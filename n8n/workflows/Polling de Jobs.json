@@ -1,0 +1,321 @@
+{
+  "name": "Polling de Jobs",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://kneaniaifzgqibpajyji.supabase.co/rest/v1/pluggy_sync_jobs?id=eq.{{ $json.body?.job_id || $json.job_id || $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "=status",
+              "value": "=running"
+            },
+            {
+              "name": "started_at",
+              "value": "={{ $now }}"
+            },
+            {
+              "name": "attempts",
+              "value": "={{ ($json.body?.attempts || $json.attempts || 0) + 1 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        0
+      ],
+      "id": "a7530cd6-e14b-40f2-a483-9e5ee00316f9",
+      "name": "Marcar Job como Running",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DulvnkFFNftSqY7V",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kneaniaifzgqibpajyji.supabase.co/functions/v1/pluggy-worker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Internal-Secret",
+              "value": "k1nCBW6udu10BlGF"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"job_id\": \"{{ $json.body?.job_id || $json.job_id || $json.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        384,
+        0
+      ],
+      "id": "0360b9b1-c35e-470f-9d2f-4e5c5b51725a",
+      "name": "Executar pluggy-worker",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 2,
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "notesInFlow": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DulvnkFFNftSqY7V",
+          "name": "Header Auth account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $node[\"Executar pluggy-worker\"].json.success }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "6bd3c762-a7bc-4c40-8770-e69453228092"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b424e0ee-f511-4c6d-820b-136af1d2a3e7",
+                    "leftValue": "={{ $node[\"Executar pluggy-worker\"].json.success }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        0
+      ],
+      "id": "470d76b9-bd10-41a7-902d-a598a83e0e66",
+      "name": "Marcar Job como Done ou Error"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://kneaniaifzgqibpajyji.supabase.co/rest/v1/pluggy_sync_jobs?id=eq.{{ $node['Webhook'].json.body.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"status\": \"done\",\n  \"finished_at\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "2ce6fecb-5a8e-4267-9f78-87c046ce5dd2",
+      "name": "IF sucesso",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DulvnkFFNftSqY7V",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://kneaniaifzgqibpajyji.supabase.co/rest/v1/pluggy_sync_jobs?id=eq.{{ $node['Webhook'].json.body.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \n  \"status\": \"error\", \n  \"error_message\": \"{{ $node[\"Executar pluggy-worker\"].json.error || 'Erro na execução' }}\",\n  \"finished_at\": \"{{ $now }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        128
+      ],
+      "id": "56fe46fa-79f7-4745-819d-c13044669d8b",
+      "name": "IF falha",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DulvnkFFNftSqY7V",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://kneaniaifzgqibpajyji.supabase.co/rest/v1/pluggy_sync_jobs?id=eq.{{ $json.body?.job_id || $json.job_id || $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"alerta\": \"Falha crítica no Sync Pluggy\",\n  \"workflow\": \"Rxfin — Pluggy Sync Orquestrador\",\n  \"jobId\": \"{{ $json.body.job_id }}\",\n  \"error\": \"{{ $node[\"Executar pluggy-worker\"].json.error || 'Erro interno na função worker' }}\",\n  \"timestamp\": \"{{ $now }}\",\n  \"traceId\": \"{{ $node[\"Executar pluggy-worker\"].json.traceId || 'N/A' }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1008,
+        128
+      ],
+      "id": "7d930470-1419-4a20-9a26-618bdd16b14e",
+      "name": "Notificacao de Erro",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DulvnkFFNftSqY7V",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "5661ce30-b55f-49fa-a003-68a8bbb9d6ed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c9741bda-01a7-4236-820f-2886dca85d61",
+      "name": "Webhook",
+      "webhookId": "5661ce30-b55f-49fa-a003-68a8bbb9d6ed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Marcar Job como Running": {
+      "main": [
+        [
+          {
+            "node": "Executar pluggy-worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executar pluggy-worker": {
+      "main": [
+        [
+          {
+            "node": "Marcar Job como Done ou Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Job como Done ou Error": {
+      "main": [
+        [
+          {
+            "node": "IF sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF falha",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF falha": {
+      "main": [
+        [
+          {
+            "node": "Notificacao de Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Marcar Job como Running",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b14a0a88-8e81-4ee1-bc25-6bd98b9cf3f6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ddf44d5ec38764085948b6f125095ba4669e4a304aafd67c76dcf4b0708a86a"
+  },
+  "id": "2Gzs5ltu5RRaMDdnKZHp8",
+  "tags": []
+}
