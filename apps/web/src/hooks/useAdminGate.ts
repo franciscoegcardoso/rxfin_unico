@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -25,8 +25,13 @@ export function useAdminGate() {
     session: null,
     error: null,
   });
+  const hasInitializedRef = useRef(false);
+  const isLoginInProgressRef = useRef(false);
 
   const login = useCallback(async () => {
+    if (isLoginInProgressRef.current || state.isAuthenticated) return;
+
+    isLoginInProgressRef.current = true;
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -44,7 +49,6 @@ export function useAdminGate() {
         navigate('/login');
         return;
       }
-
 
       const { data, error } = await supabase.functions.invoke('admin-gate', {
         body: { action: 'login' },
@@ -74,14 +78,20 @@ export function useAdminGate() {
         return;
       }
 
-      if (data?.session_token) {
-        sessionStorage.setItem(STORAGE_KEY, data.session_token);
+      if (data?.success === true || data?.code === 'SUCCESS') {
+        const sessionToken = data?.data?.session_token;
+
+        if (!sessionToken) {
+          throw new Error('Resposta de sucesso sem session_token');
+        }
+
+        sessionStorage.setItem(STORAGE_KEY, sessionToken);
         setState(prev => ({
           ...prev,
           isLoading: false,
           isAuthenticated: true,
           needsMfa: false,
-          session: data.session_token,
+          session: sessionToken,
           isAdmin: true,
         }));
         return;
@@ -94,8 +104,10 @@ export function useAdminGate() {
         isLoading: false,
         error: err.message || 'Erro ao autenticar',
       }));
+    } finally {
+      isLoginInProgressRef.current = false;
     }
-  }, [navigate]);
+  }, [navigate, state.isAuthenticated]);
 
   const logout = useCallback(async () => {
     const token = sessionStorage.getItem(STORAGE_KEY);
@@ -121,6 +133,12 @@ export function useAdminGate() {
 
   // On mount: validate existing token or attempt login
   useEffect(() => {
+    if (hasInitializedRef.current || state.isAuthenticated || isLoginInProgressRef.current) {
+      return;
+    }
+
+    hasInitializedRef.current = true;
+
     const init = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session?.access_token) {
@@ -137,7 +155,6 @@ export function useAdminGate() {
         return;
       }
 
-      
       const existingToken = sessionStorage.getItem(STORAGE_KEY);
 
       if (existingToken) {
@@ -162,12 +179,13 @@ export function useAdminGate() {
         sessionStorage.removeItem(STORAGE_KEY);
       }
 
-      // No valid token, attempt login
-      await login();
+      if (!state.isAuthenticated && !isLoginInProgressRef.current) {
+        await login();
+      }
     };
 
     init();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [login, navigate, state.isAuthenticated]);
 
   return {
     ...state,

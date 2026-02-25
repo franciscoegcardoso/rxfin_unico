@@ -1,8 +1,12 @@
-2026-02-25T23:21:01Z | e4f833223ff738b0c288ce0934d515e4c2832b5b | Remove custom headers from admin-gate calls
+2026-02-25T23:26:38Z | 7c6298af4bc6dcb520735c67cdc9315bcf9a591b | Fix admin gate login loop
 
-- Removed explicit Authorization headers from all admin-gate invocations in useAdminGate.ts
-- Kept login/logout/validate flows using default token management by Supabase client
-- After MFA verify, retain 500ms delay in AdminMfaEnrollment.tsx and removed manual JWT decode log
-- Ensures header is automatically handled by Supabase with current session token
+Refactor useAdminGate to handle new successful payload, add guards to prevent duplicate login calls, and ensure single initialization:
+- Accept data.data.session_token from admin-gate and store in sessionStorage
+- Use hasInitializedRef and isLoginInProgressRef to prevent repeated login attempts
+- Add isAuthenticated and loading guards in useEffect to avoid loop
+- Update login flow to process data.success or data.code === 'SUCCESS' and extract token accordingly
+- Maintain existing logout behavior
 
-X-Lovable-Edit-ID: edt-efc3267b-752f-4325-9ac9-f3cdd70530e3
+Result: admin login no longer loops, token saved correctly, and initialization happens once.
+
+X-Lovable-Edit-ID: edt-7289aded-fdf1-493d-835c-a33dfd518414
