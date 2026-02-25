@@ -1,5 +1,5 @@
-2026-02-25T22:46:14Z | 801801310330273ab2eaaa71ce448badd0beb9cd | Refresh session after MFA
+2026-02-25T22:48:31Z | c53d24793de9798e3883bc0bb498666c35b5401a | Remove extra MFA session refresh
 
-Update Admin MFA enrollment flow to refresh the session right after successful MFA verification and before signaling success, ensuring JWT aal2 status is up-to-date before creating admin session. Changes include calling await supabase.auth.refreshSession() between verification success and setting step to success.
+Avoid refreshing session after MFA verification; mfa.verify() already yields a valid aal2 session, so skip refresh and proceed to success flow.
 
-X-Lovable-Edit-ID: edt-8631ac6f-0ed6-4ec8-abb0-6332de291524
+X-Lovable-Edit-ID: edt-5719823c-e9ce-44c5-8503-9d17bb848436
