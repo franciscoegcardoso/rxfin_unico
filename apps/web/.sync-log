@@ -1,5 +1,8 @@
-2026-02-25T22:53:36Z | 38f060e1c511edcce66dc08de409ec57d1add5dd | Fix admin gate session flow
+2026-02-25T23:00:54Z | bb399c138b2cbe7336697fb37d5a419c10077fb1 | Sync admin-gate with fresh JWT
 
-Prevented calling admin-gate without a valid session by validating Supabase session on login/init, and redirecting to login when expired. Updated useAdminGate to check session before invoking admin-gate and to treat expired sessions gracefully. Also adjusted login/init effect to reuse token validation logic.
+Updated admin MFA and admin gate integration:
+- After successful MFA, wait briefly before proceeding to ensure aal2 propagation.
+- Always send fresh access_token in admin-gate invocations (login, validate, logout).
+- Hardened token handling in login/logout/validate flows to prevent 401/unauthorized errors.
 
-X-Lovable-Edit-ID: edt-9ff1ce93-140e-4420-9dcc-5921d2f765e2
+X-Lovable-Edit-ID: edt-2286e2e1-311e-4700-87e6-42706c1e9e27

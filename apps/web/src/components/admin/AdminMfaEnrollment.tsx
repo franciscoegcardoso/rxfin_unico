@@ -72,9 +72,11 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
       });
       if (verifyError) throw verifyError;
 
-      // mfa.verify() already returns a new aal2 session — no refreshSession() needed
       setStep('success');
-      setTimeout(() => onMfaComplete(), 1500);
+
+      // Aguarda propagação do novo token AAL2 antes de chamar o login do admin-gate
+      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      onMfaComplete();
     } catch (err: any) {
       setError(err.message || 'Código inválido');
       setCode('');

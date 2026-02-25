@@ -45,8 +45,13 @@ export function useAdminGate() {
         return;
       }
 
+      const accessToken = sessionData.session.access_token;
+
       const { data, error } = await supabase.functions.invoke('admin-gate', {
         body: { action: 'login' },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (error) throw error;
@@ -97,9 +102,17 @@ export function useAdminGate() {
   const logout = useCallback(async () => {
     const token = sessionStorage.getItem(STORAGE_KEY);
     try {
-      await supabase.functions.invoke('admin-gate', {
-        body: { action: 'logout', admin_token: token },
-      });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (accessToken) {
+        await supabase.functions.invoke('admin-gate', {
+          body: { action: 'logout', admin_token: token },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      }
     } catch {
       // ignore logout errors
     }
@@ -134,12 +147,16 @@ export function useAdminGate() {
         return;
       }
 
+      const accessToken = sessionData.session.access_token;
       const existingToken = sessionStorage.getItem(STORAGE_KEY);
 
       if (existingToken) {
         try {
           const { data, error } = await supabase.functions.invoke('admin-gate', {
             body: { action: 'validate', admin_token: existingToken },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
           });
 
           if (!error && data?.valid) {
