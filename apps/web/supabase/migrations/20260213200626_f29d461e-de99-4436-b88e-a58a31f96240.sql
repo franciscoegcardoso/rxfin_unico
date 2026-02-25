@@ -1,0 +1,2 @@
+INSERT INTO pages (slug, title, path, group_id, order_in_group, min_plan_slug, is_active_users)
+VALUES ('cartao-credito', 'Cartão de Crédito', '/cartao-credito', 'ad467023-9cd7-4186-81fe-81f7756c31d4', -1, 'free', false);

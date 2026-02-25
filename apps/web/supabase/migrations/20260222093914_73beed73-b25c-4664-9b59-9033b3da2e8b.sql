@@ -1,0 +1,1 @@
+UPDATE pages SET title = 'Pagamentos' WHERE slug = 'historico-pagamentos';

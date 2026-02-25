@@ -1,0 +1,2 @@
+INSERT INTO pages (slug, title, path, icon, description, access_level, is_active_admin, is_active_users, group_id, order_in_group)
+VALUES ('historico-pagamentos', 'Histórico de Pagamentos', '/historico-pagamentos', 'Receipt', 'Veja todos os pagamentos realizados', 'free', true, true, 'cc820566-3d75-461c-ae78-f218d06ebc7a', 7);

@@ -1,0 +1,2 @@
+UPDATE public.app_settings SET setting_value = '"/simuladores"', updated_at = now() WHERE setting_key = 'returning_user_route';
+UPDATE public.app_settings SET setting_value = '"/simuladores"', updated_at = now() WHERE setting_key = 'onboarding_skip_route';

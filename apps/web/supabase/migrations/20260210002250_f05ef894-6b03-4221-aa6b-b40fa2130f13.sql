@@ -1,0 +1,1 @@
+ALTER TABLE public.pluggy_transactions ADD COLUMN bill_id UUID REFERENCES public.credit_card_bills(id) ON DELETE SET NULL;

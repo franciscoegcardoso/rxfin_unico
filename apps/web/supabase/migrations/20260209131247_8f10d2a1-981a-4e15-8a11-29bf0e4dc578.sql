@@ -1,0 +1,1 @@
+UPDATE app_settings SET setting_value = '"/onboarding2"' WHERE setting_key = 'first_login_route';

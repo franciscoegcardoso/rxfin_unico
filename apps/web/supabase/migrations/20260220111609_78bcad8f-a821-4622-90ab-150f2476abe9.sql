@@ -1,0 +1,1 @@
+UPDATE public.fipe_sync_log SET status = 'pending' WHERE status = 'processing';

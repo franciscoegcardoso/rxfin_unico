@@ -1,0 +1,55 @@
+project_id = "kneaniaifzgqibpajyji"
+
+[functions.fipe-bulk-import]
+verify_jwt = false
+
+[functions.fipe-monthly-sync]
+verify_jwt = false
+
+[functions.save-user-cpf]
+verify_jwt = false
+
+[functions.bill-sanity-check]
+verify_jwt = false
+
+[functions.delete-own-account]
+verify_jwt = false
+
+[functions.check-expiration-notifications]
+verify_jwt = false
+
+[functions.fipe-orchestrator]
+verify_jwt = false
+
+[functions.admin-invite-users]
+verify_jwt = false
+
+[functions.fipe-auto-runner]
+verify_jwt = false
+
+[functions.pluggy-worker]
+verify_jwt = false
+
+[functions.pluggy-trigger-sync]
+verify_jwt = false
+
+[functions.pluggy-sync-accounts]
+verify_jwt = false
+
+[functions.pluggy-sync-bills]
+verify_jwt = false
+
+[functions.pluggy-sync-transactions]
+verify_jwt = false
+
+[functions.parse-receipt]
+verify_jwt = false
+
+[functions.sync-status]
+verify_jwt = false
+
+[functions.check-fipe-availability]
+verify_jwt = false
+
+[functions.economic-indicators]
+verify_jwt = false
