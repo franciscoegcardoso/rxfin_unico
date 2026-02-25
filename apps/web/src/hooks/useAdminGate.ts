@@ -30,6 +30,21 @@ export function useAdminGate() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session?.access_token) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+          needsMfa: false,
+          session: null,
+          error: 'Sua sessão expirou. Faça login novamente.',
+        }));
+        navigate('/login');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('admin-gate', {
         body: { action: 'login' },
       });
@@ -77,7 +92,7 @@ export function useAdminGate() {
         error: err.message || 'Erro ao autenticar',
       }));
     }
-  }, []);
+  }, [navigate]);
 
   const logout = useCallback(async () => {
     const token = sessionStorage.getItem(STORAGE_KEY);
@@ -104,6 +119,21 @@ export function useAdminGate() {
   // On mount: validate existing token or attempt login
   useEffect(() => {
     const init = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session?.access_token) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+          needsMfa: false,
+          session: null,
+          error: 'Sua sessão expirou. Faça login novamente.',
+        }));
+        navigate('/login');
+        return;
+      }
+
       const existingToken = sessionStorage.getItem(STORAGE_KEY);
 
       if (existingToken) {
