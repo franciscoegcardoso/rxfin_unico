@@ -1365,6 +1365,45 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_function_registry: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          function_slug: string
+          id: string
+          rate_limited: boolean
+          requires_admin: boolean
+          requires_internal_secret: boolean
+          updated_at: string | null
+          verify_jwt: boolean
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          function_slug: string
+          id?: string
+          rate_limited?: boolean
+          requires_admin?: boolean
+          requires_internal_secret?: boolean
+          updated_at?: string | null
+          verify_jwt?: boolean
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          function_slug?: string
+          id?: string
+          rate_limited?: boolean
+          requires_admin?: boolean
+          requires_internal_secret?: boolean
+          updated_at?: string | null
+          verify_jwt?: boolean
+        }
+        Relationships: []
+      }
       email_campaign_logs: {
         Row: {
           campaign_id: string
@@ -5787,6 +5826,36 @@ export type Database = {
           },
         ]
       }
+      v_edge_function_security: {
+        Row: {
+          category: string | null
+          function_slug: string | null
+          rate_limited: boolean | null
+          requires_admin: boolean | null
+          requires_internal_secret: boolean | null
+          security_level: string | null
+          verify_jwt: boolean | null
+        }
+        Insert: {
+          category?: string | null
+          function_slug?: string | null
+          rate_limited?: boolean | null
+          requires_admin?: boolean | null
+          requires_internal_secret?: boolean | null
+          security_level?: never
+          verify_jwt?: boolean | null
+        }
+        Update: {
+          category?: string | null
+          function_slug?: string | null
+          rate_limited?: boolean | null
+          requires_admin?: boolean | null
+          requires_internal_secret?: boolean | null
+          security_level?: never
+          verify_jwt?: boolean | null
+        }
+        Relationships: []
+      }
       v_lancamentos_full: {
         Row: {
           categoria: string | null
@@ -5947,6 +6016,7 @@ export type Database = {
       cleanup_expired_ai_audits: { Args: never; Returns: undefined }
       cleanup_expired_trash: { Args: never; Returns: Json }
       cleanup_expired_verification_tokens: { Args: never; Returns: undefined }
+      cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_rate_limit_log: { Args: never; Returns: number }
       cleanup_stale_device_tokens: { Args: never; Returns: number }
       count_all_users_admin: {
@@ -6332,7 +6402,6 @@ export type Database = {
         Returns: Json
       }
       timestamptz_to_date: { Args: { ts: string }; Returns: string }
-      unaccent: { Args: { "": string }; Returns: string }
       unregister_device_token: { Args: { _device_id: string }; Returns: Json }
       validate_admin_session: { Args: { _token: string }; Returns: Json }
       verify_admin: { Args: never; Returns: Json }
