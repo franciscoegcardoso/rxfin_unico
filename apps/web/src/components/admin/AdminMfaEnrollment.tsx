@@ -72,6 +72,8 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
       });
       if (verifyError) throw verifyError;
 
+      await supabase.auth.refreshSession();
+
       setStep('success');
       setTimeout(() => onMfaComplete(), 1500);
     } catch (err: any) {

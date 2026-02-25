@@ -1,5 +1,5 @@
-2026-02-25T19:24:38Z | f89632d8832e6244d67f4242ee312ca0e763a9ac | Add admin-gate function
+2026-02-25T22:46:14Z | 801801310330273ab2eaaa71ce448badd0beb9cd | Refresh session after MFA
 
-Implemented a new admin-gate edge function and wired config to enable admin JWT handling. The function validates JWTs, verifies admin role, supports login/logout/validate actions with MFA checks, creates and revokes admin sessions, and logs admin actions. Updated supabase/config.toml to register the admin-gate function and allow JWT handling.
+Update Admin MFA enrollment flow to refresh the session right after successful MFA verification and before signaling success, ensuring JWT aal2 status is up-to-date before creating admin session. Changes include calling await supabase.auth.refreshSession() between verification success and setting step to success.
 
-X-Lovable-Edit-ID: edt-41189ca2-e5c2-4d83-ba9b-985414f34dd7
+X-Lovable-Edit-ID: edt-8631ac6f-0ed6-4ec8-abb0-6332de291524
