@@ -1,5 +1,5 @@
-2026-02-25T23:32:59Z | 52af0e10f5d97e2c32d6166a4aec2d6d14259f88 | Configure admin gates for fipe history functions
+2026-02-25T23:38:06Z | f57f6d0325b8ed0879c99b8ab83d59b66a901a7b | Remodeled TCO section for mobile
 
-Enabled verify_jwt = false for admin-gate and related fipe history functions (fipe-history-v2, fipe-sibling-history, fipe-cohort-standard-curve) in config.toml to resolve 401 Invalid JWT errors across edge functions.
+Wrap TCO in MobileSectionDrawer and remove sync banner; remove outdated Parameter Sync banner block. This updates SimuladorCarroAB.tsx to present TCO as a separated mobile-friendly section and cleans up the parameter synchronization alert UI.
 
-X-Lovable-Edit-ID: edt-b0ea730a-81e3-4bfc-9380-ece5fc837700
+X-Lovable-Edit-ID: edt-c2673673-e4fe-40bc-a4b2-55f19a00b439

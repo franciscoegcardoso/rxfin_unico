@@ -1382,21 +1382,6 @@ const SimuladorCarroAB: React.FC = () => {
             </div>
           </div>
           
-          {/* Parameter Sync Manager - alerts only (buttons moved to cost parameters section) */}
-          {isCarBUnlocked && valueB > 0 && (() => {
-            const divergent = getDivergentFields(configA, configB);
-            const hasDiffs = divergent.fields.size > 0;
-            const hasVeryStrong = Array.from(divergent.fields).some(f => divergent.strength[f] === 'very-strong');
-            if (!hasDiffs) return (
-              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-500/5 border border-green-500/20">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <p className="text-xs text-green-700 dark:text-green-400">
-                  Parâmetros sincronizados - comparação justa
-                </p>
-              </div>
-            );
-            return null;
-          })()}
         </div>
 
         {/* Histórico FIPE - Combined chart */}
@@ -2120,7 +2105,12 @@ const SimuladorCarroAB: React.FC = () => {
             </Card>
             </MobileSectionDrawer>
 
-            {/* TCO Explanation Card */}
+            {/* TCO - Custo Total de Propriedade */}
+            <MobileSectionDrawer
+              title="TCO (Custo Total de Propriedade)"
+              icon={<Calculator className="h-4 w-4 text-primary" />}
+              isTabletOrMobile={isTabletOrMobile}
+            >
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2 sm:pb-3">
                 <div className="flex items-center justify-between gap-2">
@@ -2750,6 +2740,7 @@ const SimuladorCarroAB: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            </MobileSectionDrawer>
           </>
         )}
 
