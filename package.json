@@ -1,0 +1,27 @@
+{
+  "name": "rxfin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RXfin - Plataforma de finanças pessoais",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:mobile": "cd apps/mobile && npx expo start",
+    "build:mobile": "cd apps/mobile && eas build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "supabase:functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_ID",
+    "supabase:functions:deploy:staging": "supabase functions deploy --project-ref $SUPABASE_STAGING_PROJECT_ID",
+    "n8n:export": "echo 'Exportar workflows do n8n Cloud para n8n/workflows/'"
+  },
+  "devDependencies": {
+    "turbo": "^2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "packageManager": "npm@10.0.0"
+}

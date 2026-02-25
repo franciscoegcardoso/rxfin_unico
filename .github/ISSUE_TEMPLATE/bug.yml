@@ -1,0 +1,43 @@
+name: 🐛 Bug
+description: Reportar um bug
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do Bug
+      description: O que aconteceu?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento Esperado
+      description: O que deveria ter acontecido?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área Afetada
+      options:
+        - Mobile (iOS)
+        - Mobile (Android)
+        - Web
+        - Backend
+        - Open Banking (Pluggy)
+        - Pagamentos
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      options:
+        - Crítico (app não funciona)
+        - Alto (funcionalidade quebrada)
+        - Médio (inconveniente)
+        - Baixo (cosmético)
+    validations:
+      required: true

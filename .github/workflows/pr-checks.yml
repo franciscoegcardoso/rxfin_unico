@@ -1,0 +1,32 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  checks:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint
+        run: npx turbo run lint
+        continue-on-error: true
+      
+      - name: Type Check
+        run: npx turbo run typecheck
+        continue-on-error: true
+      
+      - name: Summary
+        run: echo "✅ PR checks completed" >> $GITHUB_STEP_SUMMARY

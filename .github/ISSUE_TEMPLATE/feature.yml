@@ -1,0 +1,35 @@
+name: 🚀 Feature
+description: Nova funcionalidade
+title: "[FEAT] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: O que precisa ser feito?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de Aceite
+      description: Como sabemos que está pronto?
+      value: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Mobile
+        - Backend (Edge Functions)
+        - Database
+        - n8n
+        - Infra/CI
+        - Documentação
+    validations:
+      required: true

@@ -1,0 +1,28 @@
+name: Deploy Edge Functions (Staging)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      
+      - name: Deploy all functions to staging
+        run: |
+          supabase functions deploy --project-ref ${{ secrets.SUPABASE_STAGING_PROJECT_ID }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      
+      - name: Summary
+        run: echo "✅ Edge Functions deployed to staging" >> $GITHUB_STEP_SUMMARY
