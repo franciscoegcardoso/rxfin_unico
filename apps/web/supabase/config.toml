@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.economic-indicators]
 verify_jwt = false
+
+[functions.admin-gate]
+verify_jwt = false

@@ -1,10 +1,5 @@
-2026-02-25T19:22:11Z | 58534a93384bb301b71bf6040fae455868bfdf90 | Implement admin MFA UI flow
+2026-02-25T19:24:38Z | f89632d8832e6244d67f4242ee312ca0e763a9ac | Add admin-gate function
 
-Add MFA enrollment UI and secure admin route
-- Implemented AdminMfaEnrollment component with steps: start, QR, verify, success
-- Wired AdminSecureLayout to handle MFA flow and protected admin area
-- Updated useAdminGate hook to manage login, MFA, and token handling
-- Integrated admin route /admin-secure to render MFA-protected dashboard (AdminAuditDashboard)
-- Minor UI/route wiring updates to App.tsx for admin-secure path
+Implemented a new admin-gate edge function and wired config to enable admin JWT handling. The function validates JWTs, verifies admin role, supports login/logout/validate actions with MFA checks, creates and revokes admin sessions, and logs admin actions. Updated supabase/config.toml to register the admin-gate function and allow JWT handling.
 
-X-Lovable-Edit-ID: edt-b876ca84-5ea0-4059-8f30-da8577a17df1
+X-Lovable-Edit-ID: edt-41189ca2-e5c2-4d83-ba9b-985414f34dd7
