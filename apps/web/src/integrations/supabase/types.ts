@@ -402,6 +402,75 @@ export type Database = {
           },
         ]
       }
+      ai_rate_config: {
+        Row: {
+          cooldown_minutes: number | null
+          created_at: string | null
+          function_name: string
+          id: string
+          is_active: boolean | null
+          max_requests_per_day: number
+          max_requests_per_hour: number
+          max_tokens_per_day: number | null
+          max_tokens_per_hour: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cooldown_minutes?: number | null
+          created_at?: string | null
+          function_name: string
+          id?: string
+          is_active?: boolean | null
+          max_requests_per_day?: number
+          max_requests_per_hour?: number
+          max_tokens_per_day?: number | null
+          max_tokens_per_hour?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cooldown_minutes?: number | null
+          created_at?: string | null
+          function_name?: string
+          id?: string
+          is_active?: boolean | null
+          max_requests_per_day?: number
+          max_requests_per_hour?: number
+          max_tokens_per_day?: number | null
+          max_tokens_per_hour?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      ai_rate_limits: {
+        Row: {
+          created_at: string | null
+          function_name: string
+          id: string
+          request_count: number | null
+          tokens_used: number | null
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          function_name: string
+          id?: string
+          request_count?: number | null
+          tokens_used?: number | null
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string | null
+          function_name?: string
+          id?: string
+          request_count?: number | null
+          tokens_used?: number | null
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       ai_topic_blocks: {
         Row: {
           created_at: string
@@ -5855,6 +5924,10 @@ export type Database = {
           variacao_percentual: number
         }[]
       }
+      check_ai_rate_limit: {
+        Args: { p_function_name: string; p_tokens?: number; p_user_id: string }
+        Returns: Json
+      }
       check_and_create_sync_job: { Args: { p_user_id: string }; Returns: Json }
       check_login_attempts: {
         Args: { p_email: string; p_ip?: unknown }
@@ -5869,6 +5942,7 @@ export type Database = {
         }
         Returns: Json
       }
+      cleanup_ai_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_admin_sessions: { Args: never; Returns: number }
       cleanup_expired_ai_audits: { Args: never; Returns: undefined }
       cleanup_expired_trash: { Args: never; Returns: Json }

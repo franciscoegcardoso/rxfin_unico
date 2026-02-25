@@ -1,8 +1,8 @@
-2026-02-25T23:00:54Z | bb399c138b2cbe7336697fb37d5a419c10077fb1 | Sync admin-gate with fresh JWT
+2026-02-25T23:13:01Z | 7e298c6fc34b91468706ac106f4e0ec51acf6ca2 | Debug admin gate and MFA logs
 
-Updated admin MFA and admin gate integration:
-- After successful MFA, wait briefly before proceeding to ensure aal2 propagation.
-- Always send fresh access_token in admin-gate invocations (login, validate, logout).
-- Hardened token handling in login/logout/validate flows to prevent 401/unauthorized errors.
+Added runtime guards and logs to admin gate and MFA enrollment:
+- Admin gate: log response from admin-gate after invoke
+- MFA enrollment: log AAL token post verification
+This aids diagnosing JWT/AAL propagation issues during admin flows.
 
-X-Lovable-Edit-ID: edt-2286e2e1-311e-4700-87e6-42706c1e9e27
+X-Lovable-Edit-ID: edt-589861ce-79bc-41fc-b417-28bc2fbc929f

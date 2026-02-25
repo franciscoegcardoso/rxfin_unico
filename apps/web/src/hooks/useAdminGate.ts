@@ -56,6 +56,8 @@ export function useAdminGate() {
 
       if (error) throw error;
 
+      console.log('[admin-gate response]', JSON.stringify(data));
+
       if (data?.code === 'MFA_REQUIRED') {
         setState(prev => ({
           ...prev,

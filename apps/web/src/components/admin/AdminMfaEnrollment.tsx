@@ -72,6 +72,9 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
       });
       if (verifyError) throw verifyError;
 
+      const { data: checkSession } = await supabase.auth.getSession();
+      console.log('[post-mfa-verify] aal:', checkSession?.session?.access_token ? JSON.parse(atob(checkSession.session.access_token.split('.')[1])).aal : 'no token');
+
       setStep('success');
 
       // Aguarda propagação do novo token AAL2 antes de chamar o login do admin-gate
