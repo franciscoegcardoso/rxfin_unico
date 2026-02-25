@@ -20,6 +20,8 @@ import { MagicLinkHandler } from "@/components/auth/MagicLinkHandler";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { RXFinLoadingSpinner } from "@/components/shared/RXFinLoadingSpinner";
+import { AdminSecureLayout } from '@/components/admin/AdminSecureLayout';
+import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
 
 import LandingPage from "./pages/LandingPage";
 import Inicio from "./pages/Inicio";
@@ -218,7 +220,9 @@ const App = () => (
                    <Route path="/admin/marketing" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminProtectedRoute>} />
                    <Route path="/admin/ai-feedback" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminProtectedRoute>} />
                    <Route path="/admin/ai-metrics" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminProtectedRoute>} />
-                  <Route path="/admin/simuladores" element={<Navigate to="/admin?tab=simuladores" replace />} />
+                   <Route path="/admin/simuladores" element={<Navigate to="/admin?tab=simuladores" replace />} />
+                   {/* Admin Secure — MFA-protected */}
+                   <Route path="/admin-secure" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
                   {/* Welcome Pages - Post-purchase */}
                   <Route path="/bem-vindo/:plan" element={<BemVindo />} />
                   {/* Legal Pages - Public */}

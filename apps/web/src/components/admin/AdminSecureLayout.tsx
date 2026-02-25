@@ -1,0 +1,95 @@
+import React from 'react';
+import { useAdminGate } from '@/hooks/useAdminGate';
+import { AdminMfaEnrollment } from './AdminMfaEnrollment';
+import { Shield, Loader2, AlertTriangle, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+
+interface AdminSecureLayoutProps {
+  children: React.ReactNode;
+}
+
+export const AdminSecureLayout: React.FC<AdminSecureLayoutProps> = ({ children }) => {
+  const { isLoading, isAdmin, isAuthenticated, needsMfa, mfaEnrolled, error, login, logout } = useAdminGate();
+  const navigate = useNavigate();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Verificando credenciais...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-background px-4">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="rounded-full bg-destructive/10 p-4">
+            <AlertTriangle className="h-8 w-8 text-destructive" />
+          </div>
+          <h1 className="text-xl font-semibold">Acesso Restrito</h1>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Você não possui permissões para acessar o painel administrativo.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          Voltar ao início
+        </Button>
+      </div>
+    );
+  }
+
+  if (error && !needsMfa) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4">
+        <AlertTriangle className="h-8 w-8 text-destructive" />
+        <p className="text-sm text-destructive text-center">{error}</p>
+        <Button variant="outline" onClick={() => login()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (needsMfa) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <AdminMfaEnrollment isEnrolled={mfaEnrolled} onMfaComplete={() => login()} />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Secure admin bar */}
+      <div className="bg-zinc-900 text-zinc-100 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm">
+          <Shield className="h-4 w-4 text-green-400" />
+          <span className="font-medium">Painel Admin</span>
+          <span className="text-zinc-400">•</span>
+          <span className="text-zinc-400 text-xs">Sessão segura (MFA verificado)</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800"
+          onClick={logout}
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sair do admin
+        </Button>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        {children}
+      </div>
+    </div>
+  );
+};

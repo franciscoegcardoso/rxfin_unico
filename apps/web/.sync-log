@@ -1,5 +1,10 @@
-2026-02-25T19:16:43Z | a38af57e00cce3f2f934164dd755a1f54dff0a79 | Move sync to parameters section
+2026-02-25T19:22:11Z | 58534a93384bb301b71bf6040fae455868bfdf90 | Implement admin MFA UI flow
 
-Move Parameter Sync Manager UI: replace with inline sync buttons inside the Custos Detalhados section, add alert for synchronized state, and adjust imports to use UI tooltip components.
+Add MFA enrollment UI and secure admin route
+- Implemented AdminMfaEnrollment component with steps: start, QR, verify, success
+- Wired AdminSecureLayout to handle MFA flow and protected admin area
+- Updated useAdminGate hook to manage login, MFA, and token handling
+- Integrated admin route /admin-secure to render MFA-protected dashboard (AdminAuditDashboard)
+- Minor UI/route wiring updates to App.tsx for admin-secure path
 
-X-Lovable-Edit-ID: edt-aa595929-1e6e-4d4b-bbdc-d5d5752aefce
+X-Lovable-Edit-ID: edt-b876ca84-5ea0-4059-8f30-da8577a17df1
