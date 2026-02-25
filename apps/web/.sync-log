@@ -1,3 +1,5 @@
-2026-02-25T19:08:40Z | 1fdb2523e9824951f02a73f0051661ec74d5d6f7 | Clean up sync-lovable-to-monorepo.yml comments
+2026-02-25T19:16:43Z | a38af57e00cce3f2f934164dd755a1f54dff0a79 | Move sync to parameters section
 
-Removed instructions and comments from sync-lovable-to-monorepo.yml.
+Move Parameter Sync Manager UI: replace with inline sync buttons inside the Custos Detalhados section, add alert for synchronized state, and adjust imports to use UI tooltip components.
+
+X-Lovable-Edit-ID: edt-aa595929-1e6e-4d4b-bbdc-d5d5752aefce

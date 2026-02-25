@@ -50,6 +50,8 @@ import {
   ChevronDown,
   ChevronUp,
   MapPin,
+  Copy,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
@@ -1380,14 +1382,21 @@ const SimuladorCarroAB: React.FC = () => {
             </div>
           </div>
           
-          {/* Parameter Sync Manager */}
-          <ParameterSyncManager
-            configA={configA}
-            configB={configB}
-            onSyncAtoB={handleSyncAtoB}
-            onSyncBtoA={handleSyncBtoA}
-            isCarBEnabled={isCarBUnlocked && valueB > 0}
-          />
+          {/* Parameter Sync Manager - alerts only (buttons moved to cost parameters section) */}
+          {isCarBUnlocked && valueB > 0 && (() => {
+            const divergent = getDivergentFields(configA, configB);
+            const hasDiffs = divergent.fields.size > 0;
+            const hasVeryStrong = Array.from(divergent.fields).some(f => divergent.strength[f] === 'very-strong');
+            if (!hasDiffs) return (
+              <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-500/5 border border-green-500/20">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <p className="text-xs text-green-700 dark:text-green-400">
+                  Parâmetros sincronizados - comparação justa
+                </p>
+              </div>
+            );
+            return null;
+          })()}
         </div>
 
         {/* Histórico FIPE - Combined chart */}
@@ -1684,18 +1693,47 @@ const SimuladorCarroAB: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Sync buttons */}
-                  <div className="flex justify-center gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => {
-                      setConfigB(prev => ({ ...prev, monthlyParking: configA.monthlyParking, monthlyTolls: configA.monthlyTolls, monthlyWashing: configA.monthlyWashing }));
-                    }}>
-                      A → B
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => {
-                      setConfigA(prev => ({ ...prev, monthlyParking: configB.monthlyParking, monthlyTolls: configB.monthlyTolls, monthlyWashing: configB.monthlyWashing }));
-                    }}>
-                      B → A
-                    </Button>
+                  {/* Sync buttons - all parameters */}
+                  <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
+                    <TooltipProvider>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 gap-1.5 text-xs border-blue-500/30 hover:bg-blue-500/10"
+                            onClick={handleSyncBtoA}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Copiar parâmetros</span> A → B
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de A para B</p>
+                        </TooltipContent>
+                      </UITooltip>
+                    </TooltipProvider>
+                    
+                    <ArrowRightLeft className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                    
+                    <TooltipProvider>
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 gap-1.5 text-xs border-amber-500/30 hover:bg-amber-500/10"
+                            onClick={handleSyncAtoB}
+                          >
+                            B → A <span className="hidden sm:inline">Copiar parâmetros</span>
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de B para A</p>
+                        </TooltipContent>
+                      </UITooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </div>
