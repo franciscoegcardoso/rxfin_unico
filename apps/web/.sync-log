@@ -1,12 +1,5 @@
-2026-02-25T23:26:38Z | 7c6298af4bc6dcb520735c67cdc9315bcf9a591b | Fix admin gate login loop
+2026-02-25T23:32:59Z | 52af0e10f5d97e2c32d6166a4aec2d6d14259f88 | Configure admin gates for fipe history functions
 
-Refactor useAdminGate to handle new successful payload, add guards to prevent duplicate login calls, and ensure single initialization:
-- Accept data.data.session_token from admin-gate and store in sessionStorage
-- Use hasInitializedRef and isLoginInProgressRef to prevent repeated login attempts
-- Add isAuthenticated and loading guards in useEffect to avoid loop
-- Update login flow to process data.success or data.code === 'SUCCESS' and extract token accordingly
-- Maintain existing logout behavior
+Enabled verify_jwt = false for admin-gate and related fipe history functions (fipe-history-v2, fipe-sibling-history, fipe-cohort-standard-curve) in config.toml to resolve 401 Invalid JWT errors across edge functions.
 
-Result: admin login no longer loops, token saved correctly, and initialization happens once.
-
-X-Lovable-Edit-ID: edt-7289aded-fdf1-493d-835c-a33dfd518414
+X-Lovable-Edit-ID: edt-b0ea730a-81e3-4bfc-9380-ece5fc837700

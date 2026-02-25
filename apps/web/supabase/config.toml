@@ -56,3 +56,12 @@ verify_jwt = false
 
 [functions.admin-gate]
 verify_jwt = false
+
+[functions.fipe-history-v2]
+verify_jwt = false
+
+[functions.fipe-sibling-history]
+verify_jwt = false
+
+[functions.fipe-cohort-standard-curve]
+verify_jwt = false
