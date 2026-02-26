@@ -1,5 +1,11 @@
-2026-02-26T23:43:37Z | 38155d1e8a16dbedb7bb4ddb7de92ed986a90ea6 | Add onboarding persistence layer
+2026-02-26T23:45:09Z | f3ffb0bdf6c9ece4768063b7533c1b6d296e015d | Add onboarding test suite
 
-Implement persistBlockA, persistBlockB, persistBlockC services and wire Block A/C commits to user data; update OnboardingWizardV3 to use auth user and show toasts on failure
+Add comprehensive tests for onboarding features:
+- OnboardingWizardV3 test for active block calculation and block steps
+- demoData data coverage tests
+- useDemoMode logic tests
+- useOnboardingCheckpoint level mapping tests
 
-X-Lovable-Edit-ID: edt-c005d359-b48c-4152-aeaa-509eb125ccd2
+Also includes test setup and mocks configuration.
+
+X-Lovable-Edit-ID: edt-770bc61c-4d65-4820-9774-67b3a9f0f5a7

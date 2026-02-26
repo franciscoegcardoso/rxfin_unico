@@ -2941,6 +2941,75 @@ export type Database = {
         }
         Relationships: []
       }
+      fipe_scale_jobs: {
+        Row: {
+          batch_size: number
+          brand_id: number
+          created_at: string | null
+          fipe_code: string
+          id: number
+          model_id: number
+          model_year: number
+          offset_val: number
+          priority: number
+          ref_end: number
+          ref_start: number
+          result_last: Json | null
+          status: string
+          total_erros: number
+          total_indisponiveis: number
+          total_inseridos: number
+          total_refs_processadas: number
+          updated_at: string | null
+          vehicle_type: number
+          year_id: string
+        }
+        Insert: {
+          batch_size?: number
+          brand_id: number
+          created_at?: string | null
+          fipe_code: string
+          id?: number
+          model_id: number
+          model_year: number
+          offset_val?: number
+          priority?: number
+          ref_end: number
+          ref_start: number
+          result_last?: Json | null
+          status?: string
+          total_erros?: number
+          total_indisponiveis?: number
+          total_inseridos?: number
+          total_refs_processadas?: number
+          updated_at?: string | null
+          vehicle_type: number
+          year_id: string
+        }
+        Update: {
+          batch_size?: number
+          brand_id?: number
+          created_at?: string | null
+          fipe_code?: string
+          id?: number
+          model_id?: number
+          model_year?: number
+          offset_val?: number
+          priority?: number
+          ref_end?: number
+          ref_start?: number
+          result_last?: Json | null
+          status?: string
+          total_erros?: number
+          total_indisponiveis?: number
+          total_inseridos?: number
+          total_refs_processadas?: number
+          updated_at?: string | null
+          vehicle_type?: number
+          year_id?: string
+        }
+        Relationships: []
+      }
       fipe_sibling_cache: {
         Row: {
           avg_monthly_decay_rate: number | null
@@ -6779,6 +6848,17 @@ export type Database = {
         }
         Relationships: []
       }
+      fipe_scale_progress: {
+        Row: {
+          erros: number | null
+          indisponiveis: number | null
+          inseridos: number | null
+          jobs: number | null
+          refs_processadas: number | null
+          status: string | null
+        }
+        Relationships: []
+      }
       v_crm_kanban: {
         Row: {
           account_count: number | null
@@ -7021,6 +7101,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_scale_job: {
+        Args: never
+        Returns: {
+          batch_size: number
+          brand_id: number
+          fipe_code: string
+          id: number
+          model_id: number
+          model_year: number
+          offset_val: number
+          ref_end: number
+          ref_start: number
+          vehicle_type: number
+          year_id: string
+        }[]
+      }
       cleanup_admin_sessions: { Args: never; Returns: number }
       cleanup_ai_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_admin_sessions: { Args: never; Returns: number }
@@ -7030,6 +7126,17 @@ export type Database = {
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
       cleanup_rate_limit_log: { Args: never; Returns: number }
       cleanup_stale_device_tokens: { Args: never; Returns: number }
+      continue_scale_job: {
+        Args: {
+          p_erros: number
+          p_id: number
+          p_indisponiveis: number
+          p_inseridos: number
+          p_next_offset: number
+          p_refs_processadas: number
+        }
+        Returns: undefined
+      }
       count_all_users_admin: {
         Args: { search_query?: string }
         Returns: number
@@ -7075,6 +7182,17 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      finish_scale_job: {
+        Args: {
+          p_erros: number
+          p_id: number
+          p_indisponiveis: number
+          p_inseridos: number
+          p_refs_processadas: number
+          p_status?: string
+        }
+        Returns: undefined
       }
       generate_automatic_notifications: { Args: never; Returns: Json }
       generate_email_queue: { Args: never; Returns: number }
