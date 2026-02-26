@@ -1,21 +1,37 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemedLogo } from '@/components/ui/themed-logo';
 import { JourneyMap } from './JourneyMap';
 import { LevelBadge } from './LevelBadge';
 import { BlockA } from './blocks/BlockA';
+import { BlockB } from './blocks/BlockB';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 
-const TOTAL_STEPS_BLOCK_A = 4; // welcome, income, expenses, marco
+const BLOCK_STEPS = { A: 4, B: 5 } as const;
+
+type ActiveBlock = 'A' | 'B';
+
+/**
+ * Determines which block to show based on onboarding phase.
+ */
+function getActiveBlock(phase: string): ActiveBlock {
+  switch (phase) {
+    case 'block_a_done': return 'B';
+    default: return 'A';
+  }
+}
 
 export const OnboardingWizardV3: React.FC = () => {
   const navigate = useNavigate();
   const { currentLevel, currentPhase, advancePhase, registerEvent } = useOnboardingCheckpoint();
   const { saveDraft } = useOnboardingDraft();
+
+  const activeBlock = useMemo(() => getActiveBlock(currentPhase), [currentPhase]);
+  const totalSteps = BLOCK_STEPS[activeBlock];
 
   const [step, setStep] = useState(0);
 
@@ -30,7 +46,14 @@ export const OnboardingWizardV3: React.FC = () => {
   const handleBlockAComplete = async () => {
     await advancePhase('block_a_done');
     await registerEvent('block_a_completed');
-    // After block A, go back to dashboard (demo still active until block_b_done)
+    // Reset step and switch to Block B
+    setStep(0);
+  };
+
+  const handleBlockBComplete = async () => {
+    await advancePhase('block_b_done');
+    await registerEvent('block_b_completed');
+    // Demo mode deactivates after block_b_done — redirect to dashboard with real data
     navigate('/inicio');
   };
 
@@ -46,7 +69,7 @@ export const OnboardingWizardV3: React.FC = () => {
           <LevelBadge
             currentLevel={currentLevel}
             currentStepInBlock={step}
-            totalStepsInBlock={TOTAL_STEPS_BLOCK_A}
+            totalStepsInBlock={totalSteps}
           />
           <Button
             variant="ghost"
@@ -65,7 +88,7 @@ export const OnboardingWizardV3: React.FC = () => {
         <JourneyMap
           currentLevel={currentLevel}
           currentStepInBlock={step}
-          totalStepsInBlock={TOTAL_STEPS_BLOCK_A}
+          totalStepsInBlock={totalSteps}
         />
       </div>
 
@@ -73,18 +96,28 @@ export const OnboardingWizardV3: React.FC = () => {
       <main className="flex-1 px-4 pb-8">
         <AnimatePresence mode="wait">
           <motion.div
-            key={step}
+            key={`${activeBlock}-${step}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.25 }}
           >
-            <BlockA
-              step={step}
-              onStepChange={handleStepChange}
-              onComplete={handleBlockAComplete}
-              onSaveDraft={saveDraft}
-            />
+            {activeBlock === 'A' && (
+              <BlockA
+                step={step}
+                onStepChange={handleStepChange}
+                onComplete={handleBlockAComplete}
+                onSaveDraft={saveDraft}
+              />
+            )}
+            {activeBlock === 'B' && (
+              <BlockB
+                step={step}
+                onStepChange={handleStepChange}
+                onComplete={handleBlockBComplete}
+                onSaveDraft={saveDraft}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>

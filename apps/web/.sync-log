@@ -1,7 +1,5 @@
-2026-02-26T23:36:45Z | 470765713e2e7a88963ecc10bb94e7aac2803a9b | Add onboarding UI components
+2026-02-26T23:39:29Z | cd034bbb9c51e04765df1e8e1cd0c047f1bbf0ec | Add Block B support
 
-Introduce ConquestCard, JourneyMap, LevelBadge, and OnboardingWizardV3
-Wire /onboarding route and App.tsx integration
-Refactor BlockA with safer imports and embedded configs
+Implement BlockB component for Patrimônio (Block B) with assets, debts, insurance steps, and Conquest Card; integrate Block B into OnboardingWizardV3, toggle between blocks A and B based on phase, and update navigation and progress handling.
 
-X-Lovable-Edit-ID: edt-6871b5cb-564a-4d39-91ed-0994a4a842bd
+X-Lovable-Edit-ID: edt-566441b8-4133-4647-95db-94b78568a0a7
