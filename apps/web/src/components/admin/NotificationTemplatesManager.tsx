@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Save, Loader2, Variable, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 import { useAdminPendingChanges } from '@/contexts/AdminPendingChangesContext';
 
 interface NotificationTemplate {
@@ -37,6 +38,7 @@ const typeLabels: Record<string, string> = {
 
 export const NotificationTemplatesManager: React.FC = () => {
   const queryClient = useQueryClient();
+  const { deferUpdateNotificationTemplate, deferToggleNotificationTemplate } = useAdminDeferredMutations();
   const { addChange, removeChange } = useAdminPendingChanges();
   const [editState, setEditState] = useState<Record<string, Partial<NotificationTemplate>>>({});
   const editStateRef = useRef(editState);
@@ -57,22 +59,7 @@ export const NotificationTemplatesManager: React.FC = () => {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, changes }: { id: string; changes: Partial<NotificationTemplate> }) => {
-      const { error } = await supabase
-        .from('notification_templates')
-        .update(changes)
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
-      toast.success('Template salvo com sucesso');
-    },
-    onError: (err: any) => {
-      toast.error('Erro ao salvar template: ' + err.message);
-    },
-  });
+  // Removed direct updateMutation - now using deferred mutations
   // Sync edit state with AdminPendingChanges for navigation guard
   const anyChanges = Object.keys(editState).length > 0;
   useEffect(() => {
@@ -114,7 +101,8 @@ export const NotificationTemplatesManager: React.FC = () => {
   const handleSave = (template: NotificationTemplate) => {
     const changes = getEdit(template.id);
     if (Object.keys(changes).length === 0) return;
-    updateMutation.mutate({ id: template.id, changes });
+    deferUpdateNotificationTemplate(template.id, changes, template.name);
+    toast.info('Alteração adicionada para revisão');
     setEditState(prev => {
       const next = { ...prev };
       delete next[template.id];
@@ -131,7 +119,8 @@ export const NotificationTemplatesManager: React.FC = () => {
   };
 
   const handleToggle = (template: NotificationTemplate) => {
-    updateMutation.mutate({ id: template.id, changes: { is_active: !template.is_active } });
+    deferToggleNotificationTemplate(template.id, template.name, template.is_active);
+    toast.info('Alteração adicionada para revisão');
   };
 
   const insertVariable = (templateId: string, varName: string) => {
@@ -276,13 +265,8 @@ export const NotificationTemplatesManager: React.FC = () => {
                   <Button
                     size="sm"
                     onClick={() => handleSave(tpl)}
-                    disabled={updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                    ) : (
-                      <Save className="h-3.5 w-3.5 mr-1" />
-                    )}
+                    <Save className="h-3.5 w-3.5 mr-1" />
                     Salvar
                   </Button>
                 </div>

@@ -8,6 +8,8 @@ import type { Page, PageInsert, PageUpdate } from '@/hooks/usePages';
 import type { PageGroup, PageGroupInsert, PageGroupUpdate } from '@/hooks/usePageGroups';
 import type { SubscriptionPlan } from '@/hooks/useSubscriptionPlans';
 import type { PlanComparisonFeature } from '@/hooks/usePlanComparisonFeatures';
+import type { AppSettings } from '@/hooks/useAppSettings';
+import type { UserProfileUpdate } from '@/hooks/useAdminUsers';
 
 /**
  * Hook that provides deferred mutations for admin operations.
@@ -610,6 +612,199 @@ export function useAdminDeferredMutations() {
     });
   }, [addChange, removeEntityFieldChange, setPendingValue, clearPendingValue, queryClient]);
 
+  // ============ APP SETTINGS ============
+
+  const deferUpdateSettings = useCallback((updates: Partial<AppSettings>, description: string) => {
+    addChange({
+      type: 'update',
+      category: 'Configuração',
+      description,
+      execute: async () => {
+        const upserts = Object.entries(updates).map(([key, value]) => ({
+          setting_key: key,
+          setting_value: JSON.stringify(value),
+          updated_at: new Date().toISOString(),
+        }));
+
+        const { error } = await supabase
+          .from('app_settings')
+          .upsert(upserts, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['app-settings'] });
+        logAction('UPDATE_SETTINGS', 'app_settings', null, { fields: Object.keys(updates) }, 'medium');
+        toast.success('Configurações salvas!');
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  // ============ NOTIFICATION TEMPLATES ============
+
+  const deferUpdateNotificationTemplate = useCallback((id: string, changes: Record<string, any>, name: string) => {
+    addChange({
+      type: 'update',
+      category: 'Template',
+      description: `Atualizar template "${name}"`,
+      entityId: id,
+      execute: async () => {
+        const { error } = await supabase
+          .from('notification_templates')
+          .update(changes)
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
+        toast.success('Template salvo com sucesso');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  const deferToggleNotificationTemplate = useCallback((id: string, name: string, currentActive: boolean) => {
+    const newStatus = !currentActive;
+    addChange({
+      type: 'toggle',
+      category: 'Template',
+      description: `${newStatus ? 'Ativar' : 'Desativar'} template "${name}"`,
+      entityId: id,
+      field: 'is_active',
+      execute: async () => {
+        const { error } = await supabase
+          .from('notification_templates')
+          .update({ is_active: newStatus })
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['notification-templates'] });
+        toast.success(`Template ${newStatus ? 'ativado' : 'desativado'}!`);
+      },
+    });
+  }, [addChange, queryClient]);
+
+  // ============ USERS ============
+
+  const deferUpdateUser = useCallback((id: string, updates: UserProfileUpdate, userName: string) => {
+    addChange({
+      type: 'update',
+      category: 'Usuário',
+      description: `Atualizar usuário "${userName}"`,
+      entityId: id,
+      execute: async () => {
+        const { error } = await supabase
+          .from('profiles')
+          .update(updates)
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        logAction('UPDATE_USER', 'profiles', id, updates);
+        toast.success('Usuário atualizado!');
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  const deferToggleUserActive = useCallback((userId: string, userName: string, currentActive: boolean) => {
+    const newStatus = !currentActive;
+    addChange({
+      type: 'toggle',
+      category: 'Usuário',
+      description: `${newStatus ? 'Ativar' : 'Desativar'} usuário "${userName}"`,
+      entityId: userId,
+      field: 'is_active',
+      execute: async () => {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: newStatus })
+          .eq('id', userId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        logAction('TOGGLE_USER_ACTIVE', 'profiles', userId, { is_active: newStatus });
+        toast.success(`Usuário ${newStatus ? 'ativado' : 'desativado'}!`);
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  const deferUpdateSubscriptionRole = useCallback((userId: string, userName: string, planSlug: string) => {
+    addChange({
+      type: 'update',
+      category: 'Usuário',
+      description: `Alterar plano de "${userName}" para "${planSlug}"`,
+      entityId: userId,
+      field: 'plan_slug',
+      execute: async () => {
+        const { data: plan, error: planError } = await supabase
+          .from('subscription_plans')
+          .select('id, duration_days')
+          .eq('slug', planSlug)
+          .single();
+        if (planError || !plan) throw new Error(`Plan not found for slug: ${planSlug}`);
+
+        const { data: workspace, error: wsError } = await supabase
+          .from('workspaces')
+          .select('id')
+          .eq('owner_id', userId)
+          .eq('is_active', true)
+          .single();
+        if (wsError || !workspace) throw new Error('Workspace not found for user');
+
+        const { error: updateError } = await supabase
+          .from('workspaces')
+          .update({
+            plan_id: plan.id,
+            plan_expires_at: new Date(Date.now() + plan.duration_days * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .eq('id', workspace.id);
+        if (updateError) throw updateError;
+
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        logAction('UPDATE_PLAN', 'workspaces', userId, { planSlug }, 'high');
+        toast.success(`Plano alterado para "${planSlug}"!`);
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  const deferGrantAdmin = useCallback((userId: string, userName: string) => {
+    addChange({
+      type: 'update',
+      category: 'Usuário',
+      description: `Promover "${userName}" a administrador`,
+      entityId: userId,
+      execute: async () => {
+        const { data, error } = await supabase.rpc('admin_manage_role', {
+          target_user_id: userId,
+          target_role: 'admin',
+          action: 'grant',
+        });
+        if (error) throw error;
+        const result = data as { success: boolean; error?: string };
+        if (!result.success) throw new Error(result.error || 'Erro ao promover administrador');
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        queryClient.invalidateQueries({ queryKey: ['is-admin'] });
+        logAction('GRANT_ADMIN', 'user_roles', userId, {}, 'critical');
+        toast.success('Usuário promovido a administrador!');
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  const deferRevokeAdmin = useCallback((userId: string, userName: string) => {
+    addChange({
+      type: 'update',
+      category: 'Usuário',
+      description: `Remover admin de "${userName}"`,
+      entityId: userId,
+      execute: async () => {
+        const { data, error } = await supabase.rpc('admin_manage_role', {
+          target_user_id: userId,
+          target_role: 'admin',
+          action: 'revoke',
+        });
+        if (error) throw error;
+        const result = data as { success: boolean; error?: string };
+        if (!result.success) throw new Error(result.error || 'Erro ao remover administrador');
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        queryClient.invalidateQueries({ queryKey: ['is-admin'] });
+        logAction('REVOKE_ADMIN', 'user_roles', userId, {}, 'critical');
+        toast.success('Privilégios de admin removidos');
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
   return {
     // Pages
     deferToggleUserStatus,
@@ -637,5 +832,16 @@ export function useAdminDeferredMutations() {
     deferCreateComparisonFeature,
     deferUpdateComparisonFeature,
     deferDeleteComparisonFeature,
+    // Settings
+    deferUpdateSettings,
+    // Notification Templates
+    deferUpdateNotificationTemplate,
+    deferToggleNotificationTemplate,
+    // Users
+    deferUpdateUser,
+    deferToggleUserActive,
+    deferUpdateSubscriptionRole,
+    deferGrantAdmin,
+    deferRevokeAdmin,
   };
 }

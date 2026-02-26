@@ -1,1 +1,5 @@
-2026-02-26T17:36:51Z | a5faefe1924304ebbfd3db1a34fb05349904f259 | Save plan in Lovable
+2026-02-26T17:41:56Z | 8ac5eb46f5492ab6385b4edc9ff53976544d7db1 | Refactor admin mutations
+
+Made PlanDialog, AppSettingsCard, AuthFlowSettingsCard, FeatureSettingsCard, NotificationTemplatesManager, UsersTab to use the admin deferred mutations flow. Introduced and wired new defer functions (deferUpdatePlan, deferCreatePlan, deferUpdateSettings, deferUpdateNotificationTemplate, etc.), replaced direct mutations with governance-queued changes, and added user-focused deferred mutations (update, toggle, role changes). Updated related UI to reflect queued changes and provide consistent admin governance across landing, web, and app surfaces.
+
+X-Lovable-Edit-ID: edt-7e3987e6-34ce-4390-b0f2-f4ea61dc3dcb

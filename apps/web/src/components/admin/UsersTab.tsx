@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Pencil, UserCheck, UserX, Mail, Phone, Shield, Crown, Users, UserPlus, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ import { AddGuestDialog } from '@/components/admin/AddGuestDialog';
 import { UserDeleteDialog } from '@/components/admin/UserDeleteDialog';
 import { useAdminUsers, type UserProfile, type UserProfileUpdate, type UserFilters as UserFiltersType } from '@/hooks/useAdminUsers';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 
 // Color mapping for plan badges
 const PLAN_COLORS: Record<string, string> = {
@@ -86,34 +88,24 @@ export function UsersTab() {
     totalCount,
     totalPages,
     isLoading,
-    updateUser,
-    updateSubscriptionRole,
-    toggleUserActive,
-    grantAdminRole,
-    revokeAdminRole,
     isProtectedAdmin,
   } = useAdminUsers(debouncedFilters, { page: currentPage, pageSize: PAGE_SIZE });
 
-  const handleToggleAdmin = (userId: string, isCurrentlyAdmin: boolean) => {
+  const {
+    deferToggleUserActive,
+    deferUpdateSubscriptionRole,
+    deferGrantAdmin,
+    deferRevokeAdmin,
+    deferUpdateUser,
+  } = useAdminDeferredMutations();
+
+  const handleToggleAdmin = (userId: string, userName: string, isCurrentlyAdmin: boolean) => {
     if (isCurrentlyAdmin) {
-      revokeAdminRole.mutate(userId, {
-        onSuccess: () => {
-          // Update the editing user state to reflect the change
-          if (editingUser?.id === userId) {
-            setEditingUser(prev => prev ? { ...prev, is_admin: false } : null);
-          }
-        }
-      });
+      deferRevokeAdmin(userId, userName || 'Sem nome');
     } else {
-      grantAdminRole.mutate(userId, {
-        onSuccess: () => {
-          // Update the editing user state to reflect the change
-          if (editingUser?.id === userId) {
-            setEditingUser(prev => prev ? { ...prev, is_admin: true } : null);
-          }
-        }
-      });
+      deferGrantAdmin(userId, userName || 'Sem nome');
     }
+    toast.info('Alteração adicionada para revisão');
   };
 
   const handleEditUser = (user: UserProfile) => {
@@ -122,18 +114,19 @@ export function UsersTab() {
   };
 
   const handleSaveUser = (id: string, data: UserProfileUpdate) => {
-    updateUser.mutate(
-      { id, ...data },
-      { onSuccess: () => setEditDialogOpen(false) }
-    );
+    deferUpdateUser(id, data, editingUser?.full_name || 'Sem nome');
+    toast.info('Alteração adicionada para revisão');
+    setEditDialogOpen(false);
   };
 
-  const handleRoleChange = (userId: string, newRole: string) => {
-    updateSubscriptionRole.mutate({ id: userId, planSlug: newRole });
+  const handleRoleChange = (userId: string, userName: string, newRole: string) => {
+    deferUpdateSubscriptionRole(userId, userName || 'Sem nome', newRole);
+    toast.info('Alteração adicionada para revisão');
   };
 
   const handleToggleActive = (user: UserProfile) => {
-    toggleUserActive.mutate({ id: user.id, is_active: user.is_active });
+    deferToggleUserActive(user.id, user.full_name || 'Sem nome', user.is_active);
+    toast.info('Alteração adicionada para revisão');
   };
 
   const handleAddGuest = (user: UserProfile) => {
@@ -298,8 +291,7 @@ export function UsersTab() {
                     <TableCell>
                       <Select
                         value={user.plan_slug}
-                        onValueChange={(value) => handleRoleChange(user.id, value)}
-                        disabled={updateSubscriptionRole.isPending}
+                        onValueChange={(value) => handleRoleChange(user.id, user.full_name || 'Sem nome', value)}
                       >
                         <SelectTrigger className="w-[130px] h-8">
                           <SelectValue>
@@ -340,7 +332,6 @@ export function UsersTab() {
                             <Switch
                               checked={user.is_active}
                               onCheckedChange={() => handleToggleActive(user)}
-                              disabled={toggleUserActive.isPending}
                             />
                             {user.is_active ? (
                               <UserCheck className="h-4 w-4 text-green-600" />
@@ -432,10 +423,10 @@ export function UsersTab() {
         onOpenChange={setEditDialogOpen}
         user={editingUser}
         onSave={handleSaveUser}
-        onToggleAdmin={handleToggleAdmin}
+        onToggleAdmin={(userId, isCurrentlyAdmin) => handleToggleAdmin(userId, editingUser?.full_name || 'Sem nome', isCurrentlyAdmin)}
         isProtectedAdmin={isProtectedAdmin}
-        isLoading={updateUser.isPending}
-        isTogglingAdmin={grantAdminRole.isPending || revokeAdminRole.isPending}
+        isLoading={false}
+        isTogglingAdmin={false}
       />
 
       {/* Add Guest Dialog */}

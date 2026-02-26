@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { LogIn, Save, Sparkles, ArrowRight, SkipForward, Users, Layers } from 'lucide-react';
+import { LogIn, Sparkles, ArrowRight, SkipForward, Users, Layers } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -9,10 +8,13 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 export function AuthFlowSettingsCard() {
-  const { settings, isLoading, updateMultipleSettings, isUpdating } = useAppSettings();
+  const { settings, isLoading } = useAppSettings();
+  const { deferUpdateSettings } = useAdminDeferredMutations();
   
   const [formState, setFormState] = useState({
     onboarding_enabled: true,
@@ -21,12 +23,9 @@ export function AuthFlowSettingsCard() {
     onboarding_skip_route: '/simuladores',
   });
   
-  // Rota calculada automaticamente baseada no tipo de onboarding
   const firstLoginRoute = formState.onboarding_type === 'simple' 
     ? '/onboarding2' 
     : '/onboarding';
-  
-  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -39,23 +38,33 @@ export function AuthFlowSettingsCard() {
     }
   }, [settings]);
 
-  useEffect(() => {
-    if (settings) {
-      const changed = 
-        formState.onboarding_enabled !== settings.onboarding_enabled ||
-        formState.onboarding_type !== settings.onboarding_type ||
-        formState.returning_user_route !== settings.returning_user_route ||
-        formState.onboarding_skip_route !== settings.onboarding_skip_route;
-      setHasChanges(changed);
-    }
-  }, [formState, settings]);
+  const deferChange = (updates: Record<string, any>, description: string) => {
+    deferUpdateSettings(updates, description);
+    toast.info('Alteração adicionada para revisão');
+  };
 
-  const handleSave = () => {
-    updateMultipleSettings({
-      ...formState,
-      first_login_route: firstLoginRoute,
-    });
-    setHasChanges(false);
+  const handleToggleOnboarding = (checked: boolean) => {
+    setFormState(prev => ({ ...prev, onboarding_enabled: checked }));
+    const newFirstLogin = formState.onboarding_type === 'simple' ? '/onboarding2' : '/onboarding';
+    deferChange(
+      { onboarding_enabled: checked, first_login_route: newFirstLogin },
+      `${checked ? 'Ativar' : 'Desativar'} onboarding`
+    );
+  };
+
+  const handleTypeChange = (value: 'simple' | 'complete') => {
+    setFormState(prev => ({ ...prev, onboarding_type: value }));
+    const newFirstLogin = value === 'simple' ? '/onboarding2' : '/onboarding';
+    deferChange(
+      { onboarding_type: value, first_login_route: newFirstLogin },
+      `Alterar tipo de onboarding para "${value}"`
+    );
+  };
+
+  const handleRouteBlur = (key: string, value: string) => {
+    if (settings && value !== (settings as any)[key]) {
+      deferChange({ [key]: value }, `Alterar rota "${key}" para "${value}"`);
+    }
   };
 
   if (isLoading) {
@@ -76,24 +85,14 @@ export function AuthFlowSettingsCard() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <LogIn className="h-5 w-5" />
-              Fluxo de Autenticação
-            </CardTitle>
-            <CardDescription className="mt-1.5">
-              Configure o onboarding e as rotas de redirecionamento após login/signup
-            </CardDescription>
-          </div>
-          <Button 
-            onClick={handleSave} 
-            disabled={!hasChanges || isUpdating}
-            size="sm"
-          >
-            <Save className="h-4 w-4 mr-1.5" />
-            Salvar Alterações
-          </Button>
+        <div>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <LogIn className="h-5 w-5" />
+            Fluxo de Autenticação
+          </CardTitle>
+          <CardDescription className="mt-1.5">
+            Configure o onboarding e as rotas de redirecionamento após login/signup
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -118,9 +117,7 @@ export function AuthFlowSettingsCard() {
             </div>
             <Switch
               checked={formState.onboarding_enabled}
-              onCheckedChange={(checked) => 
-                setFormState(prev => ({ ...prev, onboarding_enabled: checked }))
-              }
+              onCheckedChange={handleToggleOnboarding}
             />
           </div>
 
@@ -136,12 +133,7 @@ export function AuthFlowSettingsCard() {
                 </Label>
                 <RadioGroup
                   value={formState.onboarding_type}
-                  onValueChange={(value: 'simple' | 'complete') => {
-                    setFormState(prev => ({ 
-                      ...prev, 
-                      onboarding_type: value,
-                    }));
-                  }}
+                  onValueChange={handleTypeChange}
                   className="grid gap-3 sm:grid-cols-2"
                 >
                   <div className="flex items-start space-x-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -195,6 +187,7 @@ export function AuthFlowSettingsCard() {
                     onChange={(e) => 
                       setFormState(prev => ({ ...prev, onboarding_skip_route: e.target.value }))
                     }
+                    onBlur={() => handleRouteBlur('onboarding_skip_route', formState.onboarding_skip_route)}
                     placeholder="/simuladores"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -231,6 +224,7 @@ export function AuthFlowSettingsCard() {
               onChange={(e) => 
                 setFormState(prev => ({ ...prev, returning_user_route: e.target.value }))
               }
+              onBlur={() => handleRouteBlur('returning_user_route', formState.returning_user_route)}
               placeholder="/simuladores"
               className="max-w-md"
             />

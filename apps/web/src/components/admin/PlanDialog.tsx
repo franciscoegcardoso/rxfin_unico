@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { SubscriptionPlan, useSubscriptionPlanMutations } from '@/hooks/useSubscriptionPlans';
+import { SubscriptionPlan } from '@/hooks/useSubscriptionPlans';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -68,7 +70,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function PlanDialog({ open, onOpenChange, plan, pages }: PlanDialogProps) {
-  const { updatePlan, createPlan } = useSubscriptionPlanMutations();
+  const { deferUpdatePlan, deferCreatePlan } = useAdminDeferredMutations();
   const [allPagesSelected, setAllPagesSelected] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
@@ -157,9 +159,11 @@ export function PlanDialog({ open, onOpenChange, plan, pages }: PlanDialogProps)
     };
 
     if (plan) {
-      updatePlan.mutate({ id: plan.id, ...payload });
+      deferUpdatePlan(plan.id, payload, plan.name);
+      toast.info('Alteração adicionada para revisão');
     } else {
-      createPlan.mutate(payload as any);
+      deferCreatePlan(payload as any);
+      toast.info('Criação de plano adicionada para revisão');
     }
     
     onOpenChange(false);
