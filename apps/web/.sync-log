@@ -1,5 +1,10 @@
-2026-02-26T00:37:59Z | 84cd4c644a9fe56d8f6ceaef767a9f8168257817 | Add InvestimentosPluggy component
+2026-02-26T00:38:49Z | 5d8edd723c2f3d17a5e9b81e37bf6b94a0ee3d3c | Add AdminRoute guard
 
-Implemented InvestimentosPluggy to fetch pluggy_investments for a user, group by type, display categorized items with name, BRL balance, and badges, show total, and mark data source as Open Finance. Integrated into BalancoPatrimonialSection under Ativos by replacing previous placeholder with InvestimentosPluggy. Added InvestimentosPluggy UI and wiring to use existing usePluggyInvestments hook.
+Implemented AdminRoute component to guard admin-only routes:
+- Uses useAuth and useIsAdmin to verify authentication and admin status
+- Shows a centered Loader2 while loading
+- Redirects to /auth if not authenticated
+- Redirects to / if not admin
+- Exposes children when authorized
 
-X-Lovable-Edit-ID: edt-08f022e2-be56-465c-bf39-91bcad5c422f
+X-Lovable-Edit-ID: edt-34d4ac36-ce3c-49ff-ab58-fabe1d35b608
