@@ -1,5 +1,5 @@
-2026-02-26T00:42:47Z | e52d4cfcf82952c6064f0c8cc86a55ca60047116 | Add RaioXResultCard component
+2026-02-26T00:44:35Z | 4394fb423e5f69de82c82002de08293b57ea52e5 | Add admin AI feedback page
 
-Implements RaioXResultCard rendering for primeiro raio-x with visual separation, supports formats concentracao/top_ofensor/frequencia/sem_dados, integrates month formatting, gradient bars, interpretation section, and actions. Updated RaioXChat to pass onSendMessage prop and trigger new onboarding interactions accordingly.
+Implements /admin/ai-feedback with full admin access control, enhanced UI including summary cards, filters (status, SLA, search), joined user/profile and message data, actionable dropdowns for feedback lifecycle (start review, resolve with resolution notes and optional unlock, dismiss), and relative dates. Includes dismissal confirmation dialog, loading states, and improved table rendering.
 
-X-Lovable-Edit-ID: edt-3b221273-39fb-49ef-ab54-fa2561d03152
+X-Lovable-Edit-ID: edt-7152bf53-76f8-4bf5-80ff-7d7452932476
