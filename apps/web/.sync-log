@@ -1,9 +1,5 @@
-2026-02-26T02:24:09Z | 2b398900588198a562c94fb971d94cc8bbb01d4e | Register onboarding guard
+2026-02-26T02:29:31Z | a1dc38855c684cf19b218b5ee6eadca624d230bc | Rerouted admin through MFA
 
-Add single-run onboarding and generated-event dedup in RaioX chat
-- RaioXChat passes userId/sessionId to RaioXResultCard
-- RaioXResultCard now logs raio_x_generated once per session with a 60s check
-- Uses useRef guard to prevent multiple executions and persists via Supabase
-- Keeps existing onRegisterEvent callback integration
+Updated admin routes to require AdminSecureLayout (MFA) across all /admin paths, removed AdminProtectedRoute usage, redirected /admin-secure to /admin/audit, and removed admin import.
 
-X-Lovable-Edit-ID: edt-c08a0793-61c7-416d-869b-1a25159e4ee7
+X-Lovable-Edit-ID: edt-b3ec9032-9fb2-45b3-b40f-bc949de1bf8d

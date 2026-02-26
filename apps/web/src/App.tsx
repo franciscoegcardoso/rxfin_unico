@@ -13,7 +13,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { GlobalSyncIndicator } from "@/components/sync/GlobalSyncIndicator";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
+// AdminProtectedRoute removed — all admin routes now use AdminSecureLayout (MFA-required)
 import { GuidedTour } from "@/components/tour/GuidedTour";
 import { ImpersonationFloater } from "@/components/admin/ImpersonationFloater";
 import { MagicLinkHandler } from "@/components/auth/MagicLinkHandler";
@@ -217,17 +217,18 @@ const App = () => (
                   <Route path="/dividir-conta" element={<ProtectedRoute><DividirConta /></ProtectedRoute>} />
                   <Route path="/meu-ir" element={<ProtectedRoute><MeuIR /></ProtectedRoute>} />
                   {/* Perfil route now redirected above */}
-                  {/* Admin Routes — lazy loaded with Suspense */}
-                  <Route path="/admin" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/fipe-sync" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/marketing" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/ai-feedback" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/ai-metrics" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/crm" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminCRM /></Suspense></AdminProtectedRoute>} />
-                   <Route path="/admin/crm/automations" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminProtectedRoute>} />
+                  {/* Admin Routes — all require MFA via AdminSecureLayout */}
+                  <Route path="/admin" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/crm" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminCRM /></Suspense></AdminSecureLayout>} />
+                   <Route path="/admin/crm/automations" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminSecureLayout>} />
                    <Route path="/admin/simuladores" element={<Navigate to="/admin?tab=simuladores" replace />} />
-                   {/* Admin Secure — MFA-protected */}
-                   <Route path="/admin-secure" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
+                   <Route path="/admin/audit" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
+                   {/* Legacy route redirect */}
+                   <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
                   {/* Welcome Pages - Post-purchase */}
                   <Route path="/bem-vindo/:plan" element={<BemVindo />} />
                   {/* Legal Pages - Public */}
