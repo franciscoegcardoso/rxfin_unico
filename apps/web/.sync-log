@@ -1,9 +1,11 @@
-2026-02-26T03:51:25Z | 326623007486259daa3f144272177a5f7ddb7e27 | Build admin dashboard
+2026-02-26T03:53:14Z | 7ee5cc83117195808a81338d911e9fe68e87bc78 | Add admin impersonation page
 
-Add main admin dashboard page with overview metrics and pages listing, integrate into routing and navigation:
-- Implement AdminDashboard with metrics cards, quick links, and pages overview
-- Expose /admin/dashboard route and redirect /admin to dashboard
-- Add dashboard entry to AdminSidebar and update Admin.tsx redirect
-- Wire new AdminDashboard into App routing and admin UI
+Implements a new AdminImpersonate page that provides:
+- Viewport-based impersonation preview (desktop/tablet/mobile) via an iframe
+- Plan-based role selector with admin override, persisted in sessionStorage
+- Navigation controls to preview arbitrary routes inside the iframe
+- Route and UI updates to expose the impersonation page at /admin/impersonate
+- Sidebar integration adding an Impersonar item in the Sistema group
+- Admin dashboard routing updated to accommodate the new impersonation flow (and imports)
 
-X-Lovable-Edit-ID: edt-783e6ac7-6148-4b45-a50f-64d2b325462f
+X-Lovable-Edit-ID: edt-f49f0899-4020-4863-8def-d3056ed51183

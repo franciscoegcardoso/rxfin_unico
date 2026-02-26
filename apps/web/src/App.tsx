@@ -104,6 +104,7 @@ const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
 const CrmAutomations = lazy(() => import('./pages/admin/CrmAutomations'));
 const AdminAfiliados = lazy(() => import('./pages/admin/AdminAfiliados'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
@@ -248,6 +249,7 @@ const App = () => (
                   <Route path="/admin/crm/automations" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/audit" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
                   <Route path="/admin/afiliados" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminAfiliados /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/impersonate" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminImpersonate /></Suspense></AdminSecureLayout>} />
                   {/* Legacy redirects */}
                   <Route path="/admin/simuladores" element={<Navigate to="/admin/paginas" replace />} />
                   <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
