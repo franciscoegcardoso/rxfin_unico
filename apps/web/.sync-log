@@ -1,9 +1,9 @@
-2026-02-26T04:23:13Z | 9d78509f76c1b9d9f01a92e02877d4e8dcd7d707 | Add churn metrics dashboard
+2026-02-26T04:24:30Z | c97eaa5b0b590fbccc2a199db8db48c36c19e84d | Implement automations validation options
 
-Adds AdminDashboardCharts component and integrates churn data
-- Implement frontend charts for active, new, churn, and reactivated metrics
-- Fetch and display get_admin_dashboard_chart_data alongside existing metrics
-- Extend dashboard with churn card in engagement and charts section
-- Update TypeScript types and imports accordingly
+Add frontend validation-friendly selects for trigger and delay in CrmAutomations:
+- Introduced predefined TRIGGER_OPTIONS and DELAY_OPTIONS
+- Replaced free-text trigger and delay inputs with Select components
+- Display human-readable labels for trigger and delay in UI
+- Wire options to existing frontend without backend changes
 
-X-Lovable-Edit-ID: edt-e0ff4218-0cdf-469f-af80-19c296359a88
+X-Lovable-Edit-ID: edt-dd2a2979-5156-423e-a424-97b4a5942977

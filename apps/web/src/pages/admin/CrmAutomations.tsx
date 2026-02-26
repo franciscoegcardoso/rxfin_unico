@@ -47,6 +47,38 @@ const CHANNEL_ICONS: Record<string, React.ElementType> = {
   API: Zap,
 };
 
+const TRIGGER_OPTIONS = [
+  { value: 'status_change:lead', label: 'Mudança de status → Lead' },
+  { value: 'status_change:ativo', label: 'Mudança de status → Ativo' },
+  { value: 'status_change:migrado', label: 'Mudança de status → Migrado' },
+  { value: 'status_change:power_user', label: 'Mudança de status → Power User' },
+  { value: 'status_change:churn', label: 'Mudança de status → Churn' },
+  { value: 'status_change:inativo', label: 'Mudança de status → Inativo' },
+  { value: 'event:signup', label: 'Novo cadastro' },
+  { value: 'event:purchase', label: 'Nova assinatura (compra)' },
+  { value: 'event:subscription_cancelled', label: 'Cancelamento de assinatura' },
+  { value: 'event:plan_expired', label: 'Plano expirado' },
+  { value: 'inactivity:7d', label: 'Inatividade — 7 dias sem login' },
+  { value: 'inactivity:14d', label: 'Inatividade — 14 dias sem login' },
+  { value: 'inactivity:30d', label: 'Inatividade — 30 dias sem login' },
+  { value: 'event:first_transaction', label: 'Primeiro lançamento registrado' },
+  { value: 'event:first_bank_connected', label: 'Primeira instituição financeira conectada' },
+] as const;
+
+const DELAY_OPTIONS = [
+  { value: 'Imediato', label: 'Imediato' },
+  { value: '1h', label: '1 hora' },
+  { value: '6h', label: '6 horas' },
+  { value: '12h', label: '12 horas' },
+  { value: '1d', label: '1 dia' },
+  { value: '2d', label: '2 dias' },
+  { value: '3d', label: '3 dias' },
+  { value: '5d', label: '5 dias' },
+  { value: '7d', label: '7 dias' },
+  { value: '14d', label: '14 dias' },
+  { value: '30d', label: '30 dias' },
+] as const;
+
 const ICON_COLOR_OPTIONS = [
   { label: 'Primary', value: 'text-primary' },
   { label: 'Amber', value: 'text-amber-500' },
@@ -259,7 +291,7 @@ export default function CrmAutomations() {
                 <div className="space-y-2 text-xs">
                   <div className="flex gap-2">
                     <span className="text-muted-foreground w-14 shrink-0 font-medium">Trigger</span>
-                    <span className="text-foreground">{rule.trigger_description}</span>
+                    <span className="text-foreground">{TRIGGER_OPTIONS.find(t => t.value === rule.trigger_description)?.label ?? rule.trigger_description}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="text-muted-foreground w-14 shrink-0 font-medium">Ação</span>
@@ -268,7 +300,7 @@ export default function CrmAutomations() {
                   <div className="flex gap-2">
                     <span className="text-muted-foreground w-14 shrink-0 font-medium">Delay</span>
                     <span className="text-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground" />{rule.delay}
+                      <Clock className="h-3 w-3 text-muted-foreground" />{DELAY_OPTIONS.find(d => d.value === rule.delay)?.label ?? rule.delay}
                     </span>
                   </div>
                   <div className="flex gap-2 items-center">
@@ -338,7 +370,14 @@ export default function CrmAutomations() {
 
             <div className="space-y-2">
               <Label>Trigger (condição de disparo)</Label>
-              <Input value={form.trigger_description} onChange={e => setForm(p => ({ ...p, trigger_description: e.target.value }))} placeholder="Ex: Novo cadastro (status = 'lead')" />
+              <Select value={form.trigger_description} onValueChange={v => setForm(p => ({ ...p, trigger_description: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione o trigger" /></SelectTrigger>
+                <SelectContent>
+                  {TRIGGER_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -349,7 +388,14 @@ export default function CrmAutomations() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Delay</Label>
-                <Input value={form.delay} onChange={e => setForm(p => ({ ...p, delay: e.target.value }))} placeholder="Ex: Imediato, 3 dias" />
+                <Select value={form.delay} onValueChange={v => setForm(p => ({ ...p, delay: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o delay" /></SelectTrigger>
+                  <SelectContent>
+                    {DELAY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Ícone</Label>
