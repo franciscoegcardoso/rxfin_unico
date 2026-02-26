@@ -1,70 +1,75 @@
 
 
-## Plano: Hardening de Segurança Admin — Frontend
+## Plano: Card de Churn 30d + 4 Gráficos no Dashboard Admin
 
-### 1. Code Splitting das rotas admin (lazy loading)
+### Contexto
 
-**Arquivo:** `src/App.tsx`
+O dashboard atual (`AdminDashboard.tsx`) exibe 5 cards de engajamento de 30 dias via a função RPC `get_admin_dashboard_metrics_30d`. O pedido é adicionar um 6o card (Churn 30d) e 4 gráficos históricos usando Recharts (já instalado).
 
-- Adicionar `lazy` e `Suspense` aos imports do React
-- Converter os 5 imports estáticos admin para `lazy()`:
-  - `Admin`, `FipeSync`, `AdminMarketing`, `AIFeedback`, `AIMetrics`
-- Envolver as rotas admin (`/admin/*`) com `<Suspense fallback={<RXFinLoadingSpinner />}>`
-- Resultado: usuários comuns nunca baixam o bundle admin (~200KB+ de código)
+---
 
-### 2. Badge "Sessão Admin" no TopNavbar
+### 1. Migração de Banco de Dados
 
-**Arquivo:** `src/components/layout/TopNavbar.tsx`
+**1a. Atualizar `get_admin_dashboard_metrics_30d`** — adicionar `churn_30d`:
 
-- Ao lado do botão Admin existente (que já aparece quando `isAdmin=true`), adicionar um badge fixo na barra:
+Churn = workspaces que tinham plano pago (`plan_id` referenciando um plano com `slug NOT IN ('free','sem_cadastro')`) e cujo `plan_expires_at` caiu nos últimos 30 dias (ou `is_active = false` com `updated_at` nos últimos 30 dias). Query:
+
+```sql
+'churn_30d', (
+  SELECT count(DISTINCT w.owner_id) FROM workspaces w
+  JOIN subscription_plans sp ON sp.id = w.plan_id
+  WHERE sp.slug NOT IN ('free','sem_cadastro','')
+    AND (
+      (w.plan_expires_at BETWEEN thirty_days_ago AND now())
+      OR (w.is_active = false AND w.updated_at >= thirty_days_ago)
+    )
+)
 ```
-<Badge variant="warning" className="...">
-  <ShieldCheck className="h-3 w-3" />
-  Admin
-</Badge>
-```
-- Usar cores amber/yellow consistentes com o tema admin existente (`bg-amber-500/10 text-amber-600`)
-- Posicionar no bloco "Right side actions", antes do NotificationBell
 
-### 3. Hook useAdminAudit
+**1b. Criar função `get_admin_dashboard_chart_data()`** — retorna séries temporais em JSONB:
 
-**Arquivo novo:** `src/hooks/useAdminAudit.ts`
+| Série | Granularidade | Janela | Lógica |
+|-------|--------------|--------|--------|
+| `monthly_active` | Mensal | 12 meses | `profiles` com `last_login_at` naquele mês |
+| `new_active_daily` | Diário | 30 dias | `profiles.created_at` no dia |
+| `new_active_weekly` | Semanal | 12 semanas | `profiles.created_at` na semana |
+| `new_active_monthly` | Mensal | 12 meses | `profiles.created_at` no mês |
+| `monthly_churn` | Mensal | 12 meses | workspaces com plano pago cujo `plan_expires_at` caiu naquele mês |
+| `monthly_reactivated` | Mensal | 12 meses | `subscription_events` com `event_type IN ('purchase','subscription_created')` onde `role_before IN ('free','sem_cadastro','')` e `role_after NOT IN ('free','sem_cadastro','')` naquele mês |
 
-- Chama a RPC `log_admin_action` já existente no Supabase (confirmada em `types.ts` linhas 5884-5892)
-- Assinatura da RPC: `{ _action, _resource_type, _resource_id?, _metadata?, _severity? }`
-- O hook expõe `logAction(action, resourceType, resourceId?, metadata?, severity?)` que faz `supabase.rpc('log_admin_action', ...)` de forma fire-and-forget (sem bloquear a UI)
-- Inclui tratamento de erro silencioso (console.error apenas, não exibe toast)
+Usa `generate_series` para gerar os buckets de tempo. Protegida por check de admin (`user_roles`).
 
-### 4. Integração do audit nas ações admin
+---
 
-**Arquivos afetados:**
+### 2. Frontend — `AdminDashboard.tsx`
 
-- **`src/hooks/useAdminUsers.ts`** — adicionar `logAction` nos `onSuccess` de:
-  - `updateUser` → `logAction('UPDATE_USER', 'profiles', id, updates)`
-  - `toggleUserActive` → `logAction('TOGGLE_USER_ACTIVE', 'profiles', id, { is_active })`
-  - `updateSubscriptionRole` → `logAction('UPDATE_PLAN', 'workspaces', id, { planSlug })`
-  - `grantAdminRole` → `logAction('GRANT_ADMIN', 'user_roles', userId, {}, 'critical')`
-  - `revokeAdminRole` → `logAction('REVOKE_ADMIN', 'user_roles', userId, {}, 'critical')`
+**2a. Card Churn 30d**
+- Adicionar ao array `engagementCards` um 6o card com ícone `UserMinus`, cor vermelha, mostrando `metrics.churn30d`.
+- Grid passa de `lg:grid-cols-5` para `lg:grid-cols-6`.
 
-- **`src/components/admin/email-campaigns/CampaignEditor.tsx`** — no `handleSendCampaign`, após sucesso, chamar `logAction('SEND_CAMPAIGN', 'email_campaigns', campaignId, { segment, title })`
+**2b. Seção de Gráficos**
+Novo componente `AdminDashboardCharts.tsx` importado no dashboard, posicionado abaixo dos cards de engajamento.
 
-- **`src/components/admin/AdminInviteUsersTab.tsx`** — ao convidar como admin, chamar `logAction('INVITE_ADMIN', 'user_roles', null, { email }, 'critical')`
+Contém 4 blocos:
 
-### Detalhes técnicos
+1. **Clientes Ativos (Mensal)** — `AreaChart` com 12 meses, preenchimento gradiente azul.
+2. **Novos Ativos** — `BarChart` com tabs Diário/Semanal/Mensal para alternar granularidade.
+3. **Churn Mensal** — `BarChart` vermelho, 12 meses.
+4. **Reativados Mensal** — `BarChart` verde, 12 meses.
 
-- A RPC `log_admin_action` usa `auth.uid()` internamente, então o `user_id` é preenchido automaticamente
-- O hook `useAdminAudit` não usa `useMutation` — é uma função simples async que não precisa invalidar cache
-- O `logAction` é chamado no `onSuccess` das mutations, nunca no `mutationFn`, para não bloquear a operação principal
-- Severity padrão: `'medium'`; ações de role escalation usam `'critical'`
+Layout: grid 2 colunas em desktop, 1 em mobile. Cada gráfico dentro de um `Card` com `CardHeader` + `CardContent`. Tooltip formatado em pt-BR.
 
-### Arquivos criados/alterados
+**2c. Fetch dos dados**
+Chamada `supabase.rpc('get_admin_dashboard_chart_data')` no `useEffect` existente, armazenado em novo state `chartData`.
+
+---
+
+### 3. Arquivos Afetados
 
 | Arquivo | Ação |
-|---|---|
-| `src/App.tsx` | Lazy loading das 5 rotas admin |
-| `src/components/layout/TopNavbar.tsx` | Badge "Admin" amber |
-| `src/hooks/useAdminAudit.ts` | **Novo** — hook wrapper da RPC |
-| `src/hooks/useAdminUsers.ts` | Integrar logAction em 5 mutations |
-| `src/components/admin/email-campaigns/CampaignEditor.tsx` | logAction no envio |
-| `src/components/admin/AdminInviteUsersTab.tsx` | logAction no convite admin |
+|---------|------|
+| Nova migração SQL | Criar — atualiza RPC + cria nova função |
+| `src/integrations/supabase/types.ts` | Atualizado automaticamente |
+| `src/components/admin/AdminDashboardCharts.tsx` | Criar — componente dos 4 gráficos |
+| `src/pages/admin/AdminDashboard.tsx` | Editar — card churn + importar charts |
 

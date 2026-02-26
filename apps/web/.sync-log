@@ -1,5 +1,1 @@
-2026-02-26T04:08:06Z | 95db3526d382788062ccd451964d27c54132d21d | Add migrado to CRM enum
-
-Persist 30d admin metrics via public search_path and update dashboards; add Migrado status to CRM, and adjust Admin CRM to display new status.
-
-X-Lovable-Edit-ID: edt-180309f6-1c86-4947-b502-22d6283bbf31
+2026-02-26T04:19:48Z | ec82a27267cdd78c1e6ee433a9642d4050491caf | Save plan in Lovable
