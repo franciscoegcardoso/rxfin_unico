@@ -406,6 +406,7 @@ export function RaioXChat() {
                         formato={msg.raioXData.formato}
                         dados={msg.raioXData.dados}
                         onRegisterEvent={registerEvent}
+                        onSendMessage={sendMessage}
                       />
                     </div>
                   )}

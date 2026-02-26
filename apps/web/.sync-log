@@ -1,5 +1,5 @@
-2026-02-26T00:41:37Z | 90eab928d1f14e8955951b86294236f276a1f89f | Add AI onboarding hook updates
+2026-02-26T00:42:47Z | e52d4cfcf82952c6064f0c8cc86a55ca60047116 | Add RaioXResultCard component
 
-Updated useAIOnboarding to include empty-state handling and financial data check, and expose shouldShowEmptyState. Added a ref guard to run check only once per session, and compute days_since_signup for onboarding events.
+Implements RaioXResultCard rendering for primeiro raio-x with visual separation, supports formats concentracao/top_ofensor/frequencia/sem_dados, integrates month formatting, gradient bars, interpretation section, and actions. Updated RaioXChat to pass onSendMessage prop and trigger new onboarding interactions accordingly.
 
-X-Lovable-Edit-ID: edt-3ad045e8-3b9b-46c7-a6a5-60c6af9e77cd
+X-Lovable-Edit-ID: edt-3b221273-39fb-49ef-ab54-fa2561d03152
