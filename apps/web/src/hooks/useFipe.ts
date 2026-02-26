@@ -158,8 +158,8 @@ function getErrorMessage(error: unknown): string {
 // =============================================================================
 
 const DB_VT_MAP: Record<string, number> = { carros: 1, motos: 2, caminhoes: 3 };
-const DB_FUEL_NAMES: Record<number, string> = { 1: 'Gasolina', 2: 'Álcool', 3: 'Diesel' };
-const DB_FUEL_ACRONYMS: Record<number, string> = { 1: 'G', 2: 'A', 3: 'D' };
+const DB_FUEL_NAMES: Record<number, string> = { 1: 'Gasolina', 2: 'Álcool', 3: 'Diesel', 4: 'Gás', 5: 'Flex', 6: 'Elétrico/Híbrido' };
+const DB_FUEL_ACRONYMS: Record<number, string> = { 1: 'G', 2: 'A', 3: 'D', 4: 'N', 5: 'F', 6: 'E' };
 const DB_MIN_BRANDS_THRESHOLD = 20; // Only use DB if it has enough brands
 
 async function tryFipeFromDB<T>(path: string): Promise<T | null> {

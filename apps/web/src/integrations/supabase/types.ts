@@ -2620,6 +2620,66 @@ export type Database = {
         }
         Relationships: []
       }
+      fipe_error_log: {
+        Row: {
+          brand_id: number | null
+          created_at: string | null
+          error_type: string | null
+          fipe_code: string | null
+          http_status: number | null
+          id: number
+          level: string
+          message: string | null
+          model_id: number | null
+          parsed_price: number | null
+          raw_response: string | null
+          reference_code: number | null
+          returned_label: string | null
+          runner: string
+          url: string | null
+          vehicle_type: number | null
+          year_id: string | null
+        }
+        Insert: {
+          brand_id?: number | null
+          created_at?: string | null
+          error_type?: string | null
+          fipe_code?: string | null
+          http_status?: number | null
+          id?: number
+          level?: string
+          message?: string | null
+          model_id?: number | null
+          parsed_price?: number | null
+          raw_response?: string | null
+          reference_code?: number | null
+          returned_label?: string | null
+          runner: string
+          url?: string | null
+          vehicle_type?: number | null
+          year_id?: string | null
+        }
+        Update: {
+          brand_id?: number | null
+          created_at?: string | null
+          error_type?: string | null
+          fipe_code?: string | null
+          http_status?: number | null
+          id?: number
+          level?: string
+          message?: string | null
+          model_id?: number | null
+          parsed_price?: number | null
+          raw_response?: string | null
+          reference_code?: number | null
+          returned_label?: string | null
+          runner?: string
+          url?: string | null
+          vehicle_type?: number | null
+          year_id?: string | null
+        }
+        Relationships: []
+      }
       fipe_model_year_window: {
         Row: {
           fipe_code: string
@@ -2692,6 +2752,78 @@ export type Database = {
           status?: string
           vehicle_type?: number
           year_id?: string
+        }
+        Relationships: []
+      }
+      fipe_pilot_jobs: {
+        Row: {
+          batch_size: number
+          created_at: string | null
+          erros: number | null
+          fipe_code: string
+          has_more: boolean | null
+          id: number
+          indisponiveis: number | null
+          inseridos: number | null
+          mismatches: number | null
+          offset_val: number
+          processed_at: string | null
+          result: Json | null
+          status: string
+        }
+        Insert: {
+          batch_size?: number
+          created_at?: string | null
+          erros?: number | null
+          fipe_code: string
+          has_more?: boolean | null
+          id?: number
+          indisponiveis?: number | null
+          inseridos?: number | null
+          mismatches?: number | null
+          offset_val?: number
+          processed_at?: string | null
+          result?: Json | null
+          status?: string
+        }
+        Update: {
+          batch_size?: number
+          created_at?: string | null
+          erros?: number | null
+          fipe_code?: string
+          has_more?: boolean | null
+          id?: number
+          indisponiveis?: number | null
+          inseridos?: number | null
+          mismatches?: number | null
+          offset_val?: number
+          processed_at?: string | null
+          result?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
+      fipe_pilot_results: {
+        Row: {
+          created_at: string | null
+          dry_run: boolean | null
+          fipe_code: string | null
+          id: number
+          result: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          dry_run?: boolean | null
+          fipe_code?: string | null
+          id?: number
+          result?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          dry_run?: boolean | null
+          fipe_code?: string | null
+          id?: number
+          result?: Json | null
         }
         Relationships: []
       }
@@ -2796,34 +2928,55 @@ export type Database = {
       }
       fipe_sync_log: {
         Row: {
+          batch_key: string | null
           error_details: string | null
           finished_at: string | null
           id: string
+          metadata: Json | null
+          records_false_negative: number | null
+          records_inserted: number | null
+          records_processed: number | null
+          records_unavailable: number | null
           ref_code: string
           reference_month: string
           started_at: string | null
           status: string
           sync_type: string | null
+          vehicle_type: number | null
         }
         Insert: {
+          batch_key?: string | null
           error_details?: string | null
           finished_at?: string | null
           id?: string
+          metadata?: Json | null
+          records_false_negative?: number | null
+          records_inserted?: number | null
+          records_processed?: number | null
+          records_unavailable?: number | null
           ref_code: string
           reference_month: string
           started_at?: string | null
           status: string
           sync_type?: string | null
+          vehicle_type?: number | null
         }
         Update: {
+          batch_key?: string | null
           error_details?: string | null
           finished_at?: string | null
           id?: string
+          metadata?: Json | null
+          records_false_negative?: number | null
+          records_inserted?: number | null
+          records_processed?: number | null
+          records_unavailable?: number | null
           ref_code?: string
           reference_month?: string
           started_at?: string | null
           status?: string
           sync_type?: string | null
+          vehicle_type?: number | null
         }
         Relationships: []
       }
@@ -6477,6 +6630,19 @@ export type Database = {
           },
         ]
       }
+      fipe_error_summary: {
+        Row: {
+          error_type: string | null
+          first_seen: string | null
+          last_seen: string | null
+          level: string | null
+          runner: string | null
+          total: number | null
+          unique_fipe_codes: number | null
+          unique_refs: number | null
+        }
+        Relationships: []
+      }
       v_crm_kanban: {
         Row: {
           account_count: number | null
@@ -6695,6 +6861,30 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_pilot_job: {
+        Args: never
+        Returns: {
+          batch_size: number
+          created_at: string | null
+          erros: number | null
+          fipe_code: string
+          has_more: boolean | null
+          id: number
+          indisponiveis: number | null
+          inseridos: number | null
+          mismatches: number | null
+          offset_val: number
+          processed_at: string | null
+          result: Json | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "fipe_pilot_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       cleanup_admin_sessions: { Args: never; Returns: number }
       cleanup_ai_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_admin_sessions: { Args: never; Returns: number }
@@ -6725,6 +6915,10 @@ export type Database = {
       encrypt_api_key: {
         Args: { encryption_key: string; plain_key: string }
         Returns: string
+      }
+      enqueue_pilot_batch: {
+        Args: { p_batch_size?: number; p_fipe_code: string; p_offset: number }
+        Returns: undefined
       }
       f_missing_prices: {
         Args: { ref: number }
@@ -6853,6 +7047,7 @@ export type Database = {
           year_val: number
         }[]
       }
+      get_label_mismatch_stats: { Args: never; Returns: Json }
       get_phase3_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -7027,6 +7222,26 @@ export type Database = {
           p_resource_type?: string
           p_severity?: string
           p_user_id: string
+        }
+        Returns: undefined
+      }
+      log_fipe_error: {
+        Args: {
+          p_brand_id: number
+          p_error_type: string
+          p_fipe_code: string
+          p_http_status: number
+          p_level: string
+          p_message: string
+          p_model_id: number
+          p_parsed_price?: number
+          p_raw_response: string
+          p_reference_code: number
+          p_returned_label?: string
+          p_runner: string
+          p_url: string
+          p_vehicle_type: number
+          p_year_id: string
         }
         Returns: undefined
       }

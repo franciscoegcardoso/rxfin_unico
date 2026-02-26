@@ -1,11 +1,9 @@
-2026-02-26T17:47:21Z | e73a9071df31cfd8bc8ae50e248a30bf9794cc5d | Govern admin to governance
+2026-02-26T22:00:06Z | 65e2a2b647c6039d25ac3494314fe4f000ffa443 | Corrigir fuel label mapeamento
 
-Refactored admin pages to use deferred governance flow:
-- PlanDialog updated to use deferred mutations (Plan updates/creations queued for review)
-- Added deferred mutations across Admin: LegalDocumentsTab, EmailTemplates, Campaigns, Guests
-- Updated various components to replace direct mutations with deferX callbacks
-- Enabled cross-page governance auditing and query invalidation paths
-- Adjusted AddGuestDialog, LegalDocumentsTab, EmailTemplatesList/Editor, CampaignsList/Editor to route through deferrals
-- Implemented deferred handling for uploads, template toggles, deletions, and campaign actions
+Ajustei o mapeamento de fuel_type para o label correto no FIPE:
+- Incluí entradas para 4: Gas, 5: Flex, 6: Elétrico/Híbrido
+- Atualizei DB_FUEL_NAMES e DB_FUEL_ACRONYMS para evitar uso indevido de índice
 
-X-Lovable-Edit-ID: edt-21a53d29-71c7-48c4-89ed-c231cb385662
+Impacto: dropdown AnoModelo de veículos agora exibe o rótulo correto (ex.: 2021 Flex).
+
+X-Lovable-Edit-ID: edt-8147bb9c-38d4-458c-be1b-f6fd0a992152
