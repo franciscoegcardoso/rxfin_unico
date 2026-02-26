@@ -1,7 +1,9 @@
-2026-02-26T03:48:49Z | e13fdcb731ace7c3672c42b9aea5473bce537e9f | Update health check mappings
+2026-02-26T03:51:25Z | 326623007486259daa3f144272177a5f7ddb7e27 | Build admin dashboard
 
-- Added missing mappings for AIFeedback, AIMetrics, DividirConta, FinanceiroLayout, and RXSplit to KNOWN_TSX_FILES
-- Marked historico-pagamentos as redirect slug to financeiro/pagamentos in HealthCheck
-- Ensured orphan DB records are resolved by aligning files/slugs with health check logic
+Add main admin dashboard page with overview metrics and pages listing, integrate into routing and navigation:
+- Implement AdminDashboard with metrics cards, quick links, and pages overview
+- Expose /admin/dashboard route and redirect /admin to dashboard
+- Add dashboard entry to AdminSidebar and update Admin.tsx redirect
+- Wire new AdminDashboard into App routing and admin UI
 
-X-Lovable-Edit-ID: edt-744e79d3-6273-4f56-926a-5c45ac6b21e5
+X-Lovable-Edit-ID: edt-783e6ac7-6148-4b45-a50f-64d2b325462f

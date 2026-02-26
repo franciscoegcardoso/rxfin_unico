@@ -26,5 +26,5 @@ export default function Admin() {
     return <Navigate to={`${target}${suffix}`} replace />;
   }
 
-  return <Navigate to="/admin/usuarios" replace />;
+  return <Navigate to="/admin/dashboard" replace />;
 }

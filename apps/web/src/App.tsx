@@ -103,6 +103,7 @@ const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
 const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
 const CrmAutomations = lazy(() => import('./pages/admin/CrmAutomations'));
 const AdminAfiliados = lazy(() => import('./pages/admin/AdminAfiliados'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
@@ -229,6 +230,7 @@ const App = () => (
                   {/* Perfil route now redirected above */}
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/dashboard" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDashboard /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/usuarios" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminUsuarios /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/planos" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPlanos /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/paginas" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPaginas /></Suspense></AdminSecureLayout>} />

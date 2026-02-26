@@ -37,6 +37,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   // Principal
+  { label: 'Painel', href: '/admin/dashboard', icon: LayoutDashboard, group: 'Principal' },
   { label: 'Usuários', href: '/admin/usuarios', icon: Users, group: 'Principal' },
   { label: 'Planos', href: '/admin/planos', icon: Crown, group: 'Principal' },
 
