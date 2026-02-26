@@ -1,12 +1,5 @@
-2026-02-26T01:14:53Z | 4b031cdf00d02631b39feb8b102785d0b6250658 | Add CRM automations page
+2026-02-26T01:16:38Z | 803c538e3801bfbb1a189aff9a2f12c40cdbf433 | Aprimorou CRM chat onboarding
 
-Implements /admin/crm/automations with static automation rules UI:
-- grid of rule cards with header, details, toggle, and statuses
-- pre-configured 8 rules (active/pending)
-- localStorage-based active/inactive toggles
-- breadcrumb and Voltar ao Kanban action
-- integrates route and AdminPageHeader adjustments
-- adds Automações link in CRM Admin page
-- updates AdminPageHeader active state detection for nested routes
+Atualizou RaioXChat para registrar onboarding_started ao criar sessão, com created_at e dedup, e adicionou deduplicação de eventos em RaioXResultCard. Also ajustou RaioXResultCard para evitar múltiplos triggers de evento via useRef.
 
-X-Lovable-Edit-ID: edt-81d7117f-4443-497a-ab4d-307c5a5ebbdd
+X-Lovable-Edit-ID: edt-03866086-f6c2-4c5a-9c1b-125b1a5d22c5

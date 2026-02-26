@@ -89,7 +89,7 @@ export function RaioXChat() {
     // Check onboarding status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('onboarding_completed')
+      .select('onboarding_completed, created_at')
       .eq('id', user.id)
       .single();
 
@@ -112,8 +112,35 @@ export function RaioXChat() {
       return null;
     }
 
-    setSessionId(data.id);
-    return data.id;
+    const newSessionId = data.id;
+    setSessionId(newSessionId);
+
+    // Register onboarding_started event (idempotent — only if not already registered)
+    try {
+      const { count } = await supabase
+        .from('ai_onboarding_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('event_type', 'onboarding_started');
+
+      if ((count ?? 0) === 0) {
+        const daysSinceSignup = profile?.created_at
+          ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000)
+          : 0;
+
+        await supabase.from('ai_onboarding_events').insert({
+          user_id: user.id,
+          session_id: newSessionId,
+          event_type: 'onboarding_started',
+          days_since_signup: daysSinceSignup,
+          metadata: { triggered_from: 'session_creation' },
+        });
+      }
+    } catch (e) {
+      console.error('Failed to register onboarding_started:', e);
+    }
+
+    return newSessionId;
   }, [user?.id, sessionId]);
 
   // Send onboarding greeting when chat opens for first time
@@ -316,6 +343,19 @@ export function RaioXChat() {
 
   const registerEvent = async (evento: string) => {
     if (!user?.id) return;
+
+    // Dedup: skip if same event was registered in last 60 seconds
+    const sixtySecsAgo = new Date(Date.now() - 60000).toISOString();
+    const { count } = await supabase
+      .from('ai_onboarding_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('session_id', sessionId)
+      .eq('event_type', evento)
+      .gte('created_at', sixtySecsAgo);
+
+    if ((count ?? 0) > 0) return;
+
     const { data: profile } = await supabase
       .from('profiles')
       .select('created_at')

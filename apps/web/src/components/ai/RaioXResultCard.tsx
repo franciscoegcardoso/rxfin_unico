@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { PieChart, TrendingUp, ShoppingCart, Lightbulb, BarChart3, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,8 +37,12 @@ function formatMonth(ym: string): string {
 
 export function RaioXResultCard({ formato, dados, onRegisterEvent, onSendMessage }: RaioXResultCardProps) {
   const navigate = useNavigate();
+  const hasRegisteredEvent = useRef(false);
 
   useEffect(() => {
+    if (hasRegisteredEvent.current) return;
+    if (!dados || !formato || formato === 'sem_dados') return;
+    hasRegisteredEvent.current = true;
     onRegisterEvent?.('raio_x_generated');
   }, []);
 
