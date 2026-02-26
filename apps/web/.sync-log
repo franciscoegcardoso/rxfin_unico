@@ -1,12 +1,11 @@
-2026-02-26T01:07:03Z | 5fdac0ac2a9188bb65abe9c2f74a60484d0b1c51 | Add admin CRM Kanban page
+2026-02-26T01:08:13Z | b932cafceabf534a392237f0ce9dc6380365caf7 | Add drag-and-drop Kanban
 
-Implemented new /admin/crm Kanban board for CRM management:
-- Built AdminCRM page with 8 status columns, Kanban layout, search, and per-card details
-- Fetches data from v_crm_kanban via supabase and groups by crm_status
-- Card displays: name, email, plan badge, score, balance or signup date, last note pin, tags, days since last login
-- Horizontal scroll board with vertical scroll per column
-- Admin route and nav updated; CRM added to AdminPageHeader; App routes wired
-- Header shows total users; 5-min auto-refresh scaffold in place
-- Styling and icons aligned with existing UI components
+Implements DnD for /admin/crm using @dnd-kit/core and @dnd-kit/sortable:
+- draggable user cards across 8 columns
+- optimistic UI updates and server update on drop
+- error rollback with toast on failure
+- visual cues: drag overlay, opacity, shadow, and destination highlight
+- column droppable handling and constraints (no intra-column moves)
+- maintain existing structure and protections (Admin route)
 
-X-Lovable-Edit-ID: edt-ffefc258-fa7b-4225-bd85-d6a033f45b3c
+X-Lovable-Edit-ID: edt-15567ee5-e2fe-4790-a45f-344021136ab2
