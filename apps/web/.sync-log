@@ -1,5 +1,5 @@
-2026-02-26T13:44:18Z | e37f2c5c8802e98b87c0d69115070a70b05007a8 | Refactor FIPE phase3 search_path
+2026-02-26T14:43:35Z | ed938d468277c16850ecf344f3e2fbef2b61bd5b | Integrate AB ownership costs
 
-Alter RPC phase3 reference progress to use public search_path and updated FipeSync UI to include new reference progress, recent prices, and controls; added related imports and state handling; patched to initialize and display new data sections.
+Implemented CarABOwnershipCostSection and integrated two-car ownership cost section into /simuladores/veiculos/simulador-carro-ab with tabs for Carro A/B, labeled rows showing model and year, and a shared parameter area via a new dialog. Updated cost headers to display model/year and added a new responsive section Quanto custa ter estes carros? mirroring FIPE UX, including parameter customization via a dialog.
 
-X-Lovable-Edit-ID: edt-695cbcbe-6eaa-4061-9559-c1005b2ed5f0
+X-Lovable-Edit-ID: edt-6c8beff1-a9db-457a-b3b9-5c08bebed6af

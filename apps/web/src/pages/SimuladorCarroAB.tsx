@@ -104,6 +104,7 @@ import { DepreciationComparisonSection } from '@/components/simuladores/Deprecia
 import { CarComparisonHelpDialogs, VehicleCostsData, VehicleConfigData, CostOverrides } from '@/components/simuladores/CarComparisonHelpDialogs';
 import { CarComparisonVerdict } from '@/components/simuladores/CarComparisonVerdict';
 import { ComparisonCardGenerator } from '@/components/simuladores/ComparisonCardGenerator';
+import { CarABOwnershipCostSection } from '@/components/simuladores/CarABOwnershipCostSection';
 import { Scale as ScaleIcon } from 'lucide-react';
 import { useFipeFavorites } from '@/hooks/useFipeFavorites';
 import { useUserKV } from '@/hooks/useUserKV';
@@ -793,6 +794,10 @@ const SimuladorCarroAB: React.FC = () => {
   // Obter nome do modelo para estimativa de seguro
   const modelNameA = fipeA.price?.Modelo || '';
   const modelNameB = fipeB.price?.Modelo || '';
+  const brandNameA = fipeA.price?.Marca || '';
+  const brandNameB = fipeB.price?.Marca || '';
+  const yearLabelA = formatFipeYearName(fipeA.years.find(y => y.codigo === fipeA.selectedYear)?.nome || '');
+  const yearLabelB = formatFipeYearName(fipeB.years.find(y => y.codigo === fipeB.selectedYear)?.nome || '');
 
   const costsA = useMemo(() => calculateCosts(valueA, configA, modelNameA, fipeA.vehicleType, rimSizeOverrideA, tirePriceOverrideA), [valueA, configA, modelNameA, fipeA.vehicleType, simulationParams, rimSizeOverrideA, tirePriceOverrideA]);
   const costsB = useMemo(() => calculateCosts(valueB, configB, modelNameB, fipeB.vehicleType, rimSizeOverrideB, tirePriceOverrideB), [valueB, configB, modelNameB, fipeB.vehicleType, simulationParams, rimSizeOverrideB, tirePriceOverrideB]);
@@ -1750,10 +1755,30 @@ const SimuladorCarroAB: React.FC = () => {
                 {/* Versão Desktop: Tabela + Gráfico integrado */}
                 <div className="hidden sm:block">
                   {/* Header da tabela */}
-                  <div className="grid grid-cols-[1fr,100px,100px,1fr] gap-2 px-4 sm:px-0 mb-2">
+                    <div className="grid grid-cols-[1fr,100px,100px,1fr] gap-2 px-4 sm:px-0 mb-2">
                     <div />
-                    <div className="text-xs font-medium text-blue-600 text-center">Carro A</div>
-                    <div className="text-xs font-medium text-amber-600 text-center">Carro B</div>
+                    <div className="text-center">
+                      <div className="text-xs font-medium text-blue-600">Carro A</div>
+                      {modelNameA && (
+                        <div className="text-[10px] text-muted-foreground truncate max-w-[100px]" title={`${modelNameA} ${yearLabelA}`}>
+                          {modelNameA}
+                        </div>
+                      )}
+                      {yearLabelA && (
+                        <div className="text-[9px] text-muted-foreground/70">{yearLabelA}</div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs font-medium text-amber-600">Carro B</div>
+                      {modelNameB && (
+                        <div className="text-[10px] text-muted-foreground truncate max-w-[100px]" title={`${modelNameB} ${yearLabelB}`}>
+                          {modelNameB}
+                        </div>
+                      )}
+                      {yearLabelB && (
+                        <div className="text-[9px] text-muted-foreground/70">{yearLabelB}</div>
+                      )}
+                    </div>
                     <div className="text-xs font-medium text-muted-foreground text-center">Comparativo Visual</div>
                   </div>
 
@@ -1941,6 +1966,8 @@ const SimuladorCarroAB: React.FC = () => {
                             <div className="w-3 h-3 rounded-sm bg-blue-500" />
                             <span className="text-xs text-muted-foreground">Carro A</span>
                           </div>
+                          {modelNameA && <div className="text-[10px] text-muted-foreground truncate max-w-[100px]">{modelNameA}</div>}
+                          {yearLabelA && <div className="text-[9px] text-muted-foreground/70">{yearLabelA}</div>}
                           <p className={cn(
                             "font-bold text-lg",
                             costsA.totalMonthly < costsB.totalMonthly ? "text-green-600" : ""
@@ -1953,6 +1980,8 @@ const SimuladorCarroAB: React.FC = () => {
                             <div className="w-3 h-3 rounded-sm bg-amber-500" />
                             <span className="text-xs text-muted-foreground">Carro B</span>
                           </div>
+                          {modelNameB && <div className="text-[10px] text-muted-foreground truncate max-w-[100px]">{modelNameB}</div>}
+                          {yearLabelB && <div className="text-[9px] text-muted-foreground/70">{yearLabelB}</div>}
                           <p className={cn(
                             "font-bold text-lg",
                             costsB.totalMonthly < costsA.totalMonthly ? "text-green-600" : ""
@@ -1984,8 +2013,14 @@ const SimuladorCarroAB: React.FC = () => {
                       {/* Tabela mobile */}
                       <div className="px-3 py-2">
                         <div className="flex items-center justify-end gap-2 mb-2 text-[10px] font-medium text-muted-foreground">
-                          <span className="text-blue-600 w-[70px] text-right">R$ Carro A</span>
-                          <span className="text-amber-600 w-[70px] text-right">R$ Carro B</span>
+                          <div className="text-blue-600 w-[70px] text-right">
+                            <div>R$ Carro A</div>
+                            {modelNameA && <div className="text-[9px] font-normal truncate">{modelNameA}</div>}
+                          </div>
+                          <div className="text-amber-600 w-[70px] text-right">
+                            <div>R$ Carro B</div>
+                            {modelNameB && <div className="text-[9px] font-normal truncate">{modelNameB}</div>}
+                          </div>
                         </div>
                         <CostRow 
                           label="IPVA" 
@@ -2080,7 +2115,66 @@ const SimuladorCarroAB: React.FC = () => {
             </Card>
             </MobileSectionDrawer>
 
-            {/* TCO - Custo Total de Propriedade */}
+            {/* Quanto custa ter estes carros? */}
+            <MobileSectionDrawer
+              title="Quanto custa ter estes carros?"
+              icon={<Calculator className="h-4 w-4 text-primary" />}
+              badge={<Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20">Custos</Badge>}
+              isTabletOrMobile={isTabletOrMobile}
+            >
+              <CarABOwnershipCostSection
+                carA={{
+                  fipeValue: valueA,
+                  modelName: modelNameA,
+                  brandName: brandNameA,
+                  vehicleAge: configA.vehicleAge,
+                  vehicleType: (fipeA.vehicleType || 'carros') as 'carros' | 'motos' | 'caminhoes',
+                  depreciationMonthly: depreciationMonthlyA,
+                  yearLabel: yearLabelA,
+                  totalMonthly: costsA.totalMonthly + depreciationMonthlyA,
+                  totalAnnual: (costsA.totalMonthly + depreciationMonthlyA) * 12,
+                }}
+                carB={{
+                  fipeValue: valueB,
+                  modelName: modelNameB,
+                  brandName: brandNameB,
+                  vehicleAge: configB.vehicleAge,
+                  vehicleType: (fipeB.vehicleType || 'carros') as 'carros' | 'motos' | 'caminhoes',
+                  depreciationMonthly: depreciationMonthlyB,
+                  yearLabel: yearLabelB,
+                  totalMonthly: costsB.totalMonthly + depreciationMonthlyB,
+                  totalAnnual: (costsB.totalMonthly + depreciationMonthlyB) * 12,
+                }}
+                vehicleState={configA.vehicleState}
+                onVehicleStateChange={(v) => {
+                  setConfigA(prev => ({ ...prev, vehicleState: v }));
+                  setConfigB(prev => ({ ...prev, vehicleState: v }));
+                }}
+                configA={{
+                  totalMonthlyKm: configA.totalMonthlyKm,
+                  calculatedFuelCost: configA.calculatedFuelCost,
+                  fuelRows: configA.fuelRows,
+                  monthlyParking: configA.monthlyParking,
+                  monthlyTolls: configA.monthlyTolls,
+                  monthlyWashing: configA.monthlyWashing,
+                }}
+                onConfigAChange={(updates) => setConfigA(prev => ({ ...prev, ...updates }))}
+                configB={{
+                  totalMonthlyKm: configB.totalMonthlyKm,
+                  calculatedFuelCost: configB.calculatedFuelCost,
+                  fuelRows: configB.fuelRows,
+                  monthlyParking: configB.monthlyParking,
+                  monthlyTolls: configB.monthlyTolls,
+                  monthlyWashing: configB.monthlyWashing,
+                }}
+                onConfigBChange={(updates) => setConfigB(prev => ({ ...prev, ...updates }))}
+                consumptionHookA={{ suggestion: consumptionHookA.suggestion, loading: consumptionHookA.loading }}
+                consumptionHookB={{ suggestion: consumptionHookB.suggestion, loading: consumptionHookB.loading }}
+                yearLabelA={yearLabelA}
+                yearLabelB={yearLabelB}
+              />
+            </MobileSectionDrawer>
+
             <MobileSectionDrawer
               title="TCO (Custo Total de Propriedade)"
               icon={<Calculator className="h-4 w-4 text-primary" />}
