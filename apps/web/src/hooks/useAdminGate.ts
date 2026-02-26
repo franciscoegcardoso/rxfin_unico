@@ -4,6 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'rxfin_admin_token';
 
+function parseGateResponse(data: any) {
+  if (!data) return data;
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch { return data; }
+  }
+  return data;
+}
+
 interface AdminGateState {
   isLoading: boolean;
   isAdmin: boolean;
@@ -50,13 +58,14 @@ export function useAdminGate() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-gate', {
+      const { data: rawData, error } = await supabase.functions.invoke('admin-gate', {
         body: { action: 'login' },
       });
 
       if (error) throw error;
 
-      console.log('[admin-gate response]', JSON.stringify(data));
+      const data = parseGateResponse(rawData);
+      console.log('[admin-gate] parsed response:', data, typeof data);
 
       if (data?.code === 'MFA_REQUIRED') {
         setState(prev => ({
@@ -78,20 +87,14 @@ export function useAdminGate() {
         return;
       }
 
-      if (data?.success === true || data?.code === 'SUCCESS') {
-        const sessionToken = data?.data?.session_token;
-
-        if (!sessionToken) {
-          throw new Error('Resposta de sucesso sem session_token');
-        }
-
-        sessionStorage.setItem(STORAGE_KEY, sessionToken);
+      if (data?.code === 'SUCCESS' && data?.session_token) {
+        sessionStorage.setItem(STORAGE_KEY, data.session_token);
         setState(prev => ({
           ...prev,
           isLoading: false,
           isAuthenticated: true,
           needsMfa: false,
-          session: sessionToken,
+          session: data.session_token,
           isAdmin: true,
         }));
         return;
@@ -159,9 +162,10 @@ export function useAdminGate() {
 
       if (existingToken) {
         try {
-          const { data, error } = await supabase.functions.invoke('admin-gate', {
+          const { data: rawValidate, error } = await supabase.functions.invoke('admin-gate', {
             body: { action: 'validate', admin_token: existingToken },
           });
+          const data = parseGateResponse(rawValidate);
 
           if (!error && data?.valid) {
             setState(prev => ({

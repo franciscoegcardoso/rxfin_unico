@@ -1,5 +1,5 @@
-2026-02-26T02:55:25Z | f32f9633d0292e221fe0c8cb735a3fde5d07c0b4 | Removido refresh de session
+2026-02-26T03:11:40Z | 6b57ac06f1dd734e18b794927ea0aa4ca89a810a | Fix admin gate parsing
 
-Evitei o refreshSession após MFA para não degradar aal2. Mantido delay para propagação de autenticação e manter o fluxo seguro.
+Add parseGateResponse helper to safely parse string JSON from admin-gate responses and apply across login, validate, and logout flows in useAdminGate.ts. Implement parsing, replace raw data handling with parsed data, and adjust tokens storage and state updates accordingly to handle SUCCESS and MFA cases without string parsing errors.
 
-X-Lovable-Edit-ID: edt-89274231-a3e6-47cd-ade4-e5b6c9583f1c
+X-Lovable-Edit-ID: edt-9e5c68df-9788-422e-afd5-f583d8416c94
