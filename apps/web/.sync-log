@@ -1,5 +1,7 @@
-2026-02-26T23:33:36Z | 8b686dc65c6f053cd394f6718ba2265872878295 | Add demo data banner and hooks
+2026-02-26T23:36:45Z | 470765713e2e7a88963ecc10bb94e7aac2803a9b | Add onboarding UI components
 
-Implements DemoDataBanner and demo data module, extends hooks (useDemoMode, useDataWithDemo, useDemoGuard, useOnboardingDraft/checkpoint), updates AppLayout to show banner, adjusts AuthRedirect and Index to support demo-first flow, adds migration and data types for onboarding phase columns and demo data.
+Introduce ConquestCard, JourneyMap, LevelBadge, and OnboardingWizardV3
+Wire /onboarding route and App.tsx integration
+Refactor BlockA with safer imports and embedded configs
 
-X-Lovable-Edit-ID: edt-c90cf17d-540c-478e-bb7e-7749af5d0dd2
+X-Lovable-Edit-ID: edt-6871b5cb-564a-4d39-91ed-0994a4a842bd

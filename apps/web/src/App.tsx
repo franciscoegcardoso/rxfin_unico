@@ -112,6 +112,7 @@ import Forbidden from "./pages/Forbidden";
 import BemVindo from "./pages/BemVindo";
 import LegalDocument from "./pages/LegalDocument";
 import Onboarding2 from "./pages/Onboarding2";
+import { OnboardingWizardV3 } from "./components/onboarding/OnboardingWizardV3";
 // Perfil page removed - now part of MinhaConta
 
 const queryClient = new QueryClient();
@@ -146,6 +147,7 @@ const App = () => (
                   <Route path="/verificar-email" element={<VerificarEmail />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
+                  <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
                   <Route path="/app" element={<Navigate to="/inicio" replace />} />
                   <Route path="/inicio" element={<ProtectedRoute><Inicio /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
