@@ -1,9 +1,5 @@
-2026-02-26T13:40:21Z | 27948c92de4230dc40b8dc2a8b2bbe5f9199039e | Lovable update
+2026-02-26T13:44:18Z | e37f2c5c8802e98b87c0d69115070a70b05007a8 | Refactor FIPE phase3 search_path
 
-Lovable tool use: Approved.
+Alter RPC phase3 reference progress to use public search_path and updated FipeSync UI to include new reference progress, recent prices, and controls; added related imports and state handling; patched to initialize and display new data sections.
 
-context: 6951EAA2-1264-4A1A-A86D-817E462202C7
-
-tool_name:Modify database
-
-X-Lovable-Edit-ID: edt-4624e1c2-c595-469b-a6e2-bf6e46d70cf3
+X-Lovable-Edit-ID: edt-695cbcbe-6eaa-4061-9559-c1005b2ed5f0
