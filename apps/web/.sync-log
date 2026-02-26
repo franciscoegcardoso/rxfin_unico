@@ -1,11 +1,5 @@
-2026-02-26T03:37:14Z | 14a1c131f525436a5d4f53211e5f54c3524bdf83 | Revamped affiliate system admin
+2026-02-26T03:38:15Z | beab41036d0e787b6f0a331bd494c2927580f20c | Wrap Admin with PendingChanges
 
-Implemented a full admin affiliate module with new data models, UI, and hooks:
-- Added affiliate_programs, affiliate_program_tiers, affiliate_influencers, and extended affiliate_referrals in DB with RLS policies.
-- Created AdminAfiliados UI for managing programs, tiers, and influencers.
-- Added React Query hooks (useAffiliatePrograms, useAffiliateTiers, useAffiliateInfluencers, etc.) for admin tasks.
-- Integrated new /admin/afiliados route and sidebar entry.
-- Updated user-facing IndicacoesTab to render dynamic tier data and accurate commission messaging.
-- Migrated admin navigation from horizontal tabs to vertical themed sections.
+Encapsulated AdminSecureLayout with AdminPendingChangesProvider and added related UI elements (PendingChangesBar, SaveDialog, and NavigationGuard) to support admin pages.
 
-X-Lovable-Edit-ID: edt-89cfe334-761d-4300-8e78-1fe005e77063
+X-Lovable-Edit-ID: edt-2e8f1b33-6a48-46e4-a59a-e14565225cb0

@@ -5,6 +5,10 @@ import { AdminSidebar } from './AdminSidebar';
 import { Shield, Loader2, AlertTriangle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { AdminPendingChangesProvider } from '@/contexts/AdminPendingChangesContext';
+import { AdminPendingChangesBar } from '@/components/admin/AdminPendingChangesBar';
+import { AdminSaveConfirmDialog } from '@/components/admin/AdminSaveConfirmDialog';
+import { AdminNavigationGuard } from '@/components/admin/AdminNavigationGuard';
 
 interface AdminSecureLayoutProps {
   children: React.ReactNode;
@@ -67,35 +71,42 @@ export const AdminSecureLayout: React.FC<AdminSecureLayoutProps> = ({ children }
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Secure admin bar */}
-      <div className="bg-zinc-900 text-zinc-100 px-4 py-2 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 text-sm">
-          <Shield className="h-4 w-4 text-green-400" />
-          <span className="font-medium">Painel Admin</span>
-          <span className="text-zinc-400">•</span>
-          <span className="text-zinc-400 text-xs">Sessão segura (MFA verificado)</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800"
-          onClick={logout}
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          Sair do admin
-        </Button>
-      </div>
-
-      {/* Sidebar + Content */}
-      <div className="flex flex-1 overflow-hidden">
-        <AdminSidebar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="p-4 md:p-6 max-w-7xl mx-auto">
-            {children}
+    <AdminPendingChangesProvider>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Secure admin bar */}
+        <div className="bg-zinc-900 text-zinc-100 px-4 py-2 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 text-sm">
+            <Shield className="h-4 w-4 text-green-400" />
+            <span className="font-medium">Painel Admin</span>
+            <span className="text-zinc-400">•</span>
+            <span className="text-zinc-400 text-xs">Sessão segura (MFA verificado)</span>
           </div>
-        </main>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800"
+            onClick={logout}
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sair do admin
+          </Button>
+        </div>
+
+        <AdminPendingChangesBar />
+
+        {/* Sidebar + Content */}
+        <div className="flex flex-1 overflow-hidden">
+          <AdminSidebar />
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-4 md:p-6 max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
+
+        <AdminSaveConfirmDialog />
+        <AdminNavigationGuard />
       </div>
-    </div>
+    </AdminPendingChangesProvider>
   );
 };
