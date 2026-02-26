@@ -20,6 +20,7 @@ import {
   Rocket,
   RotateCcw,
   HeartPulse,
+  Handshake,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -45,6 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Marketing', href: '/admin/marketing', icon: Megaphone, group: 'Negócio' },
   { label: 'E-mails', href: '/admin/emails', icon: Mail, group: 'Negócio' },
   { label: 'Notificações', href: '/admin/notificacoes', icon: Bell, group: 'Negócio' },
+  { label: 'Afiliados', href: '/admin/afiliados', icon: Handshake, group: 'Negócio' },
 
   // Conteúdo
   { label: 'Páginas', href: '/admin/paginas', icon: FileText, group: 'Conteúdo' },

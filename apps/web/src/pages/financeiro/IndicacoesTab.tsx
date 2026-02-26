@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useComissoesAfiliados } from '@/hooks/useAffiliateData';
 import { useAffiliateReferrals } from '@/hooks/useAffiliateReferrals';
+import { useAffiliatePrograms, useAffiliateTiers } from '@/hooks/useAffiliateProgramAdmin';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanAccess } from '@/hooks/usePlanAccess';
 import { Link, useNavigate } from 'react-router-dom';
@@ -89,6 +90,9 @@ const IndicacoesTab: React.FC = () => {
   const { user } = useAuth();
   const { data: comissoes, isLoading } = useComissoesAfiliados();
   const { data: referrals, isLoading: referralsLoading } = useAffiliateReferrals();
+  const { data: programs } = useAffiliatePrograms();
+  const standardProgram = programs?.find(p => p.program_type === 'standard');
+  const { data: tiers } = useAffiliateTiers(standardProgram?.id);
   const { toast } = useToast();
   const { isFree, loading: planLoading } = usePlanAccess();
   const navigate = useNavigate();
@@ -98,6 +102,15 @@ const IndicacoesTab: React.FC = () => {
 
   const userName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? '';
   const referralLink = `https://app.rxfin.com.br/signup?aff=${user?.id ?? ''}`;
+
+  // Calculate current commission based on tiers
+  const validReferrals = referrals?.filter(r => r.status === 'ativo').length ?? 0;
+  const currentTier = tiers?.find(t =>
+    validReferrals >= t.min_referrals && (t.max_referrals === null || validReferrals <= t.max_referrals)
+  );
+  const nextTier = tiers?.find(t => t.min_referrals > validReferrals);
+  const currentCommission = currentTier?.commission_value ?? tiers?.[0]?.commission_value ?? 0;
+  const maxCommission = tiers?.[tiers.length - 1]?.commission_value ?? 0;
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink);
@@ -131,14 +144,29 @@ const IndicacoesTab: React.FC = () => {
       {/* ─── 1. Hero ─── */}
       <section className="text-center space-y-5 pt-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight tracking-tight">
-          Indique o RXFin e ganhe R$&nbsp;67<br className="hidden sm:block" /> por cliente ativo
+          Indique o RXFin e ganhe até {formatBRL(maxCommission)}<br className="hidden sm:block" /> por cliente ativo
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto">
           Ajude outras pessoas a organizarem a vida financeira — e seja recompensado por isso.
         </p>
-        <p className="text-xs text-muted-foreground">
-          Quem você indicar pode testar o RXFin gratuitamente por 7 dias.
-        </p>
+        {tiers && tiers.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+            {tiers.map((t, i) => (
+              <Badge
+                key={t.id}
+                variant={currentTier?.id === t.id ? 'default' : 'outline'}
+                className="px-3 py-1"
+              >
+                {t.min_referrals}–{t.max_referrals ?? '∞'} indicações: {formatBRL(t.commission_value)}
+              </Badge>
+            ))}
+          </div>
+        )}
+        {nextTier && validReferrals > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Mais {nextTier.min_referrals - validReferrals} indicação(ões) para ganhar {formatBRL(nextTier.commission_value)}/indicação
+          </p>
+        )}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button size="lg" onClick={() => setShareOpen(true)} className="gap-2 px-8">
             <Share2 className="h-4 w-4" />
@@ -178,7 +206,8 @@ const IndicacoesTab: React.FC = () => {
             <li>Categorização automática de gastos com IA</li>
           </ul>
           <p className="text-xs text-muted-foreground pt-1">
-            Você ganha <span className="font-semibold text-foreground">R$&nbsp;67 por cliente ativo</span> que contratar um plano.
+            Você ganha até <span className="font-semibold text-foreground">{formatBRL(maxCommission)} por cliente ativo</span> que contratar um plano.
+            Quanto mais indicações, maior sua comissão!
           </p>
         </CardContent>
       </Card>
@@ -191,14 +220,24 @@ const IndicacoesTab: React.FC = () => {
           </AccordionTrigger>
           <AccordionContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              Para cada indicação que contratar um plano RXFin usando seu link, você ganha{' '}
-              <span className="font-semibold text-foreground">R$&nbsp;67</span> por cliente ativo indicado.
+              Sua comissão cresce conforme você indica mais pessoas:
             </p>
-            <ul className="list-disc pl-5 space-y-1.5">
-              <li><span className="font-medium text-foreground">Plano anual:</span> você recebe R$&nbsp;67 em até 31 dias após a contratação.</li>
-              <li><span className="font-medium text-foreground">Plano mensal:</span> você recebe R$&nbsp;5,58 a cada 30 dias, a partir de 31 dias da contratação.</li>
-              <li>Se a indicação cancelar o plano, o valor pago é estornado e entra como saldo negativo.</li>
-            </ul>
+            {tiers && tiers.length > 0 && (
+              <ul className="list-disc pl-5 space-y-1.5">
+                {tiers.map(t => (
+                  <li key={t.id}>
+                    <span className="font-medium text-foreground">
+                      {t.min_referrals}–{t.max_referrals ?? '∞'} indicações:
+                    </span>{' '}
+                    {formatBRL(t.commission_value)} por indicação validada
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p>
+              A indicação é validada após <span className="font-semibold text-foreground">{standardProgram?.retention_days ?? 30} dias</span> de retenção do cliente.
+              Se a indicação cancelar, o valor é estornado.
+            </p>
             <p className="text-xs">
               <Link to="/termos-de-uso" className="text-primary hover:text-primary/80 underline">
                 Saiba mais sobre a política de afiliados

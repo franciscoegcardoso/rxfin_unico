@@ -47,6 +47,62 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_influencers: {
+        Row: {
+          commission_per_referral: number
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          program_id: string
+          slug: string
+          total_paid: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_per_referral: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          program_id: string
+          slug: string
+          total_paid?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_per_referral?: number
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          program_id?: string
+          slug?: string
+          total_paid?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_influencers_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_offers: {
         Row: {
           fixed_commission_annual: number | null
@@ -74,38 +130,141 @@ export type Database = {
         }
         Relationships: []
       }
-      affiliate_referrals: {
+      affiliate_program_tiers: {
         Row: {
+          commission_value: number
           created_at: string
           id: string
-          referred_email: string | null
-          referred_name: string | null
-          referred_user_id: string
-          referrer_id: string
-          status: string
+          max_referrals: number | null
+          min_referrals: number
+          program_id: string
+          sort_order: number
+        }
+        Insert: {
+          commission_value: number
+          created_at?: string
+          id?: string
+          max_referrals?: number | null
+          min_referrals: number
+          program_id: string
+          sort_order?: number
+        }
+        Update: {
+          commission_value?: number
+          created_at?: string
+          id?: string
+          max_referrals?: number | null
+          min_referrals?: number
+          program_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_program_tiers_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          program_type: Database["public"]["Enums"]["affiliate_program_type"]
+          requires_active_plan: boolean
+          retention_days: number
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
-          referred_email?: string | null
-          referred_name?: string | null
-          referred_user_id: string
-          referrer_id: string
-          status?: string
+          is_active?: boolean
+          name: string
+          program_type: Database["public"]["Enums"]["affiliate_program_type"]
+          requires_active_plan?: boolean
+          retention_days?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
+          is_active?: boolean
+          name?: string
+          program_type?: Database["public"]["Enums"]["affiliate_program_type"]
+          requires_active_plan?: boolean
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_referrals: {
+        Row: {
+          commission_value: number | null
+          converted_at: string | null
+          created_at: string
+          id: string
+          influencer_id: string | null
+          program_type:
+            | Database["public"]["Enums"]["affiliate_program_type"]
+            | null
+          referred_email: string | null
+          referred_name: string | null
+          referred_user_id: string
+          referrer_id: string
+          retention_validated_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          commission_value?: number | null
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          influencer_id?: string | null
+          program_type?:
+            | Database["public"]["Enums"]["affiliate_program_type"]
+            | null
+          referred_email?: string | null
+          referred_name?: string | null
+          referred_user_id: string
+          referrer_id: string
+          retention_validated_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_value?: number | null
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          influencer_id?: string | null
+          program_type?:
+            | Database["public"]["Enums"]["affiliate_program_type"]
+            | null
           referred_email?: string | null
           referred_name?: string | null
           referred_user_id?: string
           referrer_id?: string
+          retention_validated_at?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_influencer_id_fkey"
+            columns: ["influencer_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_influencers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       afiliados_dados_bancarios: {
         Row: {
@@ -6857,6 +7016,7 @@ export type Database = {
       verify_admin: { Args: never; Returns: Json }
     }
     Enums: {
+      affiliate_program_type: "standard" | "influencer"
       app_role: "owner" | "shared_user" | "driver" | "admin"
       crm_status_enum:
         | "lead"
@@ -6995,6 +7155,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      affiliate_program_type: ["standard", "influencer"],
       app_role: ["owner", "shared_user", "driver", "admin"],
       crm_status_enum: [
         "lead",

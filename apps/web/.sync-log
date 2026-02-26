@@ -1,5 +1,11 @@
-2026-02-26T03:24:38Z | df242ffa697bf54de1aa51fff1e7a45b4c12ae13 | Move admin pages wrappers
+2026-02-26T03:37:14Z | 14a1c131f525436a5d4f53211e5f54c3524bdf83 | Revamped affiliate system admin
 
-Refactored admin: added new page wrappers for Planos, Paginas, Emails, Termos, Notificacoes, Deploy, Rollbacks, Health; updated AdminEmails/Planos/Notificacoes etc to use AdminPageHeader and respective Tabs. Rewired App routes to point to new pages and replaced Admin horizontal tabs with vertical sidebar items. Added AdminUsuarios route integration and simplified Admin.tsx redirect logic. Updated AdminSidebar to include expanded menu under theming groups.
+Implemented a full admin affiliate module with new data models, UI, and hooks:
+- Added affiliate_programs, affiliate_program_tiers, affiliate_influencers, and extended affiliate_referrals in DB with RLS policies.
+- Created AdminAfiliados UI for managing programs, tiers, and influencers.
+- Added React Query hooks (useAffiliatePrograms, useAffiliateTiers, useAffiliateInfluencers, etc.) for admin tasks.
+- Integrated new /admin/afiliados route and sidebar entry.
+- Updated user-facing IndicacoesTab to render dynamic tier data and accurate commission messaging.
+- Migrated admin navigation from horizontal tabs to vertical themed sections.
 
-X-Lovable-Edit-ID: edt-7d8a2c5c-138e-4ff3-9916-65ea332299b9
+X-Lovable-Edit-ID: edt-89cfe334-761d-4300-8e78-1fe005e77063
