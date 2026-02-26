@@ -6729,6 +6729,7 @@ export type Database = {
           token: string
         }[]
       }
+      get_admin_dashboard_chart_data: { Args: never; Returns: Json }
       get_admin_dashboard_metrics_30d: { Args: never; Returns: Json }
       get_ai_monthly_summary: {
         Args: { p_month?: string; p_user_id: string }

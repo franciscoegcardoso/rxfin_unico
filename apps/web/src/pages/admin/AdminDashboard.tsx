@@ -8,8 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Users, Crown, FileText, Brain, Kanban, Zap,
   TrendingUp, Activity, Clock, CheckCircle, AlertTriangle,
-  ArrowRight, BarChart3, UserCheck, CreditCard, GitMerge,
+  ArrowRight, BarChart3, UserCheck, CreditCard, GitMerge, UserMinus,
 } from 'lucide-react';
+import { AdminDashboardCharts } from '@/components/admin/AdminDashboardCharts';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -21,12 +22,21 @@ interface DashMetrics {
   crmLeads: number;
   automationsActive: number;
   aiFeedbackPending: number;
-  // 30-day metrics
   activeUsers30d: number;
   newActiveUsers30d: number;
   paidActiveUsers30d: number;
   newPaidActiveUsers30d: number;
   migratedUsers30d: number;
+  churn30d: number;
+}
+
+interface ChartData {
+  monthly_active: { month: string; value: number }[];
+  new_active_daily: { day: string; value: number }[];
+  new_active_weekly: { week: string; value: number }[];
+  new_active_monthly: { month: string; value: number }[];
+  monthly_churn: { month: string; value: number }[];
+  monthly_reactivated: { month: string; value: number }[];
 }
 
 interface PageSummary {
@@ -40,6 +50,7 @@ interface PageSummary {
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<DashMetrics | null>(null);
   const [pages, setPages] = useState<PageSummary[]>([]);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +65,7 @@ export default function AdminDashboard() {
           aiFeedbackRes,
           pagesListRes,
           metrics30dRes,
+          chartDataRes,
         ] = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('pages').select('*', { count: 'exact', head: true }).eq('is_active_users', true),
@@ -63,6 +75,7 @@ export default function AdminDashboard() {
           supabase.from('ai_feedback').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('pages').select('slug, title, path, is_active_users, page_groups(name)').order('order_index'),
           supabase.rpc('get_admin_dashboard_metrics_30d'),
+          supabase.rpc('get_admin_dashboard_chart_data'),
         ]);
 
         const m30 = (metrics30dRes.data as Record<string, number>) ?? {};
@@ -79,8 +92,10 @@ export default function AdminDashboard() {
           paidActiveUsers30d: m30.paid_active_users_30d ?? 0,
           newPaidActiveUsers30d: m30.new_paid_active_users_30d ?? 0,
           migratedUsers30d: m30.migrated_users_30d ?? 0,
+          churn30d: m30.churn_30d ?? 0,
         });
 
+        setChartData((chartDataRes.data as unknown as ChartData) ?? null);
         setPages((pagesListRes.data ?? []) as PageSummary[]);
       } catch (err) {
         console.error('Dashboard metrics error:', err);
@@ -130,6 +145,14 @@ export default function AdminDashboard() {
       icon: GitMerge,
       color: 'text-teal-500',
       bg: 'bg-teal-500/10',
+    },
+    {
+      label: 'Churn (30d)',
+      value: metrics.churn30d,
+      sub: 'planos que ficaram inativos',
+      icon: UserMinus,
+      color: 'text-red-500',
+      bg: 'bg-red-500/10',
     },
   ] : [];
 
@@ -193,7 +216,7 @@ export default function AdminDashboard() {
       <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
         <Icon className="h-4 w-4" /> {title}
       </h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {cards.map(m => {
           const Wrapper = ('href' in m && m.href) ? Link : 'div';
           const wrapperProps = ('href' in m && m.href) ? { to: m.href as string } : {};
@@ -226,14 +249,15 @@ export default function AdminDashboard() {
       />
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {[1, 2, 3, 4, 5].map(i => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <Card key={i}><CardContent className="py-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
           ))}
         </div>
       ) : (
         <>
           <MetricCardGrid cards={engagementCards} title="Engajamento — Últimos 30 dias" icon={TrendingUp} />
+          <AdminDashboardCharts data={chartData} loading={loading} />
           <MetricCardGrid cards={operationalCards} title="Operacional" icon={BarChart3} />
         </>
       )}
