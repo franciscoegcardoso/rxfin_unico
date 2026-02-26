@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MoreHorizontal, Edit, Trash2, Copy, Send, Eye } from 'lucide-react';
@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useState } from 'react';
 import { CampaignPreview } from './CampaignPreview';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 
 interface Campaign {
   id: string;
@@ -71,9 +72,9 @@ const segmentLabels: Record<string, string> = {
 };
 
 export function CampaignsList({ onEditCampaign }: CampaignsListProps) {
-  const queryClient = useQueryClient();
+  const { deferDeleteCampaign, deferDuplicateCampaign } = useAdminDeferredMutations();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [campaignToDelete, setCampaignToDelete] = useState<string | null>(null);
+  const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [previewCampaign, setPreviewCampaign] = useState<Campaign | null>(null);
 
   const { data: campaigns, isLoading } = useQuery({
@@ -89,64 +90,23 @@ export function CampaignsList({ onEditCampaign }: CampaignsListProps) {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('email_campaigns')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast.success('Campanha excluída com sucesso');
-    },
-    onError: () => {
-      toast.error('Erro ao excluir campanha');
-    },
-  });
-
-  const duplicateMutation = useMutation({
-    mutationFn: async (campaign: Campaign) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('email_campaigns')
-        .insert({
-          created_by: user.id,
-          name: `${campaign.title} (Cópia)`,
-          title: `${campaign.title} (Cópia)`,
-          subject: campaign.subject,
-          html_body: campaign.subject, // Placeholder - ideally fetch full body
-          body: '',
-          segment: campaign.segment,
-          status: 'draft',
-          trigger_type: 'manual',
-          days_after_trigger: 0,
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      toast.success('Campanha duplicada com sucesso');
-    },
-    onError: () => {
-      toast.error('Erro ao duplicar campanha');
-    },
-  });
-
-  const handleDelete = (id: string) => {
-    setCampaignToDelete(id);
+  const handleDelete = (campaign: Campaign) => {
+    setCampaignToDelete(campaign);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
     if (campaignToDelete) {
-      deleteMutation.mutate(campaignToDelete);
+      deferDeleteCampaign(campaignToDelete.id, campaignToDelete.title);
+      toast.info('Exclusão adicionada para revisão');
     }
     setDeleteDialogOpen(false);
     setCampaignToDelete(null);
+  };
+
+  const handleDuplicate = (campaign: Campaign) => {
+    deferDuplicateCampaign(campaign);
+    toast.info('Duplicação adicionada para revisão');
   };
 
   if (isLoading) {
@@ -232,13 +192,13 @@ export function CampaignsList({ onEditCampaign }: CampaignsListProps) {
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => duplicateMutation.mutate(campaign)}>
+                        <DropdownMenuItem onClick={() => handleDuplicate(campaign)}>
                           <Copy className="h-4 w-4 mr-2" />
                           Duplicar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                          onClick={() => handleDelete(campaign.id)}
+                          onClick={() => handleDelete(campaign)}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />

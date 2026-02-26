@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 import type { Json } from '@/integrations/supabase/types';
 
 export interface EmailTemplate {
@@ -78,8 +79,7 @@ export function EmailTemplateEditor({
   template,
   onClose,
 }: EmailTemplateEditorProps) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { deferSaveEmailTemplate } = useAdminDeferredMutations();
   const isEditing = !!template;
 
   const [formData, setFormData] = useState({
@@ -123,52 +123,23 @@ export function EmailTemplateEditor({
     }
   }, [template, open]);
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const payload = {
-        name: formData.name,
-        slug: formData.slug || generateSlug(formData.name),
-        subject: formData.subject,
-        body: formData.body,
-        category: formData.category,
-        trigger_type: formData.trigger_type,
-        trigger_config: { description: formData.trigger_description } as Json,
-        variables: formData.variables,
-        is_active: formData.is_active,
-      };
+  const handleSave = () => {
+    const payload = {
+      name: formData.name,
+      slug: formData.slug || generateSlug(formData.name),
+      subject: formData.subject,
+      body: formData.body,
+      category: formData.category,
+      trigger_type: formData.trigger_type,
+      trigger_config: { description: formData.trigger_description } as Json,
+      variables: formData.variables,
+      is_active: formData.is_active,
+    };
 
-      if (isEditing && template) {
-        const { error } = await supabase
-          .from('email_templates')
-          .update(payload)
-          .eq('id', template.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('email_templates')
-          .insert([payload]);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      toast({
-        title: isEditing ? 'Template atualizado' : 'Template criado',
-        description: isEditing
-          ? 'O template foi atualizado com sucesso.'
-          : 'O template foi criado com sucesso.',
-      });
-      onClose();
-    },
-    onError: (error) => {
-      console.error('Error saving template:', error);
-      toast({
-        title: 'Erro ao salvar',
-        description: 'Não foi possível salvar o template. Verifique se o slug já existe.',
-        variant: 'destructive',
-      });
-    },
-  });
+    deferSaveEmailTemplate(payload, isEditing, template?.id);
+    toast.info('Alteração adicionada para revisão');
+    onClose();
+  };
 
   const handleNameChange = (name: string) => {
     setFormData((prev) => ({
@@ -385,10 +356,10 @@ export function EmailTemplateEditor({
             Cancelar
           </Button>
           <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !formData.name || !formData.subject || !formData.body}
+            onClick={handleSave}
+            disabled={!formData.name || !formData.subject || !formData.body}
           >
-            {saveMutation.isPending ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar Template'}
+            {isEditing ? 'Salvar Alterações' : 'Criar Template'}
           </Button>
         </DialogFooter>
       </DialogContent>

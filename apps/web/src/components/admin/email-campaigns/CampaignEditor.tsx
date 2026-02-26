@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Send, TestTube, Loader2, Eye } from 'lucide-react';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -74,6 +75,7 @@ const SEGMENTS = [
 export function CampaignEditor({ campaignId, onClose }: CampaignEditorProps) {
   const queryClient = useQueryClient();
   const { logAction } = useAdminAudit();
+  const { deferSaveCampaign } = useAdminDeferredMutations();
   const isEditing = !!campaignId;
 
   const [title, setTitle] = useState('');
@@ -111,46 +113,10 @@ export function CampaignEditor({ campaignId, onClose }: CampaignEditorProps) {
     }
   }, [campaign]);
 
-  // Save campaign mutation
-  const saveMutation = useMutation({
-    mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      if (isEditing) {
-        const { error } = await supabase
-          .from('email_campaigns')
-          .update({ title, subject, body, segment, updated_at: new Date().toISOString() })
-          .eq('id', campaignId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('email_campaigns')
-          .insert({
-            created_by: user.id,
-            name: title,
-            title,
-            subject,
-            html_body: body,
-            body,
-            segment,
-            status: 'draft',
-            trigger_type: 'manual',
-            days_after_trigger: 0,
-          });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
-      queryClient.invalidateQueries({ queryKey: ['email-campaign', campaignId] });
-      toast.success(isEditing ? 'Campanha atualizada!' : 'Rascunho salvo!');
-    },
-    onError: (error) => {
-      toast.error('Erro ao salvar campanha');
-      console.error(error);
-    },
-  });
+  const handleSaveDraft = () => {
+    deferSaveCampaign({ title, subject, body, segment }, isEditing, campaignId);
+    toast.info('Rascunho adicionado para revisão');
+  };
 
   // Send test email
   const handleSendTest = async () => {
@@ -305,15 +271,11 @@ export function CampaignEditor({ campaignId, onClose }: CampaignEditorProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !isFormValid}
+            onClick={handleSaveDraft}
+            disabled={!isFormValid}
             className="gap-2"
           >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+            <Save className="h-4 w-4" />
             Salvar Rascunho
           </Button>
           <Button

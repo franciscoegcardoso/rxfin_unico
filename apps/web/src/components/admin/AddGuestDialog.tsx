@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -15,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, Mail, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 
 const emailSchema = z.string().email('Email inválido').max(255);
 
@@ -36,31 +36,7 @@ export function AddGuestDialog({
 }: AddGuestDialogProps) {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
-
-  const inviteGuest = useMutation({
-    mutationFn: async (guestEmail: string) => {
-      const { data, error } = await supabase.functions.invoke('manage-guest-invitation', {
-        body: { guest_email: guestEmail },
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      // Fix: supabase.functions.invoke returns error in data when function returns error
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success(data.message || 'Convite enviado com sucesso!');
-      setEmail('');
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      console.error('Error inviting guest:', error);
-      toast.error(error.message || 'Erro ao enviar convite');
-    },
-  });
+  const { deferInviteGuest } = useAdminDeferredMutations();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +48,10 @@ export function AddGuestDialog({
       return;
     }
 
-    inviteGuest.mutate(email.toLowerCase().trim());
+    deferInviteGuest(email.toLowerCase().trim(), principalUserName);
+    toast.info('Convite adicionado para revisão');
+    setEmail('');
+    onOpenChange(false);
   };
 
   const remainingSlots = 3 - currentGuestCount;
@@ -113,7 +92,6 @@ export function AddGuestDialog({
                       setEmailError(null);
                     }}
                     className="pl-9"
-                    disabled={inviteGuest.isPending}
                   />
                 </div>
                 {emailError && (
@@ -153,25 +131,15 @@ export function AddGuestDialog({
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              disabled={inviteGuest.isPending}
             >
               Cancelar
             </Button>
             <Button 
               type="submit" 
-              disabled={remainingSlots <= 0 || inviteGuest.isPending || !email}
+              disabled={remainingSlots <= 0 || !email}
             >
-              {inviteGuest.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Enviar Convite
-                </>
-              )}
+              <UserPlus className="h-4 w-4 mr-2" />
+              Enviar Convite
             </Button>
           </DialogFooter>
         </form>

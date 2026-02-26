@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
   Cookie
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 
 type DocumentType = 'terms_of_use' | 'privacy_policy' | 'cookie_policy';
 
@@ -53,7 +54,6 @@ const DOCUMENT_LABELS: Record<DocumentType, { title: string; icon: React.Element
 
 export const LegalDocumentsTab: React.FC = () => {
   const [activeTab, setActiveTab] = useState<DocumentType>('terms_of_use');
-  const queryClient = useQueryClient();
 
   return (
     <div className="space-y-6">
@@ -88,11 +88,9 @@ export const LegalDocumentsTab: React.FC = () => {
         <TabsContent value="terms_of_use" className="mt-6">
           <DocumentManager documentType="terms_of_use" />
         </TabsContent>
-
         <TabsContent value="privacy_policy" className="mt-6">
           <DocumentManager documentType="privacy_policy" />
         </TabsContent>
-
         <TabsContent value="cookie_policy" className="mt-6">
           <DocumentManager documentType="cookie_policy" />
         </TabsContent>
@@ -106,13 +104,12 @@ interface DocumentManagerProps {
 }
 
 const DocumentManager: React.FC<DocumentManagerProps> = ({ documentType }) => {
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [changeDescription, setChangeDescription] = useState('');
   const [effectiveDate, setEffectiveDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isIndeterminate, setIsIndeterminate] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { deferUploadLegalDocument } = useAdminDeferredMutations();
 
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ['legal-document-versions', documentType],
@@ -131,68 +128,27 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ documentType }) => {
   const currentVersion = versions.find(v => v.is_current);
   const nextVersionNumber = versions.length > 0 ? Math.max(...versions.map(v => v.version_number)) + 1 : 1;
 
-  const uploadMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedFile) throw new Error('Nenhum arquivo selecionado');
-
-      setIsUploading(true);
-
-      // Generate unique file path
-      const timestamp = Date.now();
-      const filePath = `${documentType}/v${nextVersionNumber}_${timestamp}.pdf`;
-
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('legal-documents')
-        .upload(filePath, selectedFile, {
-          contentType: 'application/pdf',
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // If there's a current version, mark it as not current
-      if (currentVersion) {
-        const { error: updateError } = await supabase
-          .from('legal_document_versions')
-          .update({ is_current: false })
-          .eq('id', currentVersion.id);
-
-        if (updateError) throw updateError;
-      }
-
-      // Insert new version record
-      const { error: insertError } = await supabase
-        .from('legal_document_versions')
-        .insert({
-          document_type: documentType,
-          version_number: nextVersionNumber,
-          file_path: filePath,
-          file_name: selectedFile.name,
-          file_size: selectedFile.size,
-          change_description: changeDescription || null,
-          effective_date: isIndeterminate ? null : effectiveDate,
-          is_current: true,
-        });
-
-      if (insertError) throw insertError;
-    },
-    onSuccess: () => {
-      toast.success('Documento enviado com sucesso!');
-      queryClient.invalidateQueries({ queryKey: ['legal-document-versions', documentType] });
-      setSelectedFile(null);
-      setChangeDescription('');
-      setEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
-      setIsIndeterminate(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao enviar documento: ${error.message}`);
-    },
-    onSettled: () => {
-      setIsUploading(false);
-    },
-  });
+  const handlePublish = () => {
+    if (!selectedFile) return;
+    
+    const docLabel = DOCUMENT_LABELS[documentType].title;
+    deferUploadLegalDocument(
+      documentType,
+      selectedFile,
+      nextVersionNumber,
+      currentVersion?.id || null,
+      changeDescription || null,
+      isIndeterminate ? null : effectiveDate,
+      docLabel,
+    );
+    
+    toast.info('Publicação adicionada para revisão');
+    setSelectedFile(null);
+    setChangeDescription('');
+    setEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
+    setIsIndeterminate(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,7 +157,7 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ documentType }) => {
         toast.error('Apenas arquivos PDF são permitidos');
         return;
       }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         toast.error('O arquivo deve ter no máximo 10MB');
         return;
       }
@@ -307,20 +263,11 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ documentType }) => {
               Próxima versão: <Badge variant="outline">v{nextVersionNumber}</Badge>
             </div>
             <Button
-              onClick={() => uploadMutation.mutate()}
-              disabled={!selectedFile || isUploading}
+              onClick={handlePublish}
+              disabled={!selectedFile}
             >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Publicar Versão
-                </>
-              )}
+              <Upload className="h-4 w-4 mr-2" />
+              Publicar Versão
             </Button>
           </div>
         </CardContent>
@@ -463,9 +410,9 @@ const DocumentManager: React.FC<DocumentManagerProps> = ({ documentType }) => {
               </Table>
             </ScrollArea>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <History className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nenhum histórico disponível</p>
+            <div className="text-center py-8 text-muted-foreground">
+              <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhuma versão publicada ainda</p>
             </div>
           )}
         </CardContent>

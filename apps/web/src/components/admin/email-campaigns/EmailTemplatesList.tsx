@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Eye, Pencil, Trash2, Check, X, FileText, Clock, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
 import { EmailTemplateEditor, type EmailTemplate } from './EmailTemplateEditor';
 import { EmailTemplatePreview } from './EmailTemplatePreview';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { useAdminDeferredMutations } from '@/hooks/useAdminDeferredMutations';
 
 const CATEGORY_COLORS: Record<string, string> = {
   transactional: 'bg-blue-500/10 text-blue-700 border-blue-200',
@@ -44,8 +45,7 @@ const TRIGGER_ICONS: Record<string, typeof Zap> = {
 };
 
 export function EmailTemplatesList() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { deferToggleEmailTemplate, deferDeleteEmailTemplate } = useAdminDeferredMutations();
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
@@ -62,51 +62,6 @@ export function EmailTemplatesList() {
 
       if (error) throw error;
       return data as EmailTemplate[];
-    },
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase
-        .from('email_templates')
-        .update({ is_active })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-    },
-    onError: () => {
-      toast({
-        title: 'Erro ao atualizar',
-        description: 'Não foi possível atualizar o status do template.',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('email_templates')
-        .delete()
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['email-templates'] });
-      toast({
-        title: 'Template excluído',
-        description: 'O template foi excluído com sucesso.',
-      });
-      setTemplateToDelete(null);
-    },
-    onError: () => {
-      toast({
-        title: 'Erro ao excluir',
-        description: 'Não foi possível excluir o template.',
-        variant: 'destructive',
-      });
     },
   });
 
@@ -130,10 +85,17 @@ export function EmailTemplatesList() {
     setSelectedTemplate(null);
   };
 
-  const getTriggerDescription = (template: EmailTemplate | null) => {
-    if (!template) return 'Disparo manual';
-    const config = template.trigger_config as Record<string, unknown> | null;
-    return (config?.description as string) || 'Disparo manual';
+  const handleToggle = (template: EmailTemplate, checked: boolean) => {
+    deferToggleEmailTemplate(template.id, template.name, checked);
+    toast.info('Alteração adicionada para revisão');
+  };
+
+  const handleConfirmDelete = () => {
+    if (templateToDelete) {
+      deferDeleteEmailTemplate(templateToDelete.id, templateToDelete.name);
+      toast.info('Exclusão adicionada para revisão');
+      setTemplateToDelete(null);
+    }
   };
 
   if (isLoading) {
@@ -197,9 +159,7 @@ export function EmailTemplatesList() {
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={template.is_active}
-                        onCheckedChange={(checked) =>
-                          toggleActiveMutation.mutate({ id: template.id, is_active: checked })
-                        }
+                        onCheckedChange={(checked) => handleToggle(template, checked)}
                       />
                       {template.is_active ? (
                         <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5">
@@ -288,7 +248,7 @@ export function EmailTemplatesList() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => templateToDelete && deleteMutation.mutate(templateToDelete.id)}
+              onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir

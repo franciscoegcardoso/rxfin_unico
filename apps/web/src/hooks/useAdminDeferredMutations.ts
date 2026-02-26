@@ -805,6 +805,235 @@ export function useAdminDeferredMutations() {
     });
   }, [addChange, logAction, queryClient]);
 
+  // ============ LEGAL DOCUMENTS ============
+
+  const deferUploadLegalDocument = useCallback((
+    documentType: string,
+    file: File,
+    nextVersionNumber: number,
+    currentVersionId: string | null,
+    changeDescription: string | null,
+    effectiveDate: string | null,
+    docLabel: string,
+  ) => {
+    addChange({
+      type: 'create',
+      category: 'Documento Legal',
+      description: `Publicar v${nextVersionNumber} de "${docLabel}"`,
+      execute: async () => {
+        const timestamp = Date.now();
+        const filePath = `${documentType}/v${nextVersionNumber}_${timestamp}.pdf`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('legal-documents')
+          .upload(filePath, file, { contentType: 'application/pdf', upsert: false });
+        if (uploadError) throw uploadError;
+
+        if (currentVersionId) {
+          const { error: updateError } = await supabase
+            .from('legal_document_versions')
+            .update({ is_current: false })
+            .eq('id', currentVersionId);
+          if (updateError) throw updateError;
+        }
+
+        const { error: insertError } = await supabase
+          .from('legal_document_versions')
+          .insert({
+            document_type: documentType,
+            version_number: nextVersionNumber,
+            file_path: filePath,
+            file_name: file.name,
+            file_size: file.size,
+            change_description: changeDescription || null,
+            effective_date: effectiveDate,
+            is_current: true,
+          });
+        if (insertError) throw insertError;
+
+        queryClient.invalidateQueries({ queryKey: ['legal-document-versions', documentType] });
+        logAction('UPLOAD_LEGAL_DOCUMENT', 'legal_document_versions', null, { documentType, version: nextVersionNumber }, 'high');
+        toast.success('Documento enviado com sucesso!');
+      },
+    });
+  }, [addChange, logAction, queryClient]);
+
+  // ============ EMAIL TEMPLATES ============
+
+  const deferToggleEmailTemplate = useCallback((id: string, name: string, newActive: boolean) => {
+    addChange({
+      type: 'toggle',
+      category: 'Email Template',
+      description: `${newActive ? 'Ativar' : 'Desativar'} template "${name}"`,
+      entityId: id,
+      field: 'is_active',
+      execute: async () => {
+        const { error } = await supabase
+          .from('email_templates')
+          .update({ is_active: newActive })
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+        toast.success(`Template ${newActive ? 'ativado' : 'desativado'}!`);
+      },
+    });
+  }, [addChange, queryClient]);
+
+  const deferDeleteEmailTemplate = useCallback((id: string, name: string) => {
+    addChange({
+      type: 'delete',
+      category: 'Email Template',
+      description: `Excluir template "${name}"`,
+      entityId: id,
+      execute: async () => {
+        const { error } = await supabase
+          .from('email_templates')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+        toast.success('Template excluído!');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  const deferSaveEmailTemplate = useCallback((payload: Record<string, any>, isEditing: boolean, id?: string) => {
+    const name = payload.name || 'Template';
+    addChange({
+      type: isEditing ? 'update' : 'create',
+      category: 'Email Template',
+      description: `${isEditing ? 'Atualizar' : 'Criar'} template "${name}"`,
+      entityId: id,
+      execute: async () => {
+        if (isEditing && id) {
+          const { error } = await supabase
+            .from('email_templates')
+            .update(payload)
+            .eq('id', id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('email_templates')
+            .insert([payload] as any);
+          if (error) throw error;
+        }
+        queryClient.invalidateQueries({ queryKey: ['email-templates'] });
+        toast.success(isEditing ? 'Template atualizado!' : 'Template criado!');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  // ============ EMAIL CAMPAIGNS ============
+
+  const deferDeleteCampaign = useCallback((id: string, title: string) => {
+    addChange({
+      type: 'delete',
+      category: 'Campanha',
+      description: `Excluir campanha "${title}"`,
+      entityId: id,
+      execute: async () => {
+        const { error } = await supabase
+          .from('email_campaigns')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+        toast.success('Campanha excluída!');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  const deferDuplicateCampaign = useCallback((campaign: { title: string; subject: string; segment: string }) => {
+    addChange({
+      type: 'create',
+      category: 'Campanha',
+      description: `Duplicar campanha "${campaign.title}"`,
+      execute: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        const { error } = await supabase
+          .from('email_campaigns')
+          .insert({
+            created_by: user.id,
+            name: `${campaign.title} (Cópia)`,
+            title: `${campaign.title} (Cópia)`,
+            subject: campaign.subject,
+            html_body: campaign.subject,
+            body: '',
+            segment: campaign.segment,
+            status: 'draft',
+            trigger_type: 'manual',
+            days_after_trigger: 0,
+          });
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+        toast.success('Campanha duplicada!');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  const deferSaveCampaign = useCallback((payload: Record<string, any>, isEditing: boolean, campaignId?: string | null) => {
+    const title = payload.title || 'Campanha';
+    addChange({
+      type: isEditing ? 'update' : 'create',
+      category: 'Campanha',
+      description: `${isEditing ? 'Salvar' : 'Criar rascunho'} "${title}"`,
+      entityId: campaignId || undefined,
+      execute: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuário não autenticado');
+
+        if (isEditing && campaignId) {
+          const { error } = await supabase
+            .from('email_campaigns')
+            .update({ ...payload, updated_at: new Date().toISOString() })
+            .eq('id', campaignId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from('email_campaigns')
+            .insert({
+              created_by: user.id,
+              name: payload.title,
+              title: payload.title,
+              subject: payload.subject,
+              html_body: payload.body,
+              body: payload.body,
+              segment: payload.segment,
+              status: 'draft',
+              trigger_type: 'manual',
+              days_after_trigger: 0,
+            });
+          if (error) throw error;
+        }
+        queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+        queryClient.invalidateQueries({ queryKey: ['email-campaign', campaignId] });
+        toast.success(isEditing ? 'Campanha atualizada!' : 'Rascunho salvo!');
+      },
+    });
+  }, [addChange, queryClient]);
+
+  // ============ GUEST INVITATION ============
+
+  const deferInviteGuest = useCallback((guestEmail: string, principalUserName: string) => {
+    addChange({
+      type: 'create',
+      category: 'Convite',
+      description: `Convidar "${guestEmail}" para conta de "${principalUserName}"`,
+      execute: async () => {
+        const { data, error } = await supabase.functions.invoke('manage-guest-invitation', {
+          body: { guest_email: guestEmail },
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        toast.success(data.message || 'Convite enviado com sucesso!');
+      },
+    });
+  }, [addChange, queryClient]);
+
   return {
     // Pages
     deferToggleUserStatus,
@@ -843,5 +1072,17 @@ export function useAdminDeferredMutations() {
     deferUpdateSubscriptionRole,
     deferGrantAdmin,
     deferRevokeAdmin,
+    // Legal Documents
+    deferUploadLegalDocument,
+    // Email Templates
+    deferToggleEmailTemplate,
+    deferDeleteEmailTemplate,
+    deferSaveEmailTemplate,
+    // Email Campaigns
+    deferDeleteCampaign,
+    deferDuplicateCampaign,
+    deferSaveCampaign,
+    // Guest Invitation
+    deferInviteGuest,
   };
 }

@@ -1,5 +1,11 @@
-2026-02-26T17:41:56Z | 8ac5eb46f5492ab6385b4edc9ff53976544d7db1 | Refactor admin mutations
+2026-02-26T17:47:21Z | e73a9071df31cfd8bc8ae50e248a30bf9794cc5d | Govern admin to governance
 
-Made PlanDialog, AppSettingsCard, AuthFlowSettingsCard, FeatureSettingsCard, NotificationTemplatesManager, UsersTab to use the admin deferred mutations flow. Introduced and wired new defer functions (deferUpdatePlan, deferCreatePlan, deferUpdateSettings, deferUpdateNotificationTemplate, etc.), replaced direct mutations with governance-queued changes, and added user-focused deferred mutations (update, toggle, role changes). Updated related UI to reflect queued changes and provide consistent admin governance across landing, web, and app surfaces.
+Refactored admin pages to use deferred governance flow:
+- PlanDialog updated to use deferred mutations (Plan updates/creations queued for review)
+- Added deferred mutations across Admin: LegalDocumentsTab, EmailTemplates, Campaigns, Guests
+- Updated various components to replace direct mutations with deferX callbacks
+- Enabled cross-page governance auditing and query invalidation paths
+- Adjusted AddGuestDialog, LegalDocumentsTab, EmailTemplatesList/Editor, CampaignsList/Editor to route through deferrals
+- Implemented deferred handling for uploads, template toggles, deletions, and campaign actions
 
-X-Lovable-Edit-ID: edt-7e3987e6-34ce-4390-b0f2-f4ea61dc3dcb
+X-Lovable-Edit-ID: edt-21a53d29-71c7-48c4-89ed-c231cb385662
