@@ -1,9 +1,7 @@
-2026-02-26T03:47:52Z | 7f1e70e0706d7604e9d3562e30d647bc02bcaeb7 | Implement CRM automations
+2026-02-26T03:48:49Z | e13fdcb731ace7c3672c42b9aea5473bce537e9f | Update health check mappings
 
-Add a complete CRUD UI and backend hooks for CRM automations:
-- Introduced useCrmAutomations.ts with CrmAutomation types and hooks for list, create, update, delete.
-- Added CrmAutomations page frontend (admin UI) to manage automations, including dialog for create/edit, n8n integration fields, and per-rule details.
-- Created Supabase migration for crm_automations table with RLS policies and seed data.
-- Updated Supabase types to include crm_automations fields.
+- Added missing mappings for AIFeedback, AIMetrics, DividirConta, FinanceiroLayout, and RXSplit to KNOWN_TSX_FILES
+- Marked historico-pagamentos as redirect slug to financeiro/pagamentos in HealthCheck
+- Ensured orphan DB records are resolved by aligning files/slugs with health check logic
 
-X-Lovable-Edit-ID: edt-0eed0052-c1a9-4c17-b107-df5fd9d98711
+X-Lovable-Edit-ID: edt-744e79d3-6273-4f56-926a-5c45ac6b21e5

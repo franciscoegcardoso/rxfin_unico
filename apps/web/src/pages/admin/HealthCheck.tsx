@@ -64,6 +64,11 @@ const KNOWN_TSX_FILES: { file: string; expectedSlug: string }[] = [
   
   // Admin
   { file: 'admin/Admin.tsx', expectedSlug: 'admin' },
+  { file: 'admin/AIFeedback.tsx', expectedSlug: 'ai-feedback' },
+  { file: 'admin/AIMetrics.tsx', expectedSlug: 'ai-metrics' },
+  { file: 'DividirConta.tsx', expectedSlug: 'dividir-conta' },
+  { file: 'financeiro/FinanceiroLayout.tsx', expectedSlug: 'financeiro' },
+  { file: 'RXSplit.tsx', expectedSlug: 'rx-split' },
 ];
 
 // Arquivos que são utilitários e não precisam de registro no banco
@@ -83,8 +88,9 @@ const UTILITY_FILES = [
 
 // Slugs no banco que são apenas redirects (não possuem arquivo próprio)
 const REDIRECT_SLUGS = [
-  'contas',            // Redirect → /lancamentos
-  'fluxo-financeiro',  // Redirect → /lancamentos
+  'contas',               // Redirect → /lancamentos
+  'fluxo-financeiro',     // Redirect → /lancamentos
+  'historico-pagamentos', // Redirect → /financeiro/pagamentos
 ];
 
 interface PageRecord {
