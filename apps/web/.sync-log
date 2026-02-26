@@ -1,5 +1,5 @@
-2026-02-26T14:43:35Z | ed938d468277c16850ecf344f3e2fbef2b61bd5b | Integrate AB ownership costs
+2026-02-26T15:59:46Z | 588e04e3900f8cefc5159177532a2c1cbff2897a | Fix Jeep logo mismatch
 
-Implemented CarABOwnershipCostSection and integrated two-car ownership cost section into /simuladores/veiculos/simulador-carro-ab with tabs for Carro A/B, labeled rows showing model and year, and a shared parameter area via a new dialog. Updated cost headers to display model/year and added a new responsive section Quanto custa ter estes carros? mirroring FIPE UX, including parameter customization via a dialog.
+Updated logo asset to ensure Jeep branding uses the correct Jeep.png (brand logo) in the car simulator logos list, replacing incorrect/mismatched image. Added validation steps to verify logo mapping for brands and prevent future mismatches.
 
-X-Lovable-Edit-ID: edt-6c8beff1-a9db-457a-b3b9-5c08bebed6af
+X-Lovable-Edit-ID: edt-54fa2983-ea41-49e6-8a92-a0d8bf2c4e9e
