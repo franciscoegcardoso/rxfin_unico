@@ -1,5 +1,5 @@
-2026-02-26T01:10:48Z | b7fc4dc946c7d3340b9d053e1d8570b8f92cf308 | Adicionou Ver Detalhes nos cards
+2026-02-26T01:13:05Z | 6970e41910f02daaaa20e6ef7c25deeb1212ac05 | Add CRM filters panel
 
-Implementa botão Ver Detalhes em cada card do Kanban na página /admin/crm e integra CrmUserDetailSheet para exibir modal com informações completas do usuário, incluindo edição de status, tags, métricas, origem, timeline e notas.
+Implemented a metrics bar, collapsible filters panel, and per-column sort dropdown in admin CRM Kanban. Added origin mapping, range filters (plan, origin, score, date, tags), and frontend-only filtering with updated metrics and sortable columns.
 
-X-Lovable-Edit-ID: edt-33a9261b-cc1e-493d-93d4-3af40be21878
+X-Lovable-Edit-ID: edt-0dc5b55f-b74e-4e4f-8ae6-024edb458d76
