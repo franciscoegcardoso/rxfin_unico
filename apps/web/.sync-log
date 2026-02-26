@@ -1,5 +1,11 @@
-2026-02-26T01:16:38Z | 803c538e3801bfbb1a189aff9a2f12c40cdbf433 | Aprimorou CRM chat onboarding
+2026-02-26T02:22:30Z | ca9d6adc70d692bf16fa4a4d442e1c4b69c1bc60 | Switch to ai-chat edge function
 
-Atualizou RaioXChat para registrar onboarding_started ao criar sessão, com created_at e dedup, e adicionou deduplicação de eventos em RaioXResultCard. Also ajustou RaioXResultCard para evitar múltiplos triggers de evento via useRef.
+Adopted Supabase edge function ai-chat for Raio-X chat:
+- Replaced n8n/webhook call with supabase.functions.invoke('ai-chat')
+- Built conversation history from last 9 messages plus user input
+- Sent session_id and handled response structure data.content
+- Persisted user and assistant messages with tokens and model_used
+- Simplified error handling for rate limit and unauthorized
+- Updated saving logic to reference model_used and dynamic data.model
 
-X-Lovable-Edit-ID: edt-03866086-f6c2-4c5a-9c1b-125b1a5d22c5
+X-Lovable-Edit-ID: edt-d61982ed-31c3-420f-b4e2-181f5113c709

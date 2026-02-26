@@ -191,64 +191,46 @@ export function RaioXChat() {
     setIsLoading(true);
 
     try {
-      // Call n8n webhook (or fallback — right now just simulate since n8n isn't configured yet)
-      const webhookUrl = 'https://rxfin.app.n8n.cloud/webhook/rxfin-ai';
+      // Build conversation history (last 10 messages + current)
+      const conversationHistory = [
+        ...messages.slice(-9).map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: msg },
+      ];
 
       let assistantContent = '';
       let raioXData: Message['raioXData'] = undefined;
       let tokensFromResponse = 0;
 
-      if (webhookUrl) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000);
+      const { data, error: fnError } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          messages: conversationHistory,
+          session_id: sid,
+        },
+      });
 
-        const { data: { session } } = await supabase.auth.getSession();
-
-        const secretValue = import.meta.env.VITE_RXFIN_WEBHOOK_SECRET || import.meta.env.VITE_WEBHOOK_SECRET || 'bru4qyw1CXK@ctu6cbe';
-        console.log('Enviando Header X-RXFin-Secret com o valor:', secretValue);
-
-        console.log('WEBHOOK DEBUG:', {
-          url: webhookUrl,
-          secret: secretValue,
-          headers: { 'X-RXFin-Secret': secretValue }
-        });
-
-        const res = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-RXFin-Secret': secretValue,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            session_id: sid,
-            message: msg,
-            user_token: session?.access_token,
-            model: model.id,
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeout);
-
-        if (!res.ok) {
-          const errorBody = await res.text().catch(() => 'Sem corpo de resposta');
-          console.error(`Webhook falhou: status=${res.status}, body=${errorBody}`);
-          alert(`Erro no Webhook: Status ${res.status}\n${errorBody}`);
-          throw new Error(`Webhook error: ${res.status}`);
+      if (fnError) {
+        const status = (fnError as any)?.status;
+        if (status === 429) {
+          toast.error('Você atingiu o limite de perguntas. Tente novamente em alguns minutos.');
+          throw new Error('rate_limit');
         }
-
-        const json = await res.json();
-        assistantContent = json.response || 'Sem resposta.';
-        tokensFromResponse = json.tokens_used || 0;
-
-        if (json.formato_raio_x && json.dados_raio_x) {
-          raioXData = { formato: json.formato_raio_x, dados: json.dados_raio_x };
+        if (status === 401) {
+          toast.error('Sessão expirada. Faça login novamente.');
+          throw new Error('unauthorized');
         }
-      } else {
-        // Fallback when n8n is not configured
-        assistantContent =
-          'O assistente Raio-X ainda está sendo configurado. Em breve você poderá conversar comigo sobre suas finanças! 🚀';
+        throw fnError;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        throw new Error(data.error);
+      }
+
+      assistantContent = data.content || 'Sem resposta.';
+      tokensFromResponse = data.tokens_used || 0;
+
+      if (data.formato_raio_x && data.dados_raio_x) {
+        raioXData = { formato: data.formato_raio_x, dados: data.dados_raio_x };
       }
 
       // Save assistant message with tokens and model
@@ -260,7 +242,7 @@ export function RaioXChat() {
           role: 'assistant',
           content: assistantContent,
           tokens_used: tokensFromResponse,
-          model_used: model.id,
+          model_used: data.model || model.id,
         })
         .select('id')
         .single();
@@ -296,16 +278,7 @@ export function RaioXChat() {
         setTokenWarning(true);
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setLastFailedMessage(msg);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: 'Estou com dificuldades técnicas agora. Tente novamente em alguns instantes.',
-          },
-        ]);
-      } else {
+      if (err.message !== 'rate_limit' && err.message !== 'unauthorized') {
         setLastFailedMessage(msg);
         setMessages((prev) => [
           ...prev,
