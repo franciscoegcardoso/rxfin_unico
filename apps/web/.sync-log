@@ -1,9 +1,5 @@
-2026-02-26T04:24:30Z | c97eaa5b0b590fbccc2a199db8db48c36c19e84d | Implement automations validation options
+2026-02-26T04:59:18Z | 3f0869f5b13564b1fb5a80d8f4d937d3c80734de | Add params dialog in Carro AB
 
-Add frontend validation-friendly selects for trigger and delay in CrmAutomations:
-- Introduced predefined TRIGGER_OPTIONS and DELAY_OPTIONS
-- Replaced free-text trigger and delay inputs with Select components
-- Display human-readable labels for trigger and delay in UI
-- Wire options to existing frontend without backend changes
+Refactor the Carro AB simulator to open a dedicated dialog for Personalizar parâmetros replacing inline cost parameters. Introduced showParamsDialog state, moved IPVA, combustível, custos adicionais and sync controls into a Dialog (UI similar to FIPE). Button now triggers the modal, keeping mobile/desktop behavior.
 
-X-Lovable-Edit-ID: edt-dd2a2979-5156-423e-a424-97b4a5942977
+X-Lovable-Edit-ID: edt-178b9baf-cb57-47ef-b78e-83433aa7eb79

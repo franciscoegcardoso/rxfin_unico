@@ -302,6 +302,7 @@ const SimuladorCarroAB: React.FC = () => {
   const [mobileViewMode, setMobileViewMode] = useState<'chart' | 'table'>('chart');
   const isMobile = useIsMobile();
   const [isTabletOrMobile, setIsTabletOrMobile] = useState(false);
+  const [showParamsDialog, setShowParamsDialog] = useState(false);
   
   useEffect(() => {
     const checkSize = () => setIsTabletOrMobile(window.innerWidth < 1024);
@@ -1427,301 +1428,275 @@ const SimuladorCarroAB: React.FC = () => {
               icon={<Calculator className="h-4 w-4 text-primary" />}
               isTabletOrMobile={isTabletOrMobile}
             >
-              {/* Parâmetros de custo: Estado, Combustível, Custos adicionais */}
-              <div className="space-y-4 mb-6">
-                {/* Estado (IPVA) - compartilhado A↔B */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <div className="flex-1">
-                    <label className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
-                      Estado (IPVA)
-                      <Badge variant="outline" className="text-[10px] px-1 py-0">A→B</Badge>
-                    </label>
-                    <Select value={configA.vehicleState} onValueChange={(v) => {
-                      setConfigA(prev => ({ ...prev, vehicleState: v }));
-                      setConfigB(prev => ({ ...prev, vehicleState: v }));
-                    }}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {statesList.map(s => (
-                          <SelectItem key={s.uf} value={s.uf} className="text-xs">
-                            {s.uf} ({s.rate}%)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {/* Summary + Personalizar parâmetros button */}
+              <div className="space-y-3 mb-6">
+                {/* Compact summary */}
+                <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3" /> Estado (IPVA)
+                    </span>
+                    <span className="font-medium">{configA.vehicleState} ({statesList.find(s => s.uf === configA.vehicleState)?.rate}%)</span>
                   </div>
-                </div>
-
-                {/* Parâmetros de Combustível */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Fuel className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Parâmetros de Combustível</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <Fuel className="h-3 w-3" /> Combustível
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[8px] px-1 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
+                        <strong>{formatMoney(configA.calculatedFuelCost || 0)}</strong>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[8px] px-1 py-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
+                        <strong>{formatMoney(configB.calculatedFuelCost || 0)}</strong>
+                      </span>
+                    </div>
                   </div>
-
-                  {/* Km mismatch alert */}
-                  {configA.totalMonthlyKm !== configB.totalMonthlyKm && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
-                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                      <div className="text-xs">
-                        <p className="font-medium text-destructive">Quilometragem divergente</p>
-                        <p className="text-muted-foreground mt-0.5">
-                          Carro A: <strong>{configA.totalMonthlyKm.toLocaleString('pt-BR')} km/mês</strong> ≠ Carro B: <strong>{configB.totalMonthlyKm.toLocaleString('pt-BR')} km/mês</strong>.
-                          Para uma comparação justa, a quilometragem mensal deve ser igual.
-                        </p>
+                  {(configA.monthlyParking > 0 || configB.monthlyParking > 0 || configA.monthlyTolls > 0 || configB.monthlyTolls > 0 || configA.monthlyWashing > 0 || configB.monthlyWashing > 0) && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <ParkingCircle className="h-3 w-3" /> Custos adicionais
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-[8px] px-1 py-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
+                          <strong>{formatMoney((configA.monthlyParking || 0) + (configA.monthlyTolls || 0) + (configA.monthlyWashing || 0))}</strong>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-[8px] px-1 py-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
+                          <strong>{formatMoney((configB.monthlyParking || 0) + (configB.monthlyTolls || 0) + (configB.monthlyWashing || 0))}</strong>
+                        </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Carro A - Fuel Summary */}
-                  <div className="border rounded-lg p-3 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 text-[10px]">A</Badge>
-                      Combustível
+                  {/* Km mismatch alert - compact */}
+                  {configA.totalMonthlyKm !== configB.totalMonthlyKm && (
+                    <div className="flex items-center gap-2 p-2 rounded bg-destructive/10 border border-destructive/30">
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                      <p className="text-[10px] text-destructive">
+                        Km divergente: A={configA.totalMonthlyKm.toLocaleString('pt-BR')} ≠ B={configB.totalMonthlyKm.toLocaleString('pt-BR')}
+                      </p>
                     </div>
-                    {configA.fuelRows.filter(r => r.monthlyKm > 0 || configA.fuelRows.length === 1).map(row => {
-                      const totalCost = row.consumption > 0 ? (row.monthlyKm / row.consumption) * row.price : 0;
-                      const totalLiters = row.consumption > 0 ? row.monthlyKm / row.consumption : 0;
-                      return (
-                        <div key={row.type} className="space-y-2">
-                          <span className="text-sm font-semibold text-foreground">{row.label}</span>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Fuel className="h-3 w-3" /> km/{row.unit}
-                              </span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {formatNumber(row.consumption)}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground">R$/{row.unit}</span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {row.price.toFixed(2).replace('.', ',')}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground">Km/mês</span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {row.monthlyKm.toLocaleString('pt-BR')}
-                              </div>
-                            </div>
-                          </div>
-                          <p className="text-xs text-right text-muted-foreground">
-                            Total: <strong className="text-foreground">{formatMoney(totalCost)}/mês</strong>
-                            {totalLiters > 0 && <span className="ml-1">({Math.round(totalLiters)} {row.unit}/mês)</span>}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Carro B - Fuel Summary */}
-                  <div className="border rounded-lg p-3 space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-600 text-[10px]">B</Badge>
-                      Combustível
-                    </div>
-                    {configB.fuelRows.filter(r => r.monthlyKm > 0 || configB.fuelRows.length === 1).map(row => {
-                      const totalCost = row.consumption > 0 ? (row.monthlyKm / row.consumption) * row.price : 0;
-                      const totalLiters = row.consumption > 0 ? row.monthlyKm / row.consumption : 0;
-                      return (
-                        <div key={row.type} className="space-y-2">
-                          <span className="text-sm font-semibold text-foreground">{row.label}</span>
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Fuel className="h-3 w-3" /> km/{row.unit}
-                              </span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {formatNumber(row.consumption)}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground">R$/{row.unit}</span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {row.price.toFixed(2).replace('.', ',')}
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <span className="text-[10px] text-muted-foreground">Km/mês</span>
-                              <div className="h-9 rounded-lg border border-input bg-background px-3 flex items-center text-sm font-medium">
-                                {row.monthlyKm.toLocaleString('pt-BR')}
-                              </div>
-                            </div>
-                          </div>
-                          <p className="text-xs text-right text-muted-foreground">
-                            Total: <strong className="text-foreground">{formatMoney(totalCost)}/mês</strong>
-                            {totalLiters > 0 && <span className="ml-1">({Math.round(totalLiters)} {row.unit}/mês)</span>}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Personalizar parâmetros - opens FuelParametersTable in dialog */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full gap-2 text-xs">
-                        <Pencil className="h-3.5 w-3.5" />
-                        Personalizar parâmetros
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <Fuel className="h-5 w-5 text-primary" />
-                          Parâmetros de Combustível
-                        </DialogTitle>
-                        <DialogDescription>
-                          Ajuste consumo, preços e quilometragem para cada veículo
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 pt-2">
-                        <div className="border rounded-lg p-3 space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-medium">
-                            <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 text-[10px]">A</Badge>
-                            Combustível - Carro A
-                          </div>
-                          <FuelParametersTable
-                            yearLabel={formatFipeYearName(fipeA.years.find(y => y.codigo === fipeA.selectedYear)?.nome || 'Flex')}
-                            consumptionSuggestion={consumptionHookA.suggestion}
-                            consumptionLoading={consumptionHookA.loading}
-                            initialMonthlyKm={configA.totalMonthlyKm || 1000}
-                            onChange={(totalKm, totalCost, fuelRows) => {
-                              setConfigA(prev => ({ ...prev, totalMonthlyKm: totalKm, calculatedFuelCost: totalCost, fuelRows }));
-                            }}
-                            persistedData={{
-                              fuelRows: configA.fuelRows,
-                              totalMonthlyKm: configA.totalMonthlyKm,
-                            }}
-                          />
-                        </div>
-                        <div className="border rounded-lg p-3 space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-medium">
-                            <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-600 text-[10px]">B</Badge>
-                            Combustível - Carro B
-                          </div>
-                          <FuelParametersTable
-                            yearLabel={formatFipeYearName(fipeB.years.find(y => y.codigo === fipeB.selectedYear)?.nome || 'Flex')}
-                            consumptionSuggestion={consumptionHookB.suggestion}
-                            consumptionLoading={consumptionHookB.loading}
-                            initialMonthlyKm={configB.totalMonthlyKm || 1000}
-                            onChange={(totalKm, totalCost, fuelRows) => {
-                              setConfigB(prev => ({ ...prev, totalMonthlyKm: totalKm, calculatedFuelCost: totalCost, fuelRows }));
-                            }}
-                            persistedData={{
-                              fuelRows: configB.fuelRows,
-                              totalMonthlyKm: configB.totalMonthlyKm,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  )}
                 </div>
 
-                {/* Custos adicionais (opcionais) */}
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Custos adicionais (opcionais)</p>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                        <ParkingCircle className="h-3 w-3" />
-                        Estacion./mês
-                      </Label>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
-                          <CurrencyInput value={configA.monthlyParking} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyParking: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
-                          <CurrencyInput value={configB.monthlyParking} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyParking: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                        <Milestone className="h-3 w-3" />
-                        Pedágio/mês
-                      </Label>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
-                          <CurrencyInput value={configA.monthlyTolls} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyTolls: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
-                          <CurrencyInput value={configB.monthlyTolls} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyTolls: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                        <Droplets className="h-3 w-3" />
-                        Limpeza/mês
-                      </Label>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
-                          <CurrencyInput value={configA.monthlyWashing} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyWashing: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
-                          <CurrencyInput value={configB.monthlyWashing} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyWashing: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sync buttons - all parameters */}
-                  <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
-                    <TooltipProvider>
-                      <UITooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 gap-1.5 text-xs border-blue-500/30 hover:bg-blue-500/10"
-                            onClick={handleSyncBtoA}
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Copiar parâmetros</span> A → B
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de A para B</p>
-                        </TooltipContent>
-                      </UITooltip>
-                    </TooltipProvider>
-                    
-                    <ArrowRightLeft className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                    
-                    <TooltipProvider>
-                      <UITooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 gap-1.5 text-xs border-amber-500/30 hover:bg-amber-500/10"
-                            onClick={handleSyncAtoB}
-                          >
-                            B → A <span className="hidden sm:inline">Copiar parâmetros</span>
-                            <Copy className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de B para A</p>
-                        </TooltipContent>
-                      </UITooltip>
-                    </TooltipProvider>
-                  </div>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowParamsDialog(true)}
+                  className="w-full gap-2 text-xs bg-background hover:bg-primary hover:text-primary-foreground transition-colors border-primary/30 text-primary font-medium"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Personalizar parâmetros
+                </Button>
               </div>
+
+              {/* Parameters Dialog */}
+              <Dialog open={showParamsDialog} onOpenChange={setShowParamsDialog}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Pencil className="h-5 w-5 text-primary" />
+                      Personalizar Parâmetros
+                    </DialogTitle>
+                    <DialogDescription>
+                      Ajuste estado, combustível e custos adicionais para cada veículo
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-6 pt-2">
+                    {/* Estado (IPVA) */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
+                          Estado (IPVA)
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">A→B</Badge>
+                        </label>
+                        <Select value={configA.vehicleState} onValueChange={(v) => {
+                          setConfigA(prev => ({ ...prev, vehicleState: v }));
+                          setConfigB(prev => ({ ...prev, vehicleState: v }));
+                        }}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {statesList.map(s => (
+                              <SelectItem key={s.uf} value={s.uf} className="text-xs">
+                                {s.uf} ({s.rate}%)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Parâmetros de Combustível */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">Parâmetros de Combustível</span>
+                      </div>
+
+                      {/* Km mismatch alert */}
+                      {configA.totalMonthlyKm !== configB.totalMonthlyKm && (
+                        <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                          <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          <div className="text-xs">
+                            <p className="font-medium text-destructive">Quilometragem divergente</p>
+                            <p className="text-muted-foreground mt-0.5">
+                              Carro A: <strong>{configA.totalMonthlyKm.toLocaleString('pt-BR')} km/mês</strong> ≠ Carro B: <strong>{configB.totalMonthlyKm.toLocaleString('pt-BR')} km/mês</strong>.
+                              Para uma comparação justa, a quilometragem mensal deve ser igual.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 text-[10px]">A</Badge>
+                          Combustível - Carro A
+                        </div>
+                        <FuelParametersTable
+                          yearLabel={formatFipeYearName(fipeA.years.find(y => y.codigo === fipeA.selectedYear)?.nome || 'Flex')}
+                          consumptionSuggestion={consumptionHookA.suggestion}
+                          consumptionLoading={consumptionHookA.loading}
+                          initialMonthlyKm={configA.totalMonthlyKm || 1000}
+                          onChange={(totalKm, totalCost, fuelRows) => {
+                            setConfigA(prev => ({ ...prev, totalMonthlyKm: totalKm, calculatedFuelCost: totalCost, fuelRows }));
+                          }}
+                          persistedData={{
+                            fuelRows: configA.fuelRows,
+                            totalMonthlyKm: configA.totalMonthlyKm,
+                          }}
+                        />
+                      </div>
+                      <div className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-600 text-[10px]">B</Badge>
+                          Combustível - Carro B
+                        </div>
+                        <FuelParametersTable
+                          yearLabel={formatFipeYearName(fipeB.years.find(y => y.codigo === fipeB.selectedYear)?.nome || 'Flex')}
+                          consumptionSuggestion={consumptionHookB.suggestion}
+                          consumptionLoading={consumptionHookB.loading}
+                          initialMonthlyKm={configB.totalMonthlyKm || 1000}
+                          onChange={(totalKm, totalCost, fuelRows) => {
+                            setConfigB(prev => ({ ...prev, totalMonthlyKm: totalKm, calculatedFuelCost: totalCost, fuelRows }));
+                          }}
+                          persistedData={{
+                            fuelRows: configB.fuelRows,
+                            totalMonthlyKm: configB.totalMonthlyKm,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Custos adicionais (opcionais) */}
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        <ParkingCircle className="h-4 w-4 text-primary" />
+                        Custos adicionais (opcionais)
+                      </p>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                            <ParkingCircle className="h-3 w-3" />
+                            Estacion./mês
+                          </Label>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
+                              <CurrencyInput value={configA.monthlyParking} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyParking: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
+                              <CurrencyInput value={configB.monthlyParking} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyParking: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                            <Milestone className="h-3 w-3" />
+                            Pedágio/mês
+                          </Label>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
+                              <CurrencyInput value={configA.monthlyTolls} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyTolls: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
+                              <CurrencyInput value={configB.monthlyTolls} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyTolls: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                            <Droplets className="h-3 w-3" />
+                            Limpeza/mês
+                          </Label>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-blue-500/10 border-blue-500/30 text-blue-600">A</Badge>
+                              <CurrencyInput value={configA.monthlyWashing} onChange={(v) => setConfigA(prev => ({ ...prev, monthlyWashing: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-[8px] px-1 py-0 shrink-0 bg-amber-500/10 border-amber-500/30 text-amber-600">B</Badge>
+                              <CurrencyInput value={configB.monthlyWashing} onChange={(v) => setConfigB(prev => ({ ...prev, monthlyWashing: v || 0 }))} className="h-7 text-xs" placeholder="0,00" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sync buttons */}
+                      <div className="flex items-center justify-center gap-2 pt-3 flex-wrap">
+                        <TooltipProvider>
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 gap-1.5 text-xs border-blue-500/30 hover:bg-blue-500/10"
+                                onClick={handleSyncBtoA}
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Copiar parâmetros</span> A → B
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de A para B</p>
+                            </TooltipContent>
+                          </UITooltip>
+                        </TooltipProvider>
+                        
+                        <ArrowRightLeft className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                        
+                        <TooltipProvider>
+                          <UITooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 gap-1.5 text-xs border-amber-500/30 hover:bg-amber-500/10"
+                                onClick={handleSyncAtoB}
+                              >
+                                B → A <span className="hidden sm:inline">Copiar parâmetros</span>
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copiar Estado, km, combustível, pedágio, estac. e limpeza de B para A</p>
+                            </TooltipContent>
+                          </UITooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* Comparativo de custos */}
               <Card>
