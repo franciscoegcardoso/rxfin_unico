@@ -1,5 +1,55 @@
-2026-02-25T23:38:06Z | f57f6d0325b8ed0879c99b8ab83d59b66a901a7b | Remodeled TCO section for mobile
+2026-02-26T00:34:52Z | 7625f59232c5086faa366f6ade7f2cbb24f0c305 | Lovable update
 
-Wrap TCO in MobileSectionDrawer and remove sync banner; remove outdated Parameter Sync banner block. This updates SimuladorCarroAB.tsx to present TCO as a separated mobile-friendly section and cleans up the parameter synchronization alert UI.
+Na página Lancamentos.tsx, os handlers handleAddEntrada e handleAddSaida só fazem setState — os dados somem ao recarregar a página.
 
-X-Lovable-Edit-ID: edt-c2673673-e4fe-40bc-a4b2-55f19a00b439
+Preciso que esses handlers também persistam os dados no Supabase chamando addLancamento (do hook useLancamentosRealizados, que já está disponível no projeto).
+
+Para handleAddEntrada, após o setState, chamar:
+
+await addLancamento({
+
+  tipo: 'receita',
+
+  categoria: 'Receitas',
+
+  nome: newEntrada.name,
+
+  valor_previsto: newEntrada.amount,
+
+  valor_realizado: newEntrada.amount,
+
+  mes_referencia: newEntrada.date.substring(0, 7),
+
+  data_pagamento: newEntrada.date,
+
+  source_type: 'manual',
+
+})
+
+Para handleAddSaida, após o setState, chamar:
+
+await addLancamento({
+
+  tipo: 'despesa',
+
+  categoria: newSaida.category,
+
+  nome: newSaida.name,
+
+  valor_previsto: newSaida.amount,
+
+  valor_realizado: newSaida.amount,
+
+  mes_referencia: newSaida.date.substring(0, 7),
+
+  data_pagamento: newSaida.date,
+
+  forma_pagamento: newSaida.method,
+
+  source_type: 'manual',
+
+})
+
+Adicionar tratamento de erro básico com toast de erro caso a persistência falhe.
+
+X-Lovable-Edit-ID: edt-7fa05d4c-7b83-4db4-9eff-acd168d62153
