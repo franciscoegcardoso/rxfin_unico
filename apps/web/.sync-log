@@ -1,5 +1,7 @@
-2026-02-26T02:45:00Z | ed097042b41b483d02374c89573337a818232217 | Corrigiu contagem de mensagens no RaioXChat
+2026-02-26T02:47:28Z | ea4cc780c21dddfd68d55b8c68caa0044d7a8286 | Fix MFA admin login flow
 
-Atualiza RaioXChat para calcular total_messages e total_tokens a partir de dados reais das tabelas ai_chat_messages e ai_chat_sessions, removendo incremento manual. Implementa checagens e validações para manter consistência de sessão e sinaliza uso de tokens acima de limiar. Também adicionou suporte a nova rotina nightly-sync-all no edge function pluggy-trigger-sync para governança/admin.
+Adjusted admin MFA flow to ensure AAL2 token is refreshed before re-authenticating, preventing access issues. Specifically:
+- AdminMfaEnrollment: after successful MFA, refresh session token and add brief delay to propagate token changes.
+- useAdminGate: removed dependency on state.isAuthenticated in login guard and simplified its invocation to rely on fresh session state; updated effect dependencies accordingly.
 
-X-Lovable-Edit-ID: edt-b48db820-a3ea-4fc6-8219-8a87c7d0f2b2
+X-Lovable-Edit-ID: edt-acfe1720-5e0f-4b79-9ede-1c70f81ded23

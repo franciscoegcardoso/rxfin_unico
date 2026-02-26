@@ -29,7 +29,7 @@ export function useAdminGate() {
   const isLoginInProgressRef = useRef(false);
 
   const login = useCallback(async () => {
-    if (isLoginInProgressRef.current || state.isAuthenticated) return;
+    if (isLoginInProgressRef.current) return;
 
     isLoginInProgressRef.current = true;
     setState(prev => ({ ...prev, isLoading: true, error: null }));
@@ -107,7 +107,7 @@ export function useAdminGate() {
     } finally {
       isLoginInProgressRef.current = false;
     }
-  }, [navigate, state.isAuthenticated]);
+  }, [navigate]);
 
   const logout = useCallback(async () => {
     const token = sessionStorage.getItem(STORAGE_KEY);

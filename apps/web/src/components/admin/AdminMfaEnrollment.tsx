@@ -74,8 +74,10 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
 
       setStep('success');
 
-      // Aguarda propagação do novo token AAL2 antes de chamar o login do admin-gate
-      await new Promise<void>((resolve) => setTimeout(resolve, 500));
+      // Force session refresh to get AAL2 JWT before calling admin-gate
+      await supabase.auth.refreshSession();
+      // Small extra delay to ensure propagation
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
       onMfaComplete();
     } catch (err: any) {
       setError(err.message || 'Código inválido');
