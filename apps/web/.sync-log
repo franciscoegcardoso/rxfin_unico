@@ -1,7 +1,5 @@
-2026-02-26T02:47:28Z | ea4cc780c21dddfd68d55b8c68caa0044d7a8286 | Fix MFA admin login flow
+2026-02-26T02:55:25Z | f32f9633d0292e221fe0c8cb735a3fde5d07c0b4 | Removido refresh de session
 
-Adjusted admin MFA flow to ensure AAL2 token is refreshed before re-authenticating, preventing access issues. Specifically:
-- AdminMfaEnrollment: after successful MFA, refresh session token and add brief delay to propagate token changes.
-- useAdminGate: removed dependency on state.isAuthenticated in login guard and simplified its invocation to rely on fresh session state; updated effect dependencies accordingly.
+Evitei o refreshSession após MFA para não degradar aal2. Mantido delay para propagação de autenticação e manter o fluxo seguro.
 
-X-Lovable-Edit-ID: edt-acfe1720-5e0f-4b79-9ede-1c70f81ded23
+X-Lovable-Edit-ID: edt-89274231-a3e6-47cd-ade4-e5b6c9583f1c

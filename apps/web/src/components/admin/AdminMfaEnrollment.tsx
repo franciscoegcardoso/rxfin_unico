@@ -74,10 +74,10 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
 
       setStep('success');
 
-      // Force session refresh to get AAL2 JWT before calling admin-gate
-      await supabase.auth.refreshSession();
-      // Small extra delay to ensure propagation
-      await new Promise<void>((resolve) => setTimeout(resolve, 300));
+      // mfa.verify() already returns an aal2 session stored by the client.
+      // Do NOT call refreshSession() here — it would downgrade back to aal1.
+      // Small delay to let onAuthStateChange propagate the new session.
+      await new Promise<void>((resolve) => setTimeout(resolve, 400));
       onMfaComplete();
     } catch (err: any) {
       setError(err.message || 'Código inválido');
