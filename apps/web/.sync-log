@@ -1,10 +1,5 @@
-2026-02-26T00:38:49Z | 5d8edd723c2f3d17a5e9b81e37bf6b94a0ee3d3c | Add AdminRoute guard
+2026-02-26T00:40:25Z | 65e969c56b6df1dc8563c942cb7543e199dadc44 | Add forbidden page and redirect
 
-Implemented AdminRoute component to guard admin-only routes:
-- Uses useAuth and useIsAdmin to verify authentication and admin status
-- Shows a centered Loader2 while loading
-- Redirects to /auth if not authenticated
-- Redirects to / if not admin
-- Exposes children when authorized
+Introduced Forbidden.tsx with shield icon, title, text and home button. Wired route /403 to render Forbidden. Updated admin guards to redirect to /403 when lacking admin rights. Updated AdminRoute.tsx and AdminProtectedRoute.tsx to use /403. Imported Forbidden in App.tsx.
 
-X-Lovable-Edit-ID: edt-34d4ac36-ce3c-49ff-ab58-fabe1d35b608
+X-Lovable-Edit-ID: edt-b11297cc-0b86-4f57-8aca-d0b9eaf0362d

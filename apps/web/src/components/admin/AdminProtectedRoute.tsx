@@ -24,7 +24,7 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   }
 
   if (!isAdmin) {
-    return <Navigate to="/inicio" replace />;
+    return <Navigate to="/403" replace />;
   }
 
   return <>{children}</>;

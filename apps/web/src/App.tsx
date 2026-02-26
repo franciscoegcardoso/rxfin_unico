@@ -93,6 +93,7 @@ const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
 const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
+import Forbidden from "./pages/Forbidden";
 import BemVindo from "./pages/BemVindo";
 import LegalDocument from "./pages/LegalDocument";
 import Onboarding2 from "./pages/Onboarding2";
@@ -229,6 +230,7 @@ const App = () => (
                    <Route path="/termos-de-uso" element={<LegalDocument slug="termos-de-uso" />} />
                    <Route path="/politica-privacidade" element={<LegalDocument slug="politica-privacidade" />} />
                    <Route path="/politica-cookies" element={<LegalDocument slug="politica-cookies" />} />
+                    <Route path="/403" element={<Forbidden />} />
                     <Route path="*" element={<NotFound />} />
                     </Routes>
                   </MagicLinkHandler>
