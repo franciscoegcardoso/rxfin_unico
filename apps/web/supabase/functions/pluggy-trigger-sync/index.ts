@@ -11,7 +11,101 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth: validate JWT
+    const body = await req.json();
+
+    // ─── Nightly Sync All (called by pg_cron) ─────────────────────
+    if (body.action === 'nightly-sync-all') {
+      // Validate internal secret for cron-triggered calls
+      const internalSecret = req.headers.get('x-internal-secret');
+      const expectedSecret = Deno.env.get('INTERNAL_SECRET');
+      const authHeader = req.headers.get('Authorization');
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+      const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+      const isInternalSecret = internalSecret && expectedSecret && internalSecret === expectedSecret;
+
+      if (!isServiceRole && !isInternalSecret) {
+        return new Response(JSON.stringify({ error: 'Unauthorized — nightly sync requires service role or internal secret' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        serviceRoleKey,
+      );
+
+      // List all active connections with status UPDATED
+      const { data: connections, error: connError } = await supabase
+        .from('pluggy_connections')
+        .select('item_id, user_id')
+        .eq('status', 'UPDATED')
+        .is('deleted_at', null);
+
+      if (connError) {
+        console.error('nightly-sync-all: failed to list connections', connError);
+        return new Response(JSON.stringify({ error: 'Failed to list connections' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (!connections || connections.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, queued: 0, message: 'No connections to sync' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+
+      // Filter out connections that already have pending/running jobs
+      const itemIds = connections.map(c => c.item_id);
+      const { data: activeJobs } = await supabase
+        .from('pluggy_sync_jobs')
+        .select('item_id')
+        .in('item_id', itemIds)
+        .in('status', ['pending', 'running']);
+
+      const busyItems = new Set((activeJobs || []).map(j => j.item_id));
+      const toSync = connections.filter(c => !busyItems.has(c.item_id));
+
+      if (toSync.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, queued: 0, message: 'All connections already syncing' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+
+      // Enqueue sync jobs
+      const jobs = toSync.map(c => ({
+        user_id: c.user_id,
+        item_id: c.item_id,
+        action: 'full-sync',
+        priority: 5, // low priority (nightly)
+        status: 'pending',
+      }));
+
+      const { error: insertError } = await supabase
+        .from('pluggy_sync_jobs')
+        .insert(jobs);
+
+      if (insertError) {
+        console.error('nightly-sync-all: failed to insert jobs', insertError);
+        return new Response(JSON.stringify({ error: 'Failed to queue jobs' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log(`nightly-sync-all: queued ${toSync.length} sync jobs`);
+
+      return new Response(
+        JSON.stringify({ success: true, queued: toSync.length }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
+    // ─── Manual Sync (user-triggered) ─────────────────────────────
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -37,7 +131,7 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub as string;
 
-    const { itemId } = await req.json();
+    const { itemId } = body;
     if (!itemId || typeof itemId !== 'string') {
       return new Response(JSON.stringify({ error: 'itemId is required' }), {
         status: 400,
@@ -126,7 +220,6 @@ Deno.serve(async (req) => {
     const workerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/pluggy-worker`;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Use EdgeRuntime.waitUntil if available, otherwise just fire the fetch
     const workerPromise = fetch(workerUrl, {
       method: 'POST',
       headers: {
@@ -138,7 +231,6 @@ Deno.serve(async (req) => {
       console.error('Fire-and-forget pluggy-worker call failed (non-blocking):', err);
     });
 
-    // Try waitUntil for true fire-and-forget; otherwise just don't await
     try {
       // @ts-ignore - EdgeRuntime.waitUntil may not be typed
       if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {

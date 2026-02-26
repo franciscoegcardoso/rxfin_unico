@@ -269,26 +269,36 @@ export function RaioXChat() {
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Update session totals (messages + tokens)
-      const { data: sess } = await supabase
-        .from('ai_chat_sessions')
-        .select('total_tokens, token_limit')
-        .eq('id', sid)
-        .single();
+      // Update session totals — always SET real counted values (never increment)
+      const { count: realMessageCount } = await supabase
+        .from('ai_chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('session_id', sid);
 
-      const newTotalTokens = (sess?.total_tokens || 0) + tokensFromResponse;
+      const { data: tokenRows } = await supabase
+        .from('ai_chat_messages')
+        .select('tokens_used')
+        .eq('session_id', sid);
+
+      const realTotalTokens = tokenRows?.reduce((sum, m) => sum + (m.tokens_used || 0), 0) || 0;
 
       await supabase
         .from('ai_chat_sessions')
         .update({
-          total_messages: messages.length + 2,
-          total_tokens: newTotalTokens,
+          total_messages: realMessageCount || 0,
+          total_tokens: realTotalTokens,
           updated_at: new Date().toISOString(),
         })
         .eq('id', sid);
 
       // Check token limit (80% threshold)
-      if (sess && newTotalTokens > sess.token_limit * 0.8) {
+      const { data: sess } = await supabase
+        .from('ai_chat_sessions')
+        .select('token_limit')
+        .eq('id', sid)
+        .single();
+
+      if (sess && realTotalTokens > sess.token_limit * 0.8) {
         setTokenWarning(true);
       }
     } catch (err: any) {
