@@ -1,55 +1,8 @@
-2026-02-26T00:34:52Z | 7625f59232c5086faa366f6ade7f2cbb24f0c305 | Lovable update
+2026-02-26T00:36:25Z | 02c0e87b0499e390e33f023599d7a5c8f100be6c | Toggle sandbox flag for Pluggy
 
-Na página Lancamentos.tsx, os handlers handleAddEntrada e handleAddSaida só fazem setState — os dados somem ao recarregar a página.
+Updated PluggyConnectButton to initialize Pluggy with includeSandbox driven by env VITE_PLUGGY_SANDBOX, and added environment-based defaults:
+- includeSandbox now equals import.meta.env.VITE_PLUGGY_SANDBOX === 'true'
+- Added .env.production and .env.development guidance for VITE_PLUGGY_SANDBOX
+This replaces the previous hardcoded includeSandbox: true setting.
 
-Preciso que esses handlers também persistam os dados no Supabase chamando addLancamento (do hook useLancamentosRealizados, que já está disponível no projeto).
-
-Para handleAddEntrada, após o setState, chamar:
-
-await addLancamento({
-
-  tipo: 'receita',
-
-  categoria: 'Receitas',
-
-  nome: newEntrada.name,
-
-  valor_previsto: newEntrada.amount,
-
-  valor_realizado: newEntrada.amount,
-
-  mes_referencia: newEntrada.date.substring(0, 7),
-
-  data_pagamento: newEntrada.date,
-
-  source_type: 'manual',
-
-})
-
-Para handleAddSaida, após o setState, chamar:
-
-await addLancamento({
-
-  tipo: 'despesa',
-
-  categoria: newSaida.category,
-
-  nome: newSaida.name,
-
-  valor_previsto: newSaida.amount,
-
-  valor_realizado: newSaida.amount,
-
-  mes_referencia: newSaida.date.substring(0, 7),
-
-  data_pagamento: newSaida.date,
-
-  forma_pagamento: newSaida.method,
-
-  source_type: 'manual',
-
-})
-
-Adicionar tratamento de erro básico com toast de erro caso a persistência falhe.
-
-X-Lovable-Edit-ID: edt-7fa05d4c-7b83-4db4-9eff-acd168d62153
+X-Lovable-Edit-ID: edt-09c5fff6-49b8-4a9e-96fb-c947fdd8c86b

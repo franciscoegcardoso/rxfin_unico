@@ -133,7 +133,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
       const pluggyConnect = new PluggyConnectCtor({
         connectToken: connectToken as unknown as string,
-        includeSandbox: true,
+        includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
           setWidgetClosed();
