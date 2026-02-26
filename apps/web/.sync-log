@@ -1,11 +1,9 @@
-2026-02-26T03:53:14Z | 7ee5cc83117195808a81338d911e9fe68e87bc78 | Add admin impersonation page
+2026-02-26T04:01:05Z | f968d84fced49c63202e8d30ae9df67f5a6e00fd | Lovable update
 
-Implements a new AdminImpersonate page that provides:
-- Viewport-based impersonation preview (desktop/tablet/mobile) via an iframe
-- Plan-based role selector with admin override, persisted in sessionStorage
-- Navigation controls to preview arbitrary routes inside the iframe
-- Route and UI updates to expose the impersonation page at /admin/impersonate
-- Sidebar integration adding an Impersonar item in the Sistema group
-- Admin dashboard routing updated to accommodate the new impersonation flow (and imports)
+Lovable tool use: Approved.
 
-X-Lovable-Edit-ID: edt-f49f0899-4020-4863-8def-d3056ed51183
+context: 6951EAA2-1264-4A1A-A86D-817E462202C7
+
+tool_name:Modify database
+
+X-Lovable-Edit-ID: edt-88590889-d637-4481-9777-eae12bb64801

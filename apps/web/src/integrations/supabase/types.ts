@@ -6729,6 +6729,7 @@ export type Database = {
           token: string
         }[]
       }
+      get_admin_dashboard_metrics_30d: { Args: never; Returns: Json }
       get_ai_monthly_summary: {
         Args: { p_month?: string; p_user_id: string }
         Returns: Json
@@ -7075,6 +7076,7 @@ export type Database = {
         | "onboarding"
         | "engajado"
         | "ativo"
+        | "migrado"
         | "power_user"
         | "risco"
         | "churned"
@@ -7214,6 +7216,7 @@ export const Constants = {
         "onboarding",
         "engajado",
         "ativo",
+        "migrado",
         "power_user",
         "risco",
         "churned",
