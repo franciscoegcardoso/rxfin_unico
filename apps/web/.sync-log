@@ -1,5 +1,5 @@
-2026-02-26T04:59:18Z | 3f0869f5b13564b1fb5a80d8f4d937d3c80734de | Add params dialog in Carro AB
+2026-02-26T09:40:51Z | 7c46fcfa9f2a9f3d6197fdbb738d8862629ea272 | Fix admin flow token handling
 
-Refactor the Carro AB simulator to open a dedicated dialog for Personalizar parâmetros replacing inline cost parameters. Introduced showParamsDialog state, moved IPVA, combustível, custos adicionais and sync controls into a Dialog (UI similar to FIPE). Button now triggers the modal, keeping mobile/desktop behavior.
+Improve admin authentication flow by adding client-side token expiry checks, persisting expiry, and resilient init to avoid re-prompting MFA after successful login. Introduced hasNonExpiredToken, extended storage keys, and module-level guards to prevent redundant logins across remounts. Added logs for debugging.
 
-X-Lovable-Edit-ID: edt-178b9baf-cb57-47ef-b78e-83433aa7eb79
+X-Lovable-Edit-ID: edt-e69117d1-02a2-4d2c-b77a-37b1ab05124c

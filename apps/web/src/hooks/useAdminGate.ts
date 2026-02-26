@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'rxfin_admin_token';
+const STORAGE_EXPIRES_KEY = 'rxfin_admin_expires';
 
 function parseGateResponse(data: any) {
   if (!data) return data;
@@ -10,6 +11,20 @@ function parseGateResponse(data: any) {
     try { return JSON.parse(data); } catch { return data; }
   }
   return data;
+}
+
+/** Check if a stored token looks non-expired (client-side pre-check) */
+function hasNonExpiredToken(): string | null {
+  const token = sessionStorage.getItem(STORAGE_KEY);
+  if (!token) return null;
+  const expires = sessionStorage.getItem(STORAGE_EXPIRES_KEY);
+  if (expires && new Date(expires).getTime() < Date.now()) {
+    console.log('[AdminGate] Token expired locally, clearing');
+    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+    return null;
+  }
+  return token;
 }
 
 interface AdminGateState {
@@ -22,25 +37,58 @@ interface AdminGateState {
   error: string | null;
 }
 
+// Module-level flag survives remounts within same page lifecycle
+let _moduleInitialized = false;
+let _moduleAuthenticated = false;
+
 export function useAdminGate() {
   const navigate = useNavigate();
   const [state, setState] = useState<AdminGateState>(() => {
-    // Check if we already have a token on initial render
-    const existingToken = sessionStorage.getItem(STORAGE_KEY);
+    const existingToken = hasNonExpiredToken();
+    console.log('[AdminGate] Init state — token found:', !!existingToken, 'moduleAuth:', _moduleAuthenticated);
+
+    // If we already authenticated in this page session, skip loading
+    if (_moduleAuthenticated && existingToken) {
+      return {
+        isLoading: false,
+        isAdmin: true,
+        isAuthenticated: true,
+        needsMfa: false,
+        mfaEnrolled: false,
+        session: existingToken,
+        error: null,
+      };
+    }
+
     return {
       isLoading: true,
       isAdmin: true,
-      isAuthenticated: false,
+      isAuthenticated: !!existingToken && _moduleAuthenticated,
       needsMfa: false,
       mfaEnrolled: false,
       session: existingToken,
       error: null,
     };
   });
-  const hasInitializedRef = useRef(false);
   const isLoginInProgressRef = useRef(false);
 
   const login = useCallback(async () => {
+    // Before calling login, re-check storage — another call may have saved a token
+    const freshToken = hasNonExpiredToken();
+    if (freshToken && _moduleAuthenticated) {
+      console.log('[AdminGate] login() called but token already exists & authenticated, skipping');
+      setState({
+        isLoading: false,
+        isAuthenticated: true,
+        needsMfa: false,
+        mfaEnrolled: false,
+        session: freshToken,
+        isAdmin: true,
+        error: null,
+      });
+      return;
+    }
+
     if (isLoginInProgressRef.current) {
       console.log('[AdminGate] login already in progress, skipping');
       return;
@@ -50,12 +98,13 @@ export function useAdminGate() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Force-read the current session to ensure we have the latest JWT
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       console.log('[AdminGate] Current session present:', !!sessionData?.session);
-      
+
       if (sessionError || !sessionData.session?.access_token) {
         sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+        _moduleAuthenticated = false;
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -76,7 +125,7 @@ export function useAdminGate() {
       if (error) throw error;
 
       const data = parseGateResponse(rawData);
-      console.log('[AdminGate] Parsed response:', JSON.stringify(data), typeof data);
+      console.log('[AdminGate] Parsed response:', JSON.stringify(data));
 
       if (data?.code === 'MFA_REQUIRED') {
         console.log('[AdminGate] MFA required, enrolled:', !!data.mfa_enrolled);
@@ -92,6 +141,7 @@ export function useAdminGate() {
 
       if (data?.code === 'NOT_ADMIN') {
         console.log('[AdminGate] User is not admin');
+        _moduleAuthenticated = false;
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -103,6 +153,10 @@ export function useAdminGate() {
       if (data?.code === 'SUCCESS' && data?.session_token) {
         console.log('[AdminGate] SUCCESS! Saving token and marking authenticated');
         sessionStorage.setItem(STORAGE_KEY, data.session_token);
+        if (data.expires_at) {
+          sessionStorage.setItem(STORAGE_EXPIRES_KEY, data.expires_at);
+        }
+        _moduleAuthenticated = true;
         setState({
           isLoading: false,
           isAuthenticated: true,
@@ -138,6 +192,9 @@ export function useAdminGate() {
       // ignore logout errors
     }
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+    _moduleAuthenticated = false;
+    _moduleInitialized = false;
     setState({
       isLoading: false,
       isAdmin: true,
@@ -152,22 +209,40 @@ export function useAdminGate() {
 
   // On mount: validate existing token or attempt login
   useEffect(() => {
-    if (hasInitializedRef.current) {
-      console.log('[AdminGate] Already initialized, skipping init');
-      return;
-    }
+    // Skip if already authenticated (handles remounts after MFA)
     if (state.isAuthenticated) {
       console.log('[AdminGate] Already authenticated, skipping init');
+      _moduleInitialized = true;
       return;
     }
 
-    hasInitializedRef.current = true;
+    // Skip if this module-level init already ran (survives remounts)
+    if (_moduleInitialized && _moduleAuthenticated) {
+      console.log('[AdminGate] Module already initialized & authenticated, restoring');
+      const token = hasNonExpiredToken();
+      if (token) {
+        setState({
+          isLoading: false,
+          isAuthenticated: true,
+          needsMfa: false,
+          mfaEnrolled: false,
+          session: token,
+          isAdmin: true,
+          error: null,
+        });
+        return;
+      }
+    }
+
+    _moduleInitialized = true;
 
     const init = async () => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !sessionData.session?.access_token) {
         console.log('[AdminGate] No Supabase session, redirecting to login');
         sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+        _moduleAuthenticated = false;
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -180,8 +255,8 @@ export function useAdminGate() {
         return;
       }
 
-      const existingToken = sessionStorage.getItem(STORAGE_KEY);
-      console.log('[AdminGate] Token found:', !!existingToken);
+      const existingToken = hasNonExpiredToken();
+      console.log('[AdminGate] Init — token found:', !!existingToken);
 
       if (existingToken) {
         try {
@@ -194,6 +269,7 @@ export function useAdminGate() {
 
           if (!error && data?.valid) {
             console.log('[AdminGate] Token valid, marking authenticated');
+            _moduleAuthenticated = true;
             setState({
               isLoading: false,
               isAuthenticated: true,
@@ -210,6 +286,7 @@ export function useAdminGate() {
         }
         console.log('[AdminGate] Token invalid, removing');
         sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
       }
 
       await login();
