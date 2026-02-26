@@ -87,6 +87,15 @@ import UpdatePassword from "./pages/UpdatePassword";
 import VerificarEmail from "./pages/VerificarEmail";
 // Admin routes — lazy loaded so non-admin users never download admin code
 const Admin = lazy(() => import('./pages/admin/Admin'));
+const AdminUsuarios = lazy(() => import('./pages/admin/AdminUsuarios'));
+const AdminPlanos = lazy(() => import('./pages/admin/AdminPlanos'));
+const AdminPaginas = lazy(() => import('./pages/admin/AdminPaginas'));
+const AdminEmails = lazy(() => import('./pages/admin/AdminEmails'));
+const AdminTermos = lazy(() => import('./pages/admin/AdminTermos'));
+const AdminNotificacoes = lazy(() => import('./pages/admin/AdminNotificacoes'));
+const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
+const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
+const AdminHealthCheck = lazy(() => import('./pages/admin/AdminHealthCheck'));
 const FipeSync = lazy(() => import('./pages/admin/FipeSync'));
 const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
@@ -219,16 +228,25 @@ const App = () => (
                   {/* Perfil route now redirected above */}
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/crm" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminCRM /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/crm/automations" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminSecureLayout>} />
-                   <Route path="/admin/simuladores" element={<Navigate to="/admin?tab=simuladores" replace />} />
-                   <Route path="/admin/audit" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
-                   {/* Legacy route redirect */}
-                   <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
+                  <Route path="/admin/usuarios" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminUsuarios /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/planos" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPlanos /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/paginas" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPaginas /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/emails" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminEmails /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/termos" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminTermos /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/notificacoes" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminNotificacoes /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/deploy" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDeploy /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminHealthCheck /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/crm" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminCRM /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/crm/automations" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/audit" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
+                  {/* Legacy redirects */}
+                  <Route path="/admin/simuladores" element={<Navigate to="/admin/paginas" replace />} />
+                  <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
                   {/* Welcome Pages - Post-purchase */}
                   <Route path="/bem-vindo/:plan" element={<BemVindo />} />
                   {/* Legal Pages - Public */}

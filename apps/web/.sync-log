@@ -1,7 +1,5 @@
-2026-02-26T03:16:30Z | 424b6771dacabfd6409b1734b768f1d1ec92e606 | Improve admin MFA flow handling
+2026-02-26T03:24:38Z | df242ffa697bf54de1aa51fff1e7a45b4c12ae13 | Move admin pages wrappers
 
-Refactor Admin MFA login flow to ensure proper propagation after verification:
-- AdminMfaEnrollment: wait for auth state changes after MFA verification before proceeding, replacing prior immediate continuation with guarded wait and event-based resolution.
-- useAdminGate: enhanced initialization to respect existing tokens, added robust parsing and logging, and improved flow for validate/login paths with clearer state transitions and debugging output.
+Refactored admin: added new page wrappers for Planos, Paginas, Emails, Termos, Notificacoes, Deploy, Rollbacks, Health; updated AdminEmails/Planos/Notificacoes etc to use AdminPageHeader and respective Tabs. Rewired App routes to point to new pages and replaced Admin horizontal tabs with vertical sidebar items. Added AdminUsuarios route integration and simplified Admin.tsx redirect logic. Updated AdminSidebar to include expanded menu under theming groups.
 
-X-Lovable-Edit-ID: edt-1b3726ae-2e1e-4c54-ae4e-8d251c0082f8
+X-Lovable-Edit-ID: edt-7d8a2c5c-138e-4ff3-9916-65ea332299b9

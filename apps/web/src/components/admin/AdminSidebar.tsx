@@ -12,6 +12,14 @@ import {
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
+  Crown,
+  FileText,
+  Mail,
+  Scale,
+  Bell,
+  Rocket,
+  RotateCcw,
+  HeartPulse,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -28,13 +36,19 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   // Principal
-  { label: 'Painel Geral', href: '/admin', icon: LayoutDashboard, group: 'Principal' },
-  { label: 'Usuários', href: '/admin?tab=usuarios', icon: Users, group: 'Principal' },
+  { label: 'Usuários', href: '/admin/usuarios', icon: Users, group: 'Principal' },
+  { label: 'Planos', href: '/admin/planos', icon: Crown, group: 'Principal' },
 
   // Negócio
   { label: 'CRM', href: '/admin/crm', icon: Kanban, group: 'Negócio' },
   { label: 'Automações', href: '/admin/crm/automations', icon: Zap, group: 'Negócio' },
   { label: 'Marketing', href: '/admin/marketing', icon: Megaphone, group: 'Negócio' },
+  { label: 'E-mails', href: '/admin/emails', icon: Mail, group: 'Negócio' },
+  { label: 'Notificações', href: '/admin/notificacoes', icon: Bell, group: 'Negócio' },
+
+  // Conteúdo
+  { label: 'Páginas', href: '/admin/paginas', icon: FileText, group: 'Conteúdo' },
+  { label: 'Termos', href: '/admin/termos', icon: Scale, group: 'Conteúdo' },
 
   // IA
   { label: 'Métricas IA', href: '/admin/ai-metrics', icon: Brain, group: 'IA' },
@@ -42,6 +56,9 @@ const NAV_ITEMS: NavItem[] = [
 
   // Sistema
   { label: 'FIPE Sync', href: '/admin/fipe-sync', icon: Car, group: 'Sistema' },
+  { label: 'Deploy', href: '/admin/deploy', icon: Rocket, group: 'Sistema' },
+  { label: 'Rollbacks', href: '/admin/rollbacks', icon: RotateCcw, group: 'Sistema' },
+  { label: 'Health Check', href: '/admin/health', icon: HeartPulse, group: 'Sistema' },
   { label: 'Auditoria', href: '/admin/audit', icon: ShieldCheck, group: 'Sistema' },
 ];
 
@@ -50,18 +67,15 @@ export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const isActive = (href: string) => {
-    // Exact match for /admin (no sub-path)
     if (href === '/admin') {
       return location.pathname === '/admin' && !location.search;
     }
-    // Tab match (e.g. /admin?tab=usuarios)
     if (href.includes('?tab=')) {
       const tabMatch = href.match(/\?tab=(\w+)/);
       if (tabMatch) {
         return location.pathname === '/admin' && location.search.includes(`tab=${tabMatch[1]}`);
       }
     }
-    // Path prefix match
     return location.pathname === href || location.pathname.startsWith(href + '/');
   };
 
