@@ -432,6 +432,8 @@ export function RaioXChat() {
                       <RaioXResultCard
                         formato={msg.raioXData.formato}
                         dados={msg.raioXData.dados}
+                        userId={user?.id}
+                        sessionId={sessionId}
                         onRegisterEvent={registerEvent}
                         onSendMessage={sendMessage}
                       />

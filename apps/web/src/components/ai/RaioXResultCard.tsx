@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RaioXResultCardProps {
   formato: 'concentracao' | 'top_ofensor' | 'frequencia' | 'sem_dados';
@@ -17,6 +18,8 @@ interface RaioXResultCardProps {
     month: string;
     gerado_em: string;
   };
+  userId?: string;
+  sessionId?: string | null;
   onRegisterEvent?: (evento: string) => void;
   onSendMessage?: (msg: string) => void;
 }
@@ -35,16 +38,38 @@ function formatMonth(ym: string): string {
   return `${MONTH_NAMES[idx] ?? month} ${year}`;
 }
 
-export function RaioXResultCard({ formato, dados, onRegisterEvent, onSendMessage }: RaioXResultCardProps) {
+export function RaioXResultCard({ formato, dados, userId, sessionId, onRegisterEvent, onSendMessage }: RaioXResultCardProps) {
   const navigate = useNavigate();
-  const hasRegisteredEvent = useRef(false);
+  const hasTrackedRef = useRef(false);
 
   useEffect(() => {
-    if (hasRegisteredEvent.current) return;
+    if (!userId || !sessionId || hasTrackedRef.current) return;
     if (!dados || !formato || formato === 'sem_dados') return;
-    hasRegisteredEvent.current = true;
+    hasTrackedRef.current = true;
+
+    const checkAndInsert = async () => {
+      const { data: existing } = await supabase
+        .from('ai_onboarding_events')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('session_id', sessionId)
+        .eq('event_type', 'raio_x_generated')
+        .gte('created_at', new Date(Date.now() - 60000).toISOString())
+        .limit(1);
+
+      if (!existing?.length) {
+        await supabase.from('ai_onboarding_events').insert({
+          user_id: userId,
+          session_id: sessionId,
+          event_type: 'raio_x_generated',
+          metadata: { source: 'raio_x_result', timestamp: new Date().toISOString() },
+        });
+      }
+    };
+
+    checkAndInsert();
     onRegisterEvent?.('raio_x_generated');
-  }, []);
+  }, [userId, sessionId]);
 
   // sem_dados
   if (formato === 'sem_dados') {

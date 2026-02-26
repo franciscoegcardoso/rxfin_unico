@@ -1,5 +1,9 @@
-2026-02-26T02:23:00Z | 11104362d635d6bd32befb70437777cdd597f9b0 | Add onboarding event guard
+2026-02-26T02:24:09Z | 2b398900588198a562c94fb971d94cc8bbb01d4e | Register onboarding guard
 
-Register onboarding_started once per session in RaioXChat by adding a per-session guard (useRef) and a useEffect, persisting the event to ai_onboarding_events only once.
+Add single-run onboarding and generated-event dedup in RaioX chat
+- RaioXChat passes userId/sessionId to RaioXResultCard
+- RaioXResultCard now logs raio_x_generated once per session with a 60s check
+- Uses useRef guard to prevent multiple executions and persists via Supabase
+- Keeps existing onRegisterEvent callback integration
 
-X-Lovable-Edit-ID: edt-1f8c3215-20f2-467f-acc5-b4612dc767c6
+X-Lovable-Edit-ID: edt-c08a0793-61c7-416d-869b-1a25159e4ee7
