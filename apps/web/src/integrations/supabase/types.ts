@@ -1168,6 +1168,313 @@ export type Database = {
           },
         ]
       }
+      crm_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          performed_by: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          performed_by?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      crm_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          is_pinned: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_pinned?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_pinned?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      crm_status_history: {
+        Row: {
+          change_reason: string | null
+          changed_by: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["crm_status_enum"] | null
+          id: string
+          metadata: Json | null
+          to_status: Database["public"]["Enums"]["crm_status_enum"]
+          user_id: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["crm_status_enum"] | null
+          id?: string
+          metadata?: Json | null
+          to_status: Database["public"]["Enums"]["crm_status_enum"]
+          user_id: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["crm_status_enum"] | null
+          id?: string
+          metadata?: Json | null
+          to_status?: Database["public"]["Enums"]["crm_status_enum"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_status_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_status_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_status_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      crm_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string | null
+          status: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       default_expense_items: {
         Row: {
           category_id: string
@@ -1507,6 +1814,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_recipients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
             referencedColumns: ["id"]
           },
           {
@@ -2496,6 +2810,13 @@ export type Database = {
             foreignKeyName: "guest_invitations_guest_user_id_fkey"
             columns: ["guest_user_id"]
             isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_invitations_guest_user_id_fkey"
+            columns: ["guest_user_id"]
+            isOneToOne: false
             referencedRelation: "v_user_plan"
             referencedColumns: ["user_id"]
           },
@@ -2510,6 +2831,13 @@ export type Database = {
             foreignKeyName: "guest_invitations_previous_principal_id_fkey"
             columns: ["previous_principal_id"]
             isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_invitations_previous_principal_id_fkey"
+            columns: ["previous_principal_id"]
+            isOneToOne: false
             referencedRelation: "v_user_plan"
             referencedColumns: ["user_id"]
           },
@@ -2518,6 +2846,13 @@ export type Database = {
             columns: ["principal_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guest_invitations_principal_user_id_fkey"
+            columns: ["principal_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
             referencedColumns: ["id"]
           },
           {
@@ -4051,15 +4386,25 @@ export type Database = {
       profiles: {
         Row: {
           account_type: string
+          ad_click_id: string | null
           admin_notes: string | null
           birth_date: string | null
           cpf_encrypted: string | null
           created_at: string
+          crm_assigned_to: string | null
+          crm_score: number | null
+          crm_status: Database["public"]["Enums"]["crm_status_enum"]
+          crm_status_changed_at: string | null
+          crm_status_updated_at: string | null
+          crm_tags: string[] | null
           deleted_at: string | null
           deleted_by: string | null
           email: string | null
+          fbclid: string | null
           finance_mode: string | null
+          first_conversion_event: string | null
           full_name: string | null
+          gclid: string | null
           id: string
           invitation_status: string | null
           is_active: boolean
@@ -4076,22 +4421,38 @@ export type Database = {
           push_notifications_enabled: boolean | null
           push_platform: string | null
           push_tokens: string[] | null
+          referral_source: string | null
           status: string
           theme_preference: string | null
           updated_at: string
           user_type: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           account_type?: string
+          ad_click_id?: string | null
           admin_notes?: string | null
           birth_date?: string | null
           cpf_encrypted?: string | null
           created_at?: string
+          crm_assigned_to?: string | null
+          crm_score?: number | null
+          crm_status?: Database["public"]["Enums"]["crm_status_enum"]
+          crm_status_changed_at?: string | null
+          crm_status_updated_at?: string | null
+          crm_tags?: string[] | null
           deleted_at?: string | null
           deleted_by?: string | null
           email?: string | null
+          fbclid?: string | null
           finance_mode?: string | null
+          first_conversion_event?: string | null
           full_name?: string | null
+          gclid?: string | null
           id: string
           invitation_status?: string | null
           is_active?: boolean
@@ -4108,22 +4469,38 @@ export type Database = {
           push_notifications_enabled?: boolean | null
           push_platform?: string | null
           push_tokens?: string[] | null
+          referral_source?: string | null
           status?: string
           theme_preference?: string | null
           updated_at?: string
           user_type?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           account_type?: string
+          ad_click_id?: string | null
           admin_notes?: string | null
           birth_date?: string | null
           cpf_encrypted?: string | null
           created_at?: string
+          crm_assigned_to?: string | null
+          crm_score?: number | null
+          crm_status?: Database["public"]["Enums"]["crm_status_enum"]
+          crm_status_changed_at?: string | null
+          crm_status_updated_at?: string | null
+          crm_tags?: string[] | null
           deleted_at?: string | null
           deleted_by?: string | null
           email?: string | null
+          fbclid?: string | null
           finance_mode?: string | null
+          first_conversion_event?: string | null
           full_name?: string | null
+          gclid?: string | null
           id?: string
           invitation_status?: string | null
           is_active?: boolean
@@ -4140,17 +4517,51 @@ export type Database = {
           push_notifications_enabled?: boolean | null
           push_platform?: string | null
           push_tokens?: string[] | null
+          referral_source?: string | null
           status?: string
           theme_preference?: string | null
           updated_at?: string
           user_type?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_crm_assigned_to_fkey"
+            columns: ["crm_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_crm_assigned_to_fkey"
+            columns: ["crm_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_crm_assigned_to_fkey"
+            columns: ["crm_assigned_to"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "profiles_principal_user_id_fkey"
             columns: ["principal_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_principal_user_id_fkey"
+            columns: ["principal_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
             referencedColumns: ["id"]
           },
           {
@@ -5832,6 +6243,37 @@ export type Database = {
           },
         ]
       }
+      v_crm_kanban: {
+        Row: {
+          account_count: number | null
+          admin_notes: string | null
+          computed_score: number | null
+          created_at: string | null
+          crm_score: number | null
+          crm_status: Database["public"]["Enums"]["crm_status_enum"] | null
+          crm_status_updated_at: string | null
+          days_since_login: number | null
+          days_since_signup: number | null
+          email: string | null
+          fbclid: string | null
+          full_name: string | null
+          gclid: string | null
+          id: string | null
+          last_login_at: string | null
+          marketing_opt_in: boolean | null
+          onboarding_completed: boolean | null
+          phone: string | null
+          plan_expires_at: string | null
+          plan_name: string | null
+          plan_slug: string | null
+          referral_source: string | null
+          total_balance: number | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Relationships: []
+      }
       v_edge_function_security: {
         Row: {
           category: string | null
@@ -5999,6 +6441,7 @@ export type Database = {
           variacao_percentual: number
         }[]
       }
+      calculate_crm_score: { Args: { p_user_id: string }; Returns: number }
       check_ai_rate_limit: {
         Args: { p_function_name: string; p_tokens?: number; p_user_id: string }
         Returns: Json
@@ -6371,6 +6814,7 @@ export type Database = {
       populate_phase3_chunk: { Args: { p_limit?: number }; Returns: Json }
       populate_phase3_queue: { Args: { p_limit?: number }; Returns: Json }
       process_email_queue: { Args: never; Returns: number }
+      refresh_all_crm_scores: { Args: never; Returns: undefined }
       register_device_token: {
         Args: {
           _app_version?: string
@@ -6414,6 +6858,16 @@ export type Database = {
     }
     Enums: {
       app_role: "owner" | "shared_user" | "driver" | "admin"
+      crm_status_enum:
+        | "lead"
+        | "trial"
+        | "onboarding"
+        | "engajado"
+        | "ativo"
+        | "power_user"
+        | "risco"
+        | "churned"
+        | "reconquistado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -6542,6 +6996,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["owner", "shared_user", "driver", "admin"],
+      crm_status_enum: [
+        "lead",
+        "trial",
+        "onboarding",
+        "engajado",
+        "ativo",
+        "power_user",
+        "risco",
+        "churned",
+        "reconquistado",
+      ],
     },
   },
 } as const

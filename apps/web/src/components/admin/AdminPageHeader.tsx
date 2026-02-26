@@ -11,6 +11,7 @@ interface AdminNavItem {
 }
 
 const navItems: AdminNavItem[] = [
+  { label: 'CRM', href: '/admin/crm' },
   { label: 'Marketing', href: '/admin/marketing' },
   { label: 'AI Métricas', href: '/admin/ai-metrics' },
   { label: 'AI Feedback', href: '/admin/ai-feedback' },

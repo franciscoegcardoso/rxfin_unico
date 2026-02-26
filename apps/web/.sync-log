@@ -1,5 +1,12 @@
-2026-02-26T00:44:35Z | 4394fb423e5f69de82c82002de08293b57ea52e5 | Add admin AI feedback page
+2026-02-26T01:07:03Z | 5fdac0ac2a9188bb65abe9c2f74a60484d0b1c51 | Add admin CRM Kanban page
 
-Implements /admin/ai-feedback with full admin access control, enhanced UI including summary cards, filters (status, SLA, search), joined user/profile and message data, actionable dropdowns for feedback lifecycle (start review, resolve with resolution notes and optional unlock, dismiss), and relative dates. Includes dismissal confirmation dialog, loading states, and improved table rendering.
+Implemented new /admin/crm Kanban board for CRM management:
+- Built AdminCRM page with 8 status columns, Kanban layout, search, and per-card details
+- Fetches data from v_crm_kanban via supabase and groups by crm_status
+- Card displays: name, email, plan badge, score, balance or signup date, last note pin, tags, days since last login
+- Horizontal scroll board with vertical scroll per column
+- Admin route and nav updated; CRM added to AdminPageHeader; App routes wired
+- Header shows total users; 5-min auto-refresh scaffold in place
+- Styling and icons aligned with existing UI components
 
-X-Lovable-Edit-ID: edt-7152bf53-76f8-4bf5-80ff-7d7452932476
+X-Lovable-Edit-ID: edt-ffefc258-fa7b-4225-bd85-d6a033f45b3c
