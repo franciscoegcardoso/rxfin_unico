@@ -2620,6 +2620,60 @@ export type Database = {
         }
         Relationships: []
       }
+      fipe_catalog_health_log: {
+        Row: {
+          anos_absurdos: number
+          anos_faltando_catalog: number
+          campos_nulos_criticos: number
+          correcao_detalhes: Json | null
+          correcoes_aplicadas: number
+          fipe_codes_com_hifen: number
+          id: string
+          metadados_inconsistentes: number
+          orfaos_no_historico: number
+          run_at: string | null
+          status: string | null
+          total_issues: number | null
+          trigger_context: string | null
+          triggered_by: string
+          year_id_inconsistentes: number
+        }
+        Insert: {
+          anos_absurdos?: number
+          anos_faltando_catalog?: number
+          campos_nulos_criticos?: number
+          correcao_detalhes?: Json | null
+          correcoes_aplicadas?: number
+          fipe_codes_com_hifen?: number
+          id?: string
+          metadados_inconsistentes?: number
+          orfaos_no_historico?: number
+          run_at?: string | null
+          status?: string | null
+          total_issues?: number | null
+          trigger_context?: string | null
+          triggered_by?: string
+          year_id_inconsistentes?: number
+        }
+        Update: {
+          anos_absurdos?: number
+          anos_faltando_catalog?: number
+          campos_nulos_criticos?: number
+          correcao_detalhes?: Json | null
+          correcoes_aplicadas?: number
+          fipe_codes_com_hifen?: number
+          id?: string
+          metadados_inconsistentes?: number
+          orfaos_no_historico?: number
+          run_at?: string | null
+          status?: string | null
+          total_issues?: number | null
+          trigger_context?: string | null
+          triggered_by?: string
+          year_id_inconsistentes?: number
+        }
+        Relationships: []
+      }
       fipe_error_log: {
         Row: {
           brand_id: number | null
@@ -6630,6 +6684,79 @@ export type Database = {
           },
         ]
       }
+      fipe_catalog_health: {
+        Row: {
+          anos_absurdos: number | null
+          anos_faltando_catalog: number | null
+          campos_nulos_criticos: number | null
+          checked_at: string | null
+          fipe_codes_com_hifen: number | null
+          metadados_inconsistentes: number | null
+          orfaos_no_historico: number | null
+          st_absurdos: string | null
+          st_anos_faltando: string | null
+          st_hifen: string | null
+          st_metadados: string | null
+          st_nulos: string | null
+          st_orfaos: string | null
+          st_year_id: string | null
+          status_geral: string | null
+          total_issues: number | null
+          year_id_inconsistentes: number | null
+        }
+        Relationships: []
+      }
+      fipe_catalog_health_history: {
+        Row: {
+          anos_absurdos: number | null
+          anos_faltando_catalog: number | null
+          campos_nulos_criticos: number | null
+          correcao_detalhes: Json | null
+          correcoes_aplicadas: number | null
+          fipe_codes_com_hifen: number | null
+          metadados_inconsistentes: number | null
+          orfaos_no_historico: number | null
+          run_at: string | null
+          status: string | null
+          total_issues: number | null
+          trigger_context: string | null
+          triggered_by: string | null
+          year_id_inconsistentes: number | null
+        }
+        Insert: {
+          anos_absurdos?: number | null
+          anos_faltando_catalog?: number | null
+          campos_nulos_criticos?: number | null
+          correcao_detalhes?: Json | null
+          correcoes_aplicadas?: number | null
+          fipe_codes_com_hifen?: number | null
+          metadados_inconsistentes?: number | null
+          orfaos_no_historico?: number | null
+          run_at?: string | null
+          status?: string | null
+          total_issues?: number | null
+          trigger_context?: string | null
+          triggered_by?: string | null
+          year_id_inconsistentes?: number | null
+        }
+        Update: {
+          anos_absurdos?: number | null
+          anos_faltando_catalog?: number | null
+          campos_nulos_criticos?: number | null
+          correcao_detalhes?: Json | null
+          correcoes_aplicadas?: number | null
+          fipe_codes_com_hifen?: number | null
+          metadados_inconsistentes?: number | null
+          orfaos_no_historico?: number | null
+          run_at?: string | null
+          status?: string | null
+          total_issues?: number | null
+          trigger_context?: string | null
+          triggered_by?: string | null
+          year_id_inconsistentes?: number | null
+        }
+        Relationships: []
+      }
       fipe_error_summary: {
         Row: {
           error_type: string | null
@@ -7031,6 +7158,7 @@ export type Database = {
           year_val: number
         }[]
       }
+      get_fipe_catalog_health_summary: { Args: never; Returns: Json }
       get_fipe_models: {
         Args: { p_brand_id: number; p_vehicle_type: number }
         Returns: {
@@ -7306,6 +7434,19 @@ export type Database = {
       restore_from_trash: { Args: { _trash_id: string }; Returns: Json }
       revoke_admin_session: { Args: { _token: string }; Returns: Json }
       run_crm_maintenance: { Args: never; Returns: Json }
+      run_fipe_catalog_health_check: {
+        Args: {
+          p_autocorrect?: boolean
+          p_context?: string
+          p_triggered_by?: string
+        }
+        Returns: {
+          check_name: string
+          corrected: number
+          count: number
+          status: string
+        }[]
+      }
       save_user_cpf: {
         Args: { p_cpf: string; p_user_id: string }
         Returns: undefined

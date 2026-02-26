@@ -1,9 +1,9 @@
-2026-02-26T22:00:06Z | 65e2a2b647c6039d25ac3494314fe4f000ffa443 | Corrigir fuel label mapeamento
+2026-02-26T22:32:56Z | e7036e2f00e49f6a241338aa5ef866633ed05f44 | Implement FIPE health admin page
 
-Ajustei o mapeamento de fuel_type para o label correto no FIPE:
-- Incluí entradas para 4: Gas, 5: Flex, 6: Elétrico/Híbrido
-- Atualizei DB_FUEL_NAMES e DB_FUEL_ACRONYMS para evitar uso indevido de índice
+Adds FIPE health dashboard page, wires routes and sidebar, and fixes data model mappings:
+- Introduces FipeCatalogHealth page with health summary, logs, checks, sparkline, and history table
+- Integrates route /admin/fipe-health and sidebar item FIPE Saúde
+- Adjusts data types for health log to match backend fields
+- Updates App.tsx and AdminSidebar imports/navigation accordingly
 
-Impacto: dropdown AnoModelo de veículos agora exibe o rótulo correto (ex.: 2021 Flex).
-
-X-Lovable-Edit-ID: edt-8147bb9c-38d4-458c-be1b-f6fd0a992152
+X-Lovable-Edit-ID: edt-f11a8643-614b-4344-883d-fe6f9b04e8ea

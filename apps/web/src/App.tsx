@@ -97,6 +97,7 @@ const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
 const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
 const AdminHealthCheck = lazy(() => import('./pages/admin/AdminHealthCheck'));
 const FipeSync = lazy(() => import('./pages/admin/FipeSync'));
+const FipeCatalogHealth = lazy(() => import('./pages/admin/FipeCatalogHealth'));
 const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
 const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
@@ -242,6 +243,7 @@ const App = () => (
                   <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminHealthCheck /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/fipe-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeCatalogHealth /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />

@@ -22,6 +22,7 @@ import {
   HeartPulse,
   Handshake,
   Eye,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -61,6 +62,7 @@ const NAV_ITEMS: NavItem[] = [
   // Sistema
   { label: 'Impersonar', href: '/admin/impersonate', icon: Eye, group: 'Sistema' },
   { label: 'FIPE Sync', href: '/admin/fipe-sync', icon: Car, group: 'Sistema' },
+  { label: 'FIPE Saúde', href: '/admin/fipe-health', icon: Activity, group: 'Sistema' },
   { label: 'Deploy', href: '/admin/deploy', icon: Rocket, group: 'Sistema' },
   { label: 'Rollbacks', href: '/admin/rollbacks', icon: RotateCcw, group: 'Sistema' },
   { label: 'Health Check', href: '/admin/health', icon: HeartPulse, group: 'Sistema' },
