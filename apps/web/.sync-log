@@ -1,11 +1,5 @@
-2026-02-26T01:08:13Z | b932cafceabf534a392237f0ce9dc6380365caf7 | Add drag-and-drop Kanban
+2026-02-26T01:10:48Z | b7fc4dc946c7d3340b9d053e1d8570b8f92cf308 | Adicionou Ver Detalhes nos cards
 
-Implements DnD for /admin/crm using @dnd-kit/core and @dnd-kit/sortable:
-- draggable user cards across 8 columns
-- optimistic UI updates and server update on drop
-- error rollback with toast on failure
-- visual cues: drag overlay, opacity, shadow, and destination highlight
-- column droppable handling and constraints (no intra-column moves)
-- maintain existing structure and protections (Admin route)
+Implementa botão Ver Detalhes em cada card do Kanban na página /admin/crm e integra CrmUserDetailSheet para exibir modal com informações completas do usuário, incluindo edição de status, tags, métricas, origem, timeline e notas.
 
-X-Lovable-Edit-ID: edt-15567ee5-e2fe-4790-a45f-344021136ab2
+X-Lovable-Edit-ID: edt-33a9261b-cc1e-493d-93d4-3af40be21878

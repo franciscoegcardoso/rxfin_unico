@@ -1,31 +1,25 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import {
   UserPlus, Clock, Compass, CheckCircle, Star,
-  AlertTriangle, XCircle, RefreshCw, Search,
+  AlertTriangle, XCircle, RefreshCw, Search, Eye,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DragOverEvent,
-  useDroppable,
+  DndContext, DragOverlay, closestCenter, PointerSensor,
+  useSensor, useSensors,
+  type DragStartEvent, type DragEndEvent, type DragOverEvent,
+  useDroppable, useDraggable,
 } from '@dnd-kit/core';
-import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
+import { CrmUserDetailSheet } from '@/components/admin/CrmUserDetailSheet';
 
 /* ── Column definitions ── */
 const COLUMNS = [
@@ -71,6 +65,8 @@ export default function AdminCRM() {
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<CrmUser | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { toast } = useToast();
 
   const sensors = useSensors(
@@ -111,43 +107,17 @@ export default function AdminCRM() {
 
   const activeUser = useMemo(() => users.find(u => u.id === activeId) ?? null, [users, activeId]);
 
-  /* ── DnD handlers ── */
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const overId = event.over?.id as string | undefined;
-    // over id is a column status
-    if (overId && COLUMN_LABEL[overId]) {
-      setOverColumnId(overId);
-    } else {
-      setOverColumnId(null);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    setActiveId(null);
-    setOverColumnId(null);
-
-    const { active, over } = event;
-    if (!over) return;
-
-    const userId = active.id as string;
-    const newStatus = over.id as string;
-
-    // Only accept drops on columns
-    if (!COLUMN_LABEL[newStatus]) return;
-
+  /* ── Status change (shared by DnD and sheet) ── */
+  const handleStatusChange = useCallback(async (userId: string, newStatus: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-
     const oldStatus = user.crm_status ?? 'lead';
     if (oldStatus === newStatus) return;
 
-    // Optimistic update
     const snapshot = [...users];
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, crm_status: newStatus } : u));
+    // Also update selectedUser if open
+    setSelectedUser(prev => prev?.id === userId ? { ...prev, crm_status: newStatus } : prev);
 
     const { error } = await supabase
       .from('profiles')
@@ -156,16 +126,45 @@ export default function AdminCRM() {
 
     if (error) {
       setUsers(snapshot);
+      setSelectedUser(prev => prev?.id === userId ? { ...prev, crm_status: oldStatus } : prev);
       toast({ title: 'Erro ao atualizar status', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: `Status de ${user.full_name ?? 'usuário'} atualizado para ${COLUMN_LABEL[newStatus]}` });
     }
-  };
+  }, [users, toast]);
 
-  const handleDragCancel = () => {
+  /* ── Tags change ── */
+  const handleTagsChange = useCallback(async (userId: string, newTags: string[]) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, crm_tags: newTags } : u));
+    setSelectedUser(prev => prev?.id === userId ? { ...prev, crm_tags: newTags } : prev);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ crm_tags: newTags } as any)
+      .eq('id', userId);
+
+    if (error) {
+      toast({ title: 'Erro ao atualizar tags', variant: 'destructive' });
+      fetchData(); // revert
+    }
+  }, [toast, fetchData]);
+
+  /* ── DnD handlers ── */
+  const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as string);
+  const handleDragOver = (event: DragOverEvent) => {
+    const overId = event.over?.id as string | undefined;
+    setOverColumnId(overId && COLUMN_LABEL[overId] ? overId : null);
+  };
+  const handleDragEnd = async (event: DragEndEvent) => {
     setActiveId(null);
     setOverColumnId(null);
+    const { active, over } = event;
+    if (!over || !COLUMN_LABEL[over.id as string]) return;
+    await handleStatusChange(active.id as string, over.id as string);
   };
+  const handleDragCancel = () => { setActiveId(null); setOverColumnId(null); };
+
+  const openDetail = (u: CrmUser) => { setSelectedUser(u); setSheetOpen(true); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,42 +175,19 @@ export default function AdminCRM() {
           actions={
             <div className="relative w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-9"
-              />
+              <Input placeholder="Buscar por nome ou email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
           }
         />
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
           <div className="overflow-x-auto pb-4">
             <div className="flex gap-3 min-w-max">
-              {COLUMNS.map(col => {
-                const items = grouped[col.status] ?? [];
-                return (
-                  <KanbanColumn
-                    key={col.status}
-                    column={col}
-                    items={items}
-                    loading={loading}
-                    isOver={overColumnId === col.status}
-                    activeId={activeId}
-                  />
-                );
-              })}
+              {COLUMNS.map(col => (
+                <KanbanColumn key={col.status} column={col} items={grouped[col.status] ?? []} loading={loading} isOver={overColumnId === col.status} activeId={activeId} onOpenDetail={openDetail} />
+              ))}
             </div>
           </div>
-
           <DragOverlay dropAnimation={null}>
             {activeUser ? (
               <div className="w-[264px] rotate-2 scale-105">
@@ -221,57 +197,42 @@ export default function AdminCRM() {
           </DragOverlay>
         </DndContext>
       </div>
+
+      <CrmUserDetailSheet
+        user={selectedUser}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onStatusChange={handleStatusChange}
+        onTagsChange={handleTagsChange}
+      />
     </div>
   );
 }
 
 /* ── Droppable Column ── */
-function KanbanColumn({
-  column,
-  items,
-  loading,
-  isOver,
-  activeId,
-}: {
-  column: typeof COLUMNS[number];
-  items: CrmUser[];
-  loading: boolean;
-  isOver: boolean;
-  activeId: string | null;
+function KanbanColumn({ column, items, loading, isOver, activeId, onOpenDetail }: {
+  column: typeof COLUMNS[number]; items: CrmUser[]; loading: boolean; isOver: boolean; activeId: string | null;
+  onOpenDetail: (u: CrmUser) => void;
 }) {
   const { setNodeRef, isOver: directOver } = useDroppable({ id: column.status });
   const Icon = column.icon;
   const highlighted = isOver || directOver;
 
   return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        'w-[280px] flex-shrink-0 flex flex-col rounded-xl border bg-card transition-all duration-200',
-        highlighted
-          ? 'border-primary/60 ring-2 ring-primary/20 bg-primary/5'
-          : 'border-border'
-      )}
-    >
+    <div ref={setNodeRef} className={cn(
+      'w-[280px] flex-shrink-0 flex flex-col rounded-xl border bg-card transition-all duration-200',
+      highlighted ? 'border-primary/60 ring-2 ring-primary/20 bg-primary/5' : 'border-border'
+    )}>
       <div className="flex items-center gap-2 px-3 py-3 border-b border-border">
         <Icon className="h-4 w-4" style={{ color: column.color }} />
         <span className="text-sm font-semibold text-foreground">{column.label}</span>
         <Badge variant="secondary" className="ml-auto text-2xs">{items.length}</Badge>
       </div>
-
       <ScrollArea className="h-[calc(100vh-260px)]">
         <div className="p-2 space-y-2">
-          {loading && items.length === 0 && (
-            <div className="text-xs text-muted-foreground text-center py-8">Carregando…</div>
-          )}
-          {!loading && items.length === 0 && (
-            <div className="text-xs text-muted-foreground text-center py-8">
-              {highlighted ? 'Soltar aqui' : 'Nenhum usuário'}
-            </div>
-          )}
-          {items.map(u => (
-            <DraggableCard key={u.id} user={u} columnColor={column.color} isDragging={u.id === activeId} />
-          ))}
+          {loading && items.length === 0 && <div className="text-xs text-muted-foreground text-center py-8">Carregando…</div>}
+          {!loading && items.length === 0 && <div className="text-xs text-muted-foreground text-center py-8">{highlighted ? 'Soltar aqui' : 'Nenhum usuário'}</div>}
+          {items.map(u => <DraggableCard key={u.id} user={u} columnColor={column.color} isDragging={u.id === activeId} onOpenDetail={onOpenDetail} />)}
         </div>
       </ScrollArea>
     </div>
@@ -279,9 +240,8 @@ function KanbanColumn({
 }
 
 /* ── Draggable Card Wrapper ── */
-function DraggableCard({ user, columnColor, isDragging }: { user: CrmUser; columnColor: string; isDragging: boolean }) {
+function DraggableCard({ user, columnColor, isDragging, onOpenDetail }: { user: CrmUser; columnColor: string; isDragging: boolean; onOpenDetail: (u: CrmUser) => void }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: user.id });
-
   const style: React.CSSProperties = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.3 : 1,
@@ -290,13 +250,13 @@ function DraggableCard({ user, columnColor, isDragging }: { user: CrmUser; colum
 
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <UserCardContent user={user} columnColor={columnColor} />
+      <UserCardContent user={user} columnColor={columnColor} onOpenDetail={() => onOpenDetail(user)} />
     </div>
   );
 }
 
-/* ── Card Content (shared between real + overlay) ── */
-function UserCardContent({ user: u, columnColor, isDragOverlay }: { user: CrmUser; columnColor: string; isDragOverlay?: boolean }) {
+/* ── Card Content ── */
+function UserCardContent({ user: u, columnColor, isDragOverlay, onOpenDetail }: { user: CrmUser; columnColor: string; isDragOverlay?: boolean; onOpenDetail?: () => void }) {
   const daysSinceLogin = u.days_since_last_login ?? 999;
   const score = u.crm_score ?? 0;
 
@@ -312,43 +272,42 @@ function UserCardContent({ user: u, columnColor, isDragOverlay }: { user: CrmUse
         </div>
         {u.last_note && (
           <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="shrink-0 cursor-default">📌</span>
-            </TooltipTrigger>
+            <TooltipTrigger asChild><span className="shrink-0 cursor-default">📌</span></TooltipTrigger>
             <TooltipContent side="top" className="max-w-[220px] text-xs">{u.last_note}</TooltipContent>
           </Tooltip>
         )}
       </div>
 
       <div className="flex items-center gap-1.5 flex-wrap">
-        <Badge variant={u.plan_slug === 'free' || !u.plan_name ? 'secondary' : 'success'} className="text-2xs">
-          {u.plan_name ?? 'Free'}
-        </Badge>
-        <Badge variant="outline" className="text-2xs font-mono" style={{ borderColor: columnColor, color: columnColor }}>
-          {score}
-        </Badge>
-        {daysSinceLogin > 14 && (
-          <Badge variant="destructive" className="text-2xs">{daysSinceLogin}d sem login</Badge>
-        )}
+        <Badge variant={u.plan_slug === 'free' || !u.plan_name ? 'secondary' : 'success'} className="text-2xs">{u.plan_name ?? 'Free'}</Badge>
+        <Badge variant="outline" className="text-2xs font-mono" style={{ borderColor: columnColor, color: columnColor }}>{score}</Badge>
+        {daysSinceLogin > 14 && <Badge variant="destructive" className="text-2xs">{daysSinceLogin}d sem login</Badge>}
       </div>
 
       <p className="text-2xs text-muted-foreground">
         {(u.total_balance ?? 0) > 0
           ? fmt.format(u.total_balance!)
-          : u.created_at
-            ? `Cadastro: ${format(new Date(u.created_at), 'dd/MM/yyyy')}`
-            : '—'
-        }
+          : u.created_at ? `Cadastro: ${format(new Date(u.created_at), 'dd/MM/yyyy')}` : '—'}
       </p>
 
       {u.crm_tags && u.crm_tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {(u.crm_tags as string[]).slice(0, 4).map(tag => (
-            <span key={tag} className="inline-block rounded-full bg-accent/60 text-accent-foreground text-[10px] px-1.5 py-0.5">
-              {tag}
-            </span>
+            <span key={tag} className="inline-block rounded-full bg-accent/60 text-accent-foreground text-[10px] px-1.5 py-0.5">{tag}</span>
           ))}
         </div>
+      )}
+
+      {onOpenDetail && !isDragOverlay && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full h-6 text-2xs text-muted-foreground hover:text-foreground mt-1"
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onOpenDetail(); }}
+        >
+          <Eye className="h-3 w-3 mr-1" />Ver Detalhes
+        </Button>
       )}
     </div>
   );
