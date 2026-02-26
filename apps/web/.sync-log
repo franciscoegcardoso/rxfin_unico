@@ -1,9 +1,5 @@
-2026-02-26T04:01:05Z | f968d84fced49c63202e8d30ae9df67f5a6e00fd | Lovable update
+2026-02-26T04:08:06Z | 95db3526d382788062ccd451964d27c54132d21d | Add migrado to CRM enum
 
-Lovable tool use: Approved.
+Persist 30d admin metrics via public search_path and update dashboards; add Migrado status to CRM, and adjust Admin CRM to display new status.
 
-context: 6951EAA2-1264-4A1A-A86D-817E462202C7
-
-tool_name:Modify database
-
-X-Lovable-Edit-ID: edt-88590889-d637-4481-9777-eae12bb64801
+X-Lovable-Edit-ID: edt-180309f6-1c86-4947-b502-22d6283bbf31

@@ -8,21 +8,25 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Users, Crown, FileText, Brain, Kanban, Zap,
   TrendingUp, Activity, Clock, CheckCircle, AlertTriangle,
-  ArrowRight, BarChart3,
+  ArrowRight, BarChart3, UserCheck, CreditCard, GitMerge,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface DashMetrics {
   totalUsers: number;
-  newUsersLast7d: number;
   activePages: number;
   totalPages: number;
   crmLeads: number;
   automationsActive: number;
-  aiSessionsLast7d: number;
   aiFeedbackPending: number;
+  // 30-day metrics
+  activeUsers30d: number;
+  newActiveUsers30d: number;
+  paidActiveUsers30d: number;
+  newPaidActiveUsers30d: number;
+  migratedUsers30d: number;
 }
 
 interface PageSummary {
@@ -41,39 +45,40 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-
         const [
           usersRes,
-          newUsersRes,
           pagesActiveRes,
           pagesTotalRes,
           leadsRes,
           automationsRes,
-          aiSessionsRes,
           aiFeedbackRes,
           pagesListRes,
+          metrics30dRes,
         ] = await Promise.all([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
           supabase.from('pages').select('*', { count: 'exact', head: true }).eq('is_active_users', true),
           supabase.from('pages').select('*', { count: 'exact', head: true }),
           supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('crm_status', 'lead'),
           supabase.from('crm_automations').select('*', { count: 'exact', head: true }).eq('is_active', true),
-          supabase.from('ai_chat_sessions').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
           supabase.from('ai_feedback').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('pages').select('slug, title, path, is_active_users, page_groups(name)').order('order_index'),
+          supabase.rpc('get_admin_dashboard_metrics_30d'),
         ]);
+
+        const m30 = (metrics30dRes.data as Record<string, number>) ?? {};
 
         setMetrics({
           totalUsers: usersRes.count ?? 0,
-          newUsersLast7d: newUsersRes.count ?? 0,
           activePages: pagesActiveRes.count ?? 0,
           totalPages: pagesTotalRes.count ?? 0,
           crmLeads: leadsRes.count ?? 0,
           automationsActive: automationsRes.count ?? 0,
-          aiSessionsLast7d: aiSessionsRes.count ?? 0,
           aiFeedbackPending: aiFeedbackRes.count ?? 0,
+          activeUsers30d: m30.active_users_30d ?? 0,
+          newActiveUsers30d: m30.new_active_users_30d ?? 0,
+          paidActiveUsers30d: m30.paid_active_users_30d ?? 0,
+          newPaidActiveUsers30d: m30.new_paid_active_users_30d ?? 0,
+          migratedUsers30d: m30.migrated_users_30d ?? 0,
         });
 
         setPages((pagesListRes.data ?? []) as PageSummary[]);
@@ -85,16 +90,50 @@ export default function AdminDashboard() {
     })();
   }, []);
 
-  const metricCards = metrics ? [
+  const engagementCards = metrics ? [
     {
-      label: 'Usuários totais',
-      value: metrics.totalUsers,
-      sub: `+${metrics.newUsersLast7d} últimos 7d`,
-      icon: Users,
+      label: 'Usuários ativos (30d)',
+      value: metrics.activeUsers30d,
+      sub: `de ${metrics.totalUsers} registrados`,
+      icon: UserCheck,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
-      href: '/admin/usuarios',
     },
+    {
+      label: 'Novos ativos (30d)',
+      value: metrics.newActiveUsers30d,
+      sub: 'cadastros recentes',
+      icon: Users,
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-500/10',
+    },
+    {
+      label: 'Pagos ativos (30d)',
+      value: metrics.paidActiveUsers30d,
+      sub: 'com plano pago + login',
+      icon: CreditCard,
+      color: 'text-violet-500',
+      bg: 'bg-violet-500/10',
+    },
+    {
+      label: 'Novos pagos (30d)',
+      value: metrics.newPaidActiveUsers30d,
+      sub: 'conversões recentes',
+      icon: Crown,
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
+    },
+    {
+      label: 'Migrados (30d)',
+      value: metrics.migratedUsers30d,
+      sub: 'receita + despesa + inst. + 2 logins',
+      icon: GitMerge,
+      color: 'text-teal-500',
+      bg: 'bg-teal-500/10',
+    },
+  ] : [];
+
+  const operationalCards = metrics ? [
     {
       label: 'Leads CRM',
       value: metrics.crmLeads,
@@ -114,9 +153,9 @@ export default function AdminDashboard() {
       href: '/admin/crm/automations',
     },
     {
-      label: 'Sessões IA (7d)',
-      value: metrics.aiSessionsLast7d,
-      sub: `${metrics.aiFeedbackPending} feedbacks pendentes`,
+      label: 'Feedbacks IA pendentes',
+      value: metrics.aiFeedbackPending,
+      sub: 'aguardando revisão',
       icon: Brain,
       color: 'text-violet-500',
       bg: 'bg-violet-500/10',
@@ -142,7 +181,6 @@ export default function AdminDashboard() {
     { label: 'Health Check', href: '/admin/health', icon: Activity },
   ];
 
-  // Group pages by group_name
   const pagesByGroup = pages.reduce<Record<string, PageSummary[]>>((acc, p) => {
     const g = p.page_groups?.name || 'Outros';
     if (!acc[g]) acc[g] = [];
@@ -150,25 +188,18 @@ export default function AdminDashboard() {
     return acc;
   }, {});
 
-  return (
-    <div className="space-y-6">
-      <AdminPageHeader
-        title="Painel Admin"
-        description={`Visão geral · ${format(new Date(), "dd 'de' MMMM, yyyy", { locale: ptBR })}`}
-      />
-
-      {/* Metric Cards */}
-      {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {[1, 2, 3, 4, 5].map(i => (
-            <Card key={i}><CardContent className="py-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {metricCards.map(m => (
-            <Link key={m.label} to={m.href}>
-              <Card className="hover:border-primary/30 transition-colors cursor-pointer h-full">
+  const MetricCardGrid = ({ cards, title, icon: Icon }: { cards: Array<{ label: string; value: string | number; sub: string; icon: React.ElementType; color: string; bg: string; href?: string }>; title: string; icon: React.ElementType }) => (
+    <div className="space-y-3">
+      <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-4 w-4" /> {title}
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        {cards.map(m => {
+          const Wrapper = ('href' in m && m.href) ? Link : 'div';
+          const wrapperProps = ('href' in m && m.href) ? { to: m.href as string } : {};
+          return (
+            <Wrapper key={m.label} {...(wrapperProps as any)}>
+              <Card className={cn('h-full transition-colors', ('href' in m && m.href) && 'hover:border-primary/30 cursor-pointer')}>
                 <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground">{m.label}</span>
@@ -180,9 +211,31 @@ export default function AdminDashboard() {
                   <p className="text-[11px] text-muted-foreground">{m.sub}</p>
                 </CardContent>
               </Card>
-            </Link>
+            </Wrapper>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Painel Admin"
+        description={`Visão geral · ${format(new Date(), "dd 'de' MMMM, yyyy", { locale: ptBR })}`}
+      />
+
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {[1, 2, 3, 4, 5].map(i => (
+            <Card key={i}><CardContent className="py-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
           ))}
         </div>
+      ) : (
+        <>
+          <MetricCardGrid cards={engagementCards} title="Engajamento — Últimos 30 dias" icon={TrendingUp} />
+          <MetricCardGrid cards={operationalCards} title="Operacional" icon={BarChart3} />
+        </>
       )}
 
       {/* Quick Access */}

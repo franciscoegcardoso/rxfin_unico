@@ -1,0 +1,1 @@
+ALTER FUNCTION get_admin_dashboard_metrics_30d() SET search_path = public;

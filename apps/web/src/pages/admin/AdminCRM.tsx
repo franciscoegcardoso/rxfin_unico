@@ -39,6 +39,7 @@ const COLUMNS = [
   { status: 'trial',         label: 'Trial',         color: 'hsl(210 80% 60%)',             icon: Clock },
   { status: 'onboarding',    label: 'Onboarding',    color: 'hsl(45 93% 47%)',              icon: Compass },
   { status: 'ativo',         label: 'Ativo',         color: 'hsl(152 69% 41%)',             icon: CheckCircle },
+  { status: 'migrado',       label: 'Migrado',       color: 'hsl(199 89% 48%)',             icon: TrendingUp },
   { status: 'power_user',    label: 'Power User',    color: 'hsl(271 76% 53%)',             icon: Star },
   { status: 'risco',         label: 'Risco',         color: 'hsl(25 95% 53%)',              icon: AlertTriangle },
   { status: 'churned',       label: 'Churned',       color: 'hsl(0 84% 60%)',               icon: XCircle },
