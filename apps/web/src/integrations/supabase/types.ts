@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string
+          id: string
+          ip_address: unknown
+          success: boolean | null
+        }
+        Insert: {
+          attempted_at?: string
+          email: string
+          id?: string
+          ip_address?: unknown
+          success?: boolean | null
+        }
+        Update: {
+          attempted_at?: string
+          email?: string
+          id?: string
+          ip_address?: unknown
+          success?: boolean | null
+        }
+        Relationships: []
+      }
       admin_sessions: {
         Row: {
           created_at: string | null
@@ -6652,6 +6676,7 @@ export type Database = {
         }[]
       }
       calculate_crm_score: { Args: { p_user_id: string }; Returns: number }
+      check_admin_rate_limit: { Args: { p_email: string }; Returns: boolean }
       check_ai_rate_limit: {
         Args: { p_function_name: string; p_tokens?: number; p_user_id: string }
         Returns: Json
@@ -6670,6 +6695,7 @@ export type Database = {
         }
         Returns: Json
       }
+      cleanup_admin_sessions: { Args: never; Returns: number }
       cleanup_ai_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_admin_sessions: { Args: never; Returns: number }
       cleanup_expired_ai_audits: { Args: never; Returns: undefined }
@@ -6690,6 +6716,8 @@ export type Database = {
         Args: { encrypted_key: string; encryption_key: string }
         Returns: string
       }
+      detect_crm_churned_users: { Args: never; Returns: number }
+      detect_crm_risk_users: { Args: never; Returns: number }
       detect_recurring_transactions: {
         Args: { p_user_id: string }
         Returns: Json
@@ -6976,6 +7004,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_admin_login_attempt: {
+        Args: { p_email: string; p_ip?: unknown; p_success?: boolean }
+        Returns: undefined
+      }
       log_audit_action: {
         Args: {
           p_action: string
@@ -7047,6 +7079,7 @@ export type Database = {
       rescue_stuck_jobs: { Args: never; Returns: number }
       restore_from_trash: { Args: { _trash_id: string }; Returns: Json }
       revoke_admin_session: { Args: { _token: string }; Returns: Json }
+      run_crm_maintenance: { Args: never; Returns: Json }
       save_user_cpf: {
         Args: { p_cpf: string; p_user_id: string }
         Returns: undefined
