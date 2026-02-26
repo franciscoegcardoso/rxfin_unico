@@ -1,75 +1,72 @@
 
 
-## Plano: Card de Churn 30d + 4 Gráficos no Dashboard Admin
+## Problem Analysis
 
-### Contexto
+**Root Cause**: `PlanDialog.tsx` bypasses the admin governance flow entirely. It uses `useSubscriptionPlanMutations()` (direct mutations) instead of `useAdminDeferredMutations()` (deferred/governed mutations). On submit (line 151-166), it:
+1. Calls `updatePlan.mutate()` directly — saves to DB immediately without review
+2. Calls `onOpenChange(false)` immediately — closes dialog before mutation completes
+3. No confirmation step, no pending changes bar, no success/error feedback
 
-O dashboard atual (`AdminDashboard.tsx`) exibe 5 cards de engajamento de 30 dias via a função RPC `get_admin_dashboard_metrics_30d`. O pedido é adicionar um 6o card (Churn 30d) e 4 gráficos históricos usando Recharts (já instalado).
+The deferred governance infrastructure already exists (`deferUpdatePlan`, `deferCreatePlan` in `useAdminDeferredMutations`), but PlanDialog doesn't use it.
 
----
+## Plan
 
-### 1. Migração de Banco de Dados
+### Step 1: Refactor PlanDialog to use deferred mutations
 
-**1a. Atualizar `get_admin_dashboard_metrics_30d`** — adicionar `churn_30d`:
+**File**: `src/components/admin/PlanDialog.tsx`
 
-Churn = workspaces que tinham plano pago (`plan_id` referenciando um plano com `slug NOT IN ('free','sem_cadastro')`) e cujo `plan_expires_at` caiu nos últimos 30 dias (ou `is_active = false` com `updated_at` nos últimos 30 dias). Query:
+- Replace `useSubscriptionPlanMutations()` with `useAdminDeferredMutations()`
+- Change `onSubmit` to call `deferUpdatePlan(id, payload, name)` or `deferCreatePlan(payload)` instead of direct `.mutate()`
+- Close dialog after adding to pending changes (not after DB save)
+- Show toast indicating change was queued ("Alteração adicionada — confirme na barra de salvamento")
 
-```sql
-'churn_30d', (
-  SELECT count(DISTINCT w.owner_id) FROM workspaces w
-  JOIN subscription_plans sp ON sp.id = w.plan_id
-  WHERE sp.slug NOT IN ('free','sem_cadastro','')
-    AND (
-      (w.plan_expires_at BETWEEN thirty_days_ago AND now())
-      OR (w.is_active = false AND w.updated_at >= thirty_days_ago)
-    )
-)
+### Step 2: Fix PlanImageUpload to not trigger navigation
+
+**File**: `src/components/admin/PlanImageUpload.tsx`
+
+- The upload to storage is fine (images need to be uploaded before form submit to get the URL)
+- Ensure no redirect/navigation occurs after upload — the current code looks correct, but verify there's no side effect causing the redirect the user reported
+
+### Step 3: Audit all other admin pages for governance compliance
+
+Check each admin page's dialog/form component to ensure they use `useAdminDeferredMutations` instead of direct mutations:
+
+- **PagesTab** (`PageDialog`) — already uses deferred ✓
+- **PlanComparisonManager** — already uses deferred ✓  
+- **UsersTab** / `UserEditDialog` — needs verification
+- **NotificationTemplatesManager** — needs verification
+- **LegalDocumentsTab** — needs verification
+- **AppSettingsCard** / `FeatureSettingsCard` / `AuthFlowSettingsCard` — needs verification
+
+Each non-compliant component will be refactored to route through `useAdminDeferredMutations`, adding appropriate `deferXxx` functions where missing.
+
+### Step 4: Ensure query invalidation covers all surfaces
+
+In `useAdminDeferredMutations`, the deferred plan operations already call `queryClient.invalidateQueries({ queryKey: ['subscription-plans'] })`. Since `useSubscriptionPlans` uses `staleTime: 0` and the query key `['subscription-plans', includePrivate]`, the invalidation pattern `['subscription-plans']` will correctly invalidate both the admin view (`includePrivate=true`) and the public-facing pages (landing, web `/planos`, app) which use `includePrivate=false`.
+
+### Technical Details
+
+```text
+Current flow (broken):
+  PlanDialog → useSubscriptionPlanMutations → mutate() → DB (immediate, no review)
+                                                         → close dialog (no feedback)
+
+Fixed flow (governed):
+  PlanDialog → useAdminDeferredMutations → deferUpdatePlan() → pending changes bar
+             → close dialog with "queued" toast
+             → user reviews in AdminSaveConfirmDialog
+             → confirms → execute() → DB → invalidate queries → success toast
 ```
 
-**1b. Criar função `get_admin_dashboard_chart_data()`** — retorna séries temporais em JSONB:
+Key change in `PlanDialog.onSubmit`:
+```typescript
+// BEFORE (direct, ungoverned)
+updatePlan.mutate({ id: plan.id, ...payload });
+onOpenChange(false);
 
-| Série | Granularidade | Janela | Lógica |
-|-------|--------------|--------|--------|
-| `monthly_active` | Mensal | 12 meses | `profiles` com `last_login_at` naquele mês |
-| `new_active_daily` | Diário | 30 dias | `profiles.created_at` no dia |
-| `new_active_weekly` | Semanal | 12 semanas | `profiles.created_at` na semana |
-| `new_active_monthly` | Mensal | 12 meses | `profiles.created_at` no mês |
-| `monthly_churn` | Mensal | 12 meses | workspaces com plano pago cujo `plan_expires_at` caiu naquele mês |
-| `monthly_reactivated` | Mensal | 12 meses | `subscription_events` com `event_type IN ('purchase','subscription_created')` onde `role_before IN ('free','sem_cadastro','')` e `role_after NOT IN ('free','sem_cadastro','')` naquele mês |
-
-Usa `generate_series` para gerar os buckets de tempo. Protegida por check de admin (`user_roles`).
-
----
-
-### 2. Frontend — `AdminDashboard.tsx`
-
-**2a. Card Churn 30d**
-- Adicionar ao array `engagementCards` um 6o card com ícone `UserMinus`, cor vermelha, mostrando `metrics.churn30d`.
-- Grid passa de `lg:grid-cols-5` para `lg:grid-cols-6`.
-
-**2b. Seção de Gráficos**
-Novo componente `AdminDashboardCharts.tsx` importado no dashboard, posicionado abaixo dos cards de engajamento.
-
-Contém 4 blocos:
-
-1. **Clientes Ativos (Mensal)** — `AreaChart` com 12 meses, preenchimento gradiente azul.
-2. **Novos Ativos** — `BarChart` com tabs Diário/Semanal/Mensal para alternar granularidade.
-3. **Churn Mensal** — `BarChart` vermelho, 12 meses.
-4. **Reativados Mensal** — `BarChart` verde, 12 meses.
-
-Layout: grid 2 colunas em desktop, 1 em mobile. Cada gráfico dentro de um `Card` com `CardHeader` + `CardContent`. Tooltip formatado em pt-BR.
-
-**2c. Fetch dos dados**
-Chamada `supabase.rpc('get_admin_dashboard_chart_data')` no `useEffect` existente, armazenado em novo state `chartData`.
-
----
-
-### 3. Arquivos Afetados
-
-| Arquivo | Ação |
-|---------|------|
-| Nova migração SQL | Criar — atualiza RPC + cria nova função |
-| `src/integrations/supabase/types.ts` | Atualizado automaticamente |
-| `src/components/admin/AdminDashboardCharts.tsx` | Criar — componente dos 4 gráficos |
-| `src/pages/admin/AdminDashboard.tsx` | Editar — card churn + importar charts |
+// AFTER (deferred, governed)  
+deferUpdatePlan(plan.id, payload, plan.name);
+onOpenChange(false);
+toast.info('Alteração adicionada para revisão');
+```
 
