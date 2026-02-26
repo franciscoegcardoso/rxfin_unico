@@ -1,19 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useAIOnboarding() {
   const { user } = useAuth();
   const [shouldStartAIOnboarding, setShouldStartAIOnboarding] = useState(false);
+  const [shouldShowEmptyState, setShouldShowEmptyState] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const hasChecked = useRef(false);
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.id || hasChecked.current) {
       setIsLoading(false);
       return;
     }
 
     const check = async () => {
+      hasChecked.current = true;
       try {
         // 1. Check if onboarding_completed is false
         const { data: profile } = await supabase
@@ -42,14 +45,39 @@ export function useAIOnboarding() {
           return;
         }
 
-        // 3. Should start onboarding
+        // 3. Check if user has financial data (lancamentos OR pluggy data)
+        const [{ count: lancCount }, { count: pluggyCount }] = await Promise.all([
+          supabase
+            .from('lancamentos_realizados')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id),
+          supabase
+            .from('pluggy_transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id),
+        ]);
+
+        const hasFinancialData = (lancCount ?? 0) > 0 || (pluggyCount ?? 0) > 0;
+
+        if (!hasFinancialData) {
+          setShouldShowEmptyState(true);
+          setShouldStartAIOnboarding(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // All 3 conditions met — should start onboarding
         setShouldStartAIOnboarding(true);
 
         // Register event
+        const daysSinceSignup = profile.created_at
+          ? Math.floor((Date.now() - new Date(profile.created_at).getTime()) / 86400000)
+          : 0;
+
         await supabase.from('ai_onboarding_events').insert({
           user_id: user.id,
           event_type: 'onboarding_started',
-          days_since_signup: 0,
+          days_since_signup: daysSinceSignup,
           metadata: { triggered_from: 'hook' },
         });
       } catch (err) {
@@ -63,6 +91,5 @@ export function useAIOnboarding() {
     check();
   }, [user?.id]);
 
-  return { shouldStartAIOnboarding, isLoading };
+  return { shouldStartAIOnboarding, shouldShowEmptyState, isLoading };
 }
-// sync

@@ -1,5 +1,5 @@
-2026-02-26T00:40:25Z | 65e969c56b6df1dc8563c942cb7543e199dadc44 | Add forbidden page and redirect
+2026-02-26T00:41:37Z | 90eab928d1f14e8955951b86294236f276a1f89f | Add AI onboarding hook updates
 
-Introduced Forbidden.tsx with shield icon, title, text and home button. Wired route /403 to render Forbidden. Updated admin guards to redirect to /403 when lacking admin rights. Updated AdminRoute.tsx and AdminProtectedRoute.tsx to use /403. Imported Forbidden in App.tsx.
+Updated useAIOnboarding to include empty-state handling and financial data check, and expose shouldShowEmptyState. Added a ref guard to run check only once per session, and compute days_since_signup for onboarding events.
 
-X-Lovable-Edit-ID: edt-b11297cc-0b86-4f57-8aca-d0b9eaf0362d
+X-Lovable-Edit-ID: edt-3ad045e8-3b9b-46c7-a6a5-60c6af9e77cd
