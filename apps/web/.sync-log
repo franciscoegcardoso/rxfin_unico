@@ -1,8 +1,5 @@
-2026-02-26T00:36:25Z | 02c0e87b0499e390e33f023599d7a5c8f100be6c | Toggle sandbox flag for Pluggy
+2026-02-26T00:37:59Z | 84cd4c644a9fe56d8f6ceaef767a9f8168257817 | Add InvestimentosPluggy component
 
-Updated PluggyConnectButton to initialize Pluggy with includeSandbox driven by env VITE_PLUGGY_SANDBOX, and added environment-based defaults:
-- includeSandbox now equals import.meta.env.VITE_PLUGGY_SANDBOX === 'true'
-- Added .env.production and .env.development guidance for VITE_PLUGGY_SANDBOX
-This replaces the previous hardcoded includeSandbox: true setting.
+Implemented InvestimentosPluggy to fetch pluggy_investments for a user, group by type, display categorized items with name, BRL balance, and badges, show total, and mark data source as Open Finance. Integrated into BalancoPatrimonialSection under Ativos by replacing previous placeholder with InvestimentosPluggy. Added InvestimentosPluggy UI and wiring to use existing usePluggyInvestments hook.
 
-X-Lovable-Edit-ID: edt-09c5fff6-49b8-4a9e-96fb-c947fdd8c86b
+X-Lovable-Edit-ID: edt-08f022e2-be56-465c-bf39-91bcad5c422f

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { InvestimentosPluggy } from './InvestimentosPluggy';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -490,7 +491,11 @@ export const BalancoPatrimonialSection: React.FC = () => {
                 </div>
               );
             })}
-            {config.assets.length === 0 && (
+
+            {/* Investimentos Open Finance */}
+            <InvestimentosPluggy />
+
+            {config.assets.length === 0 && pluggyInvestmentsTotal === 0 && (
               <EmptyState description="Você ainda não cadastrou nenhum ativo" actionLabel="Adicionar primeiro ativo" onAction={() => navigate('/bens-investimentos')} className="py-4" />
             )}
           </CardContent>
