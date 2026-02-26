@@ -1403,6 +1403,57 @@ export type Database = {
           },
         ]
       }
+      crm_automations: {
+        Row: {
+          action_description: string
+          channels: string[]
+          created_at: string
+          delay: string
+          icon_color: string
+          icon_name: string
+          id: string
+          is_active: boolean
+          n8n_workflow_id: string | null
+          n8n_workflow_name: string | null
+          name: string
+          sort_order: number
+          trigger_description: string
+          updated_at: string
+        }
+        Insert: {
+          action_description: string
+          channels?: string[]
+          created_at?: string
+          delay?: string
+          icon_color?: string
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          n8n_workflow_id?: string | null
+          n8n_workflow_name?: string | null
+          name: string
+          sort_order?: number
+          trigger_description: string
+          updated_at?: string
+        }
+        Update: {
+          action_description?: string
+          channels?: string[]
+          created_at?: string
+          delay?: string
+          icon_color?: string
+          icon_name?: string
+          id?: string
+          is_active?: boolean
+          n8n_workflow_id?: string | null
+          n8n_workflow_name?: string | null
+          name?: string
+          sort_order?: number
+          trigger_description?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_notes: {
         Row: {
           content: string

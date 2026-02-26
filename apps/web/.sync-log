@@ -1,5 +1,9 @@
-2026-02-26T03:38:15Z | beab41036d0e787b6f0a331bd494c2927580f20c | Wrap Admin with PendingChanges
+2026-02-26T03:47:52Z | 7f1e70e0706d7604e9d3562e30d647bc02bcaeb7 | Implement CRM automations
 
-Encapsulated AdminSecureLayout with AdminPendingChangesProvider and added related UI elements (PendingChangesBar, SaveDialog, and NavigationGuard) to support admin pages.
+Add a complete CRUD UI and backend hooks for CRM automations:
+- Introduced useCrmAutomations.ts with CrmAutomation types and hooks for list, create, update, delete.
+- Added CrmAutomations page frontend (admin UI) to manage automations, including dialog for create/edit, n8n integration fields, and per-rule details.
+- Created Supabase migration for crm_automations table with RLS policies and seed data.
+- Updated Supabase types to include crm_automations fields.
 
-X-Lovable-Edit-ID: edt-2e8f1b33-6a48-46e4-a59a-e14565225cb0
+X-Lovable-Edit-ID: edt-0eed0052-c1a9-4c17-b107-df5fd9d98711
