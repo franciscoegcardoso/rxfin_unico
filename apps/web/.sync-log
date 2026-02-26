@@ -1,5 +1,5 @@
-2026-02-26T02:29:31Z | a1dc38855c684cf19b218b5ee6eadca624d230bc | Rerouted admin through MFA
+2026-02-26T02:31:55Z | 5ec9a5a9aceb9dcd416cd09ce4536ab94c43b314 | Transform admin to vertical menu
 
-Updated admin routes to require AdminSecureLayout (MFA) across all /admin paths, removed AdminProtectedRoute usage, redirected /admin-secure to /admin/audit, and removed admin import.
+Refactored admin layout to include a collapsible vertical AdminSidebar, removed horizontal AdminPageHeader nav, and integrated the sidebar across admin routes. Added navigation grouping, collapsed state, and ensured active state highlighting. Updated AdminSecureLayout to render sidebar with content area, and removed horizontal nav dependencies from AdminPageHeader. This sets foundation for unified admin governance and in-panel navigation.
 
-X-Lovable-Edit-ID: edt-b3ec9032-9fb2-45b3-b40f-bc949de1bf8d
+X-Lovable-Edit-ID: edt-c2b7ac58-38b8-4cad-97de-e92f4f3e7570
