@@ -1,9 +1,1 @@
-2026-02-26T22:32:56Z | e7036e2f00e49f6a241338aa5ef866633ed05f44 | Implement FIPE health admin page
-
-Adds FIPE health dashboard page, wires routes and sidebar, and fixes data model mappings:
-- Introduces FipeCatalogHealth page with health summary, logs, checks, sparkline, and history table
-- Integrates route /admin/fipe-health and sidebar item FIPE Saúde
-- Adjusts data types for health log to match backend fields
-- Updates App.tsx and AdminSidebar imports/navigation accordingly
-
-X-Lovable-Edit-ID: edt-f11a8643-614b-4344-883d-fe6f9b04e8ea
+2026-02-26T23:29:25Z | 136a7e55265701a697070ad6054833e19c882bb8 | Save plan in Lovable
