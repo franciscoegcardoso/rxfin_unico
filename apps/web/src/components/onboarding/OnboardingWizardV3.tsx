@@ -8,18 +8,20 @@ import { JourneyMap } from './JourneyMap';
 import { LevelBadge } from './LevelBadge';
 import { BlockA } from './blocks/BlockA';
 import { BlockB } from './blocks/BlockB';
+import { BlockC } from './blocks/BlockC';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 
-const BLOCK_STEPS = { A: 4, B: 5 } as const;
+const BLOCK_STEPS = { A: 4, B: 5, C: 5 } as const;
 
-type ActiveBlock = 'A' | 'B';
+type ActiveBlock = 'A' | 'B' | 'C';
 
 /**
  * Determines which block to show based on onboarding phase.
  */
 function getActiveBlock(phase: string): ActiveBlock {
   switch (phase) {
+    case 'block_b_done': return 'C';
     case 'block_a_done': return 'B';
     default: return 'A';
   }
@@ -53,7 +55,12 @@ export const OnboardingWizardV3: React.FC = () => {
   const handleBlockBComplete = async () => {
     await advancePhase('block_b_done');
     await registerEvent('block_b_completed');
-    // Demo mode deactivates after block_b_done — redirect to dashboard with real data
+    setStep(0);
+  };
+
+  const handleBlockCComplete = async () => {
+    await advancePhase('block_c_done');
+    await registerEvent('block_c_completed');
     navigate('/inicio');
   };
 
@@ -115,6 +122,14 @@ export const OnboardingWizardV3: React.FC = () => {
                 step={step}
                 onStepChange={handleStepChange}
                 onComplete={handleBlockBComplete}
+                onSaveDraft={saveDraft}
+              />
+            )}
+            {activeBlock === 'C' && (
+              <BlockC
+                step={step}
+                onStepChange={handleStepChange}
+                onComplete={handleBlockCComplete}
                 onSaveDraft={saveDraft}
               />
             )}

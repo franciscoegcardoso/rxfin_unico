@@ -1,5 +1,5 @@
-2026-02-26T23:39:29Z | cd034bbb9c51e04765df1e8e1cd0c047f1bbf0ec | Add Block B support
+2026-02-26T23:41:25Z | 69789fc228ecc6819dde33314821c968c9979b5e | Add Block C to wizard
 
-Implement BlockB component for Patrimônio (Block B) with assets, debts, insurance steps, and Conquest Card; integrate Block B into OnboardingWizardV3, toggle between blocks A and B based on phase, and update navigation and progress handling.
+Integrates Block C (Fluxo de Caixa Real) into OnboardingWizardV3, including UI for intro, budget editor, goals, review, and final ConquestCard. Also wires Block C into the active block flow and updates navigation logic to include C in the sequence.
 
-X-Lovable-Edit-ID: edt-566441b8-4133-4647-95db-94b78568a0a7
+X-Lovable-Edit-ID: edt-124950b0-01a6-4d56-8ddc-0b329d9d6610
