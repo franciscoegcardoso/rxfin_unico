@@ -66,6 +66,7 @@ export function RaioXChat() {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
+  const hasRegisteredOnboardingRef = useRef(false);
 
   // Auto-open for onboarding
   useEffect(() => {
@@ -77,6 +78,19 @@ export function RaioXChat() {
       return () => clearTimeout(timer);
     }
   }, [shouldStartAIOnboarding]);
+
+  // Register onboarding_started event once per session
+  useEffect(() => {
+    if (!user?.id || !sessionId || hasRegisteredOnboardingRef.current) return;
+    hasRegisteredOnboardingRef.current = true;
+
+    supabase.from('ai_onboarding_events').insert({
+      user_id: user.id,
+      session_id: sessionId,
+      event_type: 'onboarding_started',
+      metadata: { source: 'raio_x_chat', timestamp: new Date().toISOString() },
+    });
+  }, [user?.id, sessionId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {

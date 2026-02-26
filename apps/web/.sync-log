@@ -1,11 +1,5 @@
-2026-02-26T02:22:30Z | ca9d6adc70d692bf16fa4a4d442e1c4b69c1bc60 | Switch to ai-chat edge function
+2026-02-26T02:23:00Z | 11104362d635d6bd32befb70437777cdd597f9b0 | Add onboarding event guard
 
-Adopted Supabase edge function ai-chat for Raio-X chat:
-- Replaced n8n/webhook call with supabase.functions.invoke('ai-chat')
-- Built conversation history from last 9 messages plus user input
-- Sent session_id and handled response structure data.content
-- Persisted user and assistant messages with tokens and model_used
-- Simplified error handling for rate limit and unauthorized
-- Updated saving logic to reference model_used and dynamic data.model
+Register onboarding_started once per session in RaioXChat by adding a per-session guard (useRef) and a useEffect, persisting the event to ai_onboarding_events only once.
 
-X-Lovable-Edit-ID: edt-d61982ed-31c3-420f-b4e2-181f5113c709
+X-Lovable-Edit-ID: edt-1f8c3215-20f2-467f-acc5-b4612dc767c6
