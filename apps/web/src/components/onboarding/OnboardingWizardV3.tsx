@@ -11,6 +11,10 @@ import { BlockB } from './blocks/BlockB';
 import { BlockC } from './blocks/BlockC';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFinancial } from '@/contexts/FinancialContext';
+import { persistBlockA, persistBlockC } from '@/services/onboardingV3Persistence';
+import { toast } from 'sonner';
 
 const BLOCK_STEPS = { A: 4, B: 5, C: 5 } as const;
 
@@ -29,6 +33,8 @@ function getActiveBlock(phase: string): ActiveBlock {
 
 export const OnboardingWizardV3: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { config } = useFinancial();
   const { currentLevel, currentPhase, advancePhase, registerEvent } = useOnboardingCheckpoint();
   const { saveDraft } = useOnboardingDraft();
 
@@ -46,9 +52,16 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockAComplete = async () => {
+    if (user?.id) {
+      const result = await persistBlockA(user.id, config.incomeItems, config.expenseItems);
+      if (!result.success) {
+        console.error('[OnboardingV3] Block A persistence failed:', result.error);
+        toast.error('Erro ao salvar dados. Tente novamente.');
+        return;
+      }
+    }
     await advancePhase('block_a_done');
     await registerEvent('block_a_completed');
-    // Reset step and switch to Block B
     setStep(0);
   };
 
@@ -59,6 +72,14 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockCComplete = async () => {
+    if (user?.id) {
+      const result = await persistBlockC(user.id, [], []);
+      if (!result.success) {
+        console.error('[OnboardingV3] Block C persistence failed:', result.error);
+        toast.error('Erro ao finalizar. Tente novamente.');
+        return;
+      }
+    }
     await advancePhase('block_c_done');
     await registerEvent('block_c_completed');
     navigate('/inicio');

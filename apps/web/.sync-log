@@ -1,5 +1,5 @@
-2026-02-26T23:41:25Z | 69789fc228ecc6819dde33314821c968c9979b5e | Add Block C to wizard
+2026-02-26T23:43:37Z | 38155d1e8a16dbedb7bb4ddb7de92ed986a90ea6 | Add onboarding persistence layer
 
-Integrates Block C (Fluxo de Caixa Real) into OnboardingWizardV3, including UI for intro, budget editor, goals, review, and final ConquestCard. Also wires Block C into the active block flow and updates navigation logic to include C in the sequence.
+Implement persistBlockA, persistBlockB, persistBlockC services and wire Block A/C commits to user data; update OnboardingWizardV3 to use auth user and show toasts on failure
 
-X-Lovable-Edit-ID: edt-124950b0-01a6-4d56-8ddc-0b329d9d6610
+X-Lovable-Edit-ID: edt-c005d359-b48c-4152-aeaa-509eb125ccd2
