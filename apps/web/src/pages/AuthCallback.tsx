@@ -4,47 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Resolve the redirect route for an authenticated user based on:
- * 1. Their active workspace
- * 2. Onboarding status (profiles.onboarding_completed)
- * 3. Admin-configured app_settings (first_login_route / returning_user_route)
+ * Resolve the redirect route for an authenticated user.
+ * v3: Always sends to dashboard. Demo mode banner handles onboarding CTA.
  */
 async function resolveRedirectRoute(userId: string): Promise<string> {
-  // 1. Fetch onboarding status from profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('onboarding_completed, status')
-    .eq('id', userId)
-    .single();
-
-  // 2. Fetch relevant app_settings in a single query
   const { data: settingsRows } = await supabase
     .from('app_settings')
     .select('setting_key, setting_value')
-    .in('setting_key', [
-      'onboarding_enabled',
-      'first_login_route',
-      'returning_user_route',
-    ]);
+    .in('setting_key', ['returning_user_route']);
 
-  const settingsMap: Record<string, string | boolean> = {};
+  const settingsMap: Record<string, string> = {};
   settingsRows?.forEach((row) => {
-    settingsMap[row.setting_key] = row.setting_value as string | boolean;
+    settingsMap[row.setting_key] = row.setting_value as string;
   });
 
-  const onboardingEnabled = settingsMap['onboarding_enabled'] === true || settingsMap['onboarding_enabled'] === 'true';
-  const firstLoginRoute = (settingsMap['first_login_route'] as string) || '/onboarding';
-  const returningUserRoute = (settingsMap['returning_user_route'] as string) || '/simuladores';
+  const returningUserRoute = settingsMap['returning_user_route'] || '/simuladores';
 
-  const isFirstLogin = profile ? profile.onboarding_completed !== true : false;
-  const shouldOnboard = onboardingEnabled && isFirstLogin;
-
-  if (shouldOnboard) {
-    console.log('[AuthCallback] New user → first login route:', firstLoginRoute);
-    return firstLoginRoute;
-  }
-
-  console.log('[AuthCallback] Returning user → route:', returningUserRoute);
+  console.log('[AuthCallback] Redirecting to:', returningUserRoute);
   return returningUserRoute;
 }
 
@@ -87,7 +63,6 @@ const AuthCallback = () => {
       }
     });
 
-    // Check if already authenticated
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         handleAuthenticated(session.user.id);

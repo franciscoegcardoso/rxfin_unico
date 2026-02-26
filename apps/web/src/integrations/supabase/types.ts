@@ -4857,6 +4857,9 @@ export type Database = {
           notify_news: boolean
           notify_weekly_summary: boolean
           onboarding_completed: boolean | null
+          onboarding_control_done: boolean
+          onboarding_control_phase: string
+          onboarding_phase: string
           phone: string | null
           principal_user_id: string | null
           push_notifications_enabled: boolean | null
@@ -4905,6 +4908,9 @@ export type Database = {
           notify_news?: boolean
           notify_weekly_summary?: boolean
           onboarding_completed?: boolean | null
+          onboarding_control_done?: boolean
+          onboarding_control_phase?: string
+          onboarding_phase?: string
           phone?: string | null
           principal_user_id?: string | null
           push_notifications_enabled?: boolean | null
@@ -4953,6 +4959,9 @@ export type Database = {
           notify_news?: boolean
           notify_weekly_summary?: boolean
           onboarding_completed?: boolean | null
+          onboarding_control_done?: boolean
+          onboarding_control_phase?: string
+          onboarding_phase?: string
           phone?: string | null
           principal_user_id?: string | null
           push_notifications_enabled?: boolean | null

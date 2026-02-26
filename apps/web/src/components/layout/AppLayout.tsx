@@ -7,6 +7,8 @@ import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
 import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
 import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
+import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
+import { useDemoMode } from '@/hooks/useDemoMode';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,6 +18,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const { needsPhone, currentEmail } = usePhoneCompletion();
   const [phoneCompleted, setPhoneCompleted] = useState(false);
+  const { isDemoMode } = useDemoMode();
   
   // Run automatic consolidation on first login of the day
   useAutoConsolidation();
@@ -24,11 +27,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
+      <DemoDataBanner />
       <TopNavbar />
       <main 
         className={`
           w-full max-w-full overflow-x-hidden flex-1 
-          pt-16 
+          ${isDemoMode ? 'pt-16' : 'pt-16'} 
           px-4 md:px-6 lg:px-8 
           py-6
           ${isMobile ? 'pb-20' : ''}

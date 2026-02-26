@@ -1,1 +1,5 @@
-2026-02-26T23:29:25Z | 136a7e55265701a697070ad6054833e19c882bb8 | Save plan in Lovable
+2026-02-26T23:33:36Z | 8b686dc65c6f053cd394f6718ba2265872878295 | Add demo data banner and hooks
+
+Implements DemoDataBanner and demo data module, extends hooks (useDemoMode, useDataWithDemo, useDemoGuard, useOnboardingDraft/checkpoint), updates AppLayout to show banner, adjusts AuthRedirect and Index to support demo-first flow, adds migration and data types for onboarding phase columns and demo data.
+
+X-Lovable-Edit-ID: edt-c90cf17d-540c-478e-bb7e-7749af5d0dd2

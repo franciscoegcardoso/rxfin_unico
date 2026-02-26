@@ -9,63 +9,56 @@ interface AuthRedirectConfig {
   skipRoute: string;
   isLoading: boolean;
   isFirstLogin: boolean;
+  onboardingPhase: string;
 }
 
 /**
- * Hook that determines where to redirect users after authentication
- * based on admin-configured settings and user state
+ * Hook that determines where to redirect users after authentication.
+ * 
+ * KEY CHANGE (v3): Users with incomplete onboarding are NO LONGER forced
+ * to the onboarding wizard. They see the dashboard with demo data + banner.
+ * Onboarding is started only via the banner CTA.
  */
 export function useAuthRedirect(): AuthRedirectConfig {
   const { user } = useAuth();
   const { settings, isLoading: settingsLoading } = useAppSettings();
 
-  // Check if user has completed onboarding
   const { data: profile, isPending: profilePending } = useQuery({
     queryKey: ['profile-onboarding-status', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
       const { data, error } = await supabase
         .from('profiles')
-        .select('onboarding_completed, status')
+        .select('onboarding_completed, status, onboarding_phase, onboarding_control_done, onboarding_control_phase')
         .eq('id', user.id)
         .single();
-      
       if (error) {
         console.error('Error fetching onboarding status:', error);
         return null;
       }
-      
-      return data;
+      return data as any;
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
-  // CRITICAL: Use isPending (not isLoading) to avoid TanStack Query v5 race condition.
-  // isPending = true whenever there's no data, regardless of whether fetch started.
-  // This eliminates the 1-render gap where isLoading=false but data=undefined.
   const isLoading = settingsLoading || (!!user?.id && profilePending);
-  
-  // Determine if this is a first login (onboarding not completed)
+
+  const onboardingPhase: string = profile?.onboarding_phase ?? 'not_started';
   const isFirstLogin = profile ? profile.onboarding_completed !== true : false;
-  
-  // Should show onboarding if enabled AND user hasn't completed it
-  const shouldShowOnboarding = settings.onboarding_enabled && isFirstLogin;
-  
-  // Determine target route based on settings and user state
-  let targetRoute: string;
-  if (shouldShowOnboarding) {
-    targetRoute = settings.first_login_route || '/onboarding';
-  } else {
-    targetRoute = settings.returning_user_route || '/simuladores';
-  }
-  
-  // Route to use when skipping onboarding
+
+  // v3: Users are NOT forced to onboarding — they see dashboard with demo mode.
+  // shouldShowOnboarding is now only true when explicitly navigating to /onboarding.
+  const shouldShowOnboarding = false;
+
+  // Always send to the returning user route (dashboard).
+  // Demo mode banner handles the onboarding CTA.
+  const targetRoute = settings.returning_user_route || '/simuladores';
   const skipRoute = settings.onboarding_skip_route || '/simuladores';
 
   console.log('[AuthRedirect]', {
-    userId: user?.id, profilePending, onboardingCompleted: profile?.onboarding_completed,
+    userId: user?.id, profilePending, onboardingPhase,
+    onboardingCompleted: profile?.onboarding_completed,
     shouldShowOnboarding, targetRoute,
   });
 
@@ -75,6 +68,7 @@ export function useAuthRedirect(): AuthRedirectConfig {
     skipRoute,
     isLoading,
     isFirstLogin,
+    onboardingPhase,
   };
 }
 
@@ -86,6 +80,7 @@ export async function markOnboardingComplete(userId: string): Promise<boolean> {
     .from('profiles')
     .update({ 
       onboarding_completed: true,
+      onboarding_phase: 'completed',
       status: 'active' 
     })
     .eq('id', userId);
@@ -97,4 +92,3 @@ export async function markOnboardingComplete(userId: string): Promise<boolean> {
   
   return true;
 }
-// sync

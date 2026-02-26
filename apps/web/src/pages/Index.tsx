@@ -1,5 +1,4 @@
 import React from 'react';
-import { Onboarding } from '@/components/onboarding/Onboarding';
 import { Navigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { NubankHome } from '@/components/mobile/NubankHome';
@@ -8,9 +7,8 @@ import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 
 const Index: React.FC = () => {
   const isMobile = useIsMobile();
-  const { shouldShowOnboarding, targetRoute, isLoading } = useAuthRedirect();
+  const { targetRoute, isLoading } = useAuthRedirect();
 
-  // Show loading while checking settings
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -19,17 +17,12 @@ const Index: React.FC = () => {
     );
   }
 
-  // If onboarding is enabled and not completed (checked from DB profiles.onboarding_completed)
-  if (shouldShowOnboarding) {
-    return <Onboarding />;
-  }
-
-  // Mobile: show Nubank-style home page
+  // Mobile: show Nubank-style home page (demo banner renders inside AppLayout)
   if (isMobile) {
     return <NubankHome />;
   }
 
-  // Desktop: redirect to configured target route
+  // Desktop: redirect to dashboard (demo mode handled by AppLayout banner)
   return <Navigate to={targetRoute} replace />;
 };
 
