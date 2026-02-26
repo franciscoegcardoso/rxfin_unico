@@ -6866,6 +6866,17 @@ export type Database = {
           year_id: string
         }[]
       }
+      get_phase3_reference_progress: {
+        Args: { p_limit?: number }
+        Returns: {
+          done: number
+          pending: number
+          reference_code: number
+          slug: string
+          total: number
+          unavailable: number
+        }[]
+      }
       get_pluggy_bank_date_coverage: {
         Args: { p_user_id: string }
         Returns: {
