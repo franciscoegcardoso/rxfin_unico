@@ -1,5 +1,5 @@
-2026-02-26T15:59:46Z | 588e04e3900f8cefc5159177532a2c1cbff2897a | Fix Jeep logo mismatch
+2026-02-26T16:10:00Z | 3e189695635bb28f656e2425bba2d142036b7977 | Updated Jeep logo asset
 
-Updated logo asset to ensure Jeep branding uses the correct Jeep.png (brand logo) in the car simulator logos list, replacing incorrect/mismatched image. Added validation steps to verify logo mapping for brands and prevent future mismatches.
+Replaced public/logos/jeep.png with the user-provided image to ensure the Jeep logo displays correctly in the FIPE simulator. No metadata changes required.
 
-X-Lovable-Edit-ID: edt-54fa2983-ea41-49e6-8a92-a0d8bf2c4e9e
+X-Lovable-Edit-ID: edt-affb1fdf-905c-4526-9f30-e310a8329539
