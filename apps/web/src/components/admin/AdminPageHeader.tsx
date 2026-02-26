@@ -56,7 +56,7 @@ export const AdminPageHeader: React.FC<AdminPageHeaderProps> = ({
       {/* Sub-navigation */}
       <nav className="flex items-center gap-1 border-b border-border pb-0">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
           return (
             <Link
               key={item.href}

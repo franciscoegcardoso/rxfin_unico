@@ -92,6 +92,7 @@ const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
 const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
 const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
+const CrmAutomations = lazy(() => import('./pages/admin/CrmAutomations'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
@@ -223,6 +224,7 @@ const App = () => (
                    <Route path="/admin/ai-feedback" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminProtectedRoute>} />
                    <Route path="/admin/ai-metrics" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminProtectedRoute>} />
                    <Route path="/admin/crm" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminCRM /></Suspense></AdminProtectedRoute>} />
+                   <Route path="/admin/crm/automations" element={<AdminProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><CrmAutomations /></Suspense></AdminProtectedRoute>} />
                    <Route path="/admin/simuladores" element={<Navigate to="/admin?tab=simuladores" replace />} />
                    {/* Admin Secure — MFA-protected */}
                    <Route path="/admin-secure" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />

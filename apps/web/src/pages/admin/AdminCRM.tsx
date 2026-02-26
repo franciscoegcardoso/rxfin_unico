@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Link } from 'react-router-dom';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -17,7 +18,7 @@ import {
   UserPlus, Clock, Compass, CheckCircle, Star,
   AlertTriangle, XCircle, RefreshCw, Search, Eye,
   Users, TrendingUp, UserCheck, ShieldAlert, Percent, DollarSign,
-  Filter, ChevronDown, X, ArrowUpDown, CalendarIcon,
+  Filter, ChevronDown, X, ArrowUpDown, CalendarIcon, Zap,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, subDays, differenceInDays } from 'date-fns';
@@ -238,9 +239,14 @@ export default function AdminCRM() {
           title="CRM"
           description={`Exibindo ${filtered.length} de ${users.length} usuários`}
           actions={
-            <div className="relative w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar por nome ou email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/crm/automations"><Zap className="h-3.5 w-3.5 mr-1.5" />Automações</Link>
+              </Button>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar por nome ou email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              </div>
             </div>
           }
         />

@@ -1,5 +1,12 @@
-2026-02-26T01:13:05Z | 6970e41910f02daaaa20e6ef7c25deeb1212ac05 | Add CRM filters panel
+2026-02-26T01:14:53Z | 4b031cdf00d02631b39feb8b102785d0b6250658 | Add CRM automations page
 
-Implemented a metrics bar, collapsible filters panel, and per-column sort dropdown in admin CRM Kanban. Added origin mapping, range filters (plan, origin, score, date, tags), and frontend-only filtering with updated metrics and sortable columns.
+Implements /admin/crm/automations with static automation rules UI:
+- grid of rule cards with header, details, toggle, and statuses
+- pre-configured 8 rules (active/pending)
+- localStorage-based active/inactive toggles
+- breadcrumb and Voltar ao Kanban action
+- integrates route and AdminPageHeader adjustments
+- adds Automações link in CRM Admin page
+- updates AdminPageHeader active state detection for nested routes
 
-X-Lovable-Edit-ID: edt-0dc5b55f-b74e-4e4f-8ae6-024edb458d76
+X-Lovable-Edit-ID: edt-81d7117f-4443-497a-ab4d-307c5a5ebbdd
