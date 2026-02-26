@@ -74,10 +74,43 @@ export const AdminMfaEnrollment: React.FC<AdminMfaEnrollmentProps> = ({ isEnroll
 
       setStep('success');
 
-      // mfa.verify() already returns an aal2 session stored by the client.
-      // Do NOT call refreshSession() here — it would downgrade back to aal1.
-      // Small delay to let onAuthStateChange propagate the new session.
-      await new Promise<void>((resolve) => setTimeout(resolve, 400));
+      // mfa.verify() stores the aal2 session in the Supabase client.
+      // Wait for onAuthStateChange to propagate, then verify the session is aal2
+      // before calling onMfaComplete which triggers admin-gate login.
+      console.log('[MFA] Verify succeeded, waiting for session propagation...');
+      
+      // Wait for the auth state change to propagate
+      await new Promise<void>((resolve) => {
+        // Listen for the TOKEN_REFRESHED or SIGNED_IN event with aal2
+        const timeout = setTimeout(() => {
+          console.log('[MFA] Timeout waiting for auth event, proceeding anyway');
+          resolve();
+        }, 2000);
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          console.log('[MFA] Auth state changed:', event);
+          if (event === 'TOKEN_REFRESHED' || event === 'MFA_CHALLENGE_VERIFIED' || event === 'SIGNED_IN') {
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+            // Small additional delay to ensure internal state is updated
+            setTimeout(resolve, 200);
+          }
+        });
+
+        // Also check if the session is already updated
+        supabase.auth.getSession().then(({ data }) => {
+          const factors = (data.session as any)?.amr;
+          const hasTotp = factors?.some?.((f: any) => f.method === 'totp');
+          if (hasTotp) {
+            console.log('[MFA] Session already has TOTP factor, proceeding');
+            clearTimeout(timeout);
+            subscription.unsubscribe();
+            setTimeout(resolve, 200);
+          }
+        });
+      });
+
+      console.log('[MFA] Calling onMfaComplete (login)');
       onMfaComplete();
     } catch (err: any) {
       setError(err.message || 'Código inválido');

@@ -1,5 +1,7 @@
-2026-02-26T03:11:40Z | 6b57ac06f1dd734e18b794927ea0aa4ca89a810a | Fix admin gate parsing
+2026-02-26T03:16:30Z | 424b6771dacabfd6409b1734b768f1d1ec92e606 | Improve admin MFA flow handling
 
-Add parseGateResponse helper to safely parse string JSON from admin-gate responses and apply across login, validate, and logout flows in useAdminGate.ts. Implement parsing, replace raw data handling with parsed data, and adjust tokens storage and state updates accordingly to handle SUCCESS and MFA cases without string parsing errors.
+Refactor Admin MFA login flow to ensure proper propagation after verification:
+- AdminMfaEnrollment: wait for auth state changes after MFA verification before proceeding, replacing prior immediate continuation with guarded wait and event-based resolution.
+- useAdminGate: enhanced initialization to respect existing tokens, added robust parsing and logging, and improved flow for validate/login paths with clearer state transitions and debugging output.
 
-X-Lovable-Edit-ID: edt-9e5c68df-9788-422e-afd5-f583d8416c94
+X-Lovable-Edit-ID: edt-1b3726ae-2e1e-4c54-ae4e-8d251c0082f8
