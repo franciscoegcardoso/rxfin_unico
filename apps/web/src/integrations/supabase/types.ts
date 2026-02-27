@@ -6859,6 +6859,22 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_control_funnel: {
+        Row: {
+          onboarding_control_phase: string | null
+          pct_of_started: number | null
+          users: number | null
+        }
+        Relationships: []
+      }
+      onboarding_funnel: {
+        Row: {
+          onboarding_phase: string | null
+          pct_of_started: number | null
+          users: number | null
+        }
+        Relationships: []
+      }
       v_crm_kanban: {
         Row: {
           account_count: number | null
@@ -7008,6 +7024,14 @@ export type Database = {
           p_type?: string
         }
         Returns: Json
+      }
+      advance_onboarding_control_phase: {
+        Args: { new_phase: string }
+        Returns: undefined
+      }
+      advance_onboarding_phase: {
+        Args: { new_phase: string }
+        Returns: undefined
       }
       apply_batch_categories: { Args: { p_items: Json }; Returns: Json }
       apply_lancamento_category_rule: {

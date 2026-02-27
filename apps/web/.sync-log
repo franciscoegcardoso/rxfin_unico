@@ -1,5 +1,8 @@
-2026-02-27T00:38:57Z | f72f10ae48e30f39e1f2f685cd0ef9ca96cbe2dd | Update FIPE marcas mapping
+2026-02-27T00:48:54Z | d43a1741728a9922e1745de2bdfd7adbe574b406 | Lovable update
 
-Updated public/marcas.json to correct fipe_id mappings for multiple brands (Jeep 28->29, Kia 29->31, Citroën 13, etc.) to align with FIPE API IDs and ensure proper logo rendering. Also adjusted related brands to multi-type considerations. No code changes, data corrections only.
+No admin, na parte de gestão de usuários, insira uma identificação do estágio de onboarding de cada usuário. Se necessário, quebre uma sessão (uma guia separada) só para isso.
 
-X-Lovable-Edit-ID: edt-47e9926a-4c9c-4bfa-8e0f-2a4c4f0327b4
+Na gestão de crm, deve ter 'migrado' (depois de 'ativo'), correspondente aos usuários que já terminaram o processo de onboarding.
+Cada data de início de termino das fase de onboarding deve ter um registro de data.
+
+X-Lovable-Edit-ID: edt-4c94e488-3d0c-4a7d-95ce-a23b06899d70
