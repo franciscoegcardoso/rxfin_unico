@@ -4137,6 +4137,55 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_phase_history: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          phase: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          phase: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          phase?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_phase_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_phase_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_crm_kanban"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_phase_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_plan"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       package_transaction_links: {
         Row: {
           allocated_amount: number | null

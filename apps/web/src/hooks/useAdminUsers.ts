@@ -23,6 +23,7 @@ export interface UserProfile {
   principal_user_name?: string | null;
   guests?: UserProfile[];
   guest_count?: number;
+  onboarding_phase?: string;
 }
 
 export type UserProfileUpdate = Partial<Pick<UserProfile, 

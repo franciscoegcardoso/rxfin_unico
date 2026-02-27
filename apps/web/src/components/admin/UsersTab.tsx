@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Pencil, UserCheck, UserX, Mail, Phone, Shield, Crown, Users, UserPlus, Clock } from 'lucide-react';
+import { OnboardingBadge } from '@/components/admin/OnboardingBadge';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -157,6 +158,7 @@ export function UsersTab() {
               <TableHead>Tipo</TableHead>
               <TableHead>Contato</TableHead>
               <TableHead>Plano</TableHead>
+              <TableHead>Onboarding</TableHead>
               <TableHead className="text-center">Admin</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead>Último Acesso</TableHead>
@@ -179,7 +181,7 @@ export function UsersTab() {
               ))
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   {filters.search || filters.subscriptionRole !== 'all' || filters.isActive !== 'all' || filters.lastAccessPeriod !== 'all'
                     ? 'Nenhum usuário encontrado com os filtros aplicados'
                     : 'Nenhum usuário cadastrado'}
@@ -310,6 +312,9 @@ export function UsersTab() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <OnboardingBadge phase={user.onboarding_phase || 'not_started'} />
                     </TableCell>
                     <TableCell className="text-center">
                       {user.is_admin ? (

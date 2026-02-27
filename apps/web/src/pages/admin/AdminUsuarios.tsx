@@ -1,13 +1,15 @@
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { UsersTab } from '@/components/admin/UsersTab';
 import { AdminInviteUsersTab } from '@/components/admin/AdminInviteUsersTab';
+import { AdminOnboardingTab } from '@/components/admin/AdminOnboardingTab';
 import { SubscriptionEventsTab } from '@/components/admin/SubscriptionEventsTab';
-import { Users, UserPlus, CreditCard } from 'lucide-react';
+import { Users, UserPlus, CreditCard, Compass } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
 
 const USER_SUB_TABS = [
   { id: 'lista', label: 'Lista de Usuários', icon: Users },
+  { id: 'onboarding', label: 'Onboarding', icon: Compass },
   { id: 'cadastro', label: 'Cadastrar Usuários', icon: UserPlus },
   { id: 'assinaturas', label: 'Histórico Guru', icon: CreditCard },
 ] as const;
@@ -41,6 +43,9 @@ export default function AdminUsuarios() {
         </TabsList>
         <TabsContent value="lista" className="mt-4">
           <UsersTab />
+        </TabsContent>
+        <TabsContent value="onboarding" className="mt-4">
+          <AdminOnboardingTab />
         </TabsContent>
         <TabsContent value="cadastro" className="mt-4">
           <AdminInviteUsersTab />

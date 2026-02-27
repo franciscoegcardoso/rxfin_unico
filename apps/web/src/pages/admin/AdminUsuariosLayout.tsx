@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Users, UserPlus, CreditCard } from 'lucide-react';
+import { Users, UserPlus, CreditCard, Compass } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminPendingChanges } from '@/contexts/AdminPendingChangesContext';
 import { toast } from 'sonner';
 
 const USER_SUB_TABS = [
   { id: 'lista', label: 'Lista de Usuários', icon: Users },
+  { id: 'onboarding', label: 'Onboarding', icon: Compass },
   { id: 'cadastro', label: 'Cadastrar Usuários', icon: UserPlus },
   { id: 'assinaturas', label: 'Histórico Guru', icon: CreditCard },
 ] as const;
