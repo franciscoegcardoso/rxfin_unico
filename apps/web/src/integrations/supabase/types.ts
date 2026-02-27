@@ -4137,6 +4137,42 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_category_map: {
+        Row: {
+          display_name: string
+          display_order: number
+          entry_type: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          macro_key: string
+          target_category_id: string | null
+          target_item_id: string
+        }
+        Insert: {
+          display_name: string
+          display_order?: number
+          entry_type: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          macro_key: string
+          target_category_id?: string | null
+          target_item_id: string
+        }
+        Update: {
+          display_name?: string
+          display_order?: number
+          entry_type?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          macro_key?: string
+          target_category_id?: string | null
+          target_item_id?: string
+        }
+        Relationships: []
+      }
       onboarding_phase_history: {
         Row: {
           created_at: string
@@ -7131,6 +7167,22 @@ export type Database = {
         }[]
       }
       calculate_crm_score: { Args: { p_user_id: string }; Returns: number }
+      calculate_milestone_cashflow: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      calculate_milestone_identity: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      calculate_milestone_mastery: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      calculate_milestone_patrimony: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       check_admin_rate_limit: { Args: { p_email: string }; Returns: boolean }
       check_ai_rate_limit: {
         Args: { p_function_name: string; p_tokens?: number; p_user_id: string }
@@ -7376,6 +7428,11 @@ export type Database = {
         }[]
       }
       get_label_mismatch_stats: { Args: never; Returns: Json }
+      get_onboarding_categories: { Args: never; Returns: Json }
+      get_onboarding_contextual_insight: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       get_phase3_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -7605,6 +7662,14 @@ export type Database = {
         Returns: Json
       }
       normalize_store_name_sql: { Args: { raw_name: string }; Returns: string }
+      onboarding_setup_expenses: {
+        Args: { p_expenses: Json; p_user_id: string }
+        Returns: Json
+      }
+      onboarding_setup_income: {
+        Args: { p_incomes: Json; p_user_id: string }
+        Returns: Json
+      }
       populate_phase3_by_ref: {
         Args: { p_ref_end: number; p_ref_start: number }
         Returns: Json
@@ -7646,6 +7711,10 @@ export type Database = {
           count: number
           status: string
         }[]
+      }
+      save_onboarding_block_a: {
+        Args: { p_expense_data: Json; p_income_data: Json }
+        Returns: Json
       }
       save_user_cpf: {
         Args: { p_cpf: string; p_user_id: string }

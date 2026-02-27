@@ -1,5 +1,9 @@
-2026-02-27T01:09:29Z | 1d9ddf81071306a497d68281a675858106c94936 | Add onboarding UI and history
+2026-02-27T14:58:40Z | 5a9b1d868ccc706852c21d9a616c0010cd3e5245 | Update onboarding demo UI
 
-Implements admin onboarding tab, adds OnboardingBadge, integrates history table, and wires routing to show onboarding status in Users list. Also updates data model to include onboarding_phase and onboarding_phase_history with UI access and permissions scaffolding.
+Implemented demo-mode onboarding visuals:
+- Added DemoBadge component to display DEMO tag on cards.
+- Introduced OnboardingInsightCard to show contextual onboarding insights.
+- Refactored Inicio.tsx to replace legacy onboarding checklist with an onboarding insight flow, and wrapped main KPI cards with a DemoCardWrapper to apply dashed borders and DEMO badge in demo mode.
+- Added OnboardingInsightCard integration and DemoBadge usage in admin/demo context.
 
-X-Lovable-Edit-ID: edt-1faea294-8904-4c87-b097-e5b7b3952e7a
+X-Lovable-Edit-ID: edt-8983273f-bb29-476f-ac8c-ff28535af682
