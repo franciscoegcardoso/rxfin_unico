@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Building2, Car, Shield, Landmark,
   Plus, Trash2, CheckCircle2, AlertCircle, SkipForward
@@ -9,12 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { ConquestCard } from '../ConquestCard';
 import { cn } from '@/lib/utils';
-import { useFinancial } from '@/contexts/FinancialContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { demoData } from '@/data/demoData';
 
 interface BlockBProps {
   step: number;
@@ -30,35 +29,34 @@ const ASSET_TYPES = [
   { value: 'outro', label: 'Outro', icon: Shield },
 ];
 
-/**
- * Block B: Patrimônio (Steps 0-4)
- * Step 0: Welcome + what you'll map
- * Step 1: Assets (imóveis, veículos, investimentos)
- * Step 2: Debts (financiamentos, cartão)
- * Step 3: Insurance overview (skip-friendly)
- * Step 4: Marco B - Conquest Card
- */
+const formatBRL = (v: number) => v > 0 ? `R$ ${v.toLocaleString('pt-BR')}` : 'R$ 0';
+
 export const BlockB: React.FC<BlockBProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
-  // ─── Step 0: Intro ────────────────────────────────────────────────────
+  const { user } = useAuth();
+  const [milestoneData, setMilestoneData] = useState<any>(null);
+
+  useEffect(() => {
+    if (step === 4 && user?.id) {
+      supabase.rpc('calculate_milestone_patrimony', { p_user_id: user.id })
+        .then(({ data }) => setMilestoneData(data));
+    }
+  }, [step, user?.id]);
+
+  // ─── Step 0: Intro ────────────────────────────────────────────
   if (step === 0) {
     return (
       <div className="max-w-2xl mx-auto py-8 animate-slide-up">
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800/40 mb-4">
-            <Shield className="h-8 w-8 text-slate-600 dark:text-slate-300" />
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
+            <Shield className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-3">
-            Nível 2: Patrimônio
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground mb-3">Nível 2: Patrimônio</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
             Vamos mapear tudo que você tem e tudo que você deve para calcular seu patrimônio líquido real.
           </p>
         </div>
-
         <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-            Neste nível você vai registrar:
-          </h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Neste nível você vai registrar:</h2>
           <div className="space-y-3">
             {[
               { icon: Building2, label: 'Bens e Imóveis', desc: 'Propriedades, veículos, bens de valor' },
@@ -76,16 +74,15 @@ export const BlockB: React.FC<BlockBProps> = ({ step, onStepChange, onComplete, 
             ))}
           </div>
         </div>
-
+        <div className="text-center text-sm text-muted-foreground mb-3">⏱️ ~5 min | 📊 Resultado: Patrimônio Líquido Real</div>
         <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(1)}>
-          Mapear meu Patrimônio
-          <ArrowRight className="ml-2 h-5 w-5" />
+          Mapear meu Patrimônio <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     );
   }
 
-  // ─── Step 1: Assets ───────────────────────────────────────────────────
+  // ─── Step 1: Assets ───────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="max-w-3xl mx-auto py-4">
@@ -102,7 +99,7 @@ export const BlockB: React.FC<BlockBProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 2: Debts ────────────────────────────────────────────────────
+  // ─── Step 2: Debts ────────────────────────────────────────────
   if (step === 2) {
     return (
       <div className="max-w-3xl mx-auto py-4">
@@ -119,7 +116,7 @@ export const BlockB: React.FC<BlockBProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 3: Insurance (skip-friendly) ────────────────────────────────
+  // ─── Step 3: Insurance (skip-friendly) ────────────────────────
   if (step === 3) {
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -147,26 +144,44 @@ export const BlockB: React.FC<BlockBProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 4: Marco B - Conquest Card ──────────────────────────────────
+  // ─── Step 4: Conquest Card ────────────────────────────────────
   if (step === 4) {
-    // Use demo summary as baseline since real data might not be available yet
-    const summary = demoData.summary;
+    const md = milestoneData as any;
+
+    const metrics = md
+      ? [
+          { label: 'Total de Ativos', value: formatBRL(md.total_assets) },
+          { label: 'Saldo Pluggy', value: formatBRL(md.total_pluggy_balance || 0) },
+          { label: 'Patrimônio Líquido', value: formatBRL(md.net_worth) },
+          { label: 'Meses de Renda', value: `${md.months_of_income?.toFixed(1) ?? '?'} meses` },
+        ]
+      : [
+          { label: 'Total de Ativos', value: 'Calculando...' },
+          { label: 'Patrimônio Líquido', value: 'Calculando...' },
+          { label: 'Meses de Renda', value: 'Calculando...' },
+          { label: 'Meta Saudável', value: '12+ meses' },
+        ];
+
+    const insightText = md
+      ? `Seu patrimônio equivale a ${md.months_of_income?.toFixed(1)} meses da sua renda. Meta saudável: ${md.healthy_target_months || 12}+ meses.`
+      : 'Calculando seu patrimônio...';
 
     return (
       <div className="py-8">
         <ConquestCard
           level={2}
+          badge="silver"
           title="Patrimônio Mapeado!"
-          metrics={[
-            { label: 'Total de Bens', value: `R$ ${summary.totalAssets.toLocaleString('pt-BR')}` },
-            { label: 'Total de Dívidas', value: `R$ ${summary.totalDebts.toLocaleString('pt-BR')}` },
-            { label: 'Patrimônio Líquido', value: `R$ ${summary.netWorth.toLocaleString('pt-BR')}` },
-            { label: 'Proteção', value: 'A calcular' },
-          ]}
-          insight={`Seu patrimônio líquido estimado é de R$ ${summary.netWorth.toLocaleString('pt-BR')}. Ao completar os próximos níveis, você verá como ele evolui ao longo do tempo.`}
+          metrics={metrics}
+          insight={insightText}
           nextLevelPreview="Nível 3 — Fluxo Real: descubra para onde vai cada real do seu dinheiro."
           onContinue={onComplete}
-          continueLabel="Concluir Nível 2 e Voltar ao Dashboard"
+          continueLabel="Avançar para Nível 3: Fluxo de Caixa"
+          softUpsell={{
+            text: '💎 No Premium: atualização automática FIPE todo mês + alertas de desvalorização',
+            ctaText: 'Conhecer Premium',
+            ctaRoute: '/financeiro/planos',
+          }}
         />
       </div>
     );
@@ -200,8 +215,6 @@ const AssetEditor: React.FC = () => {
           <p className="text-sm text-muted-foreground">Registre imóveis, veículos, investimentos e outros bens</p>
         </div>
       </div>
-
-      {/* Asset list */}
       <div className="space-y-2 mb-4">
         {assets.map((a, i) => (
           <Card key={i} className="border border-border">
@@ -223,7 +236,6 @@ const AssetEditor: React.FC = () => {
           </Card>
         ))}
       </div>
-
       {adding ? (
         <Card className="border border-primary/30 bg-primary/5">
           <CardContent className="p-4 space-y-3">
@@ -263,7 +275,6 @@ const AssetEditor: React.FC = () => {
           <Plus className="h-4 w-4 mr-2" /> Adicionar Bem ou Investimento
         </Button>
       )}
-
       {assets.length === 0 && !adding && (
         <p className="text-xs text-muted-foreground text-center mt-3">
           Nenhum bem cadastrado ainda. Você pode pular e cadastrar depois.
@@ -298,7 +309,6 @@ const DebtEditor: React.FC = () => {
           <p className="text-sm text-muted-foreground">Financiamentos, empréstimos, cartão parcelado</p>
         </div>
       </div>
-
       <div className="space-y-2 mb-4">
         {debts.map((d, i) => (
           <Card key={i} className="border border-border">
@@ -317,7 +327,6 @@ const DebtEditor: React.FC = () => {
           </Card>
         ))}
       </div>
-
       {adding ? (
         <Card className="border border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 space-y-3">
@@ -350,7 +359,6 @@ const DebtEditor: React.FC = () => {
           <Plus className="h-4 w-4 mr-2" /> Adicionar Dívida
         </Button>
       )}
-
       {debts.length === 0 && !adding && (
         <div className="text-center mt-3">
           <p className="text-xs text-muted-foreground">Nenhuma dívida? Ótimo! Pode avançar.</p>

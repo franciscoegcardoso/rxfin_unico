@@ -1,9 +1,5 @@
-2026-02-27T14:58:40Z | 5a9b1d868ccc706852c21d9a616c0010cd3e5245 | Update onboarding demo UI
+2026-02-27T15:05:50Z | c3887c52a16d9a29b8982822e3d5de21e54fa525 | Implement BlockD UI and RPCs
 
-Implemented demo-mode onboarding visuals:
-- Added DemoBadge component to display DEMO tag on cards.
-- Introduced OnboardingInsightCard to show contextual onboarding insights.
-- Refactored Inicio.tsx to replace legacy onboarding checklist with an onboarding insight flow, and wrapped main KPI cards with a DemoCardWrapper to apply dashed borders and DEMO badge in demo mode.
-- Added OnboardingInsightCard integration and DemoBadge usage in admin/demo context.
+Add BlockD with new onboarding flow for Domínio Total, including milestone-driven UI, goal selection, and integration points. Update ConquestCard to support crowns, upsell, and navigation hooks. Extend OnboardingWizardV3 to include BlockD, plus draft persistence and RPC-based phase advancement. Adjust related components (BlockA/B/C) for milestone data, RPC usage, and UI tweaks. Include new milestone data handling and improved admin UX hooks.
 
-X-Lovable-Edit-ID: edt-8983273f-bb29-476f-ac8c-ff28535af682
+X-Lovable-Edit-ID: edt-f00de326-2db5-4b3b-9fd1-e1c1b410e454

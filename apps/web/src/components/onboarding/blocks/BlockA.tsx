@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft, Crown, Fingerprint, Shield, Activity, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ConquestCard } from '../ConquestCard';
 import { cn } from '@/lib/utils';
 import { useFinancial } from '@/contexts/FinancialContext';
-import { useOnboardingDefaults } from '@/hooks/useOnboardingDefaults';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 interface BlockAProps {
   step: number;
@@ -13,17 +17,85 @@ interface BlockAProps {
   onSaveDraft: (key: string, data: any) => void;
 }
 
-/**
- * Block A: Financial Identity (Steps 0-3)
- * Step 0: Welcome + Journey preview
- * Step 1: Account type + Income
- * Step 2: Expenses
- * Step 3: Marco A - Conquest Card
- */
+interface CategoryItem {
+  key: string;
+  name: string;
+  item_id: string;
+  icon: string;
+  category_id?: string;
+}
+
+const formatBRL = (v: number) =>
+  v > 0 ? `R$ ${v.toLocaleString('pt-BR')}` : 'R$ 0';
+
 export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
   const { config, setAccountType } = useFinancial();
+  const { user } = useAuth();
 
-  // ─── Step 0: Welcome with Journey Preview ────────────────────────────
+  // Fetch categories from RPC
+  const { data: categories, isLoading: catLoading } = useQuery({
+    queryKey: ['onboarding-categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_onboarding_categories');
+      if (error) throw error;
+      return data as any as { income: CategoryItem[]; expense: CategoryItem[] };
+    },
+    staleTime: 300_000,
+  });
+
+  // Form state for income/expense values
+  const [incomeValues, setIncomeValues] = useState<Record<string, number>>({});
+  const [expenseValues, setExpenseValues] = useState<Record<string, number>>({});
+  const [saving, setSaving] = useState(false);
+  const [milestoneData, setMilestoneData] = useState<any>(null);
+
+  // Fetch milestone when reaching conquest step
+  useEffect(() => {
+    if (step === 3 && user?.id) {
+      supabase.rpc('calculate_milestone_identity', { p_user_id: user.id })
+        .then(({ data }) => setMilestoneData(data));
+    }
+  }, [step, user?.id]);
+
+  const handleSaveBlockA = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    try {
+      const incomeData = Object.entries(incomeValues)
+        .filter(([, v]) => v > 0)
+        .map(([key, value]) => ({ key, value }));
+      const expenseData = Object.entries(expenseValues)
+        .filter(([, v]) => v > 0)
+        .map(([key, value]) => ({ key, value }));
+
+      if (incomeData.length === 0) {
+        toast.error('Informe pelo menos uma receita.');
+        setSaving(false);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('save_onboarding_block_a', {
+        p_income_data: incomeData as any,
+        p_expense_data: expenseData as any,
+      });
+
+      if (error) {
+        console.error('[BlockA] save_onboarding_block_a error:', error);
+        toast.error('Erro ao salvar dados. Tente novamente.');
+        setSaving(false);
+        return;
+      }
+
+      onSaveDraft('blockA', { incomeValues, expenseValues });
+      onStepChange(3);
+    } catch (e) {
+      console.error('[BlockA] unexpected error:', e);
+      toast.error('Erro inesperado.');
+    }
+    setSaving(false);
+  };
+
+  // ─── Step 0: Welcome ─────────────────────────────────────────
   if (step === 0) {
     return (
       <div className="max-w-2xl mx-auto py-8 animate-slide-up">
@@ -36,7 +108,6 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
           </p>
         </div>
 
-        {/* Journey destination preview */}
         <div className="bg-card rounded-2xl border border-border p-6 mb-6">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
             Ao final desta jornada você terá:
@@ -59,7 +130,6 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
           </div>
         </div>
 
-        {/* Account type quick selection */}
         <div className="bg-card rounded-2xl border border-border p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-2">
             Como você gerencia suas contas?
@@ -92,6 +162,8 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
           </div>
         </div>
 
+        <div className="text-center text-sm text-muted-foreground mb-3">⏱️ ~5 min | 📊 Resultado: Identidade Financeira</div>
+
         <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(1)}>
           Começar Nível 1: Identidade Financeira
           <ArrowRight className="ml-2 h-5 w-5" />
@@ -100,179 +172,135 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 1: Income (reuse existing component) ────────────────────────
+  // ─── Step 1: Income (from RPC categories) ────────────────────
   if (step === 1) {
+    const incomeItems = categories?.income ?? [];
+
     return (
-      <div className="max-w-4xl mx-auto py-4">
+      <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-4">
           <Button variant="outline" size="sm" onClick={() => onStepChange(0)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('income', config.incomeItems); onStepChange(2); }}>
+          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('income', incomeValues); onStepChange(2); }}>
             Próximo: Despesas <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-        {/* Embed income config inline — we reuse the UI but with our own navigation */}
-        <EmbeddedIncomeConfig />
+
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-foreground mb-1">Suas Receitas</h2>
+          <p className="text-sm text-muted-foreground">Quanto você recebe por mês? Preencha o que se aplica.</p>
+        </div>
+
+        {catLoading ? (
+          <div className="text-center py-12 text-muted-foreground">Carregando categorias...</div>
+        ) : (
+          <div className="space-y-3">
+            {incomeItems.map((item) => (
+              <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                <span className="text-xl shrink-0">{item.icon}</span>
+                <span className="text-sm font-medium text-foreground flex-1">{item.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    className="w-28 h-8 text-right text-sm"
+                    placeholder="0"
+                    value={incomeValues[item.key] || ''}
+                    onChange={(e) => setIncomeValues(prev => ({ ...prev, [item.key]: Number(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
-  // ─── Step 2: Expenses ─────────────────────────────────────────────────
+  // ─── Step 2: Expenses (from RPC categories) ──────────────────
   if (step === 2) {
+    const expenseItems = categories?.expense ?? [];
+
     return (
-      <div className="max-w-4xl mx-auto py-4">
+      <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-4">
           <Button variant="outline" size="sm" onClick={() => onStepChange(1)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('expenses', config.expenseItems); onStepChange(3); }}>
-            Ver meu Raio-X <ArrowRight className="h-4 w-4 ml-1" />
+          <Button variant="hero" size="sm" onClick={handleSaveBlockA} disabled={saving}>
+            {saving ? 'Salvando...' : 'Ver meu Raio-X'} <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-        <EmbeddedExpenseConfig />
+
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-foreground mb-1">Suas Despesas</h2>
+          <p className="text-sm text-muted-foreground">Quanto você gasta por mês em cada categoria?</p>
+        </div>
+
+        {catLoading ? (
+          <div className="text-center py-12 text-muted-foreground">Carregando categorias...</div>
+        ) : (
+          <div className="space-y-3">
+            {expenseItems.map((item) => (
+              <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
+                <span className="text-xl shrink-0">{item.icon}</span>
+                <span className="text-sm font-medium text-foreground flex-1">{item.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    className="w-28 h-8 text-right text-sm"
+                    placeholder="0"
+                    value={expenseValues[item.key] || ''}
+                    onChange={(e) => setExpenseValues(prev => ({ ...prev, [item.key]: Number(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
-  // ─── Step 3: Marco A - Conquest Card ──────────────────────────────────
+  // ─── Step 3: Conquest Card with real milestone data ──────────
   if (step === 3) {
-    const enabledIncomes = config.incomeItems.filter(i => i.enabled);
-    const enabledExpenses = config.expenseItems.filter(e => e.enabled);
+    const md = milestoneData as any;
 
-    // Simple projection: savings * 12 months * 5 years at 12% compound
-    const totalIncome = enabledIncomes.length * 3000; // placeholder average
-    const totalExpenses = enabledExpenses.length * 500; // placeholder average
-    const savings = Math.max(totalIncome - totalExpenses, 0);
-    const fiveYearProjection = savings > 0
-      ? Math.round(savings * 12 * ((Math.pow(1.01, 60) - 1) / 0.01))
-      : 0;
+    const metrics = md
+      ? [
+          { label: 'Receita Mensal', value: formatBRL(md.total_income) },
+          { label: 'Despesas Estimadas', value: formatBRL(md.total_expenses) },
+          { label: 'Margem Mensal', value: `${formatBRL(md.monthly_margin)} (${md.margin_percentage?.toFixed(1) ?? 0}%)` },
+          { label: 'Projeção 5 anos (12% a.a.)', value: formatBRL(md.projection_5y_12pct) },
+        ]
+      : [
+          { label: 'Receita Mensal', value: 'Calculando...' },
+          { label: 'Despesas', value: 'Calculando...' },
+          { label: 'Margem', value: 'Calculando...' },
+          { label: 'Projeção 5 anos', value: 'Calculando...' },
+        ];
+
+    const insightText = md?.monthly_margin > 0
+      ? `Se investir R$ ${md.monthly_margin.toLocaleString('pt-BR')}/mês a 12% a.a., em 5 anos você terá R$ ${md.projection_5y_12pct?.toLocaleString('pt-BR')}.`
+      : 'Complete com valores reais para ver sua projeção personalizada.';
 
     return (
       <div className="py-8">
         <ConquestCard
           level={1}
+          badge="bronze"
           title="Identidade Financeira Mapeada!"
-          metrics={[
-            { label: 'Fontes de Receita', value: String(enabledIncomes.length) },
-            { label: 'Categorias de Despesa', value: String(enabledExpenses.length) },
-            { label: 'Capacidade de Poupança', value: savings > 0 ? `~R$ ${savings.toLocaleString('pt-BR')}/mês` : 'A calcular' },
-            { label: 'Projeção 5 anos', value: fiveYearProjection > 0 ? `~R$ ${fiveYearProjection.toLocaleString('pt-BR')}` : 'A calcular' },
-          ]}
-          insight={savings > 0
-            ? `Se poupar R$ ${savings.toLocaleString('pt-BR')}/mês a 12% a.a., em 5 anos terá aproximadamente R$ ${fiveYearProjection.toLocaleString('pt-BR')}.`
-            : 'Complete com valores reais no dashboard para ver sua projeção personalizada.'
-          }
+          metrics={metrics}
+          insight={insightText}
           nextLevelPreview="Nível 2 — Patrimônio Mapeado: descubra tudo que você tem e deve."
           onContinue={onComplete}
-          continueLabel="Concluir Nível 1 e Voltar ao Dashboard"
+          continueLabel="Avançar para Nível 2: Patrimônio"
         />
       </div>
     );
   }
 
   return null;
-};
-
-// ─── Embedded Income/Expense configs (simplified wrappers) ──────────────
-
-const EmbeddedIncomeConfig: React.FC = () => {
-  const { config, toggleIncomeItem, updateIncomeMethod, addIncomeItem, initializeOnboardingDefaults } = useFinancial();
-  const { incomeItems: defaultIncomeItems, expenseItems: defaultExpenseItems, isLoading } = useOnboardingDefaults();
-  const [hasInit, setHasInit] = useState(false);
-
-  React.useEffect(() => {
-    if (!isLoading && defaultIncomeItems.length > 0 && !hasInit) {
-      initializeOnboardingDefaults(defaultIncomeItems, defaultExpenseItems);
-      setHasInit(true);
-    }
-  }, [isLoading, defaultIncomeItems, defaultExpenseItems, hasInit]);
-
-  const items = config.incomeItems.filter(i => !i.responsiblePersonId);
-
-  if (isLoading) {
-    return <div className="text-center py-12 text-muted-foreground">Carregando receitas...</div>;
-  }
-
-  return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-      <div className="grid grid-cols-[40px,1fr,120px] gap-4 px-4 py-3 bg-muted/50 border-b border-border">
-        <span />
-        <span className="text-sm font-medium text-muted-foreground">Fonte de Receita</span>
-        <span className="text-sm font-medium text-muted-foreground text-center">Método</span>
-      </div>
-      <div className="divide-y divide-border max-h-[50vh] overflow-y-auto">
-        {items.map((item) => (
-          <div key={item.id} className="grid grid-cols-[40px,1fr,120px] gap-4 px-4 py-3 items-center hover:bg-accent/30">
-            <div className="flex justify-center">
-              <input
-                type="checkbox"
-                checked={item.enabled}
-                onChange={() => toggleIncomeItem(item.id)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-            </div>
-            <span className={cn("text-sm truncate", item.enabled ? "text-foreground font-medium" : "text-muted-foreground")}>
-              {item.name}
-            </span>
-            <div className="flex justify-center gap-0.5">
-              {['gross', 'net'].map(m => (
-                <button
-                  key={m}
-                  disabled={!item.enabled}
-                  onClick={() => updateIncomeMethod(item.id, m as any)}
-                  className={cn(
-                    "px-2 py-1 text-xs rounded transition-all",
-                    m === 'gross' ? 'rounded-l-md' : 'rounded-r-md',
-                    item.method === m && item.enabled ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-                    !item.enabled && 'opacity-50'
-                  )}
-                >
-                  {m === 'gross' ? 'Bruto' : 'Líq.'}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const EmbeddedExpenseConfig: React.FC = () => {
-  const { config, toggleExpenseItem } = useFinancial();
-  const { categories: expenseCategories } = useOnboardingDefaults();
-  const [expanded, setExpanded] = useState<string[]>(() => expenseCategories.slice(0, 3).map((c: any) => c.id));
-
-  return (
-    <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-      {expenseCategories.map((cat: any) => {
-        const items = config.expenseItems.filter(e => e.categoryId === cat.id);
-        if (items.length === 0) return null;
-        const isOpen = expanded.includes(cat.id);
-        const enabledCount = items.filter(i => i.enabled).length;
-        return (
-          <div key={cat.id} className="bg-card rounded-xl border border-border overflow-hidden">
-            <button onClick={() => setExpanded(prev => isOpen ? prev.filter(id => id !== cat.id) : [...prev, cat.id])} className="w-full flex items-center justify-between p-3 hover:bg-accent/50">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-foreground">{cat.name}</span>
-                <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{enabledCount}/{items.length}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">{isOpen ? '▲' : '▼'}</span>
-            </button>
-            {isOpen && (
-              <div className="border-t border-border divide-y divide-border">
-                {items.map(item => (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30">
-                    <input type="checkbox" checked={item.enabled} onChange={() => toggleExpenseItem(item.id)} className="h-4 w-4 rounded border-border text-primary" />
-                    <span className={cn("text-sm flex-1", item.enabled ? "text-foreground" : "text-muted-foreground")}>{item.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
 };

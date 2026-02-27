@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -9,22 +9,19 @@ import { LevelBadge } from './LevelBadge';
 import { BlockA } from './blocks/BlockA';
 import { BlockB } from './blocks/BlockB';
 import { BlockC } from './blocks/BlockC';
+import { BlockD } from './blocks/BlockD';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFinancial } from '@/contexts/FinancialContext';
-import { persistBlockA, persistBlockC } from '@/services/onboardingV3Persistence';
 import { toast } from 'sonner';
 
-const BLOCK_STEPS = { A: 4, B: 5, C: 5 } as const;
+const BLOCK_STEPS = { A: 4, B: 5, C: 5, D: 4 } as const;
 
-type ActiveBlock = 'A' | 'B' | 'C';
+type ActiveBlock = 'A' | 'B' | 'C' | 'D';
 
-/**
- * Determines which block to show based on onboarding phase.
- */
 function getActiveBlock(phase: string): ActiveBlock {
   switch (phase) {
+    case 'block_c_done': return 'D';
     case 'block_b_done': return 'C';
     case 'block_a_done': return 'B';
     default: return 'A';
@@ -34,14 +31,32 @@ function getActiveBlock(phase: string): ActiveBlock {
 export const OnboardingWizardV3: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { config } = useFinancial();
   const { currentLevel, currentPhase, advancePhase, registerEvent } = useOnboardingCheckpoint();
-  const { saveDraft } = useOnboardingDraft();
+  const { saveDraft, getDraft, clearDraft } = useOnboardingDraft();
 
   const activeBlock = useMemo(() => getActiveBlock(currentPhase), [currentPhase]);
   const totalSteps = BLOCK_STEPS[activeBlock];
 
   const [step, setStep] = useState(0);
+  const [draftRestored, setDraftRestored] = useState(false);
+
+  // Restore draft on mount
+  useEffect(() => {
+    if (draftRestored) return;
+    getDraft().then((draft) => {
+      if (draft && draft.currentBlock === activeBlock && draft.currentStep > 0) {
+        setStep(draft.currentStep);
+      }
+      setDraftRestored(true);
+    });
+  }, [activeBlock, draftRestored, getDraft]);
+
+  // Auto-save step changes to draft
+  useEffect(() => {
+    if (draftRestored && step > 0) {
+      saveDraft('_nav', { currentBlock: activeBlock, currentStep: step });
+    }
+  }, [step, activeBlock, draftRestored, saveDraft]);
 
   const handleStepChange = useCallback((newStep: number) => {
     setStep(newStep);
@@ -52,36 +67,32 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockAComplete = async () => {
-    if (user?.id) {
-      const result = await persistBlockA(user.id, config.incomeItems, config.expenseItems);
-      if (!result.success) {
-        console.error('[OnboardingV3] Block A persistence failed:', result.error);
-        toast.error('Erro ao salvar dados. Tente novamente.');
-        return;
-      }
-    }
-    await advancePhase('block_a_done');
+    const ok = await advancePhase('block_a_done');
+    if (!ok) return;
     await registerEvent('block_a_completed');
     setStep(0);
   };
 
   const handleBlockBComplete = async () => {
-    await advancePhase('block_b_done');
+    const ok = await advancePhase('block_b_done');
+    if (!ok) return;
     await registerEvent('block_b_completed');
     setStep(0);
   };
 
   const handleBlockCComplete = async () => {
-    if (user?.id) {
-      const result = await persistBlockC(user.id, [], []);
-      if (!result.success) {
-        console.error('[OnboardingV3] Block C persistence failed:', result.error);
-        toast.error('Erro ao finalizar. Tente novamente.');
-        return;
-      }
-    }
-    await advancePhase('block_c_done');
+    const ok = await advancePhase('block_c_done');
+    if (!ok) return;
     await registerEvent('block_c_completed');
+    setStep(0);
+  };
+
+  const handleBlockDComplete = async () => {
+    const ok = await advancePhase('completed');
+    if (!ok) return;
+    await registerEvent('block_d_completed');
+    await clearDraft();
+    toast.success('🎉 Parabéns! Seu Raio-X está completo!');
     navigate('/inicio');
   };
 
@@ -151,6 +162,14 @@ export const OnboardingWizardV3: React.FC = () => {
                 step={step}
                 onStepChange={handleStepChange}
                 onComplete={handleBlockCComplete}
+                onSaveDraft={saveDraft}
+              />
+            )}
+            {activeBlock === 'D' && (
+              <BlockD
+                step={step}
+                onStepChange={handleStepChange}
+                onComplete={handleBlockDComplete}
                 onSaveDraft={saveDraft}
               />
             )}

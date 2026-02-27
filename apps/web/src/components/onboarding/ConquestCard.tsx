@@ -1,31 +1,41 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Fingerprint, Shield, Activity, ArrowRight, Sparkles } from 'lucide-react';
+import { Crown, Fingerprint, Shield, Activity, ArrowRight, Sparkles, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
+import { useNavigate } from 'react-router-dom';
 
 interface ConquestMetric {
   label: string;
   value: string;
 }
 
+interface SoftUpsell {
+  text: string;
+  ctaText: string;
+  ctaRoute: string;
+}
+
 interface ConquestCardProps {
   level: number; // 1-4
   title: string;
+  badge?: string; // 'bronze' | 'silver' | 'gold' | 'diamond'
   metrics: ConquestMetric[];
   insight?: string;
   nextLevelPreview?: string;
   onContinue: () => void;
   continueLabel?: string;
+  crown?: boolean;
+  softUpsell?: SoftUpsell;
 }
 
 const LEVEL_THEMES = [
-  null, // placeholder for index 0
-  { icon: Fingerprint, gradient: 'from-amber-500 to-orange-500', badge: 'Bronze', badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  { icon: Shield, gradient: 'from-slate-400 to-slate-600', badge: 'Prata', badgeColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300' },
-  { icon: Activity, gradient: 'from-yellow-400 to-amber-500', badge: 'Ouro', badgeColor: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
-  { icon: Crown, gradient: 'from-violet-500 to-purple-600', badge: 'Diamante', badgeColor: 'bg-gradient-to-r from-violet-100 to-amber-100 text-violet-700 dark:from-violet-900/40 dark:to-amber-900/30 dark:text-violet-300' },
+  null,
+  { icon: Fingerprint, gradient: 'from-amber-500 to-orange-500', badge: '🥉 Bronze', badgeLabel: 'Identidade Mapeada', badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+  { icon: Shield, gradient: 'from-slate-400 to-slate-600', badge: '🥈 Prata', badgeLabel: 'Patrimônio Mapeado', badgeColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300' },
+  { icon: Activity, gradient: 'from-yellow-400 to-amber-500', badge: '🥇 Ouro', badgeLabel: 'Fluxo de Caixa Mapeado', badgeColor: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' },
+  { icon: Crown, gradient: 'from-violet-500 to-purple-600', badge: '💎 Diamante', badgeLabel: 'Domínio Total', badgeColor: 'bg-gradient-to-r from-violet-100 to-amber-100 text-violet-700 dark:from-violet-900/40 dark:to-amber-900/30 dark:text-violet-300' },
 ];
 
 export const ConquestCard: React.FC<ConquestCardProps> = ({
@@ -36,20 +46,23 @@ export const ConquestCard: React.FC<ConquestCardProps> = ({
   nextLevelPreview,
   onContinue,
   continueLabel = 'Continuar Jornada',
+  crown,
+  softUpsell,
 }) => {
+  const navigate = useNavigate();
   const theme = LEVEL_THEMES[Math.min(level, 4)]!;
-  const Icon = theme.icon;
+  const Icon = crown ? Crown : theme.icon;
 
   useEffect(() => {
-    // Fire confetti on mount
     const duration = level === 4 ? 3000 : 1500;
     const end = Date.now() + duration;
+    const particleCount = level === 4 ? 5 : 3;
 
     const frame = () => {
       confetti({
-        particleCount: level === 4 ? 5 : 3,
+        particleCount,
         angle: 60 + Math.random() * 60,
-        spread: 55,
+        spread: level === 4 ? 100 : 55,
         origin: { x: Math.random(), y: Math.random() * 0.4 },
         colors: level === 4
           ? ['#8B5CF6', '#F59E0B', '#FFFFFF']
@@ -67,7 +80,10 @@ export const ConquestCard: React.FC<ConquestCardProps> = ({
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="max-w-lg mx-auto"
     >
-      <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+      <div className={cn(
+        "bg-card rounded-2xl border border-border shadow-xl overflow-hidden",
+        level === 4 && "ring-2 ring-amber-400/50"
+      )}>
         {/* Header gradient */}
         <div className={cn('bg-gradient-to-r p-6 text-center text-white', theme.gradient)}>
           <motion.div
@@ -79,7 +95,7 @@ export const ConquestCard: React.FC<ConquestCardProps> = ({
             <Icon className="h-8 w-8" />
           </motion.div>
           <div className={cn('inline-block px-3 py-0.5 rounded-full text-xs font-bold mb-2', theme.badgeColor)}>
-            {theme.badge}
+            {theme.badge} — {theme.badgeLabel}
           </div>
           <h2 className="text-xl font-bold">{title}</h2>
         </div>
@@ -100,6 +116,22 @@ export const ConquestCard: React.FC<ConquestCardProps> = ({
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex items-start gap-2">
               <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <p className="text-sm text-foreground">{insight}</p>
+            </div>
+          )}
+
+          {/* Soft upsell */}
+          {softUpsell && (
+            <div className="bg-accent/50 border border-accent rounded-lg p-3 space-y-2">
+              <p className="text-sm text-foreground">{softUpsell.text}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate(softUpsell.ctaRoute)}>
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                  {softUpsell.ctaText}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={onContinue}>
+                  Agora não
+                </Button>
+              </div>
             </div>
           )}
 
