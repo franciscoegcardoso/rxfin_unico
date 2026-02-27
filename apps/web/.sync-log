@@ -1,11 +1,1 @@
-2026-02-26T23:45:09Z | f3ffb0bdf6c9ece4768063b7533c1b6d296e015d | Add onboarding test suite
-
-Add comprehensive tests for onboarding features:
-- OnboardingWizardV3 test for active block calculation and block steps
-- demoData data coverage tests
-- useDemoMode logic tests
-- useOnboardingCheckpoint level mapping tests
-
-Also includes test setup and mocks configuration.
-
-X-Lovable-Edit-ID: edt-770bc61c-4d65-4820-9774-67b3a9f0f5a7
+2026-02-27T00:38:13Z | 55d6f1efd2e8f55de186188aa0fc7a865869668f | Save plan in Lovable
