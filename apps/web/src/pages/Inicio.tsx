@@ -8,6 +8,7 @@ import { useVisibility } from '@/contexts/VisibilityContext';
 import { useTour } from '@/contexts/TourContext';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { supabase } from '@/integrations/supabase/client';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ import { InsuranceExpirationAlerts } from '@/components/inicio/InsuranceExpirati
 import { MobileHomeHero } from '@/components/inicio/MobileHomeHero';
 import { OnboardingInsightCard } from '@/components/inicio/OnboardingInsightCard';
 import { DemoBadge } from '@/components/inicio/DemoBadge';
+import { ControlOnboardingBanner } from '@/components/shared/ControlOnboardingBanner';
 import {
   MonthSummaryCard,
   ExpensesStatusCard,
@@ -93,6 +95,8 @@ const Inicio: React.FC = () => {
   const { hasCompletedTour, startTour } = useTour();
   const { isFeatureEnabled } = useFeaturePreferences();
   const { isDemoMode } = useDemoMode();
+  const { currentPhase, controlDone } = useOnboardingCheckpoint();
+  const showControlBanner = currentPhase === 'completed' && !controlDone;
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [firstName, setFirstName] = useState<string>('');
@@ -221,6 +225,7 @@ const Inicio: React.FC = () => {
 
           {/* Onboarding Insight (replaces legacy checklist) */}
           {isDemoMode && <OnboardingInsightCard />}
+          {showControlBanner && <ControlOnboardingBanner />}
 
           <InsuranceExpirationAlerts />
           <UpcomingEventsCard />
@@ -290,6 +295,7 @@ const Inicio: React.FC = () => {
 
         {/* Onboarding Insight (replaces legacy checklist) */}
         {isDemoMode && <OnboardingInsightCard />}
+        {showControlBanner && <ControlOnboardingBanner />}
 
         <InsuranceExpirationAlerts />
         <UpcomingEventsCard />

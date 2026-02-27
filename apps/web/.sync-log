@@ -1,9 +1,5 @@
-2026-02-27T16:00:54Z | 689a30ed2a5bf46fc672d4f133f493bc383b7e4e | Lovable update
+2026-02-27T16:11:29Z | 0a7bf0ec96a7ee2c8f0c0e86988954ef09c5619e | Add onboarding control flow UI
 
-Lovable plan: Declined.
+Implemented a new 7-step OnboardingControlWizard with progress bar, steps, and RPC-backed state transitions. Added OnboardingControlPage route, new hook/useOnboardingControlCheckpoint, and multiple Step components (Transition, Planejamento, Fluxo, Cartao, Metas, Patrimonio, GrandFinale). Integrated ControlOnboardingBanner and banner usage in Inicio. Updated App.tsx routing and Inicio.tsx to support the control flow and demo integration.
 
-context: 8F42B1C3-5D9E-4A7B-B2E1-9C3F4D5A6E7B
-
-The user has declined this plan. Please ask what changes they would like or suggest an alternative approach.
-
-X-Lovable-Edit-ID: edt-a62c2e1f-fbb5-4e2a-8fa1-a9418cec9c79
+X-Lovable-Edit-ID: edt-0cbf8014-eec5-45ad-aad5-5fc72d006d79
