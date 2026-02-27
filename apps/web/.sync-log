@@ -1,5 +1,5 @@
-2026-02-27T16:11:29Z | 0a7bf0ec96a7ee2c8f0c0e86988954ef09c5619e | Add onboarding control flow UI
+2026-02-27T18:51:02Z | 846828496f8e633499f75754076959d5b687ff86 | Integrate v7.4 depreciation
 
-Implemented a new 7-step OnboardingControlWizard with progress bar, steps, and RPC-backed state transitions. Added OnboardingControlPage route, new hook/useOnboardingControlCheckpoint, and multiple Step components (Transition, Planejamento, Fluxo, Cartao, Metas, Patrimonio, GrandFinale). Integrated ControlOnboardingBanner and banner usage in Inicio. Updated App.tsx routing and Inicio.tsx to support the control flow and demo integration.
+Add new depreciation_backtest_results and depreciation_calculation_log schemas to Supabase types, enabling storage of backtest results, logs, and related metrics for depreciation engine v7.4.
 
-X-Lovable-Edit-ID: edt-0cbf8014-eec5-45ad-aad5-5fc72d006d79
+X-Lovable-Edit-ID: edt-294fc01f-6128-4b2a-941d-f7e306a9e1ba

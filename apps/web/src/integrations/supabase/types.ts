@@ -1882,6 +1882,120 @@ export type Database = {
           },
         ]
       }
+      depreciation_backtest_results: {
+        Row: {
+          absolute_pct_error: number
+          actual_price: number
+          created_at: string | null
+          engine_config: Json | null
+          engine_version: string
+          fipe_code: string
+          horizon_years: number
+          id: string
+          model_year: number
+          projected_price: number
+          signed_pct_error: number
+          train_cutoff_year: number
+          within_ci_80: boolean | null
+        }
+        Insert: {
+          absolute_pct_error: number
+          actual_price: number
+          created_at?: string | null
+          engine_config?: Json | null
+          engine_version: string
+          fipe_code: string
+          horizon_years: number
+          id?: string
+          model_year: number
+          projected_price: number
+          signed_pct_error: number
+          train_cutoff_year: number
+          within_ci_80?: boolean | null
+        }
+        Update: {
+          absolute_pct_error?: number
+          actual_price?: number
+          created_at?: string | null
+          engine_config?: Json | null
+          engine_version?: string
+          fipe_code?: string
+          horizon_years?: number
+          id?: string
+          model_year?: number
+          projected_price?: number
+          signed_pct_error?: number
+          train_cutoff_year?: number
+          within_ci_80?: boolean | null
+        }
+        Relationships: []
+      }
+      depreciation_calculation_log: {
+        Row: {
+          breakpoint_t: number | null
+          confidence_level: string | null
+          created_at: string | null
+          data_points_used: number | null
+          data_source: string
+          distinct_years: number | null
+          engine_version: string
+          factor_b: number | null
+          factor_c: number | null
+          fipe_code: string
+          id: string
+          method_used: string
+          model_year: number
+          phase1_b: number | null
+          phase1_r2: number | null
+          phase2_b: number | null
+          phase2_r2: number | null
+          r_squared: number | null
+          sanity_checks_triggered: Json | null
+        }
+        Insert: {
+          breakpoint_t?: number | null
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points_used?: number | null
+          data_source: string
+          distinct_years?: number | null
+          engine_version: string
+          factor_b?: number | null
+          factor_c?: number | null
+          fipe_code: string
+          id?: string
+          method_used: string
+          model_year: number
+          phase1_b?: number | null
+          phase1_r2?: number | null
+          phase2_b?: number | null
+          phase2_r2?: number | null
+          r_squared?: number | null
+          sanity_checks_triggered?: Json | null
+        }
+        Update: {
+          breakpoint_t?: number | null
+          confidence_level?: string | null
+          created_at?: string | null
+          data_points_used?: number | null
+          data_source?: string
+          distinct_years?: number | null
+          engine_version?: string
+          factor_b?: number | null
+          factor_c?: number | null
+          fipe_code?: string
+          id?: string
+          method_used?: string
+          model_year?: number
+          phase1_b?: number | null
+          phase1_r2?: number | null
+          phase2_b?: number | null
+          phase2_r2?: number | null
+          r_squared?: number | null
+          sanity_checks_triggered?: Json | null
+        }
+        Relationships: []
+      }
       driver_vehicle_access: {
         Row: {
           created_at: string
@@ -3374,6 +3488,30 @@ export type Database = {
           },
         ]
       }
+      ipca_monthly: {
+        Row: {
+          accumulated: number
+          monthly_rate: number
+          source: string | null
+          updated_at: string | null
+          year_month: string
+        }
+        Insert: {
+          accumulated: number
+          monthly_rate: number
+          source?: string | null
+          updated_at?: string | null
+          year_month: string
+        }
+        Update: {
+          accumulated?: number
+          monthly_rate?: number
+          source?: string | null
+          updated_at?: string | null
+          year_month?: string
+        }
+        Relationships: []
+      }
       ir_comprovantes: {
         Row: {
           ano_fiscal: number
@@ -3869,6 +4007,30 @@ export type Database = {
           id?: string
           ip_address?: unknown
           success?: boolean | null
+        }
+        Relationships: []
+      }
+      market_regime_annual: {
+        Row: {
+          mkt_retention: number
+          n_vehicles: number | null
+          regime: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          mkt_retention: number
+          n_vehicles?: number | null
+          regime?: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          mkt_retention?: number
+          n_vehicles?: number | null
+          regime?: string
+          updated_at?: string | null
+          year?: number
         }
         Relationships: []
       }
@@ -5514,6 +5676,54 @@ export type Database = {
         }
         Relationships: []
       }
+      segment_depreciation_priors: {
+        Row: {
+          b_prior: number
+          ci_multiplier: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          last_calibrated_at: string | null
+          mape_1yr: number | null
+          mape_3yr: number | null
+          mape_5yr: number | null
+          sample_size: number | null
+          segment: string
+          sigma_prior: number
+          updated_at: string | null
+        }
+        Insert: {
+          b_prior: number
+          ci_multiplier?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_calibrated_at?: string | null
+          mape_1yr?: number | null
+          mape_3yr?: number | null
+          mape_5yr?: number | null
+          sample_size?: number | null
+          segment: string
+          sigma_prior?: number
+          updated_at?: string | null
+        }
+        Update: {
+          b_prior?: number
+          ci_multiplier?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          last_calibrated_at?: string | null
+          mape_1yr?: number | null
+          mape_3yr?: number | null
+          mape_5yr?: number | null
+          sample_size?: number | null
+          segment?: string
+          sigma_prior?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       seguros: {
         Row: {
           arquivo_nome: string | null
@@ -6612,6 +6822,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_segments: {
+        Row: {
+          body_type: string | null
+          classification_method: string | null
+          created_at: string | null
+          fipe_code: string
+          fuel_type: string | null
+          id: string
+          segment: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_type?: string | null
+          classification_method?: string | null
+          created_at?: string | null
+          fipe_code: string
+          fuel_type?: string | null
+          id?: string
+          segment: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_type?: string | null
+          classification_method?: string | null
+          created_at?: string | null
+          fipe_code?: string
+          fuel_type?: string | null
+          id?: string
+          segment?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       vendas_analytics: {
         Row: {
           afiliado_id: string | null
@@ -6849,6 +7092,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      depreciation_backtest_summary: {
+        Row: {
+          avg_bias: number | null
+          avg_mape: number | null
+          ci_coverage_rate: number | null
+          engine_version: string | null
+          error_stddev: number | null
+          horizon_years: number | null
+          median_ape: number | null
+          p90_ape: number | null
+          total_tests: number | null
+        }
+        Relationships: []
       }
       fipe_catalog_health: {
         Row: {
