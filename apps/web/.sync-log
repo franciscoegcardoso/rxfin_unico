@@ -1,5 +1,9 @@
-2026-02-27T15:05:50Z | c3887c52a16d9a29b8982822e3d5de21e54fa525 | Implement BlockD UI and RPCs
+2026-02-27T16:00:54Z | 689a30ed2a5bf46fc672d4f133f493bc383b7e4e | Lovable update
 
-Add BlockD with new onboarding flow for Domínio Total, including milestone-driven UI, goal selection, and integration points. Update ConquestCard to support crowns, upsell, and navigation hooks. Extend OnboardingWizardV3 to include BlockD, plus draft persistence and RPC-based phase advancement. Adjust related components (BlockA/B/C) for milestone data, RPC usage, and UI tweaks. Include new milestone data handling and improved admin UX hooks.
+Lovable plan: Declined.
 
-X-Lovable-Edit-ID: edt-f00de326-2db5-4b3b-9fd1-e1c1b410e454
+context: 8F42B1C3-5D9E-4A7B-B2E1-9C3F4D5A6E7B
+
+The user has declined this plan. Please ask what changes they would like or suggest an alternative approach.
+
+X-Lovable-Edit-ID: edt-a62c2e1f-fbb5-4e2a-8fa1-a9418cec9c79

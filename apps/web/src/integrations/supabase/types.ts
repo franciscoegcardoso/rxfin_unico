@@ -5011,6 +5011,7 @@ export type Database = {
           notify_news: boolean
           notify_weekly_summary: boolean
           onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
           onboarding_control_done: boolean
           onboarding_control_phase: string
           onboarding_phase: string
@@ -5062,6 +5063,7 @@ export type Database = {
           notify_news?: boolean
           notify_weekly_summary?: boolean
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           onboarding_control_done?: boolean
           onboarding_control_phase?: string
           onboarding_phase?: string
@@ -5113,6 +5115,7 @@ export type Database = {
           notify_news?: boolean
           notify_weekly_summary?: boolean
           onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
           onboarding_control_done?: boolean
           onboarding_control_phase?: string
           onboarding_phase?: string
