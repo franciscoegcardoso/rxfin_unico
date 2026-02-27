@@ -1,5 +1,1 @@
-2026-02-27T18:51:02Z | 846828496f8e633499f75754076959d5b687ff86 | Integrate v7.4 depreciation
-
-Add new depreciation_backtest_results and depreciation_calculation_log schemas to Supabase types, enabling storage of backtest results, logs, and related metrics for depreciation engine v7.4.
-
-X-Lovable-Edit-ID: edt-294fc01f-6128-4b2a-941d-f7e306a9e1ba
+2026-02-27T18:51:34Z | 0ae0385d1ae5a519c3114395956621f75ba8de79 | Update and rename depreciation-engine-v6.3.md to depreciationEngineV7_4
