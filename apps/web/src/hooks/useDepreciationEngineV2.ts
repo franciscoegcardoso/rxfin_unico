@@ -1,16 +1,17 @@
 /**
- * Hook de integração do Motor de Cálculo de Depreciação V6
+ * Hook de integração do Motor de Cálculo de Depreciação V7.4
  * 
  * Orquestra a busca de dados (Waterfall) e executa o Core Engine,
  * fornecendo uma interface simples para componentes UI.
  * 
- * RXFin v6.0: Usa Curva Padrão Agregada para projeções consistentes
+ * RXFin v7.4: Usa engine v7.4 com regime de mercado + IPCA + CI por segmento
  */
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useCohortMatrix, type CohortCell } from '@/hooks/useCohortMatrix';
 import { useFamilyModels, extractModelFamily } from '@/hooks/useFamilyModels';
 import { useBrandAggregation } from '@/hooks/useBrandAggregation';
+import { useMarketRegimeData } from '@/hooks/useMarketRegimeData';
 import { supabase } from '@/integrations/supabase/client';
 import {
   calculateDepreciationCurveV3,
@@ -33,6 +34,13 @@ import {
   type EngineResult,
   type DepreciationCurvePoint,
 } from '@/utils/depreciationCoreEngine';
+import {
+  calculateDepreciationCurveV7,
+  convertToV2Result,
+  convertToV3Result,
+  type VehicleSegment,
+  type MarketRegimeData,
+} from '@/utils/depreciationEngineV7';
 
 export interface UseDepreciationEngineV2Props {
   fipeCode: string;
@@ -297,6 +305,7 @@ export function useDepreciationEngineV2({
   vehicleType = 'carros',
   brandCode,
 }: UseDepreciationEngineV2Props): UseDepreciationEngineV2Return {
+  const regimeData = useMarketRegimeData();
   const [result, setResult] = useState<DepreciationEngineResult | null>(null);
   const [resultV3, setResultV3] = useState<DepreciationEngineResultV3 | null>(null);
   const [loading, setLoading] = useState(false);
@@ -348,7 +357,22 @@ export function useDepreciationEngineV2({
     setError(null);
     
     try {
-      console.log(`[DepreciationEngineV2] Starting V6 calculation for ${modelName} (${fipeCode})`);
+      console.log(`[DepreciationEngineV2] Starting V7.4 calculation for ${modelName} (${fipeCode})`);
+      
+      // =====================================================================
+      // V7.4: BUSCAR SEGMENTO DO VEÍCULO
+      // =====================================================================
+      let vehicleSegment: VehicleSegment = 'default';
+      try {
+        const { data: segmentRow } = await (supabase as any)
+          .from('vehicle_segments')
+          .select('segment')
+          .eq('fipe_code', fipeCode)
+          .maybeSingle();
+        vehicleSegment = (segmentRow?.segment as VehicleSegment) ?? 'default';
+      } catch { /* fallback to default */ }
+      
+      console.log(`[DepreciationEngineV2] V7.4: segment=${vehicleSegment}, regimeYears=${Object.keys(regimeData.regimeByYear).length}`);
       
       // =====================================================================
       // V6: BUSCAR CURVA PADRÃO AGREGADA PRIMEIRO
@@ -575,44 +599,43 @@ export function useDepreciationEngineV2({
           standardCurveResponse.standardCurve.length > 0 &&
           standardCurveResponse.factors) {
         
-        console.log(`[DepreciationEngineV2] ✅ Using V6 engine with standard curve (${standardCurveResponse.modelYearsUsed.length} model years)`);
+        console.log(`[DepreciationEngineV2] ✅ Using V7.4 engine with standard curve (${standardCurveResponse.modelYearsUsed.length} model years)`);
         
-        // =====================================================================
-        // CRITICAL FIX (v6.2): A âncora do V6 (preço 0km / Y-1) NÃO pode vir
-        // de dados agregados (família/marca), porque isso pode eliminar o ano
-        // Y-1 do ano-modelo selecionado e zerar/distorcer a projeção.
-        //
-        // Portanto:
-        // - Base/âncora: SEMPRE tentar usar Nível 1 (rawCohortData) do modelo
-        // - Só cair para effectiveCohortData se Nível 1 não tiver nenhum ponto
-        // =====================================================================
         const hasLevel1Anchor = rawCohortData.some(d => d.year === (modelYear - 1));
-        const cohortForV6 = (rawCohortData.length > 0 && hasLevel1Anchor)
+        const cohortForV7 = (rawCohortData.length > 0 && hasLevel1Anchor)
           ? rawCohortData
           : rawCohortData.length > 0
             ? rawCohortData
             : effectiveCohortData;
 
-        // Converter dados cohort para FipePoint format esperado pelo V6
+        // Converter dados cohort para FipePoint format
         const fipePoints: { price: number; month: number; year: number; ref_date?: string }[] = 
-          cohortForV6.map(d => ({
+          cohortForV7.map(d => ({
             price: d.price,
-            month: 12, // Usamos dezembro como padrão
+            month: 12,
             year: d.year,
             ref_date: d.ref_date,
           }));
         
-        // Chamar V6 Engine
-        const v6Result = calculateDepreciationCurveV6(
+        // =====================================================================
+        // V7.4: Use new engine with regime + segment + standard curve
+        // =====================================================================
+        const v74Result = calculateDepreciationCurveV7(
           fipePoints,
           modelYear,
-          standardCurveResponse.standardCurve,
-          standardCurveResponse.factors
+          new Date(),
+          {
+            segment: vehicleSegment,
+            regimeData,
+            isMatureVehicle,
+            standardCurve: standardCurveResponse.standardCurve,
+            standardCurveFactors: standardCurveResponse.factors,
+          }
         );
         
-        // Converter V6 result para V3 format (compatibilidade)
-        engineResultV3 = convertV6ToV3(v6Result, effectiveSource, isMatureVehicle);
-        engineResultV2 = convertV6ToV2(v6Result, projectionHorizon);
+        // Convert V7.4 result to V3/V2 formats for UI compatibility
+        engineResultV3 = convertToV3Result(v74Result, new Date());
+        engineResultV2 = convertToV2Result(v74Result, projectionHorizon);
         
       } else {
         console.log(`[DepreciationEngineV2] ⚠️ Standard curve unavailable, using V5 fallback`);
@@ -664,7 +687,7 @@ export function useDepreciationEngineV2({
         setLoading(false);
       }
     }
-  }, [fipeCode, modelName, brandName, modelYear, brandCode, vehicleType, cohort, family]);
+  }, [fipeCode, modelName, brandName, modelYear, brandCode, vehicleType, cohort, family, regimeData]);
 
   // Derived state for UI
   const confidence = resultV3?.metadata.confidence ?? null;

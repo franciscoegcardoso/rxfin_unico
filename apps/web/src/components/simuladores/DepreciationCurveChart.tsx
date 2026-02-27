@@ -134,7 +134,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-// Dialog de metodologia
+// Dialog de metodologia v7.4
 const MethodologyDialog: React.FC<{ 
   curveResult: DepreciationCurveResult;
   modelName: string;
@@ -146,54 +146,118 @@ const MethodologyDialog: React.FC<{
         Ver Metodologia
       </Button>
     </DialogTrigger>
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
-          Metodologia de Depreciação Dinâmica
+          Metodologia: Motor de Depreciação v7.4
+          <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 border-emerald-500/30">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Validado por backtesting
+          </Badge>
         </DialogTitle>
       </DialogHeader>
       
       <div className="space-y-4 text-sm">
+        {/* Dados Históricos */}
         <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
           <h4 className="font-semibold flex items-center gap-2 mb-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Análise Cross-Sectional
+            Dados Históricos (Linha Sólida)
           </h4>
           <p className="text-muted-foreground">
-            Ao invés de usar taxas genéricas de mercado, analisamos os preços FIPE 
-            <strong> atuais</strong> de múltiplos anos do <strong>{modelName}</strong> para 
-            calcular a taxa real de depreciação deste modelo específico.
+            Utilizamos os <strong>valores de fechamento de Dezembro</strong> de cada ano da tabela FIPE, 
+            garantindo consistência com a Análise de Safra (Cohort Matrix).
           </p>
         </div>
         
+        {/* Análise de Coorte */}
         <div>
-          <h4 className="font-semibold mb-2">Modelo Matemático</h4>
-          <div className="p-3 rounded-lg bg-muted font-mono text-xs space-y-1">
-            <p>Preço(t) = P₀ × e<sup>(-k × t)</sup></p>
-            <p className="text-muted-foreground">Onde:</p>
-            <ul className="list-disc list-inside text-muted-foreground ml-2">
-              <li>P₀ = Preço estimado quando 0 km</li>
-              <li>k = Taxa de depreciação (calculada)</li>
-              <li>t = Idade do veículo em anos</li>
-            </ul>
-          </div>
+          <h4 className="font-semibold mb-2">Análise de Coorte (Cohort Analysis)</h4>
+          <ul className="space-y-1.5 text-muted-foreground list-disc list-inside text-xs">
+            <li><strong>Idade do veículo (t):</strong> t = Ano Calendário - Ano Modelo + 1</li>
+            <li><strong>Ano de Lançamento (Y-1):</strong> Preço 0km em Dez do ano anterior ao modelo</li>
+            <li><strong className="text-primary">Pesos pandêmicos (WLS):</strong> Anos 2020-2022 incluídos com peso reduzido (0.15, 0.30, 0.65)</li>
+            <li><strong>Normalização:</strong> Um ponto por ano (fechamento de Dezembro)</li>
+          </ul>
         </div>
         
+        {/* Projeção */}
         <div>
-          <h4 className="font-semibold mb-2">Regressão Linear nos Logaritmos</h4>
-          <p className="text-muted-foreground">
-            Linearizamos a equação exponencial aplicando logaritmo natural:
+          <h4 className="font-semibold mb-2">Projeção (Linha Tracejada)</h4>
+          <p className="text-muted-foreground text-xs mb-2">
+            Regressão Log-Linear Ponderada (WLS) com os seguintes passos:
           </p>
-          <div className="p-2 rounded bg-muted font-mono text-xs mt-2">
-            ln(Preço) = ln(P₀) − k × t
+          <ol className="space-y-1 text-muted-foreground list-decimal list-inside text-xs">
+            <li>Normalização dos preços para escala logarítmica (LN)</li>
+            <li>Regressão ponderada: anos pandêmicos com peso reduzido</li>
+            <li>Regularização Bayesiana: coeficiente B suavizado por prior do segmento</li>
+            <li>Ajuste de regime de mercado: captura dinâmicas de oferta/demanda</li>
+            <li>Ajuste de inflação (IPCA): correção parcial da desvalorização monetária</li>
+            <li>Modelos estabilizados (retenção ≥ 98%): crescimento limitado a 10 anos</li>
+          </ol>
+        </div>
+        
+        {/* Intervalo de Confiança */}
+        <div className="p-3 rounded-lg bg-muted">
+          <h4 className="font-semibold mb-2">Intervalo de Confiança</h4>
+          <p className="text-muted-foreground text-xs">
+            Cada projeção inclui um <strong className="text-primary">intervalo de confiança de 80%</strong> que reflete a incerteza da previsão. A largura varia conforme:
+          </p>
+          <ul className="space-y-1 text-muted-foreground list-disc list-inside text-xs mt-2">
+            <li>Quantidade e qualidade dos dados históricos</li>
+            <li>Distância temporal da projeção (quanto mais longe, mais largo)</li>
+            <li>Segmento do veículo (premium tem intervalo mais largo)</li>
+          </ul>
+        </div>
+        
+        {/* Acurácia por Backtesting */}
+        <div>
+          <h4 className="font-semibold mb-2 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            Acurácia Validada por Backtesting
+          </h4>
+          <p className="text-muted-foreground text-xs mb-2">
+            Validado com <strong>4.900 testes walk-forward</strong> em dados reais (2013-2025):
+          </p>
+          <div className="rounded-lg border overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="px-3 py-2 text-left font-medium">Horizonte</th>
+                  <th className="px-3 py-2 text-center font-medium">Erro Médio (MAPE)</th>
+                  <th className="px-3 py-2 text-center font-medium">Viés</th>
+                  <th className="px-3 py-2 text-center font-medium">Mediana</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">1 ano</td>
+                  <td className="px-3 py-2 text-center text-emerald-600 font-semibold">~4%</td>
+                  <td className="px-3 py-2 text-center">~0%</td>
+                  <td className="px-3 py-2 text-center">~3%</td>
+                </tr>
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">3 anos</td>
+                  <td className="px-3 py-2 text-center text-emerald-600 font-semibold">~12%</td>
+                  <td className="px-3 py-2 text-center">~0%</td>
+                  <td className="px-3 py-2 text-center">~10%</td>
+                </tr>
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">5 anos</td>
+                  <td className="px-3 py-2 text-center text-amber-600 font-semibold">~17%</td>
+                  <td className="px-3 py-2 text-center">-7%</td>
+                  <td className="px-3 py-2 text-center">~12%</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <p className="text-muted-foreground mt-2">
-            Usamos o método dos <strong>Mínimos Quadrados</strong> para encontrar 
-            a inclinação (slope), que representa nossa taxa de depreciação k.
+          <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+            * A acurácia varia por segmento. Populares: MAPE ~14% em 5 anos. Premium: ~25%.
           </p>
         </div>
         
+        {/* Resultados da Análise */}
         <div>
           <h4 className="font-semibold mb-2">Resultados da Análise</h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -223,6 +287,16 @@ const MethodologyDialog: React.FC<{
               <p className="text-[9px] text-amber-600/70 dark:text-amber-400/70">*via regressão</p>
             </div>
           </div>
+        </div>
+        
+        {/* Hierarquia de Fontes */}
+        <div>
+          <h4 className="font-semibold mb-2">Hierarquia de Fontes (Waterfall)</h4>
+          <ol className="space-y-1 text-muted-foreground list-decimal list-inside text-xs">
+            <li><strong>Nível 1:</strong> Match Exato do modelo (&gt;10 anos de dados)</li>
+            <li><strong>Nível 2:</strong> Família de modelos (anos anteriores do mesmo veículo)</li>
+            <li><strong>Nível 3:</strong> Benchmark da marca (média histórica da fabricante)</li>
+          </ol>
         </div>
         
         {curveResult.usedFallback && (

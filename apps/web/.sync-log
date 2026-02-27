@@ -1,1 +1,12 @@
-2026-02-27T18:51:34Z | 0ae0385d1ae5a519c3114395956621f75ba8de79 | Update and rename depreciation-engine-v6.3.md to depreciationEngineV7_4
+2026-02-27T18:58:01Z | f8fe271c53a7de2634820fb550947c1c8e9f1843 | Integrate v7.4 engine
+
+Add Depreciation Engine v7.4 integration:
+- Replaced core v7. ts with v7.4 drop-in and extended data flow
+- Introduced market regime data fetch and vehicle segment lookup via new hooks
+- Wired v7.4 into depreciation hook, including regime/IPCA adjustments and CI handling
+- Added caching for regime data (24h) and segment data (via React Query)
+- Created migrations for market_regime_annual and vehicle_segments
+- Updated DepreciationCurveChart methodology dialog to reflect v7.4
+- Minor type adjustments and backward-compat result converters
+
+X-Lovable-Edit-ID: edt-76d33f43-1191-44e2-ade3-cdbd5d5d72ff
