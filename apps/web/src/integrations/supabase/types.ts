@@ -7107,7 +7107,7 @@ export type Database = {
           batch_size: number
           brand_id: number
           fipe_code: string
-          id: number
+          job_id: number
           model_id: number
           model_year: number
           offset_val: number
@@ -7591,6 +7591,10 @@ export type Database = {
         Returns: Json
       }
       timestamptz_to_date: { Args: { ts: string }; Returns: string }
+      trigger_scale_orchestrator: {
+        Args: { p_concurrency?: number }
+        Returns: undefined
+      }
       unregister_device_token: { Args: { _device_id: string }; Returns: Json }
       validate_admin_session: { Args: { _token: string }; Returns: Json }
       verify_admin: { Args: never; Returns: Json }

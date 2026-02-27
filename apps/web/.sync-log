@@ -1,1 +1,5 @@
-2026-02-27T00:38:13Z | 55d6f1efd2e8f55de186188aa0fc7a865869668f | Save plan in Lovable
+2026-02-27T00:38:57Z | f72f10ae48e30f39e1f2f685cd0ef9ca96cbe2dd | Update FIPE marcas mapping
+
+Updated public/marcas.json to correct fipe_id mappings for multiple brands (Jeep 28->29, Kia 29->31, Citroën 13, etc.) to align with FIPE API IDs and ensure proper logo rendering. Also adjusted related brands to multi-type considerations. No code changes, data corrections only.
+
+X-Lovable-Edit-ID: edt-47e9926a-4c9c-4bfa-8e0f-2a4c4f0327b4
