@@ -58,3 +58,7 @@ n8n/.n8n/
 # Misc
 *.tgz
 .cache
+
+.env.test
+
+.env.test

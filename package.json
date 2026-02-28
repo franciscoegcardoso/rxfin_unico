@@ -15,7 +15,8 @@
     "test": "turbo run test",
     "supabase:functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_ID",
     "supabase:functions:deploy:staging": "supabase functions deploy --project-ref $SUPABASE_STAGING_PROJECT_ID",
-    "n8n:export": "echo 'Exportar workflows do n8n Cloud para n8n/workflows/'"
+    "n8n:export": "echo 'Exportar workflows do n8n Cloud para n8n/workflows/'",
+    "dev:web": "cd apps/web && npm run dev"
   },
   "devDependencies": {
     "turbo": "^2"
