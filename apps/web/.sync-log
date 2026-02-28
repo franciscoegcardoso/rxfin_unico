@@ -1,8 +1,5 @@
-2026-02-28T04:04:45Z | be805a63e309e545ac111132da233689ebdb182b | Lovable update
+2026-02-28T04:06:33Z | fe09b9bc14e2416240839bd17dc7ce2bfd21242d | Expanded CORS headers for economic-indicators
 
-For the code present, I get the error below.
+Updated the edge function to include broader CORS header allowances, adding additional Supabase client platform/runtime headers to enable proper gateway access and avoid 401 JWT errors.
 
-Please think step-by-step in order to resolve it.
-
-
-X-Lovable-Edit-ID: edt-0f752c3b-0d5e-41f7-bf0b-67489c54c809
+X-Lovable-Edit-ID: edt-83405c4a-1f64-42d9-901c-31e3ac8cb453
