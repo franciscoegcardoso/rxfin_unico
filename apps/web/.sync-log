@@ -1,5 +1,10 @@
-2026-02-28T04:06:33Z | fe09b9bc14e2416240839bd17dc7ce2bfd21242d | Expanded CORS headers for economic-indicators
+2026-02-28T04:17:17Z | af152ef46385527c0ba02572f8f07e3c76806b94 | Improve AdminGate JWT handling
 
-Updated the edge function to include broader CORS header allowances, adding additional Supabase client platform/runtime headers to enable proper gateway access and avoid 401 JWT errors.
+Refactor useAdminGate to validate and cache session tokens more reliably:
+- Added getValidAccessToken and clearStoredAdminGateSession utilities
+- Use validated access token for admin-gate calls, attach Authorization header
+- Handle session expiry and automatic sign-out with user redirect
+- Harden error handling for FunctionsHttpError and token invalidation
+- Clear stored session on logout/invalid tokens and reset module state
 
-X-Lovable-Edit-ID: edt-83405c4a-1f64-42d9-901c-31e3ac8cb453
+X-Lovable-Edit-ID: edt-f4b28c43-0d1f-420f-8db8-9adcc83cf337

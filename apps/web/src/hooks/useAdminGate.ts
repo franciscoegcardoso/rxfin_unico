@@ -41,6 +41,28 @@ interface AdminGateState {
 let _moduleInitialized = false;
 let _moduleAuthenticated = false;
 
+function clearStoredAdminGateSession() {
+  sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+  _moduleAuthenticated = false;
+}
+
+async function getValidAccessToken(): Promise<string | null> {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+
+  if (sessionError || !accessToken) {
+    return null;
+  }
+
+  const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
+  if (userError || !userData.user) {
+    return null;
+  }
+
+  return accessToken;
+}
+
 export function useAdminGate() {
   const navigate = useNavigate();
   const [state, setState] = useState<AdminGateState>(() => {
@@ -98,13 +120,12 @@ export function useAdminGate() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('[AdminGate] Current session present:', !!sessionData?.session);
+      const accessToken = await getValidAccessToken();
+      console.log('[AdminGate] Current valid session present:', !!accessToken);
 
-      if (sessionError || !sessionData.session?.access_token) {
-        sessionStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
-        _moduleAuthenticated = false;
+      if (!accessToken) {
+        clearStoredAdminGateSession();
+        await supabase.auth.signOut();
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -120,6 +141,7 @@ export function useAdminGate() {
       console.log('[AdminGate] Calling admin-gate action: login');
       const { data: rawData, error } = await supabase.functions.invoke('admin-gate', {
         body: { action: 'login' },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (error) throw error;
@@ -172,6 +194,22 @@ export function useAdminGate() {
       throw new Error(data?.message || 'Resposta inesperada do servidor');
     } catch (err: any) {
       console.error('[AdminGate] Login error:', err);
+
+      if (err?.name === 'FunctionsHttpError') {
+        clearStoredAdminGateSession();
+        await supabase.auth.signOut();
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          isAuthenticated: false,
+          needsMfa: false,
+          session: null,
+          error: 'Sua sessão expirou. Faça login novamente.',
+        }));
+        navigate('/login');
+        return;
+      }
+
       setState(prev => ({
         ...prev,
         isLoading: false,
@@ -191,9 +229,7 @@ export function useAdminGate() {
     } catch {
       // ignore logout errors
     }
-    sessionStorage.removeItem(STORAGE_KEY);
-    sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
-    _moduleAuthenticated = false;
+    clearStoredAdminGateSession();
     _moduleInitialized = false;
     setState({
       isLoading: false,
@@ -237,12 +273,11 @@ export function useAdminGate() {
     _moduleInitialized = true;
 
     const init = async () => {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session?.access_token) {
-        console.log('[AdminGate] No Supabase session, redirecting to login');
-        sessionStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
-        _moduleAuthenticated = false;
+      const accessToken = await getValidAccessToken();
+      if (!accessToken) {
+        console.log('[AdminGate] No valid Supabase session, redirecting to login');
+        clearStoredAdminGateSession();
+        await supabase.auth.signOut();
         setState(prev => ({
           ...prev,
           isLoading: false,
@@ -263,6 +298,7 @@ export function useAdminGate() {
           console.log('[AdminGate] Calling admin-gate action: validate');
           const { data: rawValidate, error } = await supabase.functions.invoke('admin-gate', {
             body: { action: 'validate', admin_token: existingToken },
+            headers: { Authorization: `Bearer ${accessToken}` },
           });
           const data = parseGateResponse(rawValidate);
           console.log('[AdminGate] Validate result:', JSON.stringify(data));
@@ -285,8 +321,7 @@ export function useAdminGate() {
           // token invalid, proceed to login
         }
         console.log('[AdminGate] Token invalid, removing');
-        sessionStorage.removeItem(STORAGE_KEY);
-        sessionStorage.removeItem(STORAGE_EXPIRES_KEY);
+        clearStoredAdminGateSession();
       }
 
       await login();
