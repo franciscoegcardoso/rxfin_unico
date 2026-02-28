@@ -1,0 +1,1 @@
+ALTER TABLE public.credit_card_bills ADD CONSTRAINT credit_card_bills_card_id_due_date_key UNIQUE (card_id, due_date);

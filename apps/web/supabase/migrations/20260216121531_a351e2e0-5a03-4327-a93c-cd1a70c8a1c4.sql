@@ -1,0 +1,2 @@
+ALTER TABLE public.legal_document_versions DROP CONSTRAINT IF EXISTS legal_document_versions_document_type_check;
+ALTER TABLE public.legal_document_versions ADD CONSTRAINT legal_document_versions_document_type_check CHECK (document_type IN ('terms_of_use', 'privacy_policy', 'cookie_policy'));

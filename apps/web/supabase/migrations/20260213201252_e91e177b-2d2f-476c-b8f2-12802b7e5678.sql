@@ -1,0 +1,1 @@
+UPDATE pages SET icon = 'CreditCard' WHERE slug = 'cartao-credito';

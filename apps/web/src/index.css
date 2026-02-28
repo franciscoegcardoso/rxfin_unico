@@ -1,0 +1,443 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* RXFin Brand Colors - Clean White Background */
+    --background: 0 0% 100%;
+    --foreground: 220 13% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 9%;
+
+    /* RXFin Primary Green */
+    --primary: 145 63% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 145 20% 96%;
+    --secondary-foreground: 145 30% 25%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 145 40% 95%;
+    --accent-foreground: 145 63% 30%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 145 63% 35%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    /* Income/Expense semantic colors */
+    --income: 145 63% 35%;
+    --income-light: 145 40% 95%;
+    --expense: 0 72% 51%;
+    --expense-light: 0 50% 96%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 145 63% 35%;
+
+    --radius: 0.5rem;
+
+    /* Nubank-style colors (kept for mobile compatibility) */
+    --nubank-primary: 145 63% 35%;
+    --nubank-primary-light: 145 50% 45%;
+    --nubank-bg: 145 10% 96%;
+    --nubank-surface: 145 40% 40%;
+    --nubank-hover: 145 50% 28%;
+    --nubank-accent: 145 63% 45%;
+    --nubank-foreground: 0 0% 100%;
+    --nubank-muted: 145 20% 85%;
+
+    /* Chart colors - RXFin green palette */
+    --chart-1: 145 63% 35%;
+    --chart-2: 180 60% 45%;
+    --chart-3: 200 70% 50%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 0 72% 51%;
+    --chart-axis: 215 16% 47%;
+
+    /* Sidebar - Clean white with green accents */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 145 20% 25%;
+    --sidebar-primary: 145 63% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 145 20% 96%;
+    --sidebar-accent-foreground: 145 20% 15%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 145 63% 35%;
+
+    /* Gradients - RXFin green tones */
+    --gradient-primary: linear-gradient(135deg, hsl(145 63% 35%), hsl(145 50% 45%));
+    --gradient-income: linear-gradient(135deg, hsl(145 63% 35%), hsl(155 50% 40%));
+    --gradient-expense: linear-gradient(135deg, hsl(0 72% 51%), hsl(10 80% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(145 10% 99%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(145 30% 12%) 0%, hsl(145 25% 18%) 100%);
+    --gradient-nubank: linear-gradient(135deg, hsl(145 63% 35%) 0%, hsl(145 50% 45%) 100%);
+
+    /* Shadows */
+    --shadow-xs: 0 1px 2px 0 hsl(220 13% 9% / 0.03);
+    --shadow-sm: 0 1px 3px 0 hsl(220 13% 9% / 0.04), 0 1px 2px -1px hsl(220 13% 9% / 0.03);
+    --shadow-md: 0 4px 6px -1px hsl(220 13% 9% / 0.06), 0 2px 4px -2px hsl(220 13% 9% / 0.04);
+    --shadow-lg: 0 10px 15px -3px hsl(220 13% 9% / 0.07), 0 4px 6px -4px hsl(220 13% 9% / 0.04);
+    --shadow-glow: 0 0 20px hsl(145 63% 35% / 0.15);
+  }
+
+  .dark {
+    /* RXFin Dark Mode - Deep green tones */
+    --background: 145 20% 7%;
+    --foreground: 145 10% 92%;
+
+    --card: 145 20% 10%;
+    --card-foreground: 145 10% 92%;
+
+    --popover: 145 20% 10%;
+    --popover-foreground: 145 10% 92%;
+
+    --primary: 145 55% 45%;
+    --primary-foreground: 145 20% 7%;
+
+    --secondary: 145 15% 15%;
+    --secondary-foreground: 145 10% 85%;
+
+    --muted: 145 15% 15%;
+    --muted-foreground: 145 8% 65%;
+
+    --accent: 145 30% 18%;
+    --accent-foreground: 145 55% 70%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 145 55% 45%;
+    --success-foreground: 145 20% 7%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 145 20% 7%;
+
+    --income: 145 55% 45%;
+    --income-light: 145 30% 18%;
+    --expense: 0 62% 50%;
+    --expense-light: 0 35% 18%;
+
+    --border: 145 15% 18%;
+    --input: 145 15% 18%;
+    --ring: 145 55% 45%;
+
+    /* Chart colors - dark mode */
+    --chart-1: 145 55% 45%;
+    --chart-2: 180 50% 55%;
+    --chart-3: 200 60% 60%;
+    --chart-4: 38 85% 55%;
+    --chart-5: 0 65% 55%;
+    --chart-axis: 215 15% 65%;
+
+    --sidebar-background: 145 20% 9%;
+    --sidebar-foreground: 145 10% 85%;
+    --sidebar-primary: 145 55% 45%;
+    --sidebar-primary-foreground: 145 20% 7%;
+    --sidebar-accent: 145 15% 13%;
+    --sidebar-accent-foreground: 145 10% 90%;
+    --sidebar-border: 145 15% 16%;
+    --sidebar-ring: 145 55% 45%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(145 55% 45%), hsl(145 45% 52%));
+    --gradient-income: linear-gradient(135deg, hsl(145 55% 45%), hsl(155 45% 48%));
+    --gradient-expense: linear-gradient(135deg, hsl(0 62% 50%), hsl(10 70% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(145 20% 10%) 0%, hsl(145 20% 8%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(145 20% 5%) 0%, hsl(145 20% 10%) 100%);
+
+    --shadow-glow: 0 0 20px hsl(145 55% 45% / 0.12);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    @apply text-sm;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: "cv11", "ss01";
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography scale - Enterprise SaaS */
+  h1 {
+    @apply text-2xl font-semibold text-foreground;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    @apply text-xl font-semibold text-foreground;
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    @apply text-lg font-semibold text-foreground;
+    letter-spacing: -0.02em;
+  }
+
+  h4 {
+    @apply text-base font-semibold text-foreground;
+    letter-spacing: -0.02em;
+  }
+
+  /* Data-dense elements */
+  table {
+    @apply text-[13px];
+  }
+
+  th {
+    @apply text-xs font-bold text-muted-foreground uppercase tracking-wider;
+  }
+
+  td {
+    @apply text-[13px];
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* iOS zoom prevention - use class-based approach */
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Tabular nums utility */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Gradient utilities */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-income {
+    background: var(--gradient-income);
+  }
+
+  .gradient-expense {
+    background: var(--gradient-expense);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  /* Shadow utilities */
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
+  }
+
+  /* Dashboard-specific utilities */
+  .dashboard-grid {
+    @apply grid gap-4 md:gap-6;
+  }
+
+  .data-label {
+    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+  }
+
+  .data-value {
+    @apply text-lg font-semibold tabular-nums;
+  }
+
+  .data-value-sm {
+    @apply text-base font-medium tabular-nums;
+  }
+
+  /* Hide scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area for bottom navigation */
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Gradient utilities */
+  .gradient-nubank {
+    background: var(--gradient-nubank);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px hsl(145 63% 35% / 0.2); }
+  50% { box-shadow: 0 0 25px hsl(145 63% 35% / 0.35); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* RXFin Loading Spinner - Fan blade animation */
+@keyframes rxfin-fan-spin {
+  0%   { transform: rotate(0deg); }
+  10%  { transform: rotate(30deg); }   /* accelerating */
+  30%  { transform: rotate(180deg); }  /* fast */
+  50%  { transform: rotate(360deg); }  /* fast */
+  70%  { transform: rotate(540deg); }  /* fast */
+  90%  { transform: rotate(680deg); }  /* decelerating */
+  100% { transform: rotate(720deg); }  /* slow stop → restart */
+}
+
+.rxfin-blades-spin {
+  animation: rxfin-fan-spin 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: 50px 50px;
+}
+
+@keyframes rxfin-ring-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.rxfin-ring-spin {
+  animation: rxfin-ring-spin 3s linear infinite;
+  transform-origin: 50px 50px;
+}
+
+/* Loading bar animation for skeleton states */
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* =============================================
+   CHART TEXT SHARPNESS & ANTI-ALIASING
+   ============================================= */
+
+.recharts-wrapper svg {
+  shape-rendering: geometricPrecision;
+}
+
+.recharts-wrapper text,
+.recharts-wrapper tspan {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.recharts-wrapper .recharts-surface {
+  transform: translateZ(0);
+}
+
+.recharts-tooltip-wrapper {
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide Y-axis on mobile for cleaner charts */
+@media (max-width: 768px) {
+  .recharts-yAxis {
+    display: none;
+  }
+
+  /* Prevent iOS zoom on input focus - minimum 16px font size */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="password"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure Pluggy Connect widget iframe is clickable above app overlays.
+   IMPORTANT: Only target the iframe itself, NOT the zoid container overlays.
+   Targeting the containers would keep broken/stuck overlays permanently on top. */
+iframe[name*="pluggy"],
+iframe[src*="pluggy"] {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+/* Pluggy overlay container — only set z-index when it contains a visible iframe */
+body > div[class*="pluggy-connect"]:has(iframe) {
+  z-index: 99998 !important;
+  pointer-events: auto !important;
+}
+
+/* Zoid container — only elevate when it has an active iframe child */
+[class*="zoid-pluggy-connect"]:has(iframe) {
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}

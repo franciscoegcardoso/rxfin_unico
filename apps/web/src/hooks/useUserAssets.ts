@@ -1,0 +1,128 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Asset } from '@/types/financial';
+import { toast } from 'sonner';
+
+const QUERY_KEY = 'user-assets';
+
+// Fields stored as top-level columns
+const TOP_LEVEL_FIELDS = ['id', 'user_id', 'name', 'type', 'value', 'description', 'purchase_date', 'purchase_value', 'is_rental_property', 'rental_income_id', 'rental_value', 'metadata', 'created_at', 'updated_at'] as const;
+
+// Map from camelCase app fields to snake_case DB columns
+const APP_TO_DB_TOP: Record<string, string> = {
+  name: 'name', type: 'type', value: 'value', description: 'description',
+  purchaseDate: 'purchase_date', purchaseValue: 'purchase_value',
+  isRentalProperty: 'is_rental_property', rentalIncomeId: 'rental_income_id', rentalValue: 'rental_value',
+};
+
+const DB_TO_APP_TOP: Record<string, string> = Object.entries(APP_TO_DB_TOP).reduce(
+  (acc, [k, v]) => ({ ...acc, [v]: k }), {} as Record<string, string>
+);
+
+function dbToApp(row: any): Asset {
+  const asset: any = { id: row.id };
+  for (const [dbCol, appField] of Object.entries(DB_TO_APP_TOP)) {
+    if (row[dbCol] !== undefined && row[dbCol] !== null) {
+      asset[appField] = row[dbCol];
+    }
+  }
+  if (row.metadata && typeof row.metadata === 'object') {
+    Object.assign(asset, row.metadata);
+  }
+  return asset as Asset;
+}
+
+function appToDb(asset: Partial<Asset> & { id?: string }, userId?: string) {
+  const dbRow: any = {};
+  if (userId) dbRow.user_id = userId;
+
+  const metadata: any = {};
+  for (const [key, val] of Object.entries(asset)) {
+    if (key === 'id') continue;
+    const dbCol = APP_TO_DB_TOP[key];
+    if (dbCol) {
+      dbRow[dbCol] = val;
+    } else {
+      metadata[key] = val;
+    }
+  }
+  dbRow.metadata = metadata;
+  return dbRow;
+}
+
+export function useUserAssets() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const userId = user?.id;
+
+  const query = useQuery({
+    queryKey: [QUERY_KEY, userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('user_assets' as any)
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at');
+      if (error) throw error;
+      return (data as any[]).map(dbToApp);
+    },
+    enabled: !!userId,
+  });
+
+  const addAsset = useMutation({
+    mutationFn: async (asset: Omit<Asset, 'id'>) => {
+      const dbRow = appToDb(asset, userId);
+      const { data, error } = await supabase.from('user_assets' as any).insert(dbRow).select('id').single();
+      if (error) throw error;
+      return (data as any).id as string;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast.success('Bem/investimento adicionado com sucesso!');
+    },
+    onError: () => toast.error('Erro ao adicionar bem/investimento'),
+  });
+
+  const updateAsset = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Asset> }) => {
+      const { data: current, error: fetchErr } = await supabase
+        .from('user_assets' as any).select('metadata').eq('id', id).single();
+      if (fetchErr) throw fetchErr;
+
+      const dbRow = appToDb(updates);
+      const existingMeta = (current as any)?.metadata || {};
+      dbRow.metadata = { ...existingMeta, ...dbRow.metadata };
+
+      const { error } = await supabase.from('user_assets' as any).update(dbRow).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast.success('Bem/investimento atualizado com sucesso!');
+    },
+    onError: () => toast.error('Erro ao atualizar bem/investimento'),
+  });
+
+  const removeAsset = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('user_assets' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [QUERY_KEY] });
+      toast.success('Bem/investimento removido com sucesso!');
+    },
+    onError: () => toast.error('Erro ao remover bem/investimento'),
+  });
+
+  return {
+    assets: query.data ?? [],
+    isLoading: query.isLoading,
+    addAsset,
+    updateAsset,
+    removeAsset,
+  };
+}
+// sync

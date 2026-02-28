@@ -1,0 +1,1 @@
+ALTER TABLE public.pluggy_accounts ADD COLUMN card_brand TEXT;

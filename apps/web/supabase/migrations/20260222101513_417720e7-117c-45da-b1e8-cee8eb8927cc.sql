@@ -1,0 +1,1 @@
+UPDATE pages SET is_active_admin = false, is_active_users = false WHERE path IN ('/dashboard', '/metas-mensais');

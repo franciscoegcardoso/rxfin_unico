@@ -1,0 +1,1 @@
+ALTER TABLE public.credit_card_bills ADD COLUMN paid_amount numeric DEFAULT NULL;

@@ -1,0 +1,377 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { useFinancial } from '@/contexts/FinancialContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useVisibility } from '@/contexts/VisibilityContext';
+import { useTour } from '@/contexts/TourContext';
+import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
+import { useDemoMode } from '@/hooks/useDemoMode';
+import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
+import { supabase } from '@/integrations/supabase/client';
+import { VisibilityToggle } from '@/components/ui/visibility-toggle';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Target,
+  ChevronRight,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { BudgetInsightsSummary } from '@/components/inicio/BudgetInsightsSummary';
+import { PackagesSummaryCard } from '@/components/inicio/PackagesSummaryCard';
+import { InsuranceExpirationAlerts } from '@/components/inicio/InsuranceExpirationAlerts';
+import { MobileHomeHero } from '@/components/inicio/MobileHomeHero';
+import { OnboardingInsightCard } from '@/components/inicio/OnboardingInsightCard';
+import { DemoBadge } from '@/components/inicio/DemoBadge';
+import { ControlOnboardingBanner } from '@/components/shared/ControlOnboardingBanner';
+import {
+  MonthSummaryCard,
+  ExpensesStatusCard,
+  CreditCardSpendingCard,
+  BudgetCompositionCard,
+  PendingCategorizationCard,
+} from '@/components/inicio/MobileHomeSections';
+import { UpcomingEventsCard } from '@/components/inicio/UpcomingEventsCard';
+import { EconomicIndicators } from '@/components/dashboard/EconomicIndicators';
+import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
+import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
+
+// Componente de Categoria com Meta
+const CategoryGoalItem: React.FC<{
+  category: string;
+  spent: number;
+  goal: number;
+  isHidden: boolean;
+}> = ({ category, spent, goal, isHidden }) => {
+  const percentage = goal > 0 ? Math.min((spent / goal) * 100, 100) : 0;
+  const isOverBudget = spent > goal;
+  
+  const formatCurrency = (value: number) => {
+    if (isHidden) return '••••';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium">{category}</span>
+        <span className={cn(
+          "text-xs",
+          isOverBudget ? "text-expense" : "text-muted-foreground"
+        )}>
+          {formatCurrency(spent)} / {formatCurrency(goal)}
+        </span>
+      </div>
+      <Progress 
+        value={percentage} 
+        className={cn("h-2", isOverBudget && "[&>div]:bg-expense")}
+      />
+    </div>
+  );
+};
+
+/** Wrapper that adds demo visual treatment to cards */
+const DemoCardWrapper: React.FC<{ isDemoMode: boolean; children: React.ReactNode; className?: string }> = ({ isDemoMode, children, className }) => {
+  if (!isDemoMode) return <>{children}</>;
+  return (
+    <div className={cn("relative", className)}>
+      <div className="[&>*]:border-dashed [&>*]:opacity-80">
+        {children}
+      </div>
+      <DemoBadge />
+    </div>
+  );
+};
+
+const Inicio: React.FC = () => {
+  const { config } = useFinancial();
+  const { user } = useAuth();
+  const { isHidden } = useVisibility();
+  const { hasCompletedTour, startTour } = useTour();
+  const { isFeatureEnabled } = useFeaturePreferences();
+  const { isDemoMode } = useDemoMode();
+  const { currentPhase, controlDone } = useOnboardingCheckpoint();
+  const showControlBanner = currentPhase === 'completed' && !controlDone;
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [firstName, setFirstName] = useState<string>('');
+  const [hasTriggeredTour, setHasTriggeredTour] = useState(false);
+  
+  // Hooks para metas mensais e lançamentos realizados
+  const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
+  const { lancamentos } = useLancamentosRealizados();
+  
+  // Feature flags
+  const showMetasMensais = isFeatureEnabled('metas-mensais');
+
+  // Auto-start tour for new users after first load
+  useEffect(() => {
+    if (!hasCompletedTour && !hasTriggeredTour && user) {
+      const timer = setTimeout(() => {
+        startTour();
+        setHasTriggeredTour(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [hasCompletedTour, hasTriggeredTour, startTour, user]);
+
+  // Busca nome do usuário
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (!user) {
+        setFirstName('');
+        return;
+      }
+
+      const metaName = user.user_metadata?.full_name;
+      if (metaName) {
+        setFirstName(metaName.split(' ')[0]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (data?.full_name) {
+        setFirstName(data.full_name.split(' ')[0]);
+      } else {
+        setFirstName(user.email?.split('@')[0] || 'Usuário');
+      }
+    };
+
+    fetchUserName();
+  }, [user]);
+
+  // Categorias com metas
+  const categoryGoals = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const currentGoal = getGoalByMonth(currentMonth);
+    
+    const monthExpenses = lancamentos.filter(l => 
+      l.tipo === 'despesa' && 
+      l.mes_referencia === currentMonth &&
+      !isBillPaymentTransaction(l)
+    );
+    
+    const spentByCategory = monthExpenses.reduce((acc, l) => {
+      const category = l.categoria || 'Outros';
+      acc[category] = (acc[category] || 0) + l.valor_realizado;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    if (currentGoal && currentGoal.item_goals && Object.keys(currentGoal.item_goals).length > 0) {
+      const enabledExpenses = config.expenseItems.filter(e => e.enabled);
+      
+      const goalsByCategory = enabledExpenses.reduce((acc, expense) => {
+        const category = expense.category || 'Outros';
+        const itemGoal = currentGoal.item_goals[expense.id];
+        const goalValue = itemGoal?.goal ?? expense.defaultValue;
+        
+        if (!acc[category]) acc[category] = 0;
+        acc[category] += goalValue;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      return Object.entries(goalsByCategory).map(([category, goal]) => ({
+        category,
+        goal,
+        spent: spentByCategory[category] || 0,
+      }));
+    }
+    
+    const enabledExpenses = config.expenseItems.filter(e => e.enabled);
+    const groupedByCategory = enabledExpenses.reduce((acc, expense) => {
+      const category = expense.category || 'Outros';
+      if (!acc[category]) acc[category] = { goal: 0 };
+      acc[category].goal += expense.defaultValue;
+      return acc;
+    }, {} as Record<string, { goal: number }>);
+    
+    return Object.entries(groupedByCategory).map(([category, values]) => ({
+      category,
+      goal: values.goal,
+      spent: spentByCategory[category] || 0,
+    }));
+  }, [config.expenseItems, getGoalByMonth, lancamentos]);
+
+  // Saldo líquido do mês
+  const saldoLiquido = useMemo(() => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    const monthItems = lancamentos.filter(l => l.mes_referencia === currentMonth && !isBillPaymentTransaction(l));
+    const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor_realizado, 0);
+    const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor_realizado, 0);
+    return receitas - despesas;
+  }, [lancamentos]);
+
+  const formatCurrencyFull = (value: number) => {
+    if (isHidden) return '••••••';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  // ─── Mobile layout ────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <AppLayout>
+        <div className="space-y-4">
+          <MobileHomeHero firstName={firstName} saldoLiquido={saldoLiquido} />
+
+          {/* Onboarding Insight (replaces legacy checklist) */}
+          {isDemoMode && <OnboardingInsightCard />}
+          {showControlBanner && <ControlOnboardingBanner />}
+
+          <InsuranceExpirationAlerts />
+          <UpcomingEventsCard />
+
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <MonthSummaryCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <ExpensesStatusCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <CreditCardSpendingCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <BudgetCompositionCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <PendingCategorizationCard />
+          </DemoCardWrapper>
+
+          {!isDemoMode && <EconomicIndicators />}
+
+          <BudgetInsightsSummary />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ─── Desktop / Tablet layout ──────────────────────────────
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || '';
+  const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex items-center justify-between"
+        >
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 border-2 border-primary/20">
+              <AvatarImage src={avatarUrl} alt={firstName} />
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                {getInitials(firstName || 'U')}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl font-bold">
+                Olá, {firstName || 'Usuário'}! 👋
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Saldo Líquido do Mês:{' '}
+                <span className={cn(
+                  "font-semibold",
+                  saldoLiquido >= 0 ? "text-income" : "text-expense"
+                )}>
+                  {formatCurrencyFull(saldoLiquido)}
+                </span>
+              </p>
+            </div>
+          </div>
+          <VisibilityToggle />
+        </motion.div>
+
+        {/* Onboarding Insight (replaces legacy checklist) */}
+        {isDemoMode && <OnboardingInsightCard />}
+        {showControlBanner && <ControlOnboardingBanner />}
+
+        <InsuranceExpirationAlerts />
+        <UpcomingEventsCard />
+        <PackagesSummaryCard />
+
+        {/* Main content grid */}
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4" data-tour="metrics-cards">
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <MonthSummaryCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <ExpensesStatusCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <CreditCardSpendingCard />
+          </DemoCardWrapper>
+        </div>
+
+        <div className={cn(
+          "grid gap-4",
+          showMetasMensais ? "grid-cols-2" : "grid-cols-1"
+        )}>
+          {showMetasMensais && (
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <Card data-tour="category-goals">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      Gasto vs Meta por Categoria
+                    </CardTitle>
+                    <button
+                      onClick={() => navigate('/planejamento?tab=metas')}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      Editar metas
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {categoryGoals.length > 0 ? (
+                    categoryGoals.map((item) => (
+                      <CategoryGoalItem
+                        key={item.category}
+                        category={item.category}
+                        spent={item.spent}
+                        goal={item.goal}
+                        isHidden={isHidden}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhuma categoria configurada. Configure em Parâmetros.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </DemoCardWrapper>
+          )}
+
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <BudgetCompositionCard />
+          </DemoCardWrapper>
+        </div>
+
+        <DemoCardWrapper isDemoMode={isDemoMode}>
+          <PendingCategorizationCard />
+        </DemoCardWrapper>
+
+        {!isDemoMode && <EconomicIndicators />}
+
+        <BudgetInsightsSummary />
+      </div>
+    </AppLayout>
+  );
+};
+
+export default Inicio;
