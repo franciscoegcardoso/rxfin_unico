@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.fipe-cohort-standard-curve]
 verify_jwt = false
+
+[functions.budget-insights]
+verify_jwt = false
