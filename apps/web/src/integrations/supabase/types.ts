@@ -1806,6 +1806,7 @@ export type Database = {
           entity_type: string
           id: string
           linked_records_deleted: number | null
+          retention_until: string | null
           user_id: string
         }
         Insert: {
@@ -1817,6 +1818,7 @@ export type Database = {
           entity_type: string
           id?: string
           linked_records_deleted?: number | null
+          retention_until?: string | null
           user_id: string
         }
         Update: {
@@ -1828,6 +1830,7 @@ export type Database = {
           entity_type?: string
           id?: string
           linked_records_deleted?: number | null
+          retention_until?: string | null
           user_id?: string
         }
         Relationships: []
@@ -6924,6 +6927,51 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_events: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string | null
+          http_status: number | null
+          id: string
+          idempotency_key: string
+          ip_address: string | null
+          payload: Json | null
+          processed_at: string | null
+          processing_ms: number | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          http_status?: number | null
+          id?: string
+          idempotency_key: string
+          ip_address?: string | null
+          payload?: Json | null
+          processed_at?: string | null
+          processing_ms?: number | null
+          source: string
+          status?: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          http_status?: number | null
+          id?: string
+          idempotency_key?: string
+          ip_address?: string | null
+          payload?: Json | null
+          processed_at?: string | null
+          processing_ms?: number | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
       workspace_feature_preferences: {
         Row: {
           created_at: string
@@ -7107,103 +7155,6 @@ export type Database = {
         }
         Relationships: []
       }
-      fipe_catalog_health: {
-        Row: {
-          anos_absurdos: number | null
-          anos_faltando_catalog: number | null
-          campos_nulos_criticos: number | null
-          checked_at: string | null
-          fipe_codes_com_hifen: number | null
-          metadados_inconsistentes: number | null
-          orfaos_no_historico: number | null
-          st_absurdos: string | null
-          st_anos_faltando: string | null
-          st_hifen: string | null
-          st_metadados: string | null
-          st_nulos: string | null
-          st_orfaos: string | null
-          st_year_id: string | null
-          status_geral: string | null
-          total_issues: number | null
-          year_id_inconsistentes: number | null
-        }
-        Relationships: []
-      }
-      fipe_catalog_health_history: {
-        Row: {
-          anos_absurdos: number | null
-          anos_faltando_catalog: number | null
-          campos_nulos_criticos: number | null
-          correcao_detalhes: Json | null
-          correcoes_aplicadas: number | null
-          fipe_codes_com_hifen: number | null
-          metadados_inconsistentes: number | null
-          orfaos_no_historico: number | null
-          run_at: string | null
-          status: string | null
-          total_issues: number | null
-          trigger_context: string | null
-          triggered_by: string | null
-          year_id_inconsistentes: number | null
-        }
-        Insert: {
-          anos_absurdos?: number | null
-          anos_faltando_catalog?: number | null
-          campos_nulos_criticos?: number | null
-          correcao_detalhes?: Json | null
-          correcoes_aplicadas?: number | null
-          fipe_codes_com_hifen?: number | null
-          metadados_inconsistentes?: number | null
-          orfaos_no_historico?: number | null
-          run_at?: string | null
-          status?: string | null
-          total_issues?: number | null
-          trigger_context?: string | null
-          triggered_by?: string | null
-          year_id_inconsistentes?: number | null
-        }
-        Update: {
-          anos_absurdos?: number | null
-          anos_faltando_catalog?: number | null
-          campos_nulos_criticos?: number | null
-          correcao_detalhes?: Json | null
-          correcoes_aplicadas?: number | null
-          fipe_codes_com_hifen?: number | null
-          metadados_inconsistentes?: number | null
-          orfaos_no_historico?: number | null
-          run_at?: string | null
-          status?: string | null
-          total_issues?: number | null
-          trigger_context?: string | null
-          triggered_by?: string | null
-          year_id_inconsistentes?: number | null
-        }
-        Relationships: []
-      }
-      fipe_error_summary: {
-        Row: {
-          error_type: string | null
-          first_seen: string | null
-          last_seen: string | null
-          level: string | null
-          runner: string | null
-          total: number | null
-          unique_fipe_codes: number | null
-          unique_refs: number | null
-        }
-        Relationships: []
-      }
-      fipe_scale_progress: {
-        Row: {
-          erros: number | null
-          indisponiveis: number | null
-          inseridos: number | null
-          jobs: number | null
-          refs_processadas: number | null
-          status: string | null
-        }
-        Relationships: []
-      }
       onboarding_control_funnel: {
         Row: {
           onboarding_control_phase: string | null
@@ -7378,6 +7329,7 @@ export type Database = {
         Args: { new_phase: string }
         Returns: undefined
       }
+      anonymize_user_data: { Args: { p_user_id: string }; Returns: Json }
       apply_batch_categories: { Args: { p_items: Json }; Returns: Json }
       apply_lancamento_category_rule: {
         Args: { p_categoria: string; p_nome_pattern: string; p_tipo: string }
@@ -7506,9 +7458,14 @@ export type Database = {
       cleanup_ai_rate_limits: { Args: never; Returns: undefined }
       cleanup_expired_admin_sessions: { Args: never; Returns: number }
       cleanup_expired_ai_audits: { Args: never; Returns: undefined }
+      cleanup_expired_audit_logs: { Args: never; Returns: number }
       cleanup_expired_trash: { Args: never; Returns: Json }
       cleanup_expired_verification_tokens: { Args: never; Returns: undefined }
+      cleanup_fipe_phase3_queue: { Args: never; Returns: number }
       cleanup_old_audit_logs: { Args: never; Returns: undefined }
+      cleanup_old_fipe_errors: { Args: never; Returns: number }
+      cleanup_old_rate_limits: { Args: never; Returns: number }
+      cleanup_old_webhook_events: { Args: never; Returns: number }
       cleanup_rate_limit_log: { Args: never; Returns: number }
       cleanup_stale_device_tokens: { Args: never; Returns: number }
       continue_scale_job: {
@@ -7548,6 +7505,7 @@ export type Database = {
         Args: { p_batch_size?: number; p_fipe_code: string; p_offset: number }
         Returns: undefined
       }
+      export_user_data: { Args: { p_user_id?: string }; Returns: Json }
       f_missing_prices: {
         Args: { ref: number }
         Returns: {
@@ -7592,6 +7550,7 @@ export type Database = {
       }
       get_admin_dashboard_chart_data: { Args: never; Returns: Json }
       get_admin_dashboard_metrics_30d: { Args: never; Returns: Json }
+      get_admin_overview: { Args: never; Returns: Json }
       get_ai_monthly_summary: {
         Args: { p_month?: string; p_user_id: string }
         Returns: Json
@@ -7648,6 +7607,14 @@ export type Database = {
           year_id: string
         }[]
       }
+      get_dashboard_summary: {
+        Args: { p_month: string; p_user_id: string }
+        Returns: Json
+      }
+      get_financial_report: {
+        Args: { p_end_month: string; p_start_month: string; p_user_id: string }
+        Returns: Json
+      }
       get_fipe_brands: {
         Args: { p_vehicle_type: number }
         Returns: {
@@ -7670,7 +7637,40 @@ export type Database = {
           year_val: number
         }[]
       }
+      get_fipe_catalog_health_check_live: { Args: never; Returns: Json }
+      get_fipe_catalog_health_history: {
+        Args: never
+        Returns: {
+          anos_absurdos: number
+          anos_faltando_catalog: number
+          campos_nulos_criticos: number
+          correcao_detalhes: Json
+          correcoes_aplicadas: number
+          fipe_codes_com_hifen: number
+          metadados_inconsistentes: number
+          orfaos_no_historico: number
+          run_at: string
+          status: string
+          total_issues: number
+          trigger_context: string
+          triggered_by: string
+          year_id_inconsistentes: number
+        }[]
+      }
       get_fipe_catalog_health_summary: { Args: never; Returns: Json }
+      get_fipe_error_summary: {
+        Args: never
+        Returns: {
+          error_type: string
+          first_seen: string
+          last_seen: string
+          level: string
+          runner: string
+          total: number
+          unique_fipe_codes: number
+          unique_refs: number
+        }[]
+      }
       get_fipe_models: {
         Args: { p_brand_id: number; p_vehicle_type: number }
         Returns: {
@@ -7679,6 +7679,29 @@ export type Database = {
         }[]
       }
       get_fipe_runner_status: { Args: never; Returns: Json }
+      get_fipe_scale_progress: {
+        Args: never
+        Returns: {
+          erros: number
+          indisponiveis: number
+          inseridos: number
+          jobs: number
+          refs_processadas: number
+          status: string
+        }[]
+      }
+      get_fipe_search_optimized: {
+        Args: { p_limit?: number; p_query: string; p_vehicle_type?: number }
+        Returns: {
+          brand_name: string
+          fipe_code: string
+          fuel_type: number
+          model_name: string
+          similarity_score: number
+          vehicle_type: number
+          year: number
+        }[]
+      }
       get_fipe_years: {
         Args: { p_brand_id: number; p_model_id: number; p_vehicle_type: number }
         Returns: {
@@ -7796,6 +7819,14 @@ export type Database = {
         }
       }
       get_user_cpf: { Args: { p_user_id: string }; Returns: string }
+      get_user_data_tables: {
+        Args: never
+        Returns: {
+          has_user_id: boolean
+          row_count: number
+          table_name: string
+        }[]
+      }
       get_user_plan_slug: { Args: { _user_id: string }; Returns: string }
       get_user_push_tokens: {
         Args: { _user_id: string }
@@ -7958,6 +7989,7 @@ export type Database = {
       rescue_stuck_jobs: { Args: never; Returns: number }
       restore_from_trash: { Args: { _trash_id: string }; Returns: Json }
       revoke_admin_session: { Args: { _token: string }; Returns: Json }
+      run_all_cleanups: { Args: never; Returns: Json }
       run_crm_maintenance: { Args: never; Returns: Json }
       run_fipe_catalog_health_check: {
         Args: {
@@ -7984,6 +8016,8 @@ export type Database = {
         Args: { _notification_type: string; _user_id: string }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       split_transaction: {
         Args: {
           p_installment_current?: number

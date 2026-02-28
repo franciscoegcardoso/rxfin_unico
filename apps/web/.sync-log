@@ -1,12 +1,8 @@
-2026-02-27T18:58:01Z | f8fe271c53a7de2634820fb550947c1c8e9f1843 | Integrate v7.4 engine
+2026-02-28T04:04:45Z | be805a63e309e545ac111132da233689ebdb182b | Lovable update
 
-Add Depreciation Engine v7.4 integration:
-- Replaced core v7. ts with v7.4 drop-in and extended data flow
-- Introduced market regime data fetch and vehicle segment lookup via new hooks
-- Wired v7.4 into depreciation hook, including regime/IPCA adjustments and CI handling
-- Added caching for regime data (24h) and segment data (via React Query)
-- Created migrations for market_regime_annual and vehicle_segments
-- Updated DepreciationCurveChart methodology dialog to reflect v7.4
-- Minor type adjustments and backward-compat result converters
+For the code present, I get the error below.
 
-X-Lovable-Edit-ID: edt-76d33f43-1191-44e2-ade3-cdbd5d5d72ff
+Please think step-by-step in order to resolve it.
+
+
+X-Lovable-Edit-ID: edt-0f752c3b-0d5e-41f7-bf0b-67489c54c809
