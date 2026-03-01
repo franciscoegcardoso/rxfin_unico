@@ -1,8 +1,6 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Hand } from "lucide-react";
+import React, { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Hand } from 'lucide-react';
 
 interface SwipeHintProps {
   show: boolean;
@@ -10,8 +8,13 @@ interface SwipeHintProps {
   autoHideDelay?: number;
 }
 
-export function SwipeHint({ show, onDismiss, autoHideDelay = 1500 }: SwipeHintProps) {
+export const SwipeHint: React.FC<SwipeHintProps> = ({ 
+  show, 
+  onDismiss, 
+  autoHideDelay = 1500
+}) => {
   const [isVisible, setIsVisible] = useState(show);
+
   const handleDismiss = useCallback(() => {
     setIsVisible(false);
     onDismiss();
@@ -20,23 +23,30 @@ export function SwipeHint({ show, onDismiss, autoHideDelay = 1500 }: SwipeHintPr
   useEffect(() => {
     if (show) {
       setIsVisible(true);
-      const t = setTimeout(handleDismiss, autoHideDelay);
-      return () => clearTimeout(t);
+      const timer = setTimeout(handleDismiss, autoHideDelay);
+      return () => clearTimeout(timer);
     }
   }, [show, autoHideDelay, handleDismiss]);
 
   useEffect(() => {
     if (!isVisible) return;
-    const handleTouch = () => handleDismiss();
-    window.addEventListener("touchstart", handleTouch, { passive: true });
-    window.addEventListener("pointerdown", handleTouch, { passive: true });
+
+    const handleTouch = () => {
+      handleDismiss();
+    };
+
+    window.addEventListener('touchstart', handleTouch, { passive: true });
+    window.addEventListener('pointerdown', handleTouch, { passive: true });
+
     return () => {
-      window.removeEventListener("touchstart", handleTouch);
-      window.removeEventListener("pointerdown", handleTouch);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('pointerdown', handleTouch);
     };
   }, [isVisible, handleDismiss]);
 
-  const isTouchDevice = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  const isTouchDevice = typeof window !== 'undefined' && 
+    ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
   if (!isTouchDevice) return null;
 
   return (
@@ -52,12 +62,23 @@ export function SwipeHint({ show, onDismiss, autoHideDelay = 1500 }: SwipeHintPr
           <div className="flex flex-col items-center gap-2">
             <motion.div
               className="relative"
+              initial={{ x: 0 }}
               animate={{ x: [-20, 20, -20] }}
-              transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
             >
               <Hand className="h-10 w-10 text-primary transform -rotate-45" />
             </motion.div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="text-xs text-muted-foreground font-medium">
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-xs text-muted-foreground font-medium"
+            >
               Deslize para navegar
             </motion.p>
           </div>
@@ -65,4 +86,4 @@ export function SwipeHint({ show, onDismiss, autoHideDelay = 1500 }: SwipeHintPr
       )}
     </AnimatePresence>
   );
-}
+};
