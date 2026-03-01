@@ -23,6 +23,7 @@ import {
   Handshake,
   Eye,
   Activity,
+  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -40,6 +41,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   // Principal
   { label: 'Painel', href: '/admin/dashboard', icon: LayoutDashboard, group: 'Principal' },
+  { label: 'Estratégico', href: '/admin/estrategico', icon: Target, group: 'Principal' },
   { label: 'Usuários', href: '/admin/usuarios', icon: Users, group: 'Principal' },
   { label: 'Planos', href: '/admin/planos', icon: Crown, group: 'Principal' },
 

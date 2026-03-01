@@ -322,9 +322,6 @@ const SimuladorCarroAB: React.FC = () => {
     if (context?.brandCode && context?.modelCode && context?.yearCode) {
       contextLoadedRef.current = true;
       pendingContextRef.current = null;
-      
-      console.log('[CarroAB] Auto-filling from context:', context);
-      
       fipeA.initializeFromSaved({
         vehicleType: context.vehicleType,
         brandCode: context.brandCode,

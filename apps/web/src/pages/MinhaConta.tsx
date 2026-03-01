@@ -6,15 +6,17 @@ import { WorkspaceTab } from '@/components/account/WorkspaceTab';
 import { SecurityTab } from '@/components/account/SecurityTab';
 import { SubscriptionTab } from '@/components/account/SubscriptionTab';
 import { PreferencesTab } from '@/components/account/PreferencesTab';
+import { AccountOverviewTab } from '@/components/account/AccountOverviewTab';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
-import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft } from 'lucide-react';
+import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 
 const menuItems = [
+  { id: 'visao-geral', label: 'Visão geral', description: 'Resumo da sua conta', icon: LayoutDashboard },
   { id: 'perfil', label: 'Perfil', description: 'Suas informações pessoais', icon: User },
   { id: 'workspace', label: 'Workspace', description: 'Módulos e pessoas compartilhadas', icon: Briefcase },
   { id: 'seguranca', label: 'Segurança', description: 'Senha e autenticação', icon: Shield },
@@ -50,12 +52,13 @@ const MinhaContaContent: React.FC = () => {
 
   const renderTabContent = () => {
     switch (currentTab) {
+      case 'visao-geral': return <AccountOverviewTab />;
       case 'perfil': return <ProfileTab />;
       case 'workspace': return <WorkspaceTab />;
       case 'seguranca': return <SecurityTab />;
       case 'assinatura': return <SubscriptionTab />;
       case 'preferencias': return <PreferencesTab />;
-      default: return null;
+      default: return <AccountOverviewTab />;
     }
   };
 
@@ -70,7 +73,7 @@ const MinhaContaContent: React.FC = () => {
                 variant="ghost" 
                 size="icon" 
                 onClick={handleBack}
-                className="h-8 w-8 shrink-0"
+                className="h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 touch-manipulation"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -123,7 +126,7 @@ const MinhaContaContent: React.FC = () => {
           </p>
         </div>
 
-        <Tabs value={currentTab || 'perfil'} onValueChange={handleTabChange} className="space-y-6">
+        <Tabs value={currentTab || 'visao-geral'} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -139,6 +142,7 @@ const MinhaContaContent: React.FC = () => {
             })}
           </TabsList>
 
+          <TabsContent value="visao-geral" className="mt-6"><AccountOverviewTab /></TabsContent>
           <TabsContent value="perfil" className="mt-6"><ProfileTab /></TabsContent>
           <TabsContent value="workspace" className="mt-6"><WorkspaceTab /></TabsContent>
           <TabsContent value="seguranca" className="mt-6"><SecurityTab /></TabsContent>

@@ -2,24 +2,28 @@
   "name": "rxfin",
   "version": "1.0.0",
   "private": true,
-  "description": "RXfin - Plataforma de finanças pessoais",
+  "description": "RXFin - Plataforma de finanças pessoais",
   "workspaces": [
-    "apps/*",
+    "apps/web-next",
+    "apps/web",
+    "apps/mobile",
     "packages/*"
   ],
   "scripts": {
+    "dev": "turbo run dev --filter=web-next",
+    "dev:web": "turbo run dev --filter=web",
     "dev:mobile": "cd apps/mobile && npx expo start",
-    "build:mobile": "cd apps/mobile && eas build",
+    "build": "turbo run build --filter=web-next",
+    "build:web": "turbo run build --filter=web",
+    "build:all": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "supabase:functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_ID",
-    "supabase:functions:deploy:staging": "supabase functions deploy --project-ref $SUPABASE_STAGING_PROJECT_ID",
-    "n8n:export": "echo 'Exportar workflows do n8n Cloud para n8n/workflows/'",
-    "dev:web": "cd apps/web && npm run dev"
+    "supabase:functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_ID"
   },
   "devDependencies": {
-    "turbo": "^2"
+    "turbo": "^2",
+    "supabase": "^2.76.15"
   },
   "engines": {
     "node": ">=18"

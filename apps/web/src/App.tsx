@@ -20,6 +20,7 @@ import { MagicLinkHandler } from "@/components/auth/MagicLinkHandler";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { RXFinLoadingSpinner } from "@/components/shared/RXFinLoadingSpinner";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { AdminSecureLayout } from '@/components/admin/AdminSecureLayout';
 import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
 
@@ -41,6 +42,8 @@ import MetasTab from "./pages/planejamento/MetasTab";
 import AnalisesTab from "./pages/planejamento/AnalisesTab";
 import CartaoCredito from "./pages/CartaoCredito";
 import PlanejamentoAnual from "./pages/PlanejamentoAnual";
+import Contas from "./pages/Contas";
+import FluxoFinanceiro from "./pages/FluxoFinanceiro";
 
 import RegistroCompras from "./pages/RegistroCompras";
 import PacotesOrcamento from "./pages/PacotesOrcamento";
@@ -54,12 +57,16 @@ import DadosFinanceiros from "./pages/DadosFinanceiros";
 import FinanceiroLayout from "./pages/financeiro/FinanceiroLayout";
 import PlanosTab from "./pages/financeiro/PlanosTab";
 import PagamentosTab from "./pages/financeiro/PagamentosTab";
+import HistoricoPagamentos from "./pages/HistoricoPagamentos";
 import IndicacoesTab from "./pages/financeiro/IndicacoesTab";
 
 import Simuladores from "./pages/Simuladores";
 import SimuladorFipe from "./pages/SimuladorFipe";
 import SimuladorFinanciamento from "./pages/SimuladorFinanciamento";
 import SimuladorCustoHora from "./pages/SimuladorCustoHora";
+import HubSimuladores from "./pages/simuladores/Hub";
+import SimuladorFipePublic from "./pages/simuladores/SimuladorFipe";
+import SimuladorCustoHoraPublic from "./pages/simuladores/SimuladorCustoHora";
 import SimuladorCustoOportunidadeCarro from "./pages/SimuladorCustoOportunidadeCarro";
 
 import SimuladorCarroAB from "./pages/SimuladorCarroAB";
@@ -79,6 +86,11 @@ import Seguros from "./pages/Seguros";
 import Presentes from "./pages/Presentes";
 import RXSplit from "./pages/RXSplit";
 import DividirConta from "./pages/DividirConta";
+import Alertas from "./pages/Alertas";
+import Recorrentes from "./pages/Recorrentes";
+import Notificacoes from "./pages/Notificacoes";
+import Lixeira from "./pages/Lixeira";
+import Planos from "./pages/Planos";
 import AuthCallback from "./pages/AuthCallback";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -105,6 +117,7 @@ const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
 const CrmAutomations = lazy(() => import('./pages/admin/CrmAutomations'));
 const AdminAfiliados = lazy(() => import('./pages/admin/AdminAfiliados'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const Estrategico = lazy(() => import('./pages/admin/Estrategico'));
 const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
@@ -138,6 +151,7 @@ const App = () => (
                     <ImpersonationFloater />
                     <CookieConsentBanner />
                     <RaioXChat />
+                    <ErrorBoundary>
                     <Routes>
                   <Route path="/" element={<Navigate to="/inicio" replace />} />
                   <Route path="/login" element={<Login />} />
@@ -147,6 +161,7 @@ const App = () => (
                   <Route path="/update-password" element={<UpdatePassword />} /> {/* Public - handles password recovery */}
                   <Route path="/verificar-email" element={<VerificarEmail />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/planos" element={<Planos />} />
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
                   <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
                   <Route path="/onboarding-controle" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingControlPage /></Suspense></ProtectedRoute>} />
@@ -155,8 +170,8 @@ const App = () => (
                   <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
                   <Route path="/parametros" element={<ProtectedRoute><Parametros /></ProtectedRoute>} />
                   <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
-                  <Route path="/contas" element={<Navigate to="/lancamentos" replace />} />
-                  <Route path="/fluxo-financeiro" element={<Navigate to="/lancamentos" replace />} />
+                  <Route path="/contas" element={<ProtectedRoute><Contas /></ProtectedRoute>} />
+                  <Route path="/fluxo-financeiro" element={<ProtectedRoute><FluxoFinanceiro /></ProtectedRoute>} />
                   <Route path="/bens-investimentos" element={<ProtectedRoute><BensInvestimentosLayout /></ProtectedRoute>}>
                     <Route index element={<Navigate to="consolidado" replace />} />
                     <Route path="consolidado" element={<ConsolidadoTab />} />
@@ -177,6 +192,7 @@ const App = () => (
                   <Route path="/planejamento-cartao" element={<Navigate to="/cartao-credito" replace />} />
                   <Route path="/metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
                   <Route path="/registro-compras" element={<ProtectedRoute><RegistroCompras /></ProtectedRoute>} />
+                  <Route path="/compras" element={<Navigate to="/registro-compras" replace />} />
                   <Route path="/pacotes-orcamento" element={<ProtectedRoute><PacotesOrcamento /></ProtectedRoute>} />
                   <Route path="/sonhos" element={<ProtectedRoute><Sonhos /></ProtectedRoute>} />
                   <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
@@ -186,7 +202,9 @@ const App = () => (
                   <Route path="/configuracoes-hub" element={<ProtectedRoute><ConfiguracoesHub /></ProtectedRoute>} />
                   <Route path="/configuracoes-fiscais" element={<ProtectedRoute><ConfiguracoesFiscais /></ProtectedRoute>} />
                   <Route path="/instituicoes-financeiras" element={<ProtectedRoute><InstituicoesFinanceiras /></ProtectedRoute>} />
+                  <Route path="/instituicoes" element={<ProtectedRoute><InstituicoesFinanceiras /></ProtectedRoute>} />
                   <Route path="/dados-financeiros" element={<ProtectedRoute><DadosFinanceiros /></ProtectedRoute>} />
+                  <Route path="/dados" element={<ProtectedRoute><DadosFinanceiros /></ProtectedRoute>} />
                   <Route path="/financeiro" element={<ProtectedRoute><FinanceiroLayout /></ProtectedRoute>}>
                     <Route index element={<Navigate to="planos" replace />} />
                     <Route path="planos" element={<PlanosTab />} />
@@ -194,12 +212,11 @@ const App = () => (
                     <Route path="minhas-indicacoes" element={<IndicacoesTab />} />
                   </Route>
                   {/* Redirects from old standalone routes */}
-                  <Route path="/planos" element={<Navigate to="/financeiro/planos" replace />} />
-                  <Route path="/historico-pagamentos" element={<Navigate to="/financeiro/pagamentos" replace />} />
+                  <Route path="/historico-pagamentos" element={<ProtectedRoute><HistoricoPagamentos /></ProtectedRoute>} />
                   <Route path="/minhas-indicacoes" element={<Navigate to="/financeiro/minhas-indicacoes" replace />} />
                   <Route path="/regras-categoria" element={<Navigate to="/parametros?tab=regras" replace />} />
-                  {/* Simuladores — URL-driven categories */}
-                  <Route path="/simuladores" element={<Navigate to="/simuladores/veiculos" replace />} />
+                  {/* Simuladores — Hub público (sem login) + categorias legadas */}
+                  <Route path="/simuladores" element={<HubSimuladores />} />
                   <Route path="/simuladores/:category" element={<Simuladores />} />
                   {/* Simuladores — nested simulator routes */}
                   <Route path="/simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
@@ -212,13 +229,15 @@ const App = () => (
                   <Route path="/simuladores/planejamento/econograph" element={<ProtectedRoute><EconoGraph /></ProtectedRoute>} />
                   {/* Dynamic simulators */}
                   <Route path="/simuladores/:category/:slug" element={<SimuladorDinamico />} />
-                  {/* Legacy redirects — old flat URLs → new nested URLs */}
-                  <Route path="/simulador-fipe" element={<Navigate to="/simuladores/veiculos/simulador-fipe" replace />} />
+                  {/* Simuladores públicos (sem login) — flat URLs */}
+                  <Route path="/simulador-fipe" element={<SimuladorFipePublic />} />
+                  <Route path="/simulador-custo-hora" element={<SimuladorCustoHoraPublic />} />
+                  {/* Legacy redirects — outras flat URLs → nested */}
+                  <Route path="/simulador-comparativo-carro" element={<Navigate to="/simuladores" replace />} />
                   <Route path="/simulador-carro-ab" element={<Navigate to="/simuladores/veiculos/simulador-carro-ab" replace />} />
                   <Route path="/simulador-custo-oportunidade-carro" element={<Navigate to="/simuladores/veiculos/simulador-custo-oportunidade-carro" replace />} />
                   <Route path="/financiamento-consorcio" element={<Navigate to="/simuladores/dividas/financiamento-consorcio" replace />} />
                   <Route path="/simulador-financiamento" element={<Navigate to="/simuladores/dividas/financiamento-consorcio" replace />} />
-                  <Route path="/simulador-custo-hora" element={<Navigate to="/simuladores/planejamento/simulador-custo-hora" replace />} />
                   <Route path="/simulador-desconto-justo" element={<Navigate to="/simuladores/planejamento/simulador-desconto-justo" replace />} />
                   <Route path="/econograph" element={<Navigate to="/simuladores/planejamento/econograph" replace />} />
                   <Route path="/renegociacao-dividas" element={<ProtectedRoute><RenegociacaoDividas /></ProtectedRoute>} />
@@ -228,15 +247,21 @@ const App = () => (
                    <Route path="/renegociacao-dividas/consolidacao" element={<ProtectedRoute><ConsolidacaoDividas /></ProtectedRoute>} />
                   <Route path="/balanco-patrimonial" element={<Navigate to="/bens-investimentos/consolidado" replace />} />
                   <Route path="/gestao-veiculos" element={<ProtectedRoute><GestaoVeiculos /></ProtectedRoute>} />
+                  <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
+                  <Route path="/recorrentes" element={<ProtectedRoute><Recorrentes /></ProtectedRoute>} />
+                  <Route path="/notificacoes" element={<ProtectedRoute><Notificacoes /></ProtectedRoute>} />
+                  <Route path="/lixeira" element={<ProtectedRoute><Lixeira /></ProtectedRoute>} />
                   <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
                   <Route path="/presentes" element={<ProtectedRoute><Presentes /></ProtectedRoute>} />
                   <Route path="/rx-split" element={<ProtectedRoute><RXSplit /></ProtectedRoute>} />
+                  <Route path="/rxsplit" element={<Navigate to="/rx-split" replace />} />
                   <Route path="/dividir-conta" element={<ProtectedRoute><DividirConta /></ProtectedRoute>} />
                   <Route path="/meu-ir" element={<ProtectedRoute><MeuIR /></ProtectedRoute>} />
                   {/* Perfil route now redirected above */}
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/dashboard" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDashboard /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/estrategico" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><Estrategico /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/usuarios" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminUsuarios /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/planos" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPlanos /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/paginas" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPaginas /></Suspense></AdminSecureLayout>} />
@@ -268,6 +293,7 @@ const App = () => (
                     <Route path="/403" element={<Forbidden />} />
                     <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </ErrorBoundary>
                   </MagicLinkHandler>
                   </TrackingProvider>
                 </BrowserRouter>

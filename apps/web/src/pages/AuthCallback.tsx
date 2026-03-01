@@ -19,8 +19,6 @@ async function resolveRedirectRoute(userId: string): Promise<string> {
   });
 
   const returningUserRoute = settingsMap['returning_user_route'] || '/simuladores';
-
-  console.log('[AuthCallback] Redirecting to:', returningUserRoute);
   return returningUserRoute;
 }
 

@@ -17,9 +17,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Target,
   ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Receipt,
+  Shield,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { Link, useNavigate } from 'react-router-dom';
+import { cn, formatCurrency } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BudgetInsightsSummary } from '@/components/inicio/BudgetInsightsSummary';
 import { PackagesSummaryCard } from '@/components/inicio/PackagesSummaryCard';
@@ -40,6 +45,7 @@ import { EconomicIndicators } from '@/components/dashboard/EconomicIndicators';
 import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
+import { useHomeDashboard } from '@/hooks/useHomeDashboard';
 
 // Componente de Categoria com Meta
 const CategoryGoalItem: React.FC<{
@@ -57,7 +63,7 @@ const CategoryGoalItem: React.FC<{
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 p-3.5 rounded-[14px] bg-muted/20 border border-border/50">
       <div className="flex items-center justify-between text-sm">
         <span className="font-medium">{category}</span>
         <span className={cn(
@@ -67,9 +73,12 @@ const CategoryGoalItem: React.FC<{
           {formatCurrency(spent)} / {formatCurrency(goal)}
         </span>
       </div>
-      <Progress 
-        value={percentage} 
-        className={cn("h-2", isOverBudget && "[&>div]:bg-expense")}
+      <Progress
+        value={percentage}
+        className={cn(
+          "h-2 w-full overflow-hidden rounded-full bg-muted [&>div]:rounded-full",
+          isOverBudget ? "[&>div]:bg-expense" : "[&>div]:bg-primary"
+        )}
       />
     </div>
   );
@@ -101,6 +110,9 @@ const Inicio: React.FC = () => {
   const isMobile = useIsMobile();
   const [firstName, setFirstName] = useState<string>('');
   const [hasTriggeredTour, setHasTriggeredTour] = useState(false);
+
+  const currentMonth = format(new Date(), 'yyyy-MM');
+  const { data: dashboardData, loading: dashboardLoading, error: dashboardError } = useHomeDashboard(currentMonth);
   
   // Hooks para metas mensais e lançamentos realizados
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
@@ -108,6 +120,11 @@ const Inicio: React.FC = () => {
   
   // Feature flags
   const showMetasMensais = isFeatureEnabled('metas-mensais');
+
+  // Prefer RPC dashboard user name when available
+  const displayFirstName = dashboardData?.user?.full_name
+    ? dashboardData.user.full_name.split(' ')[0]
+    : firstName;
 
   // Auto-start tour for new users after first load
   useEffect(() => {
@@ -202,14 +219,36 @@ const Inicio: React.FC = () => {
     }));
   }, [config.expenseItems, getGoalByMonth, lancamentos]);
 
-  // Saldo líquido do mês
-  const saldoLiquido = useMemo(() => {
-    const currentMonth = format(new Date(), 'yyyy-MM');
+  // Category colors for bars (consistent with /lancamentos)
+  const CATEGORY_COLORS: Record<string, string> = {
+    'Contas da Casa': '#3b82f6',
+    'Alimentação': '#22c55e',
+    'Saúde': '#ef4444',
+    'Lazer': '#a855f7',
+    'Transporte': '#f59e0b',
+    'Pessoal': '#ec4899',
+    'Investimentos': '#14b8a6',
+  };
+  const getCategoryColor = (category: string) => CATEGORY_COLORS[category] ?? 'var(--primary)';
+
+  // RPC data for sections
+  const monthSummary = dashboardData?.month_summary as { total_income?: number; total_expense?: number; balance?: number; count_total?: number } | undefined;
+  const budgetComposition = (dashboardData?.budget_composition as Array<{ category: string; total: number; pct?: number }>) ?? (dashboardData?.expenses_by_category as Array<{ category: string; total: number; pct?: number }>) ?? [];
+  const expensesForBars = Array.isArray(budgetComposition) ? budgetComposition : [];
+  const totalExpensesForPct = expensesForBars.reduce((s, i) => s + (i.total ?? 0), 0);
+  const creditCardsPayload = dashboardData?.credit_cards;
+  const bills = Array.isArray(creditCardsPayload) ? creditCardsPayload : (creditCardsPayload as { bills?: unknown[] })?.bills ?? [];
+  const insuranceAlerts = dashboardData?.insurance_alerts ?? [];
+
+  // Saldo líquido do mês: prefer RPC month_summary.balance when available
+  const saldoLiquidoFromLancamentos = useMemo(() => {
     const monthItems = lancamentos.filter(l => l.mes_referencia === currentMonth && !isBillPaymentTransaction(l));
     const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor_realizado, 0);
     const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor_realizado, 0);
     return receitas - despesas;
-  }, [lancamentos]);
+  }, [lancamentos, currentMonth]);
+  const saldoLiquido =
+    dashboardData?.month_summary != null ? dashboardData.month_summary.balance : saldoLiquidoFromLancamentos;
 
   const formatCurrencyFull = (value: number) => {
     if (isHidden) return '••••••';
@@ -221,7 +260,12 @@ const Inicio: React.FC = () => {
     return (
       <AppLayout>
         <div className="space-y-4">
-          <MobileHomeHero firstName={firstName} saldoLiquido={saldoLiquido} />
+          {dashboardError && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+              Erro ao carregar resumo: {dashboardError}
+            </p>
+          )}
+          <MobileHomeHero firstName={displayFirstName} saldoLiquido={saldoLiquido} />
 
           {/* Onboarding Insight (replaces legacy checklist) */}
           {isDemoMode && <OnboardingInsightCard />}
@@ -261,6 +305,11 @@ const Inicio: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {dashboardError && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+            Erro ao carregar resumo: {dashboardError}
+          </p>
+        )}
         {/* Hero Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -270,14 +319,14 @@ const Inicio: React.FC = () => {
         >
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14 border-2 border-primary/20">
-              <AvatarImage src={avatarUrl} alt={firstName} />
+              <AvatarImage src={avatarUrl} alt={displayFirstName} />
               <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                {getInitials(firstName || 'U')}
+                {getInitials(displayFirstName || 'U')}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="text-2xl font-bold">
-                Olá, {firstName || 'Usuário'}! 👋
+                Olá, {displayFirstName || 'Usuário'}! 👋
               </h1>
               <p className="text-sm text-muted-foreground">
                 Saldo Líquido do Mês:{' '}
@@ -301,8 +350,139 @@ const Inicio: React.FC = () => {
         <UpcomingEventsCard />
         <PackagesSummaryCard />
 
-        {/* Main content grid */}
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4" data-tour="metrics-cards">
+        {/* B) Cards de resumo (grid 4 colunas) — RPC */}
+        {monthSummary != null && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="metrics-cards">
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Receitas</p>
+                    <p className="text-lg font-semibold text-green-600">{isHidden ? '••••••' : formatCurrency(monthSummary.total_income ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCardWrapper>
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
+                    <TrendingDown className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Despesas</p>
+                    <p className="text-lg font-semibold text-red-600">{isHidden ? '••••••' : formatCurrency(monthSummary.total_expense ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCardWrapper>
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', (monthSummary.balance ?? 0) >= 0 ? 'bg-green-500/10' : 'bg-red-500/10')}>
+                    <Wallet className={cn('h-5 w-5', (monthSummary.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-600')} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Saldo</p>
+                    <p className={cn('text-lg font-semibold', (monthSummary.balance ?? 0) >= 0 ? 'text-green-600' : 'text-red-600')}>{isHidden ? '••••••' : formatCurrency(monthSummary.balance ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCardWrapper>
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
+                    <Receipt className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Lançamentos</p>
+                    <p className="text-lg font-semibold">{monthSummary.count_total ?? '—'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </DemoCardWrapper>
+          </div>
+        )}
+
+        {/* C) Despesas por Categoria */}
+        {expensesForBars.length > 0 && (
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <Card className="rounded-[14px] border border-border/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Despesas por Categoria</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {expensesForBars.map((row) => {
+                  const pct = totalExpensesForPct > 0 ? ((row.total ?? 0) / totalExpensesForPct) * 100 : (row.pct ?? 0);
+                  const color = getCategoryColor(row.category ?? '');
+                  return (
+                    <div key={row.category} className="flex items-center gap-3">
+                      <span className="w-32 shrink-0 text-sm font-medium truncate">{row.category}</span>
+                      <div className="flex-1 h-6 rounded-md bg-muted overflow-hidden min-w-0">
+                        <div className="h-full rounded-md transition-all" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                      </div>
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {isHidden ? '••••' : formatCurrency(row.total ?? 0)} ({pct.toFixed(1)}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </DemoCardWrapper>
+        )}
+
+        {/* D) Cartões de Crédito (mini resumo) */}
+        {bills.length > 0 && (
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <Card className="rounded-[14px] border border-border/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Cartões de Crédito</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {bills.map((bill: { card_name?: string | null; status?: string; total_value?: number; is_overdue?: boolean }, i: number) => (
+                  <div key={i} className="flex items-center justify-between rounded-lg border border-border/50 p-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-medium truncate">{bill.card_name ?? 'Cartão'}</span>
+                      {bill.status === 'paid' && <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-600 text-white">Paga</span>}
+                      {bill.status !== 'paid' && bill.is_overdue && <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-red-600 text-white">Vencida</span>}
+                      {bill.status !== 'paid' && !bill.is_overdue && <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-amber-500 text-white">Aberta</span>}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-semibold">{isHidden ? '••••' : formatCurrency(bill.total_value ?? 0)}</span>
+                      <Link to="/cartao-credito" className="text-xs text-primary hover:underline">Ver detalhes →</Link>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </DemoCardWrapper>
+        )}
+
+        {/* E) Alertas (seguros) */}
+        {insuranceAlerts.length > 0 && (
+          <Link to="/alertas" className="block">
+            <Card className="rounded-[14px] border-amber-500/50 bg-amber-500/10 p-4 hover:bg-amber-500/15 transition-colors">
+              <div className="flex items-center gap-3">
+                <Shield className="h-8 w-8 text-amber-600 shrink-0" />
+                <div>
+                  {(insuranceAlerts as Array<{ nome?: string; seguradora?: string; days_left?: number; dias_restantes?: number }>).map((a, i) => (
+                    <p key={i} className="text-sm font-medium">
+                      {a.nome}{a.seguradora ? ` (${a.seguradora})` : ''} vence em {(a.days_left ?? a.dias_restantes ?? 0)} dia{(a.days_left ?? a.dias_restantes) !== 1 ? 's' : ''}!
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </Link>
+        )}
+
+        {/* Conteúdo existente: metas por categoria, composição, etc. */}
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <MonthSummaryCard />
           </DemoCardWrapper>

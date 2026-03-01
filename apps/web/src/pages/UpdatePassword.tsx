@@ -30,8 +30,6 @@ const UpdatePassword: React.FC = () => {
   useEffect(() => {
     // Listen for PASSWORD_RECOVERY event from Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('UpdatePassword - Auth event:', event);
-      
       if (event === 'PASSWORD_RECOVERY') {
         // User came from password recovery link
         setIsRecoveryMode(true);

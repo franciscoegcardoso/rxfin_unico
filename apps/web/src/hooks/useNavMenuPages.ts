@@ -69,8 +69,19 @@ const MAIN_NAV_GROUP_SLUG = 'menu-principal';
 // (menu-principal já é tratado separadamente, administracao tem acesso dedicado)
 const EXCLUDED_NAV_GROUP_SLUGS = ['menu-principal', 'administracao'];
 
-// Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos)
-const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'historico-pagamentos'];
+// Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos; alertas/notificações acessíveis via sino no top bar; itens removidos do Planejamento)
+// Slugs de páginas que NÃO devem aparecer nos menus
+const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros'];
+
+// Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
+const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
+
+function isPageHiddenFromMenu(page: { slug: string; title: string }): boolean {
+  if (HIDDEN_PAGE_SLUGS.includes(page.slug)) return true;
+  const titleNorm = page.title?.trim() ?? '';
+  if (HIDDEN_PAGE_TITLES.some(t => t === titleNorm)) return true;
+  return false;
+}
 
 /**
  * Fallback estático para quando o banco de dados está vazio (ex: ambiente de staging não populado).
@@ -79,16 +90,12 @@ const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-
 function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: NavMenuSection[] } {
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
-    { path: '/bens-investimentos', label: 'Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/lancamentos', label: 'Lançamentos', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
   ];
 
   const groupedSections: NavMenuSection[] = [
-    {
-      title: 'Lançamentos', slug: 'lancamentos', icon: Receipt, items: [
-        { path: '/lancamentos', label: 'Lançamentos', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
-      ],
-    },
     {
       title: 'Planejamento', slug: 'planejamento', icon: CalendarRange, items: [
         { path: '/planejamento', label: 'Planejamento Mensal', icon: Calendar, accessLevel: 'free', canAccessAsAdmin: true },
@@ -200,7 +207,7 @@ export function useNavMenuPages(): NavMenuData {
   // Itens do menu principal: páginas do grupo "Menu Principal" (gerenciado via Admin)
   const mainItems: NavMenuItem[] = pages
     .filter(page => page.group_slug === MAIN_NAV_GROUP_SLUG)
-    .filter(page => !HIDDEN_PAGE_SLUGS.includes(page.slug))
+    .filter(page => !isPageHiddenFromMenu(page))
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
     .filter(page => {
@@ -233,7 +240,7 @@ export function useNavMenuPages(): NavMenuData {
   
   pages
     .filter(page => page.group_slug && !EXCLUDED_NAV_GROUP_SLUGS.includes(page.group_slug))
-    .filter(page => !HIDDEN_PAGE_SLUGS.includes(page.slug)) // Exclude hub pages from menu
+    .filter(page => !isPageHiddenFromMenu(page)) // Exclude hub pages and hidden titles from menu
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
     .filter(page => {

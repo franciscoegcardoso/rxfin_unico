@@ -51,10 +51,9 @@ export function useAuthRedirect(): AuthRedirectConfig {
   // shouldShowOnboarding is now only true when explicitly navigating to /onboarding.
   const shouldShowOnboarding = false;
 
-  // Always send to the returning user route (dashboard).
-  // Demo mode banner handles the onboarding CTA.
-  const targetRoute = settings.returning_user_route || '/simuladores';
-  const skipRoute = settings.onboarding_skip_route || '/simuladores';
+  // Always send to the returning user route (dashboard). Default /inicio per product spec.
+  const targetRoute = settings.returning_user_route || '/inicio';
+  const skipRoute = settings.onboarding_skip_route || '/inicio';
 
   console.log('[AuthRedirect]', {
     userId: user?.id, profilePending, onboardingPhase,

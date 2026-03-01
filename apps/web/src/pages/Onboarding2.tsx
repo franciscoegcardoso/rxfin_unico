@@ -41,7 +41,6 @@ const Onboarding2: React.FC = () => {
       .single()
       .then(({ data }) => {
         if (!cancelled && data?.onboarding_completed === true) {
-          console.log('[Onboarding2] Already completed, redirecting away');
           navigate('/simuladores', { replace: true });
         }
       });

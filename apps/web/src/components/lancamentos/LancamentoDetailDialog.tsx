@@ -2,7 +2,8 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, Calendar, Tag, CreditCard, Banknote, Building2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Pencil, Trash2, Calendar, Tag, CreditCard, Banknote, Copy } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { parseLocalDate } from '@/utils/dateUtils';
 import { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
@@ -15,6 +16,9 @@ interface LancamentoDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onEdit: (item: LancamentoRealizado) => void;
   onDelete: (id: string, nome: string) => void;
+  onMarkPaid?: (id: string, paid: boolean) => Promise<boolean>;
+  onOpenMarkAsPaid?: (item: LancamentoRealizado) => void;
+  onDuplicateNextMonth?: (id: string) => Promise<unknown>;
   sourceInfo?: { institution: string; accountType: string; imageUrl?: string; primaryColor?: string } | null;
   reconciliation?: { matched: boolean; isBillPayment: boolean; cardName?: string } | null;
 }
@@ -23,13 +27,14 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
-  item, open, onOpenChange, onEdit, onDelete, sourceInfo, reconciliation,
+  item, open, onOpenChange, onEdit, onDelete, onMarkPaid, onOpenMarkAsPaid, onDuplicateNextMonth, sourceInfo, reconciliation,
 }) => {
   const isMobile = useIsMobile();
 
   if (!item) return null;
 
   const isEntrada = item.tipo === 'receita';
+  const isPaid = !!item.data_pagamento;
   const displayDate = item.data_pagamento
     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
     : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR');
@@ -104,12 +109,39 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
         </div>
       )}
 
+      {/* Pago/Recebido */}
+      {onMarkPaid && (
+        <div className="flex items-center gap-2 pt-2 flex-wrap">
+          {!isPaid && onOpenMarkAsPaid && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { onOpenChange(false); onOpenMarkAsPaid(item); }}>
+              <Banknote className="h-4 w-4" />
+              {isEntrada ? 'Marcar como recebido' : 'Marcar como pago'}
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="paid"
+              checked={isPaid}
+              onCheckedChange={(checked) => onMarkPaid(item.id, checked === true)}
+            />
+            <label htmlFor="paid" className="text-sm font-medium cursor-pointer">
+              {isEntrada ? 'Recebido' : 'Pago'}
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
-      <div className="flex gap-2 pt-2">
-        <Button variant="outline" className="flex-1 gap-2" onClick={() => { onOpenChange(false); onEdit(item); }}>
+      <div className="flex flex-wrap gap-2 pt-2">
+        <Button variant="outline" className="flex-1 gap-2 min-w-[100px]" onClick={() => { onOpenChange(false); onEdit(item); }}>
           <Pencil className="h-4 w-4" /> Editar
         </Button>
-        <Button variant="outline" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+        {onDuplicateNextMonth && (
+          <Button variant="outline" className="gap-2 min-w-[100px]" onClick={() => onDuplicateNextMonth(item.id)}>
+            <Copy className="h-4 w-4" /> Duplicar mês
+          </Button>
+        )}
+        <Button variant="outline" className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 min-w-[100px]"
           onClick={() => { onOpenChange(false); onDelete(item.id, item.nome); }}>
           <Trash2 className="h-4 w-4" /> Excluir
         </Button>

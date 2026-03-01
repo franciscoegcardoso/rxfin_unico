@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
@@ -6,6 +7,7 @@
 
 @layer base {
   :root {
+    --font-dm-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     /* RXFin Brand Colors - Clean White Background */
     --background: 0 0% 100%;
     --foreground: 220 13% 9%;
@@ -16,8 +18,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 13% 9%;
 
-    /* RXFin Primary Green */
-    --primary: 145 63% 35%;
+    /* RXFin Primary Green (hue 150) */
+    --primary: 150 63% 35%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 145 20% 96%;
@@ -32,21 +34,21 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 63% 35%;
+    --success: 150 63% 35%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    /* Income/Expense semantic colors */
-    --income: 145 63% 35%;
+    /* Income/Expense semantic colors (hue 150) */
+    --income: 150 63% 35%;
     --income-light: 145 40% 95%;
     --expense: 0 72% 51%;
     --expense-light: 0 50% 96%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 145 63% 35%;
+    --ring: 150 63% 35%;
 
     --radius: 0.5rem;
 
@@ -178,8 +180,8 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    @apply bg-background text-foreground antialiased font-sans;
+    font-family: var(--font-dm-sans);
     font-feature-settings: "cv11", "ss01";
     font-size: 14px;
     font-weight: 400;

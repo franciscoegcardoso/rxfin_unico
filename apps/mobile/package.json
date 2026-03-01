@@ -2,6 +2,10 @@
   "name": "rxfin_mobile",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "private": true,
+  "overrides": {
+    "react-dom": "19.2.0"
+  },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -25,7 +29,7 @@
     "expo-web-browser": "~55.0.9",
     "nativewind": "^4.2.2",
     "react": "19.2.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "19.2.0",
     "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-reanimated": "4.2.1",
@@ -39,6 +43,5 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
-  },
-  "private": true
+  }
 }

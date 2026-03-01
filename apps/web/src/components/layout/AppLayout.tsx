@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TopNavbar } from './TopNavbar';
 import { PageTransition } from './PageTransition';
 import { MobileBottomNav } from '@/components/mobile/MobileBottomNav';
+import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
@@ -26,6 +27,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const showPhoneDialog = needsPhone && !phoneCompleted;
 
   return (
+    <MobileMenuProvider>
     <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
       <DemoDataBanner />
       <TopNavbar />
@@ -58,5 +60,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         currentEmail={currentEmail}
       />
     </div>
+    </MobileMenuProvider>
   );
 };

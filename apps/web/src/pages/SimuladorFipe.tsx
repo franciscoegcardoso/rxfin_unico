@@ -19,9 +19,9 @@ const SimuladorFipe: React.FC = () => {
     <AppLayout>
       <div className="space-y-6">
         <div>
-          <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
-          <h1 className="text-3xl font-bold text-foreground">Valor de mercado (FIPE) e Custo real de propriedade</h1>
-          <p className="text-muted-foreground mt-1">
+          <BackLink to="/simuladores" label="Simuladores" className="mb-2 min-h-[44px] touch-manipulation" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Valor de mercado (FIPE) e Custo real de propriedade</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Não olhe apenas o preço de compra e venda. Acesse o histórico completo de preços e projete quanto esse veículo realmente custa para o seu bolso.
           </p>
         </div>

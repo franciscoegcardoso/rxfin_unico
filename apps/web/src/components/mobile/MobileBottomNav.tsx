@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import { 
   Home, 
   Building2, 
@@ -41,8 +42,8 @@ const ROUTE_FEATURE_NAMES: Record<string, string> = {
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = React.useState(false);
+  const { open: moreMenuOpen, setOpen: setMoreMenuOpen } = useMobileMenu();
   const { hasRoutePermission, isAdmin } = useSubscriptionPermissions();
   
   // Check availability for each path

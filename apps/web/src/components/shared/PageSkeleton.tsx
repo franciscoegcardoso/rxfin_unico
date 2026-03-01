@@ -14,6 +14,21 @@ interface PageSkeletonProps {
   className?: string;
 }
 
+/** Reusable skeleton for a row of metric cards — exported as CardSkeleton grid */
+export const CardSkeleton: React.FC<{ count?: number }> = ({ count = 1 }) => (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    {Array.from({ length: count }).map((_, i) => (
+      <Card key={i}>
+        <CardContent className="p-4 space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-6 w-28" />
+          <Skeleton className="h-2 w-16" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
 /** Reusable skeleton for a row of metric cards */
 const MetricsSkeleton: React.FC<{ count: number }> = ({ count }) => (
   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -29,8 +44,8 @@ const MetricsSkeleton: React.FC<{ count: number }> = ({ count }) => (
   </div>
 );
 
-/** Skeleton for a table */
-const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({ rows = 5, cols = 5 }) => (
+/** Skeleton for a table — exported for reuse */
+export const TableSkeleton: React.FC<{ rows?: number; cols?: number }> = ({ rows = 5, cols = 5 }) => (
   <Card>
     <CardHeader className="pb-3">
       <div className="flex items-center justify-between">
@@ -80,6 +95,16 @@ const CardsGridSkeleton: React.FC<{ count: number }> = ({ count }) => (
       </Card>
     ))}
   </div>
+);
+
+/** Skeleton for chart placeholder — exported for reuse */
+export const ChartSkeleton: React.FC<{ className?: string; height?: number }> = ({ className, height = 280 }) => (
+  <Card className={className}>
+    <CardContent className="p-4 space-y-3">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="w-full rounded-lg" style={{ height }} />
+    </CardContent>
+  </Card>
 );
 
 /** Skeleton for list layout */

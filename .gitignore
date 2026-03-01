@@ -14,12 +14,15 @@ web-build/
 .turbo
 
 # Environment variables
+# Variáveis de ambiente locais (nunca commitar)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env*.local
+.env.*.local
+apps/web-next/.env.local
 
 # IDE
 .vscode/settings.json

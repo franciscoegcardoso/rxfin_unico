@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, PieChart, DollarSign, TrendingUp, Landmark, Shield } from 'lucide-react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, Target as TargetIcon, LayoutDashboard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,43 +38,32 @@ import { AddAssetDialog } from '@/components/bens/AddAssetDialog';
 import { SeguroDialog } from '@/components/seguros/SeguroDialog';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
-import { assetIcons, formatCurrencyBase, VALID_TABS, type BensTab, type AssetDependencies } from './constants';
+import { assetIcons, formatCurrencyBase, type AssetDependencies } from './constants';
+import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
+  const { data: patrimonioData, error: patrimonioError } = usePatrimonioOverview();
   const { isHidden } = useVisibility();
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
   const { seguros } = useSeguros();
 
   const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
+  const tabFromUrl = ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(pathSegment) ? pathSegment : 'overview';
 
-  // Determine active tab from URL path
-  const pathSegment = location.pathname.split('/').filter(Boolean).pop() || 'consolidado';
-  const currentTab: BensTab = VALID_TABS.includes(pathSegment as BensTab) ? (pathSegment as BensTab) : 'consolidado';
-
-  // Backward compatibility: redirect ?tab= query params to path-based URLs
+  const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam && VALID_TABS.includes(tabParam as BensTab)) {
-      navigate(`/bens-investimentos/${tabParam}`, { replace: true });
+    setCurrentTab((prev) => (pathSegment && ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(pathSegment) ? pathSegment : prev));
+  }, [pathSegment]);
+  const tabParam = searchParams.get('tab');
+  useEffect(() => {
+    if (tabParam && ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(tabParam)) {
+      setCurrentTab(tabParam);
     }
-  }, [searchParams, navigate]);
-
-  // Listen for navigate-tab custom events (backward compat with sub-components)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      const tab = customEvent.detail;
-      if (tab && VALID_TABS.includes(tab)) {
-        navigate(`/bens-investimentos/${tab}`);
-      }
-    };
-    window.addEventListener('navigate-tab', handler);
-    return () => window.removeEventListener('navigate-tab', handler);
-  }, [navigate]);
+  }, [tabParam]);
 
   const formatCurrency = useCallback((value: number) => isHidden ? '••••••' : formatCurrencyBase(value), [isHidden]);
 
@@ -95,8 +85,15 @@ const BensInvestimentosLayout: React.FC = () => {
   const [trashSheetOpen, setTrashSheetOpen] = useState(false);
   const [auditSheetOpen, setAuditSheetOpen] = useState(false);
 
-  // Default asset type based on active tab
-  const defaultAssetType = currentTab === 'investimentos' ? 'investment' as const : 'property' as const;
+  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : 'property';
+  const assets = patrimonioData?.assets ?? [];
+  const imoveis = assets.filter((a: { type?: string }) => a.type === 'imovel');
+  const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
+  const financiamentosList = patrimonioData?.financiamentos ?? [];
+  const consorciosList = patrimonioData?.consorcios ?? [];
+  const segurosList = patrimonioData?.seguros ?? [];
+  const goalsList = patrimonioData?.goals ?? [];
+  const netWorth = patrimonioData?.net_worth;
 
   // --- Context callbacks ---
   const handleOpenAddDialog = useCallback((institutionId?: string, investmentType?: InvestmentType) => {
@@ -230,9 +227,7 @@ const BensInvestimentosLayout: React.FC = () => {
     }
   };
 
-  const handleTabChange = (value: string) => {
-    navigate(`/bens-investimentos/${value}`);
-  };
+  const handleTabChange = (value: string) => setCurrentTab(value);
 
   // Context value
   const contextValue = useMemo(() => ({
@@ -247,8 +242,232 @@ const BensInvestimentosLayout: React.FC = () => {
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
       <AppLayout>
-        <div className="space-y-6">
-          {/* Add Asset Dialog */}
+        <div className="space-y-4">
+          <PageHeader
+            title="Bens e Direitos"
+            description="Gerencie seu patrimônio, consórcios e financiamentos"
+            icon={<Building2 className="h-5 w-5 text-primary" />}
+          >
+            <VisibilityToggle />
+            <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.bensInvestimentos} />
+
+            {/* Trash Sheet */}
+            <Sheet open={trashSheetOpen} onOpenChange={setTrashSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                  <Trash2 className="h-4 w-4" />
+                  {trashItems.length > 0 && (
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                      {trashItems.length}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-lg">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <Trash2 className="h-5 w-5" />
+                    Lixeira
+                  </SheetTitle>
+                  <SheetDescription>
+                    Itens excluídos nos últimos 30 dias. Restaure ou exclua permanentemente.
+                  </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-180px)] mt-4">
+                  {trashLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : trashItems.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Trash2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <p>A lixeira está vazia</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {trashItems.map((item) => {
+                        const daysLeft = getDaysUntilExpiration(item.expires_at);
+                        return (
+                          <Card key={item.id} className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {assetIcons[item.asset_type as AssetType] || <Package className="h-4 w-4" />}
+                                  <span className="font-medium truncate">
+                                    {item.asset_data.name || 'Item sem nome'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span>Expira em {daysLeft} dia{daysLeft !== 1 ? 's' : ''}</span>
+                                </div>
+                                {item.linked_data && item.linked_data.length > 0 && (
+                                  <div className="text-xs text-amber-600 mt-1">
+                                    + {item.linked_data.length} registro(s) vinculado(s)
+                                  </div>
+                                )}
+                                <div className="text-sm font-medium mt-1">
+                                  {formatCurrency(item.asset_data.value || 0)}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <Button size="sm" variant="outline" onClick={() => handleRestoreFromTrash(item.id)} className="gap-1">
+                                  <RotateCcw className="h-3 w-3" />
+                                  Restaurar
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button size="sm" variant="destructive" className="gap-1">
+                                      <Trash2 className="h-3 w-3" />
+                                      Excluir
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação não pode ser desfeita. O item será removido permanentemente.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => permanentlyDelete(item.id)}>
+                                        Excluir permanentemente
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                      {trashItems.length > 0 && (
+                        <Button variant="destructive" className="w-full mt-4" onClick={emptyTrash}>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Esvaziar Lixeira
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+
+            {/* Audit Log Sheet */}
+            <Sheet open={auditSheetOpen} onOpenChange={setAuditSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <History className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-full sm:max-w-lg">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Histórico de Exclusões
+                  </SheetTitle>
+                  <SheetDescription>
+                    Registro completo de todas as exclusões de bens
+                  </SheetDescription>
+                </SheetHeader>
+                <ScrollArea className="h-[calc(100vh-180px)] mt-4">
+                  {auditLogs.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <History className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                      <p>Nenhuma exclusão registrada</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {auditLogs.map((log) => (
+                        <Card key={log.id} className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                {assetIcons[log.entity_type as AssetType] || <Package className="h-4 w-4" />}
+                                <span className="font-medium truncate">{log.entity_name}</span>
+                                <Badge variant={log.action === 'force_delete' ? 'destructive' : 'secondary'} className="text-[10px]">
+                                  {log.action === 'force_delete' ? 'Forçado' : 'Normal'}
+                                </Badge>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </div>
+                              {log.linked_records_deleted > 0 && (
+                                <div className="text-xs text-amber-600 mt-1">
+                                  {log.linked_records_deleted} registro(s) vinculado(s) também excluído(s)
+                                </div>
+                              )}
+                              {log.details?.value && (
+                                <div className="text-sm font-medium mt-1">
+                                  {formatCurrency(log.details.value)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </SheetContent>
+            </Sheet>
+          </PageHeader>
+
+          {patrimonioError && (
+            <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{patrimonioError}</p>
+            </Card>
+          )}
+          {netWorth != null && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 max-h-[100px]">
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                    <Building2 className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Total Ativos</p>
+                    <p className="text-sm font-semibold text-green-600 truncate">{formatCurrency(netWorth.total_assets)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                    <Car className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Veículos</p>
+                    <p className="text-sm font-semibold truncate">{formatCurrency(netWorth.total_vehicles)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="h-8 w-8 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
+                    <MinusCircle className="h-4 w-4 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dívidas</p>
+                    <p className="text-sm font-semibold text-red-600 truncate">{formatCurrency(netWorth.total_debt)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Patrimônio Líquido</p>
+                    <p className="text-sm font-semibold text-green-600 truncate">{formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           <AddAssetDialog
             open={isDialogOpen}
             onOpenChange={setIsDialogOpen}
@@ -427,36 +646,252 @@ const BensInvestimentosLayout: React.FC = () => {
             </Sheet>
           </PageHeader>
 
-          {/* Tab Navigation */}
+          {/* Tab Navigation — 6 abas com conteúdo da RPC */}
           <Tabs value={currentTab} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-5">
-              <TabsTrigger value="consolidado" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
-                <PieChart className="h-4 w-4" />
-                <span>Consolidado</span>
+            <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1 h-auto flex-wrap">
+              <TabsTrigger value="overview" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden xs:inline">Visão Geral</span>
               </TabsTrigger>
-              <TabsTrigger value="patrimonio" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
-                <DollarSign className="h-4 w-4" />
-                <span>Patrimônio</span>
+              <TabsTrigger value="imoveis" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <Home className="h-3.5 w-3.5 shrink-0" />
+                <span>Imóveis</span>
               </TabsTrigger>
-              <TabsTrigger value="investimentos" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
-                <TrendingUp className="h-4 w-4" />
+              <TabsTrigger value="investimentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <TrendingUp className="h-3.5 w-3.5 shrink-0" />
                 <span>Investimentos</span>
               </TabsTrigger>
-              <TabsTrigger value="credito" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
-                <Landmark className="h-4 w-4" />
-                <span>Crédito</span>
+              <TabsTrigger value="financiamentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <Landmark className="h-3.5 w-3.5 shrink-0" />
+                <span>Financiamentos</span>
               </TabsTrigger>
-              <TabsTrigger value="seguros" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
-                <Shield className="h-4 w-4" />
+              <TabsTrigger value="seguros" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <Shield className="h-3.5 w-3.5 shrink-0" />
                 <span>Seguros</span>
               </TabsTrigger>
+              <TabsTrigger value="metas" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+                <TargetIcon className="h-3.5 w-3.5 shrink-0" />
+                <span>Metas</span>
+              </TabsTrigger>
             </TabsList>
-          </Tabs>
 
-          {/* Routed Tab Content */}
-          <div className="space-y-6">
-            <Outlet />
-          </div>
+            <div className="mt-4 space-y-4">
+              {currentTab === 'overview' && (
+                <div className="space-y-4">
+                  {imoveis.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4" /> Imóveis</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('imoveis')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <ul className="space-y-1.5 text-sm">
+                        {imoveis.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
+                          <li key={i} className="flex justify-between gap-2"><span className="truncate">{a.name ?? '—'}</span><span className="font-medium shrink-0">{formatCurrency(a.current_value ?? 0)}</span></li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                  {investimentosList.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Investimentos</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('investimentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <ul className="space-y-1.5 text-sm">
+                        {investimentosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
+                          <li key={i} className="flex justify-between gap-2"><span className="truncate">{a.name ?? '—'}</span><span className="font-medium shrink-0">{formatCurrency(a.current_value ?? 0)}</span></li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                  {(financiamentosList.length > 0 || consorciosList.length > 0) && (
+                    <Card className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Financiamentos</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('financiamentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <ul className="space-y-1.5 text-sm">
+                        {financiamentosList.slice(0, 3).map((f: { nome?: string; saldo_devedor?: number; progress_pct?: number }, i: number) => (
+                          <li key={i} className="flex justify-between gap-2"><span className="truncate">{f.nome ?? '—'}</span><span className="shrink-0">{formatCurrency(f.saldo_devedor ?? 0)} · {(f.progress_pct ?? 0)}%</span></li>
+                        ))}
+                        {consorciosList.slice(0, 2).map((c: { nome?: string }, i: number) => (
+                          <li key={`c-${i}`} className="flex justify-between gap-2"><span className="truncate">{c.nome ?? '—'}</span></li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                  {segurosList.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Seguros</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('seguros')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{segurosList.filter((s: { is_active?: boolean }) => s.is_active).length} ativos · {segurosList.filter((s: { is_active?: boolean }) => !s.is_active).length} vencidos</p>
+                    </Card>
+                  )}
+                  {goalsList.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><TargetIcon className="h-4 w-4" /> Metas</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('metas')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <div className="space-y-2">
+                        {goalsList.slice(0, 4).map((g: { name?: string; pct?: number }, i: number) => (
+                          <div key={i}>
+                            <div className="flex justify-between text-xs mb-0.5"><span className="truncate">{g.name}</span><span>{g.pct ?? 0}%</span></div>
+                            <Progress value={g.pct ?? 0} className="h-1.5" />
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+                  {imoveis.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && goalsList.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado de patrimônio no momento.</p>
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'imoveis' && (
+                <div className="space-y-4">
+                  {imoveis.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum imóvel cadastrado.</p>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {imoveis.map((a: { name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; is_rental?: boolean; rental_value?: number; monthly_cost?: number }, i: number) => {
+                        const roi = a.is_rental && (a.rental_value ?? 0) > 0 && (a.current_value ?? 0) > 0
+                          ? ((a.rental_value! * 12) / a.current_value! * 100).toFixed(1)
+                          : null;
+                        return (
+                          <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
+                            <CardContent className="p-4">
+                              <p className="font-bold truncate">{a.name ?? '—'}</p>
+                              <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
+                              {a.purchase_value != null && <p className="text-xs text-muted-foreground">Compra: {formatCurrency(a.purchase_value)}</p>}
+                              {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}% valorização</Badge>}
+                              {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm text-green-600">Renda: {formatCurrency(a.rental_value)}/mês</p>}
+                              {(a.monthly_cost ?? 0) > 0 && <p className="text-sm text-muted-foreground">Custo: {formatCurrency(a.monthly_cost!)}/mês</p>}
+                              {roi != null && <p className="text-xs text-muted-foreground mt-1">ROI: {roi}% a.a.</p>}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'investimentos' && (
+                <div className="space-y-4">
+                  {investimentosList.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum investimento cadastrado.</p>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {investimentosList.map((a: { name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number }, i: number) => (
+                        <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
+                          <CardContent className="p-4">
+                            <p className="font-bold truncate">{a.name ?? '—'}</p>
+                            <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
+                            {a.purchase_value != null && <p className="text-xs text-muted-foreground">Compra: {formatCurrency(a.purchase_value)}</p>}
+                            {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}%</Badge>}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'financiamentos' && (
+                <div className="space-y-4">
+                  {financiamentosList.map((fin: { nome?: string; instituicao?: string; saldo_devedor?: number; valor_parcela?: number; parcelas_pagas?: number; prazo_total?: number; progress_pct?: number; taxa_juros?: number }, i: number) => (
+                    <Card key={i} className="rounded-[14px] border border-border/80 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-bold">{fin.nome ?? '—'}</p>
+                        {fin.instituicao && <Badge variant="outline" className="text-xs">{fin.instituicao}</Badge>}
+                      </div>
+                      <p className="mt-2 font-semibold">Saldo devedor: {formatCurrency(fin.saldo_devedor ?? 0)}</p>
+                      <p className="text-sm text-muted-foreground">Parcela: {formatCurrency(fin.valor_parcela ?? 0)}/mês</p>
+                      {fin.taxa_juros != null && <p className="text-xs text-muted-foreground">Taxa: {fin.taxa_juros}% a.m.</p>}
+                      <div className="mt-2 flex items-center gap-2">
+                        <Progress value={fin.progress_pct ?? 0} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground shrink-0">{fin.parcelas_pagas ?? 0} de {fin.prazo_total ?? 0} parcelas ({(fin.progress_pct ?? 0)}%)</span>
+                      </div>
+                    </Card>
+                  ))}
+                  {consorciosList.map((c: { nome?: string; administradora?: string; valor_carta?: number; valor_parcela?: number; parcelas_pagas?: number; prazo_total?: number; contemplado?: boolean; grupo?: number; cota?: number }, i: number) => (
+                    <Card key={`c-${i}`} className="rounded-[14px] border border-border/80 p-4 bg-muted/20">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-bold">{c.nome ?? '—'}</p>
+                        <Badge variant={c.contemplado ? 'default' : 'secondary'} className={cn('text-xs', c.contemplado && 'bg-green-600')}>{c.contemplado ? 'Contemplado' : 'Não contemplado'}</Badge>
+                      </div>
+                      {c.administradora && <p className="text-xs text-muted-foreground mt-1">Administradora: {c.administradora}</p>}
+                      <p className="mt-2 font-semibold">Carta: {formatCurrency(c.valor_carta ?? 0)}</p>
+                      <p className="text-sm text-muted-foreground">Parcela: {formatCurrency(c.valor_parcela ?? 0)}/mês</p>
+                      <p className="text-xs text-muted-foreground">{c.parcelas_pagas ?? 0} de {c.prazo_total ?? 0} · {c.grupo != null && c.cota != null && `Grupo ${c.grupo} Cota ${c.cota}`}</p>
+                    </Card>
+                  ))}
+                  {financiamentosList.length === 0 && consorciosList.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum financiamento ou consórcio.</p>
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'seguros' && (
+                <div className="space-y-4">
+                  {segurosList.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum seguro cadastrado.</p>
+                  ) : (
+                    segurosList.map((seg: { nome?: string; tipo?: string; seguradora?: string; premio_mensal?: number; valor_cobertura?: number; franquia?: number; data_inicio?: string; data_fim?: string; is_active?: boolean }, i: number) => (
+                      <Card key={i} className={cn('rounded-[14px] border p-4', !seg.is_active && 'border-destructive/30 bg-destructive/5')}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-bold">{seg.nome ?? '—'}</p>
+                          <Badge variant="secondary" className="text-xs">{seg.tipo ?? '—'}</Badge>
+                          <Badge variant={seg.is_active ? 'default' : 'destructive'} className={cn('text-xs', seg.is_active && 'bg-green-600')}>{seg.is_active ? 'Ativo' : 'VENCIDO'}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{seg.seguradora}</p>
+                        <p className="text-sm mt-1">Prêmio: {formatCurrency(seg.premio_mensal ?? 0)}/mês · Cobertura: {formatCurrency(seg.valor_cobertura ?? 0)}</p>
+                        {seg.franquia != null && <p className="text-xs text-muted-foreground">Franquia: {formatCurrency(seg.franquia)}</p>}
+                        {seg.data_inicio && seg.data_fim && <p className="text-xs text-muted-foreground">Vigência: {format(new Date(seg.data_inicio), 'dd/MM/yyyy', { locale: ptBR })} a {format(new Date(seg.data_fim), 'dd/MM/yyyy', { locale: ptBR })}</p>}
+                        {!seg.is_active && <div className="mt-2 py-2 px-3 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm font-medium">Renovar seguro</div>}
+                      </Card>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'metas' && (
+                <div className="space-y-4">
+                  {goalsList.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma meta cadastrada.</p>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {goalsList.map((g: { name?: string; icon?: string; target?: number; current?: number; pct?: number; deadline?: string }, i: number) => {
+                        const pct = g.pct ?? 0;
+                        const barColor = pct > 50 ? 'bg-green-600' : pct > 25 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500';
+                        const deadlineStr = g.deadline ? format(new Date(g.deadline), 'dd/MM/yyyy', { locale: ptBR }) : null;
+                        const now = new Date();
+                        const dead = g.deadline ? new Date(g.deadline) : null;
+                        const monthsLeft = dead ? Math.max(0, (dead.getFullYear() - now.getFullYear()) * 12 + (dead.getMonth() - now.getMonth())) : null;
+                        return (
+                          <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2">
+                                {g.icon && <span className="text-xl">{g.icon}</span>}
+                                <p className="font-bold">{g.name ?? '—'}</p>
+                              </div>
+                              <Progress value={Math.min(100, pct)} className={cn('mt-3 h-3', barColor)} />
+                              <p className="mt-2 text-sm font-medium">{formatCurrency(g.current ?? 0)} de {formatCurrency(g.target ?? 0)} · {pct}%</p>
+                              {deadlineStr && <p className="text-xs text-muted-foreground mt-1">Prazo: {deadlineStr}{monthsLeft != null && ` · Faltam ${monthsLeft} meses`}</p>}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Tabs>
         </div>
 
         {/* Confirmation Dialog for Asset Deletion */}

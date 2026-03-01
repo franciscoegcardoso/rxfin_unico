@@ -66,7 +66,7 @@ export const ConfiguracoesHub: React.FC = () => {
         {isMobile ? (
           <MobileHubList items={configItems} />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {configItems.map((item) => (
               <Link key={item.id} to={item.path!}>
                 <Card className="h-full hover:shadow-md transition-all hover:border-primary/50 cursor-pointer group">

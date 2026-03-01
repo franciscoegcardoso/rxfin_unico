@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, Type } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, Type, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,8 +47,10 @@ import { PluggySyncStatus } from '@/components/sync/PluggySyncStatus';
 import { OutdatedConnectionBanner } from '@/components/sync/OutdatedConnectionBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, addMonths } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { useLancamentosRealizados, LancamentoRealizado, LancamentoInput } from '@/hooks/useLancamentosRealizados';
+import { useLancamentosSummary } from '@/hooks/useLancamentosSummary';
 import { useContasPagarReceber, Conta, ContaInput, ContaTipo } from '@/hooks/useContasPagarReceber';
 import { useTransactionSourceMap } from '@/hooks/useTransactionSourceMap';
 import { useFinanceMode } from '@/hooks/useFinanceMode';
@@ -60,8 +63,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LancamentoDetailDialog } from '@/components/lancamentos/LancamentoDetailDialog';
+import { MarkAsPaidLancamentoDialog } from '@/components/lancamentos/MarkAsPaidLancamentoDialog';
 import { LancamentoFriendlyNameDialog } from '@/components/lancamentos/LancamentoFriendlyNameDialog';
 import { applyLancamentoFriendlyNameRule } from '@/utils/lancamentoFriendlyNameRules';
+import { formatCurrency } from '@/lib/utils';
 
 type LancamentoTipo = 'entrada' | 'saida';
 
@@ -70,15 +75,19 @@ export const Lancamentos: React.FC = () => {
   const { isHidden } = useVisibility();
   const { isManual } = useFinanceMode();
   const { user } = useAuth();
-  const { 
-    lancamentos, 
+  const {
+    lancamentos,
     loading,
     fetchLancamentos,
     addLancamento,
-    addMultipleLancamentos, 
+    addMultipleLancamentos,
     updateLancamento,
     updateFriendlyName,
     deleteLancamento,
+    softDeleteLancamento,
+    markLancamentoPaid,
+    markLancamentoPaidWithValues,
+    duplicateLancamentoNextMonth,
   } = useLancamentosRealizados();
   const {
     contas,
@@ -103,10 +112,31 @@ export const Lancamentos: React.FC = () => {
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
+  const { data: rpcSummary, refetch: refetchSummary } = useLancamentosSummary(selectedMonth);
+  const summaryTotals = rpcSummary?.summary ?? (rpcSummary as Record<string, unknown>);
+  const totalIncome = (summaryTotals?.total_income as number) ?? 0;
+  const totalExpense = (summaryTotals?.total_expense as number) ?? 0;
+  const balance = (summaryTotals?.balance as number) ?? 0;
+  const paid = (rpcSummary as { paid?: { count?: number; total?: number } })?.paid ?? { count: 0, total: 0 };
+  const pending = (rpcSummary as { pending?: { count?: number; total?: number } })?.pending ?? { count: 0, total: 0 };
+  const overdue = (rpcSummary as { overdue?: { count?: number; total?: number } })?.overdue ?? { count: 0, total: 0 };
+  const topCategories = ((rpcSummary as { top_categories?: Array<{ category: string; total: number; count?: number; pct?: number }> })?.top_categories ?? rpcSummary?.by_category ?? []) as Array<{ category: string; total: number; count?: number; pct?: number }>;
+  const byPaymentMethod = (rpcSummary?.by_payment_method ?? []) as Array<{ method: string; total: number; count: number }>;
+  const PAYMENT_LABELS: Record<string, string> = { pix: 'PIX', cartao_credito: 'Cartão de Crédito', debito_auto: 'Débito Automático', boleto: 'Boleto', transferencia: 'Transferência' };
+  const CATEGORY_COLORS: Record<string, string> = { 'Contas da Casa': '#3b82f6', 'Alimentação': '#22c55e', 'Saúde': '#ef4444', 'Lazer': '#a855f7', 'Transporte': '#f59e0b', 'Pessoal': '#ec4899', 'Investimentos': '#14b8a6' };
+  const getCategoryColor = (c: string) => CATEGORY_COLORS[c] ?? 'var(--primary)';
+  const countIncome = (summaryTotals?.count_income as number) ?? 0;
+  const countExpense = (summaryTotals?.count_expense as number) ?? 0;
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterTipo, setFilterTipo] = useState<'all' | 'receita' | 'despesa'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending' | 'overdue'>('all');
+  const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [selectedBank, setSelectedBank] = useState<string>('all');
   const [selectedAccountType, setSelectedAccountType] = useState<string>('all');
+  const [markAsPaidItem, setMarkAsPaidItem] = useState<LancamentoRealizado | null>(null);
+  const [markAsPaidLoading, setMarkAsPaidLoading] = useState(false);
 
   // Extract unique banks and account types from sourceMap
   const { availableBanks, availableAccountTypes } = useMemo(() => {
@@ -127,35 +157,50 @@ export const Lancamentos: React.FC = () => {
     };
   }, [sourceMap]);
 
+  // Helper: status do lançamento para filtros
+  const getLancamentoStatus = useCallback((l: LancamentoRealizado): 'paid' | 'pending' | 'overdue' => {
+    if (l.data_pagamento) return 'paid';
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const venc = l.data_vencimento || l.data_registro?.slice(0, 10) || '';
+    if (venc && venc < today) return 'overdue';
+    return 'pending';
+  }, []);
+
   // Filter lancamentos by selected month
   const filteredByMonth = useMemo(() => 
     lancamentos.filter(l => l.mes_referencia === selectedMonth),
     [lancamentos, selectedMonth]
   );
 
-  // Apply search + bank + account filters
+  // Apply search + tipo + status + category + bank + account filters
   const filteredLancamentos = useMemo(() => {
     return filteredByMonth.filter(l => {
-      // Text search
+      if (filterTipo !== 'all' && l.tipo !== filterTipo) return false;
+      if (filterStatus !== 'all' && getLancamentoStatus(l) !== filterStatus) return false;
+      if (filterCategories.length > 0 && !filterCategories.includes(l.categoria)) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchesName = l.nome.toLowerCase().includes(q) || (l.friendly_name && l.friendly_name.toLowerCase().includes(q));
         const matchesCategory = l.categoria.toLowerCase().includes(q);
         if (!matchesName && !matchesCategory) return false;
       }
-      // Bank filter
       if (selectedBank !== 'all') {
         const source = getSourceInfo(l.source_id);
         if (!source || source.institution !== selectedBank) return false;
       }
-      // Account type filter
       if (selectedAccountType !== 'all') {
         const source = getSourceInfo(l.source_id);
         if (!source || source.accountType !== selectedAccountType) return false;
       }
       return true;
     });
-  }, [filteredByMonth, searchQuery, selectedBank, selectedAccountType, getSourceInfo]);
+  }, [filteredByMonth, filterTipo, filterStatus, filterCategories, searchQuery, selectedBank, selectedAccountType, getSourceInfo, getLancamentoStatus]);
+
+  const uniqueCategoriesForFilter = useMemo(() => {
+    const set = new Set<string>();
+    filteredByMonth.forEach(l => set.add(l.categoria));
+    return Array.from(set).sort();
+  }, [filteredByMonth]);
   
   // Derive entradas/saidas from filtered data
   const entradas = useMemo(() => 
@@ -472,61 +517,83 @@ export const Lancamentos: React.FC = () => {
   };
 
   const handleAddEntrada = async () => {
-    if (!newEntrada.name || !newEntrada.amount || !newEntrada.type) {
-      toast.error('Preencha todos os campos obrigatórios');
+    const nome = newEntrada.name?.trim() ?? '';
+    if (nome.length < 2) {
+      toast.error('Nome deve ter pelo menos 2 caracteres');
+      return;
+    }
+    if (!newEntrada.amount || newEntrada.amount <= 0) {
+      toast.error('Valor deve ser maior que zero');
+      return;
+    }
+    if (!newEntrada.type) {
+      toast.error('Selecione o tipo de receita');
       return;
     }
 
     if (editingId) {
       await updateLancamento(editingId, {
-        nome: newEntrada.name,
+        nome,
         valor_realizado: newEntrada.amount,
         valor_previsto: newEntrada.amount,
         data_pagamento: newEntrada.date,
         categoria: newEntrada.type,
       });
+      refetchSummary();
       handleCloseDialog();
     } else {
       const result = await addLancamento({
         tipo: 'receita',
         categoria: newEntrada.type,
-        nome: newEntrada.name,
+        nome,
         valor_previsto: newEntrada.amount,
         valor_realizado: newEntrada.amount,
-        mes_referencia: getCurrentMonthReference(),
+        mes_referencia: selectedMonth,
+        data_vencimento: newEntrada.date,
         data_pagamento: newEntrada.date,
       });
       if (result) {
+        refetchSummary();
         handleCloseDialog();
-        toast.success('Entrada registrada com sucesso!');
       }
     }
   };
 
   const handleAddSaida = async () => {
-    if (!newSaida.name || !newSaida.amount || !newSaida.category) {
-      toast.error('Preencha todos os campos obrigatórios');
+    const nome = newSaida.name?.trim() ?? '';
+    if (nome.length < 2) {
+      toast.error('Nome deve ter pelo menos 2 caracteres');
+      return;
+    }
+    if (!newSaida.amount || newSaida.amount <= 0) {
+      toast.error('Valor deve ser maior que zero');
+      return;
+    }
+    if (!newSaida.category) {
+      toast.error('Selecione a categoria');
       return;
     }
 
     if (editingId) {
       await updateLancamento(editingId, {
-        nome: newSaida.name,
+        nome,
         valor_realizado: newSaida.amount,
         valor_previsto: newSaida.amount,
         data_pagamento: newSaida.date,
         categoria: newSaida.category,
         forma_pagamento: newSaida.method,
       });
+      refetchSummary();
       handleCloseDialog();
     } else {
       const result = await addLancamento({
         tipo: 'despesa',
         categoria: newSaida.category,
-        nome: newSaida.name,
+        nome,
         valor_previsto: newSaida.amount,
         valor_realizado: newSaida.amount,
-        mes_referencia: getCurrentMonthReference(),
+        mes_referencia: selectedMonth,
+        data_vencimento: newSaida.date,
         data_pagamento: newSaida.date,
         forma_pagamento: newSaida.method,
       });
@@ -564,6 +631,7 @@ export const Lancamentos: React.FC = () => {
           }
         }
         
+        refetchSummary();
         handleCloseDialog();
         toast.success('Saída registrada com sucesso!');
       }
@@ -601,7 +669,10 @@ export const Lancamentos: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
-    await deleteLancamento(deleteConfirm.id);
+    await softDeleteLancamento(deleteConfirm.id);
+    refetchSummary();
+    setDetailDialogOpen(false);
+    setDetailItem(null);
     setDeleteConfirm(null);
   };
 
@@ -674,13 +745,14 @@ export const Lancamentos: React.FC = () => {
         {!isManual && <OutdatedConnectionBanner />}
 
         {/* Header */}
-        <PageHeader
-          title="Lançamentos"
-          description="Gerencie suas entradas e saídas"
-          icon={<Receipt className="h-5 w-5 text-primary" />}
-        >
-          {!isManual && <BankSyncButton variant="button" />}
-          <VisibilityToggle />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <PageHeader
+            title="Lançamentos"
+            description="Gerencie suas entradas e saídas"
+            icon={<Receipt className="h-5 w-5 text-primary" />}
+          >
+            {!isManual && <BankSyncButton variant="button" />}
+            <VisibilityToggle />
           {/* Single Add Button with Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -746,9 +818,186 @@ export const Lancamentos: React.FC = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </PageHeader>
+          </PageHeader>
+          <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+        </div>
 
         {!isManual && <PluggySyncStatus accountType="BANK" compact />}
+
+        {/* Resumo do mês (RPC) — cards + top categorias + forma de pagamento */}
+        {rpcSummary != null && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
+                    <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Receitas</p>
+                    <p className="text-lg font-semibold text-green-600">{formatCurrency(totalIncome)}</p>
+                    <p className="text-xs text-muted-foreground">{countIncome} itens</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
+                    <ArrowDownCircle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Despesas</p>
+                    <p className="text-lg font-semibold text-red-600">{formatCurrency(totalExpense)}</p>
+                    <p className="text-xs text-muted-foreground">{countExpense} itens</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                    <Scale className={`h-5 w-5 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Saldo</p>
+                    <p className={`text-lg font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagos</p>
+                    <p className="text-lg font-semibold">{paid.count ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(paid.total ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pendentes</p>
+                    <p className="text-lg font-semibold">{pending.count ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(pending.total ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-[14px] border border-border/80">
+                <CardContent className="flex items-center gap-3 p-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Atrasados</p>
+                    <p className="text-lg font-semibold">{overdue.count ?? 0}</p>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(overdue.total ?? 0)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {topCategories.length > 0 && (
+              <Card className="rounded-[14px] border border-border/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Top Categorias</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {topCategories.slice(0, 5).map((row) => {
+                    const totalAll = topCategories.reduce((s, i) => s + i.total, 0);
+                    const pct = totalAll > 0 ? (row.total / totalAll) * 100 : (row.pct ?? 0);
+                    const color = getCategoryColor(row.category);
+                    return (
+                      <div key={row.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                        <span className="w-full sm:w-32 shrink-0 text-sm font-medium truncate">{row.category}</span>
+                        <div className="flex-1 w-full h-6 rounded-md bg-muted overflow-hidden min-w-0">
+                          <div className="h-full rounded-md transition-all" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                        </div>
+                        <span className="shrink-0 text-sm text-muted-foreground">{formatCurrency(row.total)} ({(row.pct ?? pct).toFixed(1)}%)</span>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+
+            {byPaymentMethod.length > 0 && (
+              <Card className="rounded-[14px] border border-border/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Por Forma de Pagamento</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {byPaymentMethod.map((row) => (
+                      <span key={row.method} className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/50 px-3 py-2 min-h-[36px] text-sm">
+                        <span className="font-medium">{PAYMENT_LABELS[row.method] ?? row.method}:</span>
+                        <span>{formatCurrency(row.total)} ({row.count})</span>
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Bar chart: Receita vs Despesa */}
+            <Card className="rounded-[14px] border border-border/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Receita vs Despesa</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'var(--income)' }, { name: 'Despesas', valor: totalExpense, fill: 'var(--expense)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
+                      <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                      <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Donut: top categorias de despesa */}
+            {topCategories.length > 0 && (
+              <Card className="rounded-[14px] border border-border/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Despesas por Categoria</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[200px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={topCategories.slice(0, 6).map((row) => ({ name: row.category, value: row.total }))}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {topCategories.slice(0, 6).map((row, i) => (
+                            <Cell key={row.category} fill={getCategoryColor(row.category)} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Bulk Entry Dialog */}
         <BulkEntryDialog
@@ -1130,20 +1379,71 @@ export const Lancamentos: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Month Selector */}
-        <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
-
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar lançamento..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+        {/* Search and Filters - responsivo: full width em mobile, touch-friendly */}
+        <div className="flex flex-col gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 min-h-[44px] w-full touch-manipulation"
+              />
+            </div>
+            <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
+              <SelectTrigger className="w-full sm:w-[140px] min-h-[44px] touch-manipulation">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="receita">Receitas</SelectItem>
+                <SelectItem value="despesa">Despesas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={(v: 'all' | 'paid' | 'pending' | 'overdue') => setFilterStatus(v)}>
+              <SelectTrigger className="w-full sm:w-[140px] min-h-[44px] touch-manipulation">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="paid">Pagos</SelectItem>
+                <SelectItem value="pending">Pendentes</SelectItem>
+                <SelectItem value="overdue">Atrasados</SelectItem>
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2 w-full sm:w-[180px] min-h-[44px] justify-start touch-manipulation">
+                  <Filter className="h-4 w-4" />
+                  <span className="truncate">{filterCategories.length === 0 ? 'Categorias' : `${filterCategories.length} categoria(s)`}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="max-h-64 overflow-y-auto space-y-1">
+                  {uniqueCategoriesForFilter.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 hover:bg-muted">
+                      <Checkbox
+                        checked={filterCategories.includes(cat)}
+                        onCheckedChange={(checked) =>
+                          setFilterCategories((prev) =>
+                            checked ? [...prev, cat] : prev.filter((c) => c !== cat)
+                          )
+                        }
+                      />
+                      <span className="text-sm truncate">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+                {filterCategories.length > 0 && (
+                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setFilterCategories([])}>
+                    Limpar
+                  </Button>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
+          <div className="flex flex-wrap gap-2">
           {availableBanks.length > 0 && (
           <Select value={selectedBank} onValueChange={setSelectedBank}>
               <SelectTrigger className="w-full sm:w-[220px]">
@@ -1205,11 +1505,12 @@ export const Lancamentos: React.FC = () => {
               </SelectContent>
             </Select>
           )}
+          </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - responsivo */}
         <Tabs defaultValue="geral" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6 h-auto min-h-[44px] py-1 gap-1">
             <TabsTrigger value="geral" className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
               Geral
@@ -1344,11 +1645,19 @@ export const Lancamentos: React.FC = () => {
                     const isEntrada = item.tipo === 'receita';
                     const source = getSourceInfo(item.source_id);
                     const recon = getReconciliation(item.id);
+                    const isPaid = !!item.data_pagamento;
                     return (
                       <div key={item.id} 
                         className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
                         onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
                       >
+                        <Checkbox
+                          checked={isPaid}
+                          onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0"
+                          aria-label={isEntrada ? 'Recebido' : 'Pago'}
+                        />
                         <div className={`w-1 self-stretch rounded-full shrink-0 ${isEntrada ? 'bg-income' : 'bg-expense'}`} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
@@ -1758,7 +2067,7 @@ export const Lancamentos: React.FC = () => {
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir <strong>"{deleteConfirm?.nome}"</strong>? Esta ação não pode ser desfeita e o lançamento será removido permanentemente.
+            Tem certeza que deseja excluir <strong>"{deleteConfirm?.nome}"</strong>? Esta ação pode ser desfeita na Lixeira.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -1788,8 +2097,29 @@ export const Lancamentos: React.FC = () => {
       onOpenChange={setDetailDialogOpen}
       onEdit={(item) => item.tipo === 'receita' ? handleEditEntrada(item) : handleEditSaida(item)}
       onDelete={handleDeleteItem}
+      onMarkPaid={markLancamentoPaid}
+      onOpenMarkAsPaid={(item) => { setDetailDialogOpen(false); setMarkAsPaidItem(item); }}
+      onDuplicateNextMonth={duplicateLancamentoNextMonth}
       sourceInfo={detailItem ? getSourceInfo(detailItem.source_id) : null}
       reconciliation={detailItem ? getReconciliation(detailItem.id) : null}
+    />
+
+    <MarkAsPaidLancamentoDialog
+      item={markAsPaidItem}
+      open={!!markAsPaidItem}
+      onOpenChange={(open) => !open && setMarkAsPaidItem(null)}
+      onConfirm={async (params) => {
+        if (!markAsPaidItem) return;
+        setMarkAsPaidLoading(true);
+        try {
+          await markLancamentoPaidWithValues(markAsPaidItem.id, params.valorRealizado, params.dataPagamento, params.formaPagamento);
+          refetchSummary();
+          setMarkAsPaidItem(null);
+        } finally {
+          setMarkAsPaidLoading(false);
+        }
+      }}
+      isLoading={markAsPaidLoading}
     />
 
 

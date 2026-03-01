@@ -96,37 +96,37 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-      {/* Back Button */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4 sm:p-6">
+      {/* Back Button - touch-friendly */}
       <a 
         href="https://rxfin.com.br" 
-        className="absolute top-4 left-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="absolute top-4 left-4 flex items-center gap-2 text-sm min-h-[44px] min-w-[44px] touch-manipulation text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Voltar
+        <span className="sm:inline">Voltar</span>
       </a>
 
       <div className="w-full max-w-md space-y-6">
-        {/* Logo and Header */}
+        {/* Logo and Header - typography responsiva */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <ThemedLogo className="h-16 w-16 object-contain" />
+            <ThemedLogo className="h-14 w-14 sm:h-16 sm:w-16 object-contain" />
           </div>
-          <h1 className="text-3xl font-bold text-primary">RXFin</h1>
-          <p className="text-muted-foreground">Seu Raio-X Financeiro completo</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">RXFin</h1>
+          <p className="text-sm text-muted-foreground min-h-[14px]">Seu Raio-X Financeiro completo</p>
         </div>
 
         <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl text-center">Entrar</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-xl sm:text-2xl text-center">Entrar</CardTitle>
+            <CardDescription className="text-center text-sm">
               Acesse sua conta para continuar
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -138,7 +138,7 @@ const Login: React.FC = () => {
                       setEmail(e.target.value);
                       if (errors.email) setErrors(prev => ({ ...prev, email: undefined }));
                     }}
-                    className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
+                    className={`pl-10 min-h-[44px] w-full touch-manipulation ${errors.email ? 'border-destructive' : ''}`}
                     disabled={isLoading}
                   />
                 </div>
@@ -146,12 +146,12 @@ const Login: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Senha</Label>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <Label htmlFor="password" className="text-sm">Senha</Label>
                   <Button
                     type="button"
                     variant="link"
-                    className="px-0 h-auto font-normal text-xs text-muted-foreground hover:text-primary"
+                    className="px-0 h-auto min-h-[44px] font-normal text-sm text-muted-foreground hover:text-primary touch-manipulation"
                     onClick={() => setShowForgotPassword(true)}
                   >
                     Esqueceu a senha?
@@ -168,14 +168,14 @@ const Login: React.FC = () => {
                       setPassword(e.target.value);
                       if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
                     }}
-                    className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
+                    className={`pl-10 min-h-[44px] w-full touch-manipulation ${errors.password ? 'border-destructive' : ''}`}
                     disabled={isLoading}
                   />
                 </div>
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
               
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              <Button type="submit" className="w-full min-h-[44px] text-sm sm:text-base" size="lg" disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
@@ -193,7 +193,7 @@ const Login: React.FC = () => {
               <span className="text-muted-foreground">Não tem uma conta? </span>
               <Link 
                 to="/signup" 
-                className="text-primary font-medium hover:underline"
+                className="text-primary font-medium hover:underline touch-manipulation"
               >
                 Criar conta
               </Link>
@@ -201,7 +201,7 @@ const Login: React.FC = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground">
           Ao continuar, você concorda com nossos{' '}
           <Link to="/termos-de-uso" className="underline hover:text-foreground">
             Termos de Uso

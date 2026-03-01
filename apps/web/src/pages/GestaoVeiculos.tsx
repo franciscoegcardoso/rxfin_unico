@@ -5,10 +5,12 @@ import { BackLink } from '@/components/shared/BackLink';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Car, Fuel, Wrench, Receipt, Trash2, Filter, Pencil, BarChart3, X, Calendar, Gauge, User } from 'lucide-react';
+import { Plus, Car, Fuel, Wrench, Receipt, Trash2, Filter, Pencil, BarChart3, X, Calendar, Gauge, User, TrendingUp, ClipboardList } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { useVisibility } from '@/contexts/VisibilityContext';
-import { formatCompactCurrency } from '@/lib/utils';
+import { formatCompactCurrency, formatCurrency } from '@/lib/utils';
+import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { VehicleRecordDialog } from '@/components/veiculos/VehicleRecordDialog';
@@ -42,10 +44,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
+import { useVehicleDashboard } from '@/hooks/useVehicleDashboard';
 
 export const GestaoVeiculos: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { config, vehicleRecords, addVehicleRecord, updateVehicleRecord, removeVehicleRecord } = useFinancial();
+  const { data: vehicleDashboardData, error: vehicleDashboardError } = useVehicleDashboard();
   const vehicles = config.assets.filter(a => a.type === 'vehicle');
   const drivers = config.drivers;
   const isMobile = useIsMobile();
@@ -186,6 +190,141 @@ export const GestaoVeiculos: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {vehicleDashboardError && (
+          <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
+            <p className="text-sm text-destructive">{vehicleDashboardError}</p>
+          </Card>
+        )}
+        {vehicleDashboardData?.summary != null && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="rounded-[14px] border border-border/80">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <Car className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Veículos</p>
+                  <p className="text-lg font-semibold">{vehicleDashboardData.summary.total_vehicles ?? 0}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[14px] border border-border/80">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Valor FIPE total</p>
+                  <p className="text-lg font-semibold truncate">{formatCurrency(vehicleDashboardData.summary.total_fipe_value ?? 0)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[14px] border border-border/80">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-expense/10">
+                  <Fuel className="h-5 w-5 text-expense" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Gasto combustível</p>
+                  <p className="text-lg font-semibold truncate">{formatCurrency(vehicleDashboardData.summary.total_fuel_cost ?? 0)}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[14px] border border-border/80">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <ClipboardList className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Registros</p>
+                  <p className="text-lg font-semibold">{(vehicleDashboardData.summary as { total_records?: number })?.total_records ?? vehicleDashboardData.records?.length ?? 0}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Meus Veículos (RPC) */}
+        {vehicleDashboardData?.vehicles && vehicleDashboardData.vehicles.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">Meus Veículos</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {vehicleDashboardData.vehicles.map((v: { id?: string; display_name?: string; brand?: string; model?: string; year?: number | string; fipe_value?: number; fipe_code?: string; vehicle_type?: string }) => {
+                const shortName = [v.brand, v.model].filter(Boolean).join(' ');
+                const displayName = shortName.length > 40 ? shortName.slice(0, 37) + '…' : shortName || v.display_name || '—';
+                const typeLabel = v.vehicle_type === 'motos' ? 'moto' : 'carro';
+                return (
+                  <Card key={v.id} className="rounded-[14px] border border-border/80 overflow-hidden">
+                    <CardContent className="p-4">
+                      <p className="font-bold truncate" title={shortName || undefined}>{displayName}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{v.year ?? '—'}</p>
+                      <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(v.fipe_value ?? 0)}</p>
+                      <Badge variant="secondary" className="mt-2 text-xs">{typeLabel}</Badge>
+                      {v.fipe_code && (
+                        <Link to={`/simulador-fipe?code=${v.fipe_code}`} className="block mt-2 text-xs text-primary hover:underline">
+                          Ver simulador FIPE
+                        </Link>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Histórico de Registros (RPC) */}
+        {vehicleDashboardData?.records && vehicleDashboardData.records.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-lg font-semibold">Histórico de Registros</h2>
+            <Card className="rounded-[14px] border border-border/80 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border/80 bg-muted/30">
+                      <th className="px-4 py-3 text-left font-medium">Data</th>
+                      <th className="px-4 py-3 text-left font-medium">Tipo</th>
+                      <th className="px-4 py-3 text-left font-medium">Veículo</th>
+                      <th className="px-4 py-3 text-right font-medium">Custo</th>
+                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalhes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...vehicleDashboardData.records]
+                      .sort((a: { record_date?: string }, b: { record_date?: string }) => (b.record_date ?? '').localeCompare(a.record_date ?? ''))
+                      .map((rec: { id?: string; vehicle_id?: string; record_date?: string; record_type?: string; odometer?: number | null; fuel_liters?: number | null; fuel_cost?: number; notes?: string }) => {
+                        const vehicle = vehicleDashboardData.vehicles?.find((ve: { id?: string }) => ve.id === rec.vehicle_id);
+                        const shortName = vehicle ? [vehicle.brand, vehicle.model].filter(Boolean).join(' ') : rec.vehicle_id ?? '—';
+                        const displayName = shortName.length > 30 ? shortName.slice(0, 27) + '…' : shortName;
+                        const dateStr = rec.record_date ? format(new Date(rec.record_date), 'dd/MM/yyyy') : '—';
+                        const isFuel = rec.record_type === 'fuel';
+                        return (
+                          <tr key={rec.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
+                            <td className="px-4 py-3 text-muted-foreground">{dateStr}</td>
+                            <td className="px-4 py-3">
+                              {isFuel ? (
+                                <Badge className="bg-green-600 hover:bg-green-600">Combustível</Badge>
+                              ) : (
+                                <Badge className="bg-blue-600 hover:bg-blue-600">Manutenção</Badge>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 truncate max-w-[180px]" title={shortName}>{displayName}</td>
+                            <td className="px-4 py-3 text-right font-medium">{formatCurrency(rec.fuel_cost ?? 0)}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {isFuel && rec.fuel_liters != null && <span>{rec.fuel_liters} L</span>}
+                              {rec.notes && <span className="block truncate max-w-[200px]" title={rec.notes}>{rec.notes}</span>}
+                              {!isFuel && !rec.notes && '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </section>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">

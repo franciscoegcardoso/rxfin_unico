@@ -138,3 +138,94 @@ export async function applyFriendlyNameRule(
   if (error) throw error;
   return { updated: (data as any)?.updated || 0 };
 }
+
+// ─── RPC: create (backend auth.uid()) ───────────────────
+export async function createLancamentoRpc(params: {
+  p_tipo: 'receita' | 'despesa';
+  p_categoria: string;
+  p_nome: string;
+  p_valor_previsto: number;
+  p_mes_referencia: string;
+  p_data_vencimento?: string | null;
+  p_forma_pagamento?: string | null;
+  p_category_id?: string | null;
+  p_observacoes?: string | null;
+}): Promise<void> {
+  const { error } = await supabase.rpc('create_lancamento' as any, {
+    p_tipo: params.p_tipo,
+    p_categoria: params.p_categoria,
+    p_nome: params.p_nome,
+    p_valor_previsto: params.p_valor_previsto,
+    p_mes_referencia: params.p_mes_referencia,
+    p_data_vencimento: params.p_data_vencimento ?? null,
+    p_forma_pagamento: params.p_forma_pagamento ?? null,
+    p_category_id: params.p_category_id ?? getCategoryId(params.p_categoria),
+    p_observacoes: params.p_observacoes ?? null,
+  });
+  if (error) throw error;
+}
+
+// ─── RPC: upsert (create or update) ─────────────────────
+export async function upsertLancamentoRpc(params: {
+  p_id: string | null;
+  p_tipo: 'receita' | 'despesa';
+  p_nome: string;
+  p_categoria: string;
+  p_valor_previsto: number;
+  p_mes_referencia: string;
+  p_data_vencimento?: string | null;
+  p_data_pagamento?: string | null;
+  p_valor_realizado?: number | null;
+  p_forma_pagamento?: string | null;
+  p_observacoes?: string | null;
+}): Promise<void> {
+  const { error } = await supabase.rpc('upsert_lancamento' as any, params);
+  if (error) throw error;
+}
+
+// ─── RPC: update (partial) ──────────────────────────────
+export async function updateLancamentoRpc(
+  id: string,
+  p_data: Partial<{ nome: string; valor_previsto: number; valor_realizado: number; categoria: string; data_vencimento: string | null; data_pagamento: string | null; forma_pagamento: string | null; observacoes: string | null }>,
+): Promise<void> {
+  const { error } = await supabase.rpc('update_lancamento' as any, { p_id: id, p_data });
+  if (error) throw error;
+}
+
+// ─── RPC: mark as paid (simple toggle, legacy) ───────────
+export async function markLancamentoPaidRpc(
+  lancamentoId: string,
+  paid: boolean,
+): Promise<void> {
+  const { error } = await supabase.rpc('mark_lancamento_paid' as any, {
+    p_lancamento_id: lancamentoId,
+    p_paid: paid,
+  });
+  if (error) throw error;
+}
+
+// ─── RPC: mark as paid with values ──────────────────────
+export async function markLancamentoPaidWithValuesRpc(params: {
+  p_id: string;
+  p_valor_realizado: number;
+  p_data_pagamento: string;
+  p_forma_pagamento: string;
+}): Promise<void> {
+  const { error } = await supabase.rpc('mark_lancamento_paid' as any, params);
+  if (error) throw error;
+}
+
+// ─── RPC: duplicate to next month ───────────────────────
+export async function duplicateLancamentoNextMonthRpc(lancamentoId: string): Promise<LancamentoRealizado | null> {
+  const { data, error } = await supabase.rpc('duplicate_lancamento_next_month' as any, {
+    p_id: lancamentoId,
+  });
+  if (error) throw error;
+  return data ? mapRow(data as any) : null;
+}
+
+// ─── RPC: soft delete ───────────────────────────────────
+export async function softDeleteLancamentoRpc(id: string): Promise<void> {
+  const { error } = await supabase.rpc('soft_delete_lancamento' as any, { p_id: id });
+  if (error) throw error;
+}

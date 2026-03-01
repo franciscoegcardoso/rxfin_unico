@@ -9,6 +9,7 @@ import {
   Lock,
   ShieldCheck,
   Rocket,
+  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { showComingSoonToast } from '@/components/subscription/ComingSoonToast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
+import { useMobileMenu } from '@/contexts/MobileMenuContext';
 import logoRxfin from '@/assets/logo-rxfin-icon.png';
 import logoRxfinWhite from '@/assets/logo-rxfin-white.png';
 import { useTheme } from 'next-themes';
@@ -45,6 +47,7 @@ export const TopNavbar: React.FC = () => {
   const { mainItems, groupedSections, isLoading } = useNavMenuPages();
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
+  const { setOpen: setMobileMenuOpen } = useMobileMenu();
   const currentLogo = resolvedTheme === 'dark' ? logoRxfinWhite : logoRxfin;
   
   const isAdminActive = location.pathname.startsWith('/admin');
@@ -130,7 +133,7 @@ export const TopNavbar: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 overflow-x-hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/60 overflow-x-hidden shadow-sm bg-background" style={{ backgroundColor: 'hsl(var(--background))' }}>
       <div className="flex h-14 items-center justify-between px-4 md:px-6 w-full max-w-full mx-auto">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -142,8 +145,21 @@ export const TopNavbar: React.FC = () => {
           <span className="font-semibold text-base text-foreground hidden sm:inline">RXFin</span>
         </Link>
 
-        {/* Mobile/Tablet: Notification Bell (right side) */}
-        {isMobile && <NotificationBell />}
+        {/* Mobile/Tablet: Hamburger menu + Notification Bell */}
+        {isMobile && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 min-h-[44px] min-w-[44px] touch-manipulation"
+              aria-label="Abrir menu"
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <NotificationBell />
+          </div>
+        )}
 
         {/* Desktop Navigation (lg+) */}
         <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6">

@@ -49,10 +49,7 @@ export default function AIMetrics() {
         p_start_date: startDate.toISOString().split('T')[0],
       });
 
-      console.log('ai-metrics data:', data, 'error:', error);
-
       if (error) {
-        console.error('Erro ao buscar métricas:', error);
         return;
       }
 
@@ -75,8 +72,8 @@ export default function AIMetrics() {
         sessions_over_80pct: ct.sessoes_acima_limite ?? 0,
         total_tokens: (ct.media_tokens_por_sessao ?? 0) * (ct.total_sessoes ?? 0),
       });
-    } catch (err) {
-      console.error('Failed to fetch AI metrics:', err);
+    } catch {
+      // Error handled by loading state
     } finally {
       setLastUpdated(new Date());
       setLoading(false);

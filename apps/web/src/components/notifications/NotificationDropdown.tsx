@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCheck, Bell } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { CheckCheck, Bell, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationItem } from './NotificationItem';
@@ -81,6 +81,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             </div>
           </ScrollArea>
         )}
+        {/* Ver todas */}
+        <div className="border-t px-4 py-2">
+          <Link
+            to="/notificacoes"
+            onClick={() => onClose()}
+            className="flex items-center justify-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            Ver todas
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       <NotificationDetailDialog

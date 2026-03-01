@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { BackLink } from '@/components/shared/BackLink';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,8 @@ import {
   CreditCard,
   QrCode,
   Banknote,
-  Wallet
+  Wallet,
+  ShoppingBag
 } from 'lucide-react';
 import { usePurchaseRegistry, PurchaseRegistryInput, PurchaseRegistryItem } from '@/hooks/usePurchaseRegistry';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
@@ -47,15 +48,7 @@ import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip } from 'recharts';
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
+import { formatCurrency } from '@/lib/utils';
 
 const PAYMENT_METHODS = [
   { value: 'pix', label: 'PIX', icon: QrCode },
@@ -504,21 +497,14 @@ const RegistroCompras: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <BackLink to="/planejamento" label="Voltar ao Planejamento" />
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <ShoppingCart className="h-6 w-6 text-primary" />
-                Registro de Compras Anual
-              </h1>
-              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.registroCompras} />
-            </div>
-            <p className="text-muted-foreground text-sm">
-              Controle sua lista de desejos e acompanhe as aquisições do ano
-            </p>
-          </div>
+        <PageHeader
+          title="Registro de Compras"
+          description="Controle sua lista de desejos e acompanhe as aquisições do ano"
+          icon={<ShoppingBag className="h-5 w-5 text-primary" />}
+          backTo="/planejamento"
+          backLabel="Voltar ao Planejamento"
+        >
+          <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.registroCompras} />
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => handleOpenDialog()} className="rounded-full">
@@ -593,7 +579,22 @@ const RegistroCompras: React.FC = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+        </PageHeader>
+
+        {/* Empty state when no items */}
+        {!loading && items.length === 0 && (
+          <Card className="rounded-[14px] border border-border/80">
+            <CardContent className="py-12 text-center">
+              <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-muted-foreground font-medium">Nenhuma compra registrada</p>
+              <p className="text-sm text-muted-foreground mt-1">Adicione itens à lista de desejos ou registre compras realizadas.</p>
+              <Button variant="default" className="mt-4 gap-2" onClick={() => handleOpenDialog()}>
+                <Plus className="h-4 w-4" />
+                Novo Item
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -704,8 +705,8 @@ const RegistroCompras: React.FC = () => {
             ) : purchasedItems.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">Nenhuma compra registrada ainda</p>
+                  <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground">Nenhuma compra registrada</p>
                 </CardContent>
               </Card>
             ) : (
