@@ -4,17 +4,17 @@
   "private": true,
   "description": "RXFin - Plataforma de finanças pessoais",
   "workspaces": [
-    "apps/web-next",
     "apps/web",
+    "apps/landing",
     "apps/mobile",
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev --filter=web-next",
     "dev:web": "turbo run dev --filter=web",
+    "dev:landing": "turbo run dev --filter=landing",
     "dev:mobile": "cd apps/mobile && npx expo start",
-    "build": "turbo run build --filter=web-next",
     "build:web": "turbo run build --filter=web",
+    "build:landing": "turbo run build --filter=landing",
     "build:all": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",

@@ -65,3 +65,4 @@ n8n/.n8n/
 .env.test
 
 .env.test
+.vercel
