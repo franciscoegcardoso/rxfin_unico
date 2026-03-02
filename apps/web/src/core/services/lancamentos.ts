@@ -14,6 +14,7 @@ function mapRow(d: any): LancamentoRealizado {
     category_id: d.category_id ?? null,
     friendly_name: d.friendly_name ?? null,
     is_category_confirmed: d.is_category_confirmed ?? false,
+    valor_realizado: d.valor_realizado ?? d.valor_previsto ?? 0,
   };
 }
 
@@ -141,28 +142,33 @@ export async function applyFriendlyNameRule(
 
 // ─── RPC: create (backend auth.uid()) ───────────────────
 export async function createLancamentoRpc(params: {
-  p_tipo: 'receita' | 'despesa';
+  p_tipo: string;
   p_categoria: string;
   p_nome: string;
   p_valor_previsto: number;
   p_mes_referencia: string;
+  p_valor_realizado?: number | null;
   p_data_vencimento?: string | null;
+  p_data_pagamento?: string | null;
   p_forma_pagamento?: string | null;
-  p_category_id?: string | null;
   p_observacoes?: string | null;
-}): Promise<void> {
-  const { error } = await supabase.rpc('create_lancamento' as any, {
+  p_category_id?: string | null;
+}): Promise<{ id: string; success: boolean }> {
+  const { data, error } = await supabase.rpc('create_lancamento' as any, {
     p_tipo: params.p_tipo,
     p_categoria: params.p_categoria,
     p_nome: params.p_nome,
     p_valor_previsto: params.p_valor_previsto,
     p_mes_referencia: params.p_mes_referencia,
+    p_valor_realizado: params.p_valor_realizado ?? null,
     p_data_vencimento: params.p_data_vencimento ?? null,
+    p_data_pagamento: params.p_data_pagamento ?? null,
     p_forma_pagamento: params.p_forma_pagamento ?? null,
-    p_category_id: params.p_category_id ?? getCategoryId(params.p_categoria),
     p_observacoes: params.p_observacoes ?? null,
+    p_category_id: params.p_category_id ?? getCategoryId(params.p_categoria),
   });
   if (error) throw error;
+  return (data ?? { id: '', success: false }) as { id: string; success: boolean };
 }
 
 // ─── RPC: upsert (create or update) ─────────────────────
@@ -207,12 +213,13 @@ export async function markLancamentoPaidRpc(
 // ─── RPC: mark as paid with values ──────────────────────
 export async function markLancamentoPaidWithValuesRpc(params: {
   p_id: string;
-  p_valor_realizado: number;
-  p_data_pagamento: string;
-  p_forma_pagamento: string;
-}): Promise<void> {
-  const { error } = await supabase.rpc('mark_lancamento_paid' as any, params);
+  p_valor_realizado?: number | null;
+  p_data_pagamento?: string;
+  p_forma_pagamento?: string | null;
+}): Promise<{ status: string }> {
+  const { data, error } = await supabase.rpc('mark_lancamento_paid' as any, params);
   if (error) throw error;
+  return (data ?? { status: '' }) as { status: string };
 }
 
 // ─── RPC: duplicate to next month ───────────────────────

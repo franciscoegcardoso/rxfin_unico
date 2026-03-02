@@ -50,9 +50,12 @@ export function useLancamentosRealizados() {
         p_nome: input.nome,
         p_valor_previsto: input.valor_previsto,
         p_mes_referencia: input.mes_referencia,
-        p_data_vencimento: input.data_vencimento ?? input.data_pagamento ?? null,
+        p_valor_realizado: input.valor_realizado ?? null,
+        p_data_vencimento: input.data_vencimento ?? null,
+        p_data_pagamento: input.data_pagamento ?? null,
         p_forma_pagamento: input.forma_pagamento ?? null,
         p_observacoes: input.observacoes ?? null,
+        p_category_id: input.category_id ?? null,
       });
       await fetchLancamentos();
       toast.success('Lan?amento criado');
@@ -71,7 +74,11 @@ export function useLancamentosRealizados() {
     }
 
     try {
-      const created = await lancamentosService.createMultipleLancamentos(user.id, inputs);
+      const safeInputs = inputs.map((input) => ({
+        ...input,
+        valor_realizado: input.valor_realizado ?? input.valor_previsto,
+      }));
+      const created = await lancamentosService.createMultipleLancamentos(user.id, safeInputs);
       setLancamentos(prev => [...created, ...prev]);
       toast.success(`${inputs.length} lan?amento(s) consolidado(s) com sucesso`);
       return true;

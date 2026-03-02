@@ -212,7 +212,7 @@ const RegistroCompras: React.FC = () => {
     if (lancamentoId && lancamentoId !== 'none') {
       const lancamento = saidasDisponiveis.find(l => l.id === lancamentoId);
       if (lancamento) {
-        setActualValue(lancamento.valor_realizado);
+        setActualValue(lancamento.valor_realizado ?? lancamento.valor_previsto ?? 0);
         if (lancamento.data_pagamento) {
           setPurchaseDate(lancamento.data_pagamento);
         }
@@ -863,7 +863,7 @@ const RegistroCompras: React.FC = () => {
                       <SelectItem value="none">Nenhum (cadastrar manualmente)</SelectItem>
                       {saidasDisponiveis.map((lancamento) => (
                         <SelectItem key={lancamento.id} value={lancamento.id}>
-                          {lancamento.nome} - {formatCurrency(lancamento.valor_realizado)}
+                          {lancamento.nome} - {formatCurrency(lancamento.valor_realizado ?? lancamento.valor_previsto)}
                           {lancamento.data_pagamento && (
                             <span className="text-muted-foreground ml-1">
                               ({format(parseISO(lancamento.data_pagamento), 'dd/MM/yy')})

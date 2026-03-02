@@ -12,7 +12,7 @@ export interface LancamentoRealizado {
   nome: string;
   friendly_name: string | null;
   valor_previsto: number;
-  valor_realizado: number;
+  valor_realizado: number | null;
   mes_referencia: string;
   data_vencimento: string | null;
   data_pagamento: string | null;
@@ -32,7 +32,7 @@ export interface LancamentoInput {
   category_id?: string | null;
   nome: string;
   valor_previsto: number;
-  valor_realizado: number;
+  valor_realizado: number | null;
   mes_referencia: string;
   data_vencimento?: string | null;
   data_pagamento?: string | null;

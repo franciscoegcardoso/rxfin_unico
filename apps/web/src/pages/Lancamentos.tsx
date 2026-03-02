@@ -206,18 +206,18 @@ export const Lancamentos: React.FC = () => {
   const entradas = useMemo(() => 
     filteredLancamentos
       .filter(l => l.tipo === 'receita')
-      .sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro).localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro)), 
+      .sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro || '')), 
     [filteredLancamentos]
   );
   const saidas = useMemo(() => 
     filteredLancamentos
       .filter(l => l.tipo === 'despesa')
-      .sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro).localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro)), 
+      .sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro || '')), 
     [filteredLancamentos]
   );
 
   const allLancamentos = useMemo(() => 
-    [...filteredLancamentos].sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro).localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro)),
+    [...filteredLancamentos].sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro || '')),
     [filteredLancamentos]
   );
 
@@ -423,8 +423,8 @@ export const Lancamentos: React.FC = () => {
     purchaseItemId: '' as string
   });
 
-  const totalEntradas = entradas.reduce((acc, t) => acc + t.valor_realizado, 0);
-  const totalSaidas = saidas.reduce((acc, t) => acc + t.valor_realizado, 0);
+  const totalEntradas = entradas.reduce((acc, t) => acc + (t.valor_realizado ?? t.valor_previsto ?? 0), 0);
+  const totalSaidas = saidas.reduce((acc, t) => acc + (t.valor_realizado ?? t.valor_previsto ?? 0), 0);
 
   const lastSyncDate = useMemo(() => {
     const synced = lancamentos
@@ -433,9 +433,10 @@ export const Lancamentos: React.FC = () => {
     return synced.length > 0 ? synced[0].created_at : null;
   }, [lancamentos]);
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | null | undefined) => {
     if (isHidden) return '••••••';
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    const safe = value ?? 0;
+    return `R$ ${safe.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -487,8 +488,8 @@ export const Lancamentos: React.FC = () => {
     setEditingId(item.id);
     setNewEntrada({
       name: item.nome,
-      amount: item.valor_realizado,
-      date: item.data_pagamento || item.data_registro,
+      amount: item.valor_realizado ?? item.valor_previsto ?? 0,
+      date: item.data_pagamento || item.data_registro || '',
       type: item.categoria
     });
     setLancamentoTipo('entrada');
@@ -500,8 +501,8 @@ export const Lancamentos: React.FC = () => {
     setEditingId(item.id);
     setNewSaida({
       name: item.nome,
-      amount: item.valor_realizado,
-      date: item.data_pagamento || item.data_registro,
+      amount: item.valor_realizado ?? item.valor_previsto ?? 0,
+      date: item.data_pagamento || item.data_registro || '',
       category: item.categoria,
       method: (item.forma_pagamento || 'credit_card') as PaymentMethod,
       purchaseItemId: ''
@@ -1679,7 +1680,7 @@ export const Lancamentos: React.FC = () => {
                               )}
                             </div>
                             <p className={`font-bold text-sm whitespace-nowrap ${isEntrada ? 'text-income' : 'text-expense'}`}>
-                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado)}
+                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                             </p>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1698,7 +1699,7 @@ export const Lancamentos: React.FC = () => {
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {item.data_pagamento
                                 ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                                : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
+                                : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
                               }
                             </span>
                           </div>
@@ -1814,7 +1815,7 @@ export const Lancamentos: React.FC = () => {
                             {item.friendly_name || item.nome}
                           </p>
                           <p className="font-bold text-sm text-income whitespace-nowrap">
-                            + {formatCurrency(item.valor_realizado)}
+                            + {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1964,7 +1965,7 @@ export const Lancamentos: React.FC = () => {
                             )}
                           </div>
                           <p className="font-bold text-sm text-expense whitespace-nowrap">
-                            - {formatCurrency(item.valor_realizado)}
+                            - {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1991,7 +1992,7 @@ export const Lancamentos: React.FC = () => {
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {item.data_pagamento
                               ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                              : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
+                              : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
                             }
                           </span>
                         </div>
@@ -2013,7 +2014,7 @@ export const Lancamentos: React.FC = () => {
                   {paymentMethods.map((method) => {
                     const total = saidas
                       .filter(e => e.forma_pagamento === method.value && !billPaymentIds.has(e.id))
-                      .reduce((acc, e) => acc + e.valor_realizado, 0);
+                      .reduce((acc, e) => acc + (e.valor_realizado ?? e.valor_previsto ?? 0), 0);
                     
                     return (
                       <div

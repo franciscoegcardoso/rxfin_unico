@@ -80,7 +80,7 @@ export const Lancamentos: React.FC = () => {
     addMultipleLancamentos, 
     updateLancamento,
     updateFriendlyName,
-    deleteLancamento,
+    softDeleteLancamento,
   } = useLancamentosRealizados();
   const {
     contas,
@@ -382,8 +382,8 @@ export const Lancamentos: React.FC = () => {
     purchaseItemId: '' as string
   });
 
-  const totalEntradas = entradas.reduce((acc, t) => acc + t.valor_realizado, 0);
-  const totalSaidas = saidas.reduce((acc, t) => acc + t.valor_realizado, 0);
+  const totalEntradas = entradas.reduce((acc, t) => acc + (t.valor_realizado ?? t.valor_previsto ?? 0), 0);
+  const totalSaidas = saidas.reduce((acc, t) => acc + (t.valor_realizado ?? t.valor_previsto ?? 0), 0);
 
   const lastSyncDate = useMemo(() => {
     const synced = lancamentos
@@ -446,8 +446,8 @@ export const Lancamentos: React.FC = () => {
     setEditingId(item.id);
     setNewEntrada({
       name: item.nome,
-      amount: item.valor_realizado,
-      date: item.data_pagamento || item.data_registro,
+      amount: item.valor_realizado ?? item.valor_previsto ?? 0,
+      date: item.data_pagamento || item.data_registro || '',
       type: item.categoria
     });
     setLancamentoTipo('entrada');
@@ -459,8 +459,8 @@ export const Lancamentos: React.FC = () => {
     setEditingId(item.id);
     setNewSaida({
       name: item.nome,
-      amount: item.valor_realizado,
-      date: item.data_pagamento || item.data_registro,
+      amount: item.valor_realizado ?? item.valor_previsto ?? 0,
+      date: item.data_pagamento || item.data_registro || '',
       category: item.categoria,
       method: (item.forma_pagamento || 'credit_card') as PaymentMethod,
       purchaseItemId: ''
@@ -605,7 +605,7 @@ export const Lancamentos: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
-    await deleteLancamento(deleteConfirm.id);
+    await softDeleteLancamento(deleteConfirm.id);
     setDeleteConfirm(null);
   };
 
@@ -1398,7 +1398,7 @@ export const Lancamentos: React.FC = () => {
                               )}
                             </div>
                             <p className={`font-bold text-sm whitespace-nowrap ${isEntrada ? 'text-income' : 'text-expense'}`}>
-                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado)}
+                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                             </p>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1417,7 +1417,7 @@ export const Lancamentos: React.FC = () => {
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                               {item.data_pagamento
                                 ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                                : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
+                                : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
                               }
                             </span>
                           </div>
@@ -1533,7 +1533,7 @@ export const Lancamentos: React.FC = () => {
                             {item.friendly_name || item.nome}
                           </p>
                           <p className="font-bold text-sm text-income whitespace-nowrap">
-                            + {formatCurrency(item.valor_realizado)}
+                            + {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1550,9 +1550,9 @@ export const Lancamentos: React.FC = () => {
                             ) : null; })()}
                           </div>
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {item.data_pagamento 
+                            {item.data_pagamento
                               ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                              : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
+                              : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
                             }
                           </span>
                         </div>
@@ -1683,7 +1683,7 @@ export const Lancamentos: React.FC = () => {
                             )}
                           </div>
                           <p className="font-bold text-sm text-expense whitespace-nowrap">
-                            - {formatCurrency(item.valor_realizado)}
+                            - {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -1710,7 +1710,7 @@ export const Lancamentos: React.FC = () => {
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {item.data_pagamento
                               ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                              : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
+                              : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
                             }
                           </span>
                         </div>
@@ -1732,7 +1732,7 @@ export const Lancamentos: React.FC = () => {
                   {paymentMethods.map((method) => {
                     const total = saidas
                       .filter(e => e.forma_pagamento === method.value && !billPaymentIds.has(e.id))
-                      .reduce((acc, e) => acc + e.valor_realizado, 0);
+                      .reduce((acc, e) => acc + (e.valor_realizado ?? e.valor_previsto ?? 0), 0);
                     
                     return (
                       <div

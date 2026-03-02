@@ -172,7 +172,7 @@ const Inicio: React.FC = () => {
     
     const spentByCategory = monthExpenses.reduce((acc, l) => {
       const category = l.categoria || 'Outros';
-      acc[category] = (acc[category] || 0) + l.valor_realizado;
+      acc[category] = (acc[category] || 0) + (l.valor_realizado ?? l.valor_previsto ?? 0);
       return acc;
     }, {} as Record<string, number>);
     
@@ -215,8 +215,8 @@ const Inicio: React.FC = () => {
   const saldoLiquido = useMemo(() => {
     const currentMonth = format(new Date(), 'yyyy-MM');
     const monthItems = lancamentos.filter(l => l.mes_referencia === currentMonth && !isBillPaymentTransaction(l));
-    const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor_realizado, 0);
-    const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor_realizado, 0);
+    const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + (l.valor_realizado ?? l.valor_previsto ?? 0), 0);
+    const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + (l.valor_realizado ?? l.valor_previsto ?? 0), 0);
     return receitas - despesas;
   }, [lancamentos]);
 

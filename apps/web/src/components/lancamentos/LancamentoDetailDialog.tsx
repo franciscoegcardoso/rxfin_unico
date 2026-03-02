@@ -37,7 +37,7 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
   const isPaid = !!item.data_pagamento;
   const displayDate = item.data_pagamento
     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-    : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR');
+    : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : (item.data_vencimento ? parseLocalDate(item.data_vencimento).toLocaleDateString('pt-BR') : '—'));
 
   const paymentMethod = paymentMethods.find(m => m.value === item.forma_pagamento);
 
@@ -52,7 +52,7 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
           )}
         </div>
         <p className={`font-bold text-lg ${isEntrada ? 'text-income' : 'text-expense'}`}>
-          {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado)}
+          {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
         </p>
       </div>
 

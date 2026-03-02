@@ -120,8 +120,8 @@ export function LancamentoCategorySection({
     }
     items.sort((a, b) => {
       let comparison = 0;
-      const dateA = a.data_pagamento || a.data_registro;
-      const dateB = b.data_pagamento || b.data_registro;
+      const dateA = a.data_pagamento || a.data_registro || '';
+      const dateB = b.data_pagamento || b.data_registro || '';
       switch (sortField) {
         case 'date':
           comparison = dateA.localeCompare(dateB);
@@ -130,7 +130,7 @@ export function LancamentoCategorySection({
           comparison = a.nome.localeCompare(b.nome);
           break;
         case 'value':
-          comparison = a.valor_realizado - b.valor_realizado;
+          comparison = (a.valor_realizado ?? a.valor_previsto) - (b.valor_realizado ?? b.valor_previsto);
           break;
         case 'category':
           comparison = a.categoria.localeCompare(b.categoria);
@@ -253,7 +253,7 @@ export function LancamentoCategorySection({
 
   const totals = {
     filteredCount: filteredAndSorted.length,
-    filteredTotal: filteredAndSorted.reduce((sum, l) => sum + l.valor_realizado, 0),
+    filteredTotal: filteredAndSorted.reduce((sum, l) => sum + (l.valor_realizado ?? l.valor_previsto ?? 0), 0),
     unvalidatedCount,
   };
 
@@ -338,7 +338,7 @@ export function LancamentoCategorySection({
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-[10px] text-muted-foreground">{formatShortDate(dateStr)}</span>
+                          <span className="text-[10px] text-muted-foreground">{dateStr ? formatShortDate(dateStr) : '—'}</span>
                           {isConfirmed && (
                             <Check className="h-3 w-3 text-emerald-500/60" strokeWidth={2.5} />
                           )}
@@ -359,7 +359,7 @@ export function LancamentoCategorySection({
                         "font-medium text-xs tabular-nums whitespace-nowrap",
                         isEntrada ? "text-income" : "text-expense"
                       )}>
-                        {formatCurrency(item.valor_realizado)}
+                        {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </span>
                     </div>
                   </div>
@@ -408,14 +408,14 @@ export function LancamentoCategorySection({
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Valor</span>
                       <span className={cn("text-lg font-bold", isEntrada ? "text-income" : "text-expense")}>
-                        {formatCurrency(item.valor_realizado)}
+                        {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </span>
                     </div>
 
                     {/* Date */}
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Data</span>
-                      <span className="text-sm font-medium">{formatDate(dateStr)}</span>
+                      <span className="text-sm font-medium">{dateStr ? formatDate(dateStr) : '—'}</span>
                     </div>
 
                     {/* Forma de pagamento */}
@@ -566,7 +566,7 @@ export function LancamentoCategorySection({
                     <TableRow key={item.id} className="text-xs">
                       {/* Date */}
                       <TableCell className="whitespace-nowrap py-1.5 px-2 font-semibold text-foreground">
-                        {formatDate(dateStr)}
+                        {dateStr ? formatDate(dateStr) : '—'}
                       </TableCell>
 
                       {/* Name / Description */}
@@ -664,7 +664,7 @@ export function LancamentoCategorySection({
                         "text-right font-medium tabular-nums py-1.5 px-2",
                         isEntrada ? "text-income" : "text-expense"
                       )}>
-                        {formatCurrency(item.valor_realizado)}
+                        {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </TableCell>
 
                       {/* Actions */}
@@ -727,12 +727,12 @@ export function LancamentoCategorySection({
                 <div className="space-y-3">
                   <div>
                     <label className="text-xs text-muted-foreground">Data</label>
-                    <p className="font-medium text-sm">{formatDate(dateStr)}</p>
+                    <p className="font-medium text-sm">{dateStr ? formatDate(dateStr) : '—'}</p>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Valor</label>
                     <p className={cn("font-bold text-lg", isEntrada ? "text-income" : "text-expense")}>
-                      {formatCurrency(item.valor_realizado)}
+                      {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                     </p>
                   </div>
                   <div>
