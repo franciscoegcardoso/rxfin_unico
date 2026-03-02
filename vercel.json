@@ -2,5 +2,8 @@
   "framework": null,
   "buildCommand": "npm run build:web",
   "outputDirectory": "apps/web/dist",
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/web"
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/web",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
