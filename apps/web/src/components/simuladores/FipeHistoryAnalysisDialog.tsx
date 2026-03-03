@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingDown, LineChart, BarChart3 } from 'lucide-react';
-import { SuspenseTimeSeriesChart, SuspenseCohortMatrix } from '@/components/simuladores/LazyChartComponents';
+import { SuspenseTimeSeriesChart } from '@/components/simuladores/LazyChartComponents';
+import { SafraAnalysisSection } from '@/components/simuladores/SafraAnalysisSection';
 
 import type { ParsedHistoryPoint } from '@/hooks/useFipeFullHistory';
 import type { CohortAnalysisData } from '@/utils/depreciationRegression';
@@ -90,17 +91,14 @@ export const FipeHistoryAnalysisDialog: React.FC<FipeHistoryAnalysisDialogProps>
             </div>
           )}
 
-          {/* Cohort Matrix */}
-          {fipeCode && (
+          {/* Análise de Safra (RPC get_fipe_safra_analysis) */}
+          {fipeCode && modelYear && (
             <div>
               <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-primary" />
                 Análise de Safra (Depreciação por Ano Calendário)
               </h3>
-              <SuspenseCohortMatrix
-                fipeCode={fipeCode}
-                modelName={modelName}
-              />
+              <SafraAnalysisSection fipeCode={fipeCode} modelYear={modelYear} />
             </div>
           )}
 

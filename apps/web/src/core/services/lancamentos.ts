@@ -4,6 +4,7 @@
  */
 import { supabase } from '@/core/supabase';
 import type { LancamentoRealizado, LancamentoInput } from '@/core/types/lancamentos';
+import { logCrudOperation } from '@/core/auditLog';
 import { getCategoryId } from '@/utils/categoryUtils';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -18,10 +19,12 @@ function mapRow(d: any): LancamentoRealizado {
   };
 }
 
+const DEFAULT_PAGE_SIZE = 50;
+
 // ─── Fetch ───────────────────────────────────────────────
 export async function fetchLancamentos(userId: string): Promise<LancamentoRealizado[]> {
   const { data, error } = await supabase
-    .from('lancamentos_realizados')
+    .from('lancamentos_realizados_v')
     .select('*')
     .eq('user_id', userId)
     .order('data_registro', { ascending: false });
@@ -30,30 +33,69 @@ export async function fetchLancamentos(userId: string): Promise<LancamentoRealiz
   return (data || []).map(mapRow);
 }
 
+/** Fetch one page + total count for pagination (evita travar com muitos registros). */
+export async function fetchLancamentosPaginated(
+  userId: string,
+  page: number,
+  pageSize: number = DEFAULT_PAGE_SIZE,
+  mesReferencia?: string | null
+): Promise<{ data: LancamentoRealizado[]; count: number }> {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  let q = supabase
+    .from('lancamentos_realizados_v')
+    .select('*', { count: 'exact', head: false })
+    .eq('user_id', userId)
+    .order('data_registro', { ascending: false })
+    .range(from, to);
+  if (mesReferencia != null && mesReferencia !== '') {
+    q = q.eq('mes_referencia', mesReferencia);
+  }
+  const { data, error, count } = await q;
+
+  if (error) throw error;
+  return {
+    data: (data || []).map(mapRow),
+    count: count ?? 0,
+  };
+}
+
 // ─── Create (single) ────────────────────────────────────
 export async function createLancamento(
   userId: string,
   input: LancamentoInput,
 ): Promise<LancamentoRealizado> {
+  const start = performance.now();
+  const payload = {
+    user_id: userId,
+    tipo: input.tipo,
+    categoria: input.categoria,
+    category_id: input.category_id ?? getCategoryId(input.categoria),
+    nome: input.nome,
+    valor_previsto: input.valor_previsto,
+    valor_realizado: input.valor_realizado,
+    mes_referencia: input.mes_referencia,
+    data_vencimento: input.data_vencimento || null,
+    data_pagamento: input.data_pagamento || null,
+    forma_pagamento: input.forma_pagamento || null,
+    observacoes: input.observacoes || null,
+  };
   const { data, error } = await supabase
-    .from('lancamentos_realizados')
-    .insert({
-      user_id: userId,
-      tipo: input.tipo,
-      categoria: input.categoria,
-      category_id: input.category_id ?? getCategoryId(input.categoria),
-      nome: input.nome,
-      valor_previsto: input.valor_previsto,
-      valor_realizado: input.valor_realizado,
-      mes_referencia: input.mes_referencia,
-      data_vencimento: input.data_vencimento || null,
-      data_pagamento: input.data_pagamento || null,
-      forma_pagamento: input.forma_pagamento || null,
-      observacoes: input.observacoes || null,
-    } as any)
+    .from('lancamentos_realizados_v')
+    .insert(payload as any)
     .select()
     .single();
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'lancamentos_realizados_v',
+    recordId: data?.id,
+    newData: payload as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  });
   if (error) throw error;
   return mapRow(data);
 }
@@ -63,6 +105,7 @@ export async function createMultipleLancamentos(
   userId: string,
   inputs: LancamentoInput[],
 ): Promise<LancamentoRealizado[]> {
+  const start = performance.now();
   const records = inputs.map((input) => ({
     user_id: userId,
     tipo: input.tipo,
@@ -79,10 +122,20 @@ export async function createMultipleLancamentos(
   }));
 
   const { data, error } = await supabase
-    .from('lancamentos_realizados')
+    .from('lancamentos_realizados_v')
     .insert(records)
     .select();
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'lancamentos_realizados_v',
+    recordId: (data as any)?.[0]?.id,
+    newData: { batch_count: records.length },
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  });
   if (error) throw error;
   return (data || []).map(mapRow);
 }
@@ -92,34 +145,72 @@ export async function updateLancamento(
   id: string,
   updates: Partial<LancamentoInput>,
 ): Promise<LancamentoRealizado> {
+  const start = performance.now();
+  const { data: oldRow } = await supabase.from('lancamentos_realizados_v').select('*').eq('id', id).single();
   const { data, error } = await supabase
-    .from('lancamentos_realizados')
+    .from('lancamentos_realizados_v')
     .update(updates)
     .eq('id', id)
     .select()
     .single();
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'lancamentos_realizados_v',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: updates as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  });
   if (error) throw error;
   return mapRow(data);
 }
 
 // ─── Delete ──────────────────────────────────────────────
 export async function deleteLancamento(id: string): Promise<void> {
+  const start = performance.now();
+  const { data: oldRow } = await supabase.from('lancamentos_realizados_v').select('*').eq('id', id).single();
   const { error } = await supabase
-    .from('lancamentos_realizados')
+    .from('lancamentos_realizados_v')
     .delete()
     .eq('id', id);
 
+  await logCrudOperation({
+    operation: 'DELETE',
+    tableName: 'lancamentos_realizados_v',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  });
   if (error) throw error;
 }
 
 // ─── Update friendly name ────────────────────────────────
 export async function updateFriendlyName(id: string, friendlyName: string): Promise<void> {
+  const start = performance.now();
+  const { data: oldRow } = await supabase.from('lancamentos_realizados_v').select('*').eq('id', id).single();
   const { error } = await supabase
-    .from('lancamentos_realizados')
+    .from('lancamentos_realizados_v')
     .update({ friendly_name: friendlyName } as any)
     .eq('id', id);
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'lancamentos_realizados_v',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: { friendly_name: friendlyName },
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  });
   if (error) throw error;
 }
 

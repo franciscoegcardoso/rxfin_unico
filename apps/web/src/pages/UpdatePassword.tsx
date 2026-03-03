@@ -100,8 +100,8 @@ const UpdatePassword: React.FC = () => {
     if (error) {
       toast.error('Erro ao atualizar senha: ' + error.message);
     } else {
-      toast.success('Senha atualizada com sucesso!');
-      navigate('/simuladores', { replace: true });
+      toast.success('Senha atualizada com sucesso! Faça login com a nova senha.');
+      navigate('/login', { replace: true, state: { message: 'Senha alterada com sucesso. Faça login.' } });
     }
   };
 

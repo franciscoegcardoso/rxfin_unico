@@ -205,6 +205,7 @@ export function useNavMenuPages(): NavMenuData {
   }
   
   // Itens do menu principal: páginas do grupo "Menu Principal" (gerenciado via Admin)
+  const seenMainPaths = new Set<string>();
   const mainItems: NavMenuItem[] = pages
     .filter(page => page.group_slug === MAIN_NAV_GROUP_SLUG)
     .filter(page => !isPageHiddenFromMenu(page))
@@ -217,6 +218,11 @@ export function useNavMenuPages(): NavMenuData {
     })
     // Ordenar pelo order_in_group do banco (não mais pelo índice estático)
     .sort((a, b) => (a.order_in_group ?? 99) - (b.order_in_group ?? 99))
+    .filter(page => {
+      if (seenMainPaths.has(page.path)) return false;
+      seenMainPaths.add(page.path);
+      return true;
+    })
     .map(page => {
       // For effective admins, treat unavailable pages as available (no "Em breve" visual state)
       const rawComingSoon = !page.is_active_users;
@@ -235,11 +241,15 @@ export function useNavMenuPages(): NavMenuData {
       };
     });
   
+  // Paths already in main nav must not appear again in dropdowns (evita duplicata no menu)
+  const mainPathsSet = new Set(mainItems.map(m => m.path));
+
   // Agrupar páginas por grupo para dropdowns
   const groupsMap = new Map<string, NavGroup>();
   
   pages
     .filter(page => page.group_slug && !EXCLUDED_NAV_GROUP_SLUGS.includes(page.group_slug))
+    .filter(page => !mainPathsSet.has(page.path)) // Não mostrar em dropdown se já está no menu principal
     .filter(page => !isPageHiddenFromMenu(page)) // Exclude hub pages and hidden titles from menu
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
@@ -265,12 +275,18 @@ export function useNavMenuPages(): NavMenuData {
       groupsMap.get(groupSlug)!.pages.push(page);
     });
   
-  // Converter para array de seções ordenadas
+  // Converter para array de seções ordenadas (deduplicar por path dentro de cada grupo)
   const groupedSections: NavMenuSection[] = Array.from(groupsMap.values())
     .sort((a, b) => (a.order_index ?? 99) - (b.order_index ?? 99))
     .map(group => {
+      const seenInGroup = new Set<string>();
       const items = group.pages
         .sort((a, b) => (a.order_in_group ?? 99) - (b.order_in_group ?? 99))
+        .filter(page => {
+          if (seenInGroup.has(page.path)) return false;
+          seenInGroup.add(page.path);
+          return true;
+        })
         .map(page => {
           // For effective admins, treat unavailable pages as available (no "Em breve" visual state)
           const rawComingSoon = !page.is_active_users;

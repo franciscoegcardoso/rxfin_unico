@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types'
+import { logCrudOperation } from '@/core/auditLog'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -61,12 +62,23 @@ export async function getContas(
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export async function createConta(conta: ContaInsert): Promise<ContaPagarReceber> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('contas_pagar_receber')
     .insert(conta)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'contas_pagar_receber',
+    recordId: data?.id,
+    newData: conta as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
@@ -75,6 +87,8 @@ export async function marcarComoPaga(
   id: string,
   dataPagamento: string = new Date().toISOString().split('T')[0]
 ): Promise<ContaPagarReceber> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('contas_pagar_receber').select('*').eq('id', id).single()
   const { data, error } = await supabase
     .from('contas_pagar_receber')
     .update({ data_pagamento: dataPagamento, updated_at: new Date().toISOString() })
@@ -82,11 +96,35 @@ export async function marcarComoPaga(
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'contas_pagar_receber',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: { data_pagamento: dataPagamento, updated_at: new Date().toISOString() },
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function deleteConta(id: string): Promise<void> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('contas_pagar_receber').select('*').eq('id', id).single()
   const { error } = await supabase.from('contas_pagar_receber').delete().eq('id', id)
+
+  await logCrudOperation({
+    operation: 'DELETE',
+    tableName: 'contas_pagar_receber',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
 }

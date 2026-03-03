@@ -1,5 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { usePageAvailability } from '@/hooks/useNavMenuPages';
@@ -31,8 +33,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   const { isAvailable, isLoading: availabilityLoading, pageName, canAdminBypass } = usePageAvailability(location.pathname);
 
-  // Wait for auth, permissions, and availability to load
-  if (authLoading || permissionsLoading || availabilityLoading) {
+  const { data: profile, isPending: profilePending } = useQuery({
+    queryKey: ['profile-status', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('id', user.id)
+        .single();
+      if (error) return null;
+      return data as { status: string };
+    },
+    enabled: !!user?.id,
+    staleTime: 0,
+  });
+
+  const redirectTo = location.pathname + location.search;
+  const loginRedirect = redirectTo && redirectTo !== '/login' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login';
+
+  if (authLoading || permissionsLoading || availabilityLoading || (!!user?.id && profilePending)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RXFinLoadingSpinner size={56} />
@@ -41,7 +61,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={loginRedirect} replace />;
+  }
+
+  if (profile?.status === 'pending') {
+    return <Navigate to={`/verificar-email?email=${encodeURIComponent(user.email ?? '')}`} replace />;
   }
 
   // Admin has access to everything — real admin or impersonating as admin

@@ -48,7 +48,7 @@ export function useAIOnboarding() {
         // 3. Check if user has financial data (lancamentos OR pluggy data)
         const [{ count: lancCount }, { count: pluggyCount }] = await Promise.all([
           supabase
-            .from('lancamentos_realizados')
+            .from('lancamentos_realizados_v')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id),
           supabase

@@ -126,7 +126,7 @@ export function useCreditCardImports() {
 
       // Delete associated transactions
       const { error: transactionsError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .delete()
         .eq('import_batch_id', importRecord.import_batch_id);
 

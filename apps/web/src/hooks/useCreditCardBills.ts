@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { logCrudOperation } from '@/core/auditLog';
 
 export interface CreditCardBill {
   id: string;
@@ -78,20 +79,34 @@ export function useCreditCardBills() {
 
   const createBill = async (input: BillInput): Promise<CreditCardBill | null> => {
     if (!user) { toast.error('Usuário não autenticado'); return null; }
+    const start = performance.now();
     try {
+      const payload = {
+        user_id: user.id,
+        card_id: input.card_id,
+        card_name: input.card_name || null,
+        closing_date: input.closing_date,
+        due_date: input.due_date,
+        total_value: input.total_value || 0,
+        status: input.status || 'open',
+      };
       const { data, error: insertError } = await supabase
         .from('credit_card_bills')
-        .insert({
-          user_id: user.id,
-          card_id: input.card_id,
-          card_name: input.card_name || null,
-          closing_date: input.closing_date,
-          due_date: input.due_date,
-          total_value: input.total_value || 0,
-          status: input.status || 'open',
-        })
+        .insert(payload)
         .select()
         .single();
+
+      await logCrudOperation({
+        operation: 'CREATE',
+        tableName: 'credit_card_bills',
+        recordId: (data as any)?.id,
+        newData: payload as Record<string, unknown>,
+        success: !insertError,
+        errorMessage: insertError?.message,
+        errorCode: insertError?.code,
+        durationMs: Math.round(performance.now() - start),
+        endpoint: '/cartao-credito',
+      });
       if (insertError) throw insertError;
       const newBill = data as CreditCardBill;
       setBills(prev => [newBill, ...prev]);
@@ -111,9 +126,24 @@ export function useCreditCardBills() {
       lancamento_id?: string;
     }
   ): Promise<boolean> => {
+    const start = performance.now();
     try {
+      const { data: oldRow } = await supabase.from('credit_card_bills').select('*').eq('id', id).single();
       const { error: updateError } = await supabase
         .from('credit_card_bills').update(updates).eq('id', id);
+
+      await logCrudOperation({
+        operation: 'UPDATE',
+        tableName: 'credit_card_bills',
+        recordId: id,
+        oldData: oldRow as Record<string, unknown>,
+        newData: updates as Record<string, unknown>,
+        success: !updateError,
+        errorMessage: updateError?.message,
+        errorCode: updateError?.code,
+        durationMs: Math.round(performance.now() - start),
+        endpoint: '/cartao-credito',
+      });
       if (updateError) throw updateError;
       setBills(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
       return true;
@@ -125,9 +155,23 @@ export function useCreditCardBills() {
   };
 
   const deleteBill = async (id: string): Promise<boolean> => {
+    const start = performance.now();
     try {
+      const { data: oldRow } = await supabase.from('credit_card_bills').select('*').eq('id', id).single();
       const { error: deleteError } = await supabase
         .from('credit_card_bills').delete().eq('id', id);
+
+      await logCrudOperation({
+        operation: 'DELETE',
+        tableName: 'credit_card_bills',
+        recordId: id,
+        oldData: oldRow as Record<string, unknown>,
+        success: !deleteError,
+        errorMessage: deleteError?.message,
+        errorCode: deleteError?.code,
+        durationMs: Math.round(performance.now() - start),
+        endpoint: '/cartao-credito',
+      });
       if (deleteError) throw deleteError;
       setBills(prev => prev.filter(b => b.id !== id));
       toast.success('Fatura removida');
@@ -149,7 +193,7 @@ export function useCreditCardBills() {
     if (transactionIds.length === 0) return true;
     try {
       const { error: updateError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .update({ credit_card_bill_id: billId })
         .in('id', transactionIds);
       if (updateError) throw updateError;

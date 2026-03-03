@@ -34,7 +34,8 @@ import { MobileSectionDrawer } from './MobileSectionDrawer';
 // LAZY-LOADED HEAVY CHART COMPONENTS
 // These components are loaded on-demand to improve initial page performance
 // ============================================================================
-import { SuspenseTimeSeriesChart, SuspenseCohortMatrix } from './LazyChartComponents';
+import { SuspenseTimeSeriesChart } from './LazyChartComponents';
+import { SafraAnalysisSection } from './SafraAnalysisSection';
 import { 
   FipePriceResultSkeleton, 
   YearPricesChartSkeleton,
@@ -513,7 +514,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Quick Select from Registered Vehicles & Favorites */}
       {(registeredVehicles.length > 0 || fipeFavoritesProps.favoriteVehicles.length > 0) && (
         <Card className="border-primary/20 bg-primary/5">
@@ -1030,9 +1031,9 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
           badge={<Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20">Avançado</Badge>}
           isTabletOrMobile={isTabletOrMobile}
         >
-          <SuspenseCohortMatrix
+          <SafraAnalysisSection
             fipeCode={fipe.price.CodigoFipe}
-            modelName={fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || ''}
+            modelYear={fipe.price.AnoModelo}
           />
         </MobileSectionDrawer>
       )}

@@ -102,7 +102,7 @@ export function useCreditCardTransactions() {
 
       while (hasMore) {
         const { data, error: fetchError } = await supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .select('*')
           .eq('user_id', user.id)
           .order('transaction_date', { ascending: false })
@@ -387,7 +387,7 @@ export function useCreditCardTransactions() {
 
       if (withPluggyId.length > 0) {
         const { data: upsertedData, error: upsertError } = await supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .upsert(withPluggyId, { onConflict: 'pluggy_transaction_id', ignoreDuplicates: true })
           .select('id');
 
@@ -397,7 +397,7 @@ export function useCreditCardTransactions() {
 
       if (withoutPluggyId.length > 0) {
         const { data: insertedData, error: insertError } = await supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .insert(withoutPluggyId)
           .select('id');
 
@@ -431,7 +431,7 @@ export function useCreditCardTransactions() {
   ): Promise<boolean> => {
     try {
       const { error: updateError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .update(updates)
         .eq('id', id);
 
@@ -451,7 +451,7 @@ export function useCreditCardTransactions() {
   const deleteTransaction = async (id: string): Promise<boolean> => {
     try {
       const { error: deleteError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .delete()
         .eq('id', id);
 
@@ -472,7 +472,7 @@ export function useCreditCardTransactions() {
     
     try {
       const { error: deleteError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .delete()
         .in('id', ids);
 
@@ -550,7 +550,7 @@ export function useCreditCardTransactions() {
           await Promise.all(
             batch.map(u =>
               supabase
-                .from('credit_card_transactions')
+                .from('credit_card_transactions_v')
                 .update({
                   installment_current: u.installment_current,
                   installment_total: u.installment_total,
@@ -647,7 +647,7 @@ export function useCreditCardTransactions() {
           await Promise.all(
             batch.map(u =>
               supabase
-                .from('credit_card_transactions')
+                .from('credit_card_transactions_v')
                 .update({
                   installment_current: u.installment_current,
                   installment_total: u.installment_total,
@@ -665,7 +665,7 @@ export function useCreditCardTransactions() {
 
       // Re-fetch to get updated installment data
       const { data: freshTxs, error: freshErr } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .select('*')
         .eq('user_id', user.id);
 
@@ -744,7 +744,7 @@ export function useCreditCardTransactions() {
       let totalUpdated = 0;
       for (const [, { groupId, transactionIds }] of purchaseGroups) {
         const { error: updateError } = await supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .update({ installment_group_id: groupId })
           .in('id', transactionIds);
 

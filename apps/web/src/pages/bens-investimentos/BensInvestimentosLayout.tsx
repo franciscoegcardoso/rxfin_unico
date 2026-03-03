@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, Target as TargetIcon, LayoutDashboard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -228,6 +228,10 @@ const BensInvestimentosLayout: React.FC = () => {
   };
 
   const handleTabChange = (value: string) => setCurrentTab(value);
+  const activeTabRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+  }, [currentTab]);
 
   // Context value
   const contextValue = useMemo(() => ({
@@ -244,7 +248,7 @@ const BensInvestimentosLayout: React.FC = () => {
       <AppLayout>
         <div className="space-y-4">
           <PageHeader
-            title="Bens e Direitos"
+            title="Bens e Investimentos"
             description="Gerencie seu patrimônio, consórcios e financiamentos"
             icon={<Building2 className="h-5 w-5 text-primary" />}
           >
@@ -420,7 +424,7 @@ const BensInvestimentosLayout: React.FC = () => {
             </Card>
           )}
           {netWorth != null && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 max-h-[100px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <Card className="rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-2 p-3">
                   <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
@@ -428,7 +432,7 @@ const BensInvestimentosLayout: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Total Ativos</p>
-                    <p className="text-sm font-semibold text-green-600 truncate">{formatCurrency(netWorth.total_assets)}</p>
+                    <p className="text-sm font-semibold text-green-600 truncate tabular-nums">{formatCurrency(netWorth.total_assets)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -439,7 +443,7 @@ const BensInvestimentosLayout: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Veículos</p>
-                    <p className="text-sm font-semibold truncate">{formatCurrency(netWorth.total_vehicles)}</p>
+                    <p className="text-sm font-semibold truncate tabular-nums">{formatCurrency(netWorth.total_vehicles)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -450,7 +454,7 @@ const BensInvestimentosLayout: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dívidas</p>
-                    <p className="text-sm font-semibold text-red-600 truncate">{formatCurrency(netWorth.total_debt)}</p>
+                    <p className="text-sm font-semibold text-red-600 truncate tabular-nums">{formatCurrency(netWorth.total_debt)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -461,7 +465,7 @@ const BensInvestimentosLayout: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Patrimônio Líquido</p>
-                    <p className="text-sm font-semibold text-green-600 truncate">{formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}</p>
+                    <p className="text-sm font-semibold text-green-600 truncate tabular-nums">{formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -475,205 +479,36 @@ const BensInvestimentosLayout: React.FC = () => {
             defaultType={defaultAssetType}
           />
 
-          <PageHeader
-            title="Bens e Direitos"
-            description="Gerencie seu patrimônio, consórcios e financiamentos"
-            icon={<Building2 className="h-5 w-5 text-primary" />}
-          >
-            <VisibilityToggle />
-            <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.bensInvestimentos} />
-
-            {/* Trash Sheet */}
-            <Sheet open={trashSheetOpen} onOpenChange={setTrashSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="relative">
-                  <Trash2 className="h-4 w-4" />
-                  {trashItems.length > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                      {trashItems.length}
-                    </Badge>
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-lg">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <Trash2 className="h-5 w-5" />
-                    Lixeira
-                  </SheetTitle>
-                  <SheetDescription>
-                    Itens excluídos nos últimos 30 dias. Restaure ou exclua permanentemente.
-                  </SheetDescription>
-                </SheetHeader>
-                <ScrollArea className="h-[calc(100vh-180px)] mt-4">
-                  {trashLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : trashItems.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Trash2 className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                      <p>A lixeira está vazia</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {trashItems.map((item) => {
-                        const daysLeft = getDaysUntilExpiration(item.expires_at);
-                        return (
-                          <Card key={item.id} className="p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  {assetIcons[item.asset_type as AssetType] || <Package className="h-4 w-4" />}
-                                  <span className="font-medium truncate">
-                                    {item.asset_data.name || 'Item sem nome'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  <span>Expira em {daysLeft} dia{daysLeft !== 1 ? 's' : ''}</span>
-                                </div>
-                                {item.linked_data && item.linked_data.length > 0 && (
-                                  <div className="text-xs text-amber-600 mt-1">
-                                    + {item.linked_data.length} registro(s) vinculado(s)
-                                  </div>
-                                )}
-                                <div className="text-sm font-medium mt-1">
-                                  {formatCurrency(item.asset_data.value || 0)}
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <Button size="sm" variant="outline" onClick={() => handleRestoreFromTrash(item.id)} className="gap-1">
-                                  <RotateCcw className="h-3 w-3" />
-                                  Restaurar
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button size="sm" variant="destructive" className="gap-1">
-                                      <Trash2 className="h-3 w-3" />
-                                      Excluir
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Esta ação não pode ser desfeita. O item será removido permanentemente.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => permanentlyDelete(item.id)}>
-                                        Excluir permanentemente
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                      {trashItems.length > 0 && (
-                        <Button variant="destructive" className="w-full mt-4" onClick={emptyTrash}>
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Esvaziar Lixeira
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </ScrollArea>
-              </SheetContent>
-            </Sheet>
-
-            {/* Audit Log Sheet */}
-            <Sheet open={auditSheetOpen} onOpenChange={setAuditSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <History className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-lg">
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <History className="h-5 w-5" />
-                    Histórico de Exclusões
-                  </SheetTitle>
-                  <SheetDescription>
-                    Registro completo de todas as exclusões de bens
-                  </SheetDescription>
-                </SheetHeader>
-                <ScrollArea className="h-[calc(100vh-180px)] mt-4">
-                  {auditLogs.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <History className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                      <p>Nenhuma exclusão registrada</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {auditLogs.map((log) => (
-                        <Card key={log.id} className="p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                {assetIcons[log.entity_type as AssetType] || <Package className="h-4 w-4" />}
-                                <span className="font-medium truncate">{log.entity_name}</span>
-                                <Badge variant={log.action === 'force_delete' ? 'destructive' : 'secondary'} className="text-[10px]">
-                                  {log.action === 'force_delete' ? 'Forçado' : 'Normal'}
-                                </Badge>
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </div>
-                              {log.linked_records_deleted > 0 && (
-                                <div className="text-xs text-amber-600 mt-1">
-                                  {log.linked_records_deleted} registro(s) vinculado(s) também excluído(s)
-                                </div>
-                              )}
-                              {log.details?.value && (
-                                <div className="text-sm font-medium mt-1">
-                                  {formatCurrency(log.details.value)}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </SheetContent>
-            </Sheet>
-          </PageHeader>
-
-          {/* Tab Navigation — 6 abas com conteúdo da RPC */}
+          {/* Tab Navigation — overflow-x em mobile, ativa sempre visível */}
           <Tabs value={currentTab} onValueChange={handleTabChange}>
-            <TabsList className="grid grid-cols-3 sm:grid-cols-6 gap-1 h-auto flex-wrap">
-              <TabsTrigger value="overview" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+            <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 scrollbar-thin">
+              <TabsList className="inline-flex w-max min-w-full sm:min-w-0 gap-1 h-auto flex-nowrap p-1 bg-muted/50 rounded-lg">
+              <TabsTrigger ref={currentTab === 'overview' ? activeTabRef : undefined} value="overview" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
                 <span className="hidden xs:inline">Visão Geral</span>
               </TabsTrigger>
-              <TabsTrigger value="imoveis" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+              <TabsTrigger ref={currentTab === 'imoveis' ? activeTabRef : undefined} value="imoveis" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <Home className="h-3.5 w-3.5 shrink-0" />
                 <span>Imóveis</span>
               </TabsTrigger>
-              <TabsTrigger value="investimentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+              <TabsTrigger ref={currentTab === 'investimentos' ? activeTabRef : undefined} value="investimentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <TrendingUp className="h-3.5 w-3.5 shrink-0" />
                 <span>Investimentos</span>
               </TabsTrigger>
-              <TabsTrigger value="financiamentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+              <TabsTrigger ref={currentTab === 'financiamentos' ? activeTabRef : undefined} value="financiamentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <Landmark className="h-3.5 w-3.5 shrink-0" />
                 <span>Financiamentos</span>
               </TabsTrigger>
-              <TabsTrigger value="seguros" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+              <TabsTrigger ref={currentTab === 'seguros' ? activeTabRef : undefined} value="seguros" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <Shield className="h-3.5 w-3.5 shrink-0" />
                 <span>Seguros</span>
               </TabsTrigger>
-              <TabsTrigger value="metas" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2">
+              <TabsTrigger ref={currentTab === 'metas' ? activeTabRef : undefined} value="metas" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <TargetIcon className="h-3.5 w-3.5 shrink-0" />
                 <span>Metas</span>
               </TabsTrigger>
             </TabsList>
+            </div>
 
             <div className="mt-4 space-y-4">
               {currentTab === 'overview' && (
@@ -766,7 +601,7 @@ const BensInvestimentosLayout: React.FC = () => {
                             <CardContent className="p-4">
                               <p className="font-bold truncate">{a.name ?? '—'}</p>
                               <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
-                              {a.purchase_value != null && <p className="text-xs text-muted-foreground">Compra: {formatCurrency(a.purchase_value)}</p>}
+                              {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
                               {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}% valorização</Badge>}
                               {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm text-green-600">Renda: {formatCurrency(a.rental_value)}/mês</p>}
                               {(a.monthly_cost ?? 0) > 0 && <p className="text-sm text-muted-foreground">Custo: {formatCurrency(a.monthly_cost!)}/mês</p>}
@@ -791,7 +626,7 @@ const BensInvestimentosLayout: React.FC = () => {
                           <CardContent className="p-4">
                             <p className="font-bold truncate">{a.name ?? '—'}</p>
                             <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
-                            {a.purchase_value != null && <p className="text-xs text-muted-foreground">Compra: {formatCurrency(a.purchase_value)}</p>}
+                            {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
                             {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}%</Badge>}
                           </CardContent>
                         </Card>
@@ -850,7 +685,7 @@ const BensInvestimentosLayout: React.FC = () => {
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">{seg.seguradora}</p>
                         <p className="text-sm mt-1">Prêmio: {formatCurrency(seg.premio_mensal ?? 0)}/mês · Cobertura: {formatCurrency(seg.valor_cobertura ?? 0)}</p>
-                        {seg.franquia != null && <p className="text-xs text-muted-foreground">Franquia: {formatCurrency(seg.franquia)}</p>}
+                        {seg.franquia != null && <p className="text-sm text-muted-foreground tabular-nums">Franquia: {formatCurrency(seg.franquia)}</p>}
                         {seg.data_inicio && seg.data_fim && <p className="text-xs text-muted-foreground">Vigência: {format(new Date(seg.data_inicio), 'dd/MM/yyyy', { locale: ptBR })} a {format(new Date(seg.data_fim), 'dd/MM/yyyy', { locale: ptBR })}</p>}
                         {!seg.is_active && <div className="mt-2 py-2 px-3 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-sm font-medium">Renovar seguro</div>}
                       </Card>

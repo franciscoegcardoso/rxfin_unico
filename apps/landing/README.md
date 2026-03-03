@@ -38,7 +38,7 @@ Copie `.env.example` para `.env` e preencha:
 
 Os CTAs usam `VITE_APP_URL`:
 
-- Simular agora → `${VITE_APP_URL}/simulador-fipe`
+- Simular agora → `${VITE_APP_URL}/simuladores/veiculos/simulador-fipe`
 - Ver simuladores → `${VITE_APP_URL}/simuladores`
 - Cadastrar → `${VITE_APP_URL}/auth`
 

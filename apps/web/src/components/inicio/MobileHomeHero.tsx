@@ -50,7 +50,7 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
         <div className="mb-6">
           <h1 className="text-lg font-medium text-primary-foreground">Olá, {firstName || 'Usuário'} 👋</h1>
           <p className="text-xs text-primary-foreground/70 mt-0.5">Saldo Líquido do Mês</p>
-          <p className="text-3xl font-bold mt-1 text-primary-foreground">{formatCurrency(saldoLiquido)}</p>
+          <p className="text-2xl sm:text-3xl font-bold mt-1 text-primary-foreground tabular-nums">{formatCurrency(saldoLiquido)}</p>
         </div>
 
         {/* Quick actions */}

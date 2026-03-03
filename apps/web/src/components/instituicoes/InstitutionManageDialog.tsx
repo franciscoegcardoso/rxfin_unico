@@ -166,7 +166,7 @@ export const InstitutionManageDialog: React.FC<InstitutionManageDialogProps> = (
 
         const [txResult, billsResult, lmResult] = await Promise.all([
           supabase
-            .from('credit_card_transactions')
+            .from('credit_card_transactions_v')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .in('card_id', cardIds),

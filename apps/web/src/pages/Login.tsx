@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,8 @@ const passwordSchema = z.string().min(6, 'Senha deve ter no mínimo 6 caracteres
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || undefined;
   const { user, signIn, loading: authLoading } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -28,12 +30,14 @@ const Login: React.FC = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
-  // Show error from magic link if present
   useEffect(() => {
-    const state = location.state as { error?: string } | null;
+    const state = location.state as { error?: string; message?: string } | null;
     if (state?.error) {
       toast.error(state.error);
-      // Clear the state to prevent showing error again on refresh
+      window.history.replaceState({}, document.title);
+    }
+    if (state?.message) {
+      toast.success(state.message);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -42,9 +46,10 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (user && !redirectLoading) {
-      navigate(targetRoute);
+      const destination = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : targetRoute;
+      navigate(destination, { replace: true });
     }
-  }, [user, navigate, targetRoute, redirectLoading]);
+  }, [user, navigate, targetRoute, redirectLoading, redirect]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};

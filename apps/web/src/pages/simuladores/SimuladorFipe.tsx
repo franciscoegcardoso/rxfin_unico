@@ -62,7 +62,7 @@ export default function SimuladorFipe() {
     if (!sessionId) return;
     supabase
       .from('page_views')
-      .insert({ page: '/simulador-fipe', session_id: sessionId })
+      .insert({ page: '/simuladores/veiculos/simulador-fipe', session_id: sessionId })
       .then(() => {});
   }, []);
 
@@ -105,7 +105,7 @@ export default function SimuladorFipe() {
       .from('conversion_events')
       .insert({
         event_type: 'simulator_cta',
-        page: '/simulador-fipe',
+        page: '/simuladores/veiculos/simulador-fipe',
         session_id: sessionId,
       })
       .then(() => {});
@@ -117,11 +117,11 @@ export default function SimuladorFipe() {
       subtitle="Descubra o valor de mercado do seu veículo e quanto realmente custa mantê-lo."
     >
       {/* Step 1 — Selecionar veículo */}
-      <Card className="bg-white dark:bg-card shadow-lg rounded-2xl border border-border/80">
-        <CardContent className="p-6 space-y-4">
+      <Card className="bg-white dark:bg-card shadow-lg rounded-xl sm:rounded-2xl border border-border/80 w-full min-w-0">
+        <CardContent className="p-4 sm:p-6 space-y-4">
           <div>
             <Label className="text-sm font-medium">Tipo</Label>
-            <div className="flex gap-2 mt-2">
+            <div className="flex flex-wrap gap-2 mt-2">
               {VEHICLE_TYPES.map((t) => (
                 <Button
                   key={t.value}
@@ -135,7 +135,7 @@ export default function SimuladorFipe() {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label>Marca</Label>
               <Select
@@ -209,13 +209,13 @@ export default function SimuladorFipe() {
             value={price.Valor}
             valueClassName="text-2xl sm:text-3xl font-bold text-green-700 dark:text-green-400"
           />
-          <Card className="bg-white dark:bg-card shadow-lg rounded-2xl border-2 border-green-200 dark:border-green-800">
-            <CardContent className="p-6">
-              <h3 className="font-semibold mb-4">Custo de propriedade (mensal)</h3>
+          <Card className="bg-white dark:bg-card shadow-lg rounded-xl sm:rounded-2xl border-2 border-green-200 dark:border-green-800 w-full min-w-0">
+            <CardContent className="p-4 sm:p-6">
+              <h3 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">Custo de propriedade (mensal)</h3>
               <p className="text-xs text-muted-foreground mb-4">
                 {price.Marca} {price.Modelo} · Código FIPE {price.CodigoFipe} · Ref. {price.MesReferencia}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <CurrencyInput label="IPVA (3,5% FIPE/12)" value={ipvaMonthly} onChange={setIpvaMonthly} />
                 <CurrencyInput label="Seguro (estimativa)" value={seguroMonthly} onChange={setSeguroMonthly} />
                 <CurrencyInput label="Combustível (R$/mês)" value={combustivel} onChange={setCombustivel} />

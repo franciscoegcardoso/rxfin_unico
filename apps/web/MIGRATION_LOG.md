@@ -15,7 +15,7 @@
 
 ## Fase 3 - Layout global (Sidebar + TopNav)
 - Criado `apps/web/src/app/(protected)/layout.tsx` com `AppLayout` (TopNavbar, DemoDataBanner, PageTransition, MobileBottomNav, etc.).
-- Movidas **29 rotas protegidas** para `app/(protected)/`: inicio, parametros, lancamentos, cartao-credito, planejamento, planejamento-anual, registro-compras, pacotes-orcamento, sonhos, minha-conta, configuracoes-hub, configuracoes-fiscais, instituicoes-financeiras, dados-financeiros, gestao-veiculos, seguros, presentes, rx-split, dividir-conta, meu-ir, bens-investimentos, onboarding, bem-vindo, simulador-fipe, simuladores (e sub-rotas), financeiro (e sub-rotas), renegociacao-dividas (e sub-rotas), admin (e sub-rotas).
+- Movidas **29 rotas protegidas** para `app/(protected)/`: inicio, parametros, lancamentos, cartao-credito, planejamento, planejamento-anual, registro-compras, pacotes-orcamento, sonhos, minha-conta, configuracoes-hub, configuracoes-fiscais, instituicoes-financeiras, dados-financeiros, gestao-veiculos, seguros, presentes, rx-split, dividir-conta, meu-ir, bens-investimentos, onboarding, bem-vindo, simuladores/veiculos/simulador-fipe, simuladores (e sub-rotas), financeiro (e sub-rotas), renegociacao-dividas (e sub-rotas), admin (e sub-rotas).
 - Rotas **não movidas** (auth/públicas): login, signup, reset-password, update-password, verificar-email, auth/callback, termos-de-uso, politica-privacidade, politica-cookies, 403, page.tsx (raiz), not-found.
 
 ## Fase 4 - Tema e estilos

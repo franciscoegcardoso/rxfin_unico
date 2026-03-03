@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types'
+import { logCrudOperation } from '@/core/auditLog'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -41,30 +42,68 @@ export async function getAtivoById(id: string): Promise<UserAsset> {
 }
 
 export async function createAtivo(ativo: UserAssetInsert): Promise<UserAsset> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('user_assets')
     .insert(ativo)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'user_assets',
+    recordId: data?.id,
+    newData: ativo as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function updateAtivo(id: string, updates: UserAssetUpdate): Promise<UserAsset> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('user_assets').select('*').eq('id', id).single()
+  const payload = { ...updates, updated_at: new Date().toISOString() }
   const { data, error } = await supabase
     .from('user_assets')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'user_assets',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: payload as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function deleteAtivo(id: string): Promise<void> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('user_assets').select('*').eq('id', id).single()
   const { error } = await supabase.from('user_assets').delete().eq('id', id)
+
+  await logCrudOperation({
+    operation: 'DELETE',
+    tableName: 'user_assets',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
 }
 
@@ -92,12 +131,23 @@ export async function getSeguros(userId: string): Promise<Seguro[]> {
 }
 
 export async function createSeguro(seguro: SeguroInsert): Promise<Seguro> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('seguros')
     .insert(seguro)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'seguros',
+    recordId: data?.id,
+    newData: seguro as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
@@ -116,12 +166,23 @@ export async function getFinanciamentos(userId: string): Promise<Financiamento[]
 }
 
 export async function createFinanciamento(fin: FinanciamentoInsert): Promise<Financiamento> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('financiamentos')
     .insert(fin)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'financiamentos',
+    recordId: data?.id,
+    newData: fin as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
@@ -130,13 +191,27 @@ export async function updateFinanciamento(
   id: string,
   updates: TablesUpdate<'financiamentos'>
 ): Promise<Financiamento> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('financiamentos').select('*').eq('id', id).single()
+  const payload = { ...updates, updated_at: new Date().toISOString() }
   const { data, error } = await supabase
     .from('financiamentos')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'financiamentos',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: payload as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
@@ -155,12 +230,23 @@ export async function getConsorcios(userId: string): Promise<Consorcio[]> {
 }
 
 export async function createConsorcio(consorcio: ConsorcioInsert): Promise<Consorcio> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('consorcios')
     .insert(consorcio)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'consorcios',
+    recordId: data?.id,
+    newData: consorcio as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }

@@ -31,7 +31,7 @@ interface SimulatorConfig {
 const SIMULATORS: SimulatorConfig[] = [
   {
     title: 'Valor FIPE e Custo Real',
-    publicPath: '/simulador-fipe',
+    publicPath: '/simuladores/veiculos/simulador-fipe',
     privatePath: '/simuladores/veiculos/simulador-fipe',
     icon: Car,
     description: 'Descubra o valor de mercado do seu veículo e quanto realmente custa mantê-lo',

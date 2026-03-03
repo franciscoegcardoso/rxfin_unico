@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Rocket,
   Menu,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -47,14 +48,14 @@ export const TopNavbar: React.FC = () => {
   const { mainItems, groupedSections, isLoading } = useNavMenuPages();
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
-  const { setOpen: setMobileMenuOpen } = useMobileMenu();
+  const { open: mobileMenuOpen, setOpen: setMobileMenuOpen } = useMobileMenu();
   const currentLogo = resolvedTheme === 'dark' ? logoRxfinWhite : logoRxfin;
   
   const isAdminActive = location.pathname.startsWith('/admin');
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth');
+    navigate('/login', { replace: true });
   };
 
   // Use ONLY items from database - no fallback that bypasses visibility settings
@@ -145,17 +146,17 @@ export const TopNavbar: React.FC = () => {
           <span className="font-semibold text-base text-foreground hidden sm:inline">RXFin</span>
         </Link>
 
-        {/* Mobile/Tablet: Hamburger menu + Notification Bell */}
+        {/* Mobile/Tablet: Hamburger (Menu/X) + Notification Bell — visible only < md */}
         {isMobile && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 md:hidden">
             <Button
               variant="ghost"
               size="icon"
               className="h-9 w-9 min-h-[44px] min-w-[44px] touch-manipulation"
-              aria-label="Abrir menu"
-              onClick={() => setMobileMenuOpen(true)}
+              aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <Menu className="h-5 w-5" />
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <NotificationBell />
           </div>

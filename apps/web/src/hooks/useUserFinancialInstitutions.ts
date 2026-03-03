@@ -24,7 +24,7 @@ async function cascadeDeleteCardData(userId: string, institutionId: string) {
     cardIds.push(...pluggyAccounts.map(a => a.id));
   }
 
-  await supabase.from('credit_card_transactions').delete().eq('user_id', userId).in('card_id', cardIds);
+  await supabase.from('credit_card_transactions_v').delete().eq('user_id', userId).in('card_id', cardIds);
   await supabase.from('credit_card_bills').delete().eq('user_id', userId).in('card_id', cardIds);
   await supabase.from('credit_card_imports').delete().eq('user_id', userId).in('card_id', cardIds);
   await supabase.from('contas_pagar_receber').delete().eq('vinculo_cartao_id', institutionId).eq('user_id', userId);

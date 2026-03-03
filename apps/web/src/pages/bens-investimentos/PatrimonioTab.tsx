@@ -51,7 +51,7 @@ const PatrimonioTab: React.FC = () => {
   return (
     <>
       <div className="flex items-center justify-end">
-        <Button onClick={() => handleOpenAddDialog()} className="gap-2 w-full sm:w-auto">
+        <Button onClick={() => handleOpenAddDialog()} className="gap-2 w-full sm:w-auto min-h-[44px] touch-manipulation">
           <Plus className="h-4 w-4" />
           Adicionar Patrimônio
         </Button>
@@ -70,7 +70,7 @@ const PatrimonioTab: React.FC = () => {
               {React.cloneElement(assetIcons[value as AssetType] as React.ReactElement, { className: "h-3 w-3" })}
             </div>
             <span className="text-xs text-muted-foreground hidden sm:inline">{label}:</span>
-            <span className="text-xs font-medium">{formatCurrency(totalByType[value as AssetType] || 0)}</span>
+            <span className="text-sm font-medium tabular-nums">{formatCurrency(totalByType[value as AssetType] || 0)}</span>
           </div>
         ))}
       </div>
@@ -209,7 +209,7 @@ const PatrimonioTab: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          /* Cards View */
+          /* Cards View — 1 col mobile, padding reduzido em mobile */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {patrimonioAssets.map((asset) => {
               const isSold = asset.isSold;
@@ -217,7 +217,7 @@ const PatrimonioTab: React.FC = () => {
                 <Card
                   key={asset.id}
                   className={cn(
-                    "group hover:shadow-md transition-shadow relative overflow-hidden",
+                    "group hover:shadow-md transition-shadow relative overflow-hidden min-w-0",
                     isSold && "bg-gradient-to-br from-muted/30 to-muted/10 border-muted-foreground/10 opacity-75"
                   )}
                 >
@@ -228,14 +228,14 @@ const PatrimonioTab: React.FC = () => {
                       </span>
                     </div>
                   )}
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className={cn("p-2 rounded-lg", isSold ? "bg-muted-foreground/10" : "bg-accent")}>
+                  <CardContent className="p-3 sm:pt-6 sm:px-6 sm:pb-6">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className={cn("p-2 rounded-lg shrink-0", isSold ? "bg-muted-foreground/10" : "bg-accent")}>
                           {assetIcons[asset.type]}
                         </div>
-                        <div>
-                          <h3 className={cn("font-semibold", isSold && "text-muted-foreground")}>{asset.name}</h3>
+                        <div className="min-w-0 flex-1">
+                          <h3 className={cn("font-semibold truncate", isSold && "text-muted-foreground")}>{asset.name}</h3>
                           <p className="text-sm text-muted-foreground">
                             {assetTypes.find(t => t.value === asset.type)?.label}
                           </p>
@@ -279,8 +279,8 @@ const PatrimonioTab: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t">
-                      <p className={cn("text-2xl font-bold", isSold ? "text-muted-foreground" : "text-primary")}>
+                    <div className="mt-4 pt-4 border-t min-w-0">
+                      <p className={cn("text-xl sm:text-2xl font-bold tabular-nums truncate", isSold ? "text-muted-foreground" : "text-primary")}>
                         {formatCurrency(isSold && asset.saleValue ? asset.saleValue : asset.value)}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">

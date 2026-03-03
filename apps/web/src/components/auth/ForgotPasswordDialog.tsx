@@ -44,8 +44,8 @@ export const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email },
       });
 
       if (error) {
@@ -55,7 +55,6 @@ export const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
       setIsSuccess(true);
     } catch (error: any) {
       console.error('Error sending reset email:', error);
-      // Mesmo em caso de erro, mostramos mensagem genérica (segurança)
       setIsSuccess(true);
     } finally {
       setIsLoading(false);
@@ -81,7 +80,7 @@ export const ForgotPasswordDialog: React.FC<ForgotPasswordDialogProps> = ({
             <DialogHeader className="text-center">
               <DialogTitle className="text-center">Verifique seu Email</DialogTitle>
               <DialogDescription className="text-center">
-                Se existe uma conta com o email <strong>{email}</strong>, você receberá um link para redefinir sua senha.
+                Se existe uma conta com o email <strong>{email}</strong>, você receberá as instruções para redefinir sua senha.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-6 space-y-3">

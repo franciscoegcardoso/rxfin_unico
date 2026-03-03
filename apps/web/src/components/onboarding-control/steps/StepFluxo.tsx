@@ -47,16 +47,21 @@ export const StepFluxo: React.FC<StepFluxoProps> = ({ userId, onComplete }) => {
     if (!descricao || !valor) return;
     setSaving(true);
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const { error } = await supabase.from('lancamentos_realizados').insert({
+    const today = new Date().toISOString().split('T')[0];
+    const categoryId = categories.find(c => c.name === categoria)?.id ?? null;
+    const { error } = await supabase.from('transactions').insert({
       user_id: userId,
-      nome: descricao,
-      categoria: categoria,
-      valor_realizado: Number(valor),
-      valor_previsto: 0,
-      tipo: 'despesa',
-      mes_referencia: currentMonth,
-      data_registro: new Date().toISOString().split('T')[0],
       source_type: 'manual',
+      description: descricao,
+      transaction_type: 'despesa',
+      amount: Number(valor),
+      transaction_date: today,
+      reference_month: currentMonth,
+      payment_date: today,
+      category_name: categoria,
+      category_id: categoryId,
+      notes: null,
+      payment_method: null,
     });
     setSaving(false);
     if (error) {

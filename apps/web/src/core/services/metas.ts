@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types'
+import { logCrudOperation } from '@/core/auditLog'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -24,30 +25,68 @@ export async function getMetas(userId: string): Promise<UserGoal[]> {
 }
 
 export async function createMeta(meta: UserGoalInsert): Promise<UserGoal> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('user_goals')
     .insert(meta)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'user_goals',
+    recordId: data?.id,
+    newData: meta as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function updateMeta(id: string, updates: UserGoalUpdate): Promise<UserGoal> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('user_goals').select('*').eq('id', id).single()
+  const payload = { ...updates, updated_at: new Date().toISOString() }
   const { data, error } = await supabase
     .from('user_goals')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'user_goals',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: payload as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function deleteMeta(id: string): Promise<void> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('user_goals').select('*').eq('id', id).single()
   const { error } = await supabase.from('user_goals').delete().eq('id', id)
+
+  await logCrudOperation({
+    operation: 'DELETE',
+    tableName: 'user_goals',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
 }
 
@@ -71,12 +110,23 @@ export async function getPurchaseRegistry(
 }
 
 export async function createPurchase(purchase: PurchaseRegistryInsert): Promise<PurchaseRegistry> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('purchase_registry')
     .insert(purchase)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'purchase_registry',
+    recordId: data?.id,
+    newData: purchase as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
@@ -85,13 +135,27 @@ export async function updatePurchase(
   id: string,
   updates: PurchaseRegistryUpdate
 ): Promise<PurchaseRegistry> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('purchase_registry').select('*').eq('id', id).single()
+  const payload = { ...updates, updated_at: new Date().toISOString() }
   const { data, error } = await supabase
     .from('purchase_registry')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(payload)
     .eq('id', id)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'UPDATE',
+    tableName: 'purchase_registry',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    newData: payload as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }

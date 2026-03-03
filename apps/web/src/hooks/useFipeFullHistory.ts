@@ -30,6 +30,15 @@ try {
   cleanupOldCacheKeys('fipe_cohort_', '_v2_');
 } catch { /* ignore */ }
 
+/** Response shape from RPC get_fipe_price_history (schema public or fipe) */
+type GetFipePriceHistoryRow = {
+  reference_year: number;
+  reference_month: number;
+  reference_label: string;
+  price: number | string; // Postgres numeric often comes as string
+  reference_code: string;
+};
+
 type BackendHistoryResponse = {
   success: boolean;
   restricted?: boolean;
@@ -168,95 +177,71 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
     setProgress(null);
     setPriceHistory([]);
 
+    // year_id vem como "2023-5"; extrair apenas o ano inteiro (Number("2023-5") => NaN)
+    const modelYearInt = parseInt(String(modelYear).split('-')[0], 10);
+    if (!fipeCode || isNaN(modelYearInt)) {
+      if (mountedRef.current) {
+        setPriceHistory([]);
+        setError('Selecione um veículo válido para ver o histórico.');
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
-      // Call new Database-First Edge Function (v2)
-      const { data, error: fnError } = await supabase.functions.invoke<BackendHistoryResponse>(
-        'fipe-history-v2',
-        { body: { fipeCode, modelYear, forceFullFetch } }
-      );
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_fipe_price_history', {
+        p_fipe_code: fipeCode,
+        p_model_year: modelYearInt,
+        p_months_back: 60,
+      });
 
-      if (fnError) throw fnError;
-      if (!data?.success) throw new Error(data?.error || 'Falha ao buscar histórico.');
+      if (rpcError || !rpcData || !Array.isArray(rpcData) || rpcData.length === 0) {
+        if (mountedRef.current) {
+          setPriceHistory([]);
+          setError(rpcError?.message || 'Histórico não disponível para este veículo.');
+          setLoading(false);
+        }
+        return;
+      }
 
-      const points: ParsedHistoryPoint[] = (data.points || [])
-        .map((p) => ({
-          date: new Date(p.date),
-          monthLabel: p.monthLabel,
-          price: p.price,
-          reference: p.reference,
-        }))
-        .filter(p => !isNaN(p.date.getTime()) && p.price > 0)
+      const points: ParsedHistoryPoint[] = (rpcData as GetFipePriceHistoryRow[])
+        .map((row) => {
+          const price = Number(row.price);
+          const date = new Date(row.reference_year, row.reference_month - 1, 1);
+          return {
+            date,
+            monthLabel: row.reference_label || `${row.reference_month}/${row.reference_year}`,
+            price,
+            reference: row.reference_code || '',
+          };
+        })
+        .filter((p) => !isNaN(p.date.getTime()) && p.price > 0)
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
       if (points.length === 0) {
-        throw new Error('Não foi possível obter histórico de preços.');
+        if (mountedRef.current) {
+          setPriceHistory([]);
+          setError('Histórico não disponível para este veículo.');
+          setLoading(false);
+        }
+        return;
       }
 
       points[0].isLaunchPrice = true;
-
       if (mountedRef.current) {
         setPriceHistory(points);
         setProgress(null);
-        
-        // Check if this is partial data
-        const isPartialData = data.partial === true;
-        setIsPartial(isPartialData);
-        
-        setError(data.restricted 
-          ? 'Histórico parcial disponível.' 
-          : isPartialData 
-            ? 'Carregando histórico completo...'
-            : null
-        );
-        
-        // Check if we need cohort data (short history)
+        setError(null);
+        setIsPartial(false);
         const firstDate = points[0].date;
         const lastDate = points[points.length - 1].date;
         const monthsOfHistory = Math.round(
           (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44)
         );
-        
         if (monthsOfHistory < COHORT_THRESHOLD_MONTHS) {
-          // Fetch sibling data in background (don't block)
-          fetchSiblingData(fipeCode, modelYear).then(cohort => {
-            if (mountedRef.current && cohort) {
-              setCohortData(cohort);
-            }
+          fetchSiblingData(fipeCode, modelYearInt).then((cohort) => {
+            if (mountedRef.current && cohort) setCohortData(cohort);
           });
-        }
-        
-        // If partial data, schedule a refetch after a delay to get complete data
-        if (isPartialData) {
-          setTimeout(() => {
-            if (mountedRef.current && lastFetchParamsRef.current) {
-              // Silently refetch to get complete data
-              supabase.functions.invoke<BackendHistoryResponse>(
-                'fipe-history-v2',
-                { body: { fipeCode, modelYear, forceFullFetch: true } }
-              ).then(({ data: fullData }) => {
-                if (mountedRef.current && fullData?.success && fullData.points) {
-                  const fullPoints: ParsedHistoryPoint[] = fullData.points
-                    .map((p) => ({
-                      date: new Date(p.date),
-                      monthLabel: p.monthLabel,
-                      price: p.price,
-                      reference: p.reference,
-                    }))
-                    .filter(p => !isNaN(p.date.getTime()) && p.price > 0)
-                    .sort((a, b) => a.date.getTime() - b.date.getTime());
-                  
-                  if (fullPoints.length > points.length) {
-                    fullPoints[0].isLaunchPrice = true;
-                    setPriceHistory(fullPoints);
-                    setIsPartial(false);
-                    setError(null);
-                  }
-                }
-              }).catch(() => {
-                // Silent fail - user already has partial data
-              });
-            }
-          }, 2000); // Wait 2s for background fetch to complete
         }
       }
     } catch (err) {
@@ -286,38 +271,40 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
     lastFetchParamsRef.current = null;
   }, []);
 
-  // Refetch to get complete data if currently showing partial
+  // Refetch to get complete data if currently showing partial (apenas RPC)
   const refetchIfPartial = useCallback(async () => {
     if (!isPartial || !lastFetchParamsRef.current) return;
-    
     const { fipeCode, modelYear } = lastFetchParamsRef.current;
-    
+    const modelYearInt = parseInt(String(modelYear).split('-')[0], 10);
+    if (!fipeCode || isNaN(modelYearInt)) return;
     try {
-      const { data } = await supabase.functions.invoke<BackendHistoryResponse>(
-        'fipe-history-v2',
-        { body: { fipeCode, modelYear, forceFullFetch: true } }
-      );
-      
-      if (mountedRef.current && data?.success && data.points) {
-        const fullPoints: ParsedHistoryPoint[] = data.points
-          .map((p) => ({
-            date: new Date(p.date),
-            monthLabel: p.monthLabel,
-            price: p.price,
-            reference: p.reference,
-          }))
-          .filter(p => !isNaN(p.date.getTime()) && p.price > 0)
-          .sort((a, b) => a.date.getTime() - b.date.getTime());
-        
-        if (fullPoints.length > 0) {
-          fullPoints[0].isLaunchPrice = true;
-          setPriceHistory(fullPoints);
-          setIsPartial(false);
-          setError(null);
-        }
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_fipe_price_history', {
+        p_fipe_code: fipeCode,
+        p_model_year: modelYearInt,
+        p_months_back: 84,
+      });
+      if (rpcError || !rpcData || !Array.isArray(rpcData) || rpcData.length === 0) return;
+      const fullPoints: ParsedHistoryPoint[] = (rpcData as GetFipePriceHistoryRow[])
+        .map((row) => {
+          const price = Number(row.price);
+          const date = new Date(row.reference_year, row.reference_month - 1, 1);
+          return {
+            date,
+            monthLabel: row.reference_label || `${row.reference_month}/${row.reference_year}`,
+            price,
+            reference: row.reference_code || '',
+          };
+        })
+        .filter((p) => !isNaN(p.date.getTime()) && p.price > 0)
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+      if (mountedRef.current && fullPoints.length > 0) {
+        fullPoints[0].isLaunchPrice = true;
+        setPriceHistory(fullPoints);
+        setIsPartial(false);
+        setError(null);
       }
     } catch {
-      // Silent fail - user already has partial data
+      // Silent fail
     }
   }, [isPartial]);
 

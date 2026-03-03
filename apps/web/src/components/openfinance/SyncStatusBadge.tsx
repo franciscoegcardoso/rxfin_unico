@@ -25,7 +25,7 @@ export const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ itemId, onSync
 
   const fetchLatestJob = useCallback(async () => {
     const { data } = await supabase
-      .from('pluggy_sync_jobs')
+      .from('pluggy_sync_jobs_v')
       .select('id, status, action, attempts, max_attempts, error_message, created_at, finished_at')
       .eq('item_id', itemId)
       .order('created_at', { ascending: false })

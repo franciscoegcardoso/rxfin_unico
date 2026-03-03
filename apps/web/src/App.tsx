@@ -65,7 +65,6 @@ import SimuladorFipe from "./pages/SimuladorFipe";
 import SimuladorFinanciamento from "./pages/SimuladorFinanciamento";
 import SimuladorCustoHora from "./pages/SimuladorCustoHora";
 import HubSimuladores from "./pages/simuladores/Hub";
-import SimuladorFipePublic from "./pages/simuladores/SimuladorFipe";
 import SimuladorCustoHoraPublic from "./pages/simuladores/SimuladorCustoHora";
 import SimuladorCustoOportunidadeCarro from "./pages/SimuladorCustoOportunidadeCarro";
 
@@ -108,6 +107,7 @@ const AdminNotificacoes = lazy(() => import('./pages/admin/AdminNotificacoes'));
 const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
 const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
 const AdminHealthCheck = lazy(() => import('./pages/admin/AdminHealthCheck'));
+const DatabaseHealthDashboard = lazy(() => import('./pages/admin/DatabaseHealthDashboard'));
 const FipeSync = lazy(() => import('./pages/admin/FipeSync'));
 const FipeCatalogHealth = lazy(() => import('./pages/admin/FipeCatalogHealth'));
 const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
@@ -218,7 +218,7 @@ const App = () => (
                   {/* Simuladores — Hub público (sem login) + categorias legadas */}
                   <Route path="/simuladores" element={<HubSimuladores />} />
                   <Route path="/simuladores/:category" element={<Simuladores />} />
-                  {/* Simuladores — nested simulator routes */}
+                  {/* Rota canônica do Simulador FIPE — única que renderiza o componente */}
                   <Route path="/simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
                   <Route path="/simuladores/veiculos/simulador-carro-ab" element={<ProtectedRoute><SimuladorCarroAB /></ProtectedRoute>} />
                   <Route path="/simuladores/veiculos/simulador-custo-oportunidade-carro" element={<ProtectedRoute><SimuladorCustoOportunidadeCarro /></ProtectedRoute>} />
@@ -229,8 +229,8 @@ const App = () => (
                   <Route path="/simuladores/planejamento/econograph" element={<ProtectedRoute><EconoGraph /></ProtectedRoute>} />
                   {/* Dynamic simulators */}
                   <Route path="/simuladores/:category/:slug" element={<SimuladorDinamico />} />
-                  {/* Simuladores públicos (sem login) — flat URLs */}
-                  <Route path="/simulador-fipe" element={<SimuladorFipePublic />} />
+                  {/* URL antiga: apenas redirect — não renderizar componente em /simulador-fipe */}
+                  <Route path="/simulador-fipe" element={<Navigate to="/simuladores/veiculos/simulador-fipe" replace />} />
                   <Route path="/simulador-custo-hora" element={<SimuladorCustoHoraPublic />} />
                   {/* Legacy redirects — outras flat URLs → nested */}
                   <Route path="/simulador-comparativo-carro" element={<Navigate to="/simuladores" replace />} />
@@ -271,6 +271,7 @@ const App = () => (
                   <Route path="/admin/deploy" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDeploy /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminHealthCheck /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/database-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><DatabaseHealthDashboard /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/fipe-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeCatalogHealth /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />

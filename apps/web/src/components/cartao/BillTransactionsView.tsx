@@ -660,10 +660,10 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
 
   /* ─── Transaction list header ─── */
   const renderTransactionHeader = () => (
-    <div className="grid grid-cols-[56px_1fr_64px_88px] items-center py-2.5 px-4 border-b border-border/30 bg-muted/30">
+    <div className="grid grid-cols-[56px_minmax(0,1fr)_88px] sm:grid-cols-[56px_1fr_64px_88px] items-center py-2.5 px-4 border-b border-border/30 bg-muted/30">
       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Data</span>
-      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Descrição</span>
-      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Parc.</span>
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest min-w-0">Descrição</span>
+      <span className="hidden sm:block text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-center">Parc.</span>
       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest text-right">Valor</span>
     </div>
   );
@@ -683,7 +683,7 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
           }
         }}
         className={cn(
-          "grid grid-cols-[56px_1fr_64px_88px] items-center py-2 px-4 transition-colors cursor-pointer group",
+          "grid grid-cols-[56px_minmax(0,1fr)_88px] sm:grid-cols-[56px_1fr_64px_88px] items-center py-2 px-4 transition-colors cursor-pointer group",
           isProjection
             ? "border-l-2 border-l-violet-300 dark:border-l-violet-700 bg-violet-50/20 dark:bg-violet-950/10"
             : isEven
@@ -693,7 +693,7 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
         )}
       >
         {/* Data */}
-        <div className="flex flex-col">
+        <div className="flex flex-col shrink-0">
           <span className="text-xs font-medium text-muted-foreground tabular-nums font-mono">
             {tx.transaction_date && isValid(parseISO(tx.transaction_date)) ? format(parseISO(tx.transaction_date), 'dd/MM') : '—'}
           </span>
@@ -712,8 +712,8 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
             } catch { return null; }
           })()}
         </div>
-        {/* Descrição */}
-        <div className="flex items-center gap-1.5 min-w-0 pr-2">
+        {/* Descrição / Estabelecimento */}
+        <div className="flex items-center gap-1.5 min-w-0 pr-2 max-w-[160px] sm:max-w-none">
           <span
             className={cn(
               "text-xs truncate",
@@ -728,8 +728,8 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
             </Badge>
           )}
         </div>
-        {/* Parcelamento */}
-        <div className="text-center">
+        {/* Parcelamento — oculto em mobile */}
+        <div className="hidden sm:block text-center">
           {installmentInfo ? (
             <span
               className={cn(
@@ -746,7 +746,7 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
         {/* Valor */}
         <span
           className={cn(
-            "text-xs font-mono font-medium tabular-nums text-right",
+            "text-xs font-mono font-medium tabular-nums text-right shrink-0",
             isProjection ? "text-muted-foreground" : "text-muted-foreground"
           )}
         >
@@ -945,7 +945,7 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
                                 {billTxs.length} {billTxs.length === 1 ? 'item' : 'itens'}
                               </p>
                               <p className={cn(
-                                "font-bold text-sm font-mono tabular-nums tracking-tight",
+                                "font-bold text-xl sm:text-2xl font-mono tabular-nums tracking-tight",
                                 displayStatus === 'paid' ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                               )}>
                                 {formatCurrency(getBillTotal(bill))}
@@ -984,10 +984,10 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
                             Nenhum lançamento vinculado
                           </p>
                         ) : (
-                          <>
+                          <div className="overflow-x-auto min-w-0">
                             {renderTransactionHeader()}
                             {billTxs.map((tx, idx) => renderTransaction(tx, bill.due_date, idx))}
-                          </>
+                          </div>
                         )}
                       </div>
                     </CollapsibleContent>
@@ -1030,8 +1030,10 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-1.5 rounded-xl border border-border/30 overflow-hidden bg-card">
-                      {renderTransactionHeader()}
-                      {unlinkedTransactions.map((tx, idx) => renderTransaction(tx, undefined, idx))}
+                      <div className="overflow-x-auto min-w-0">
+                        {renderTransactionHeader()}
+                        {unlinkedTransactions.map((tx, idx) => renderTransaction(tx, undefined, idx))}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -1072,8 +1074,10 @@ const projectedInstallments = useMemo((): ProjectedInstallment[] => {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-1.5 rounded-xl border border-border/30 overflow-hidden bg-card">
-                      {renderTransactionHeader()}
-                      {projectedUnlinked.map((tx, idx) => renderTransaction(tx, undefined, idx))}
+                      <div className="overflow-x-auto min-w-0">
+                        {renderTransactionHeader()}
+                        {projectedUnlinked.map((tx, idx) => renderTransaction(tx, undefined, idx))}
+                      </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

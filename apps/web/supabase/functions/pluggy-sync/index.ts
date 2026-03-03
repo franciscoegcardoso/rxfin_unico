@@ -68,7 +68,7 @@ async function selfHealOrphanTransactions(
   userId: string,
 ): Promise<{ healed: number; billsCreated: number }> {
   const { data: orphans } = await supabase
-    .from('credit_card_transactions')
+    .from('credit_card_transactions_v')
     .select('id, transaction_date, card_id, pluggy_transaction_id')
     .eq('user_id', userId)
     .is('credit_card_bill_id', null);
@@ -166,7 +166,7 @@ async function selfHealOrphanTransactions(
   let healed = 0;
   for (const [billId, txIds] of billToTxIds) {
     const { error } = await supabase
-      .from('credit_card_transactions')
+      .from('credit_card_transactions_v')
       .update({ credit_card_bill_id: billId })
       .in('id', txIds);
     if (!error) healed += txIds.length;
@@ -527,11 +527,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── HISTORICAL LOAD: Queue job instead of running inline ───
+    // ─── HISTORICAL LOAD: Dispatch via Redis ingest layer (fallback: pluggy_sync_jobs) ───
     if (action === 'historical-load') {
-      console.log('[historical-load] Queuing background job...');
+      console.log('[historical-load] Dispatching via ingest-dispatcher...');
 
       const histItemId = itemId || '__all__';
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const internalSecret = Deno.env.get('INTERNAL_SECRET') ?? '';
+      const dispatcherUrl = `${supabaseUrl}/functions/v1/ingest-dispatcher`;
+
+      if (internalSecret && dispatcherUrl) {
+        try {
+          const dispatchRes = await fetch(dispatcherUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
+            body: JSON.stringify({
+              type: 'pluggy:historical_load',
+              payload: { user_id: user.id, item_id: histItemId },
+              priority: 3,
+              idempotencyKey: `historical-load:${histItemId}:${new Date().toISOString().split('T')[0]}`,
+            }),
+          });
+          const dispatchData = await dispatchRes.json();
+          const jobId = dispatchData.messageId ?? 'dispatched';
+          console.log(`[historical-load] Dispatcher response:`, dispatchData);
+          return new Response(
+            JSON.stringify({ success: true, queued: true, jobId, fallback: dispatchData.fallback === true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (e) {
+          console.error('[historical-load] Dispatcher failed, falling back to pluggy_sync_jobs:', e);
+        }
+      }
+
       const { data: existingHist } = await supabase
         .from('pluggy_sync_jobs')
         .select('id')
@@ -572,11 +600,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ─── INCREMENTAL SYNC: Queue job instead of running inline ───
+    // ─── INCREMENTAL SYNC: Dispatch via Redis ingest layer (fallback: pluggy_sync_jobs) ───
     if (action === 'incremental-sync') {
-      console.log('[incremental-sync] Queuing background job...');
+      console.log('[incremental-sync] Dispatching via ingest-dispatcher...');
 
       const incItemId = itemId || '__all__';
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const internalSecret = Deno.env.get('INTERNAL_SECRET') ?? '';
+      const dispatcherUrl = `${supabaseUrl}/functions/v1/ingest-dispatcher`;
+
+      if (internalSecret && dispatcherUrl) {
+        try {
+          const dispatchRes = await fetch(dispatcherUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
+            body: JSON.stringify({
+              type: 'pluggy:incremental_sync',
+              payload: { user_id: user.id, item_id: incItemId },
+              priority: 2,
+              idempotencyKey: `incremental-sync:${incItemId}:${new Date().toISOString().split('T')[0]}`,
+            }),
+          });
+          const dispatchData = await dispatchRes.json();
+          const jobId = dispatchData.messageId ?? 'dispatched';
+          return new Response(
+            JSON.stringify({ success: true, queued: true, jobId, fallback: dispatchData.fallback === true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (e) {
+          console.error('[incremental-sync] Dispatcher failed, falling back to pluggy_sync_jobs:', e);
+        }
+      }
+
       const { data: existingInc } = await supabase
         .from('pluggy_sync_jobs')
         .select('id')
@@ -668,33 +723,62 @@ Deno.serve(async (req) => {
         throw connError;
       }
 
-      // Queue a background sync job (skip if one is already active for this item)
-      const { data: existingInit } = await supabase
-        .from('pluggy_sync_jobs')
-        .select('id')
-        .eq('item_id', itemId)
-        .in('status', ['pending', 'running'])
-        .limit(1)
-        .maybeSingle();
+      // Queue a background sync job via ingest-dispatcher (Redis) or fallback to pluggy_sync_jobs
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const internalSecret = Deno.env.get('INTERNAL_SECRET') ?? '';
+      const dispatcherUrl = `${supabaseUrl}/functions/v1/ingest-dispatcher`;
+      let queuedViaDispatcher = false;
 
-      let jobError = null;
-      if (!existingInit) {
-        const { error } = await supabase
-          .from('pluggy_sync_jobs')
-          .insert({
-            user_id: user.id,
-            item_id: itemId,
-            action: 'initial-sync',
-            priority: 1,
-            status: 'pending',
+      if (internalSecret && dispatcherUrl) {
+        try {
+          const dispatchRes = await fetch(dispatcherUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-internal-secret': internalSecret },
+            body: JSON.stringify({
+              type: 'pluggy:initial_sync',
+              payload: { user_id: user.id, item_id: itemId },
+              priority: 1,
+              idempotencyKey: `initial-sync:${itemId}:${new Date().toISOString().split('T')[0]}`,
+            }),
           });
-        jobError = error;
+          const dispatchData = await dispatchRes.json();
+          if (dispatchData.success && dispatchData.messageId) {
+            queuedViaDispatcher = true;
+            console.log(`[save-connection] Dispatched initial-sync for item ${itemId}, messageId: ${dispatchData.messageId}`);
+          }
+        } catch (e) {
+          console.error('[save-connection] Dispatcher failed, falling back to pluggy_sync_jobs:', e);
+        }
       }
 
-      if (jobError) {
-        console.error('Error queuing sync job:', jobError);
-      } else {
-        console.log(`[save-connection] Queued initial-sync job for item ${itemId}`);
+      if (!queuedViaDispatcher) {
+        const { data: existingInit } = await supabase
+          .from('pluggy_sync_jobs')
+          .select('id')
+          .eq('item_id', itemId)
+          .in('status', ['pending', 'running'])
+          .limit(1)
+          .maybeSingle();
+
+        let jobError = null;
+        if (!existingInit) {
+          const { error } = await supabase
+            .from('pluggy_sync_jobs')
+            .insert({
+              user_id: user.id,
+              item_id: itemId,
+              action: 'initial-sync',
+              priority: 1,
+              status: 'pending',
+            });
+          jobError = error;
+        }
+
+        if (jobError) {
+          console.error('Error queuing sync job:', jobError);
+        } else {
+          console.log(`[save-connection] Queued initial-sync job for item ${itemId}`);
+        }
       }
 
       return new Response(

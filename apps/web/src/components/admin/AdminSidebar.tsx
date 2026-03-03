@@ -24,6 +24,7 @@ import {
   Eye,
   Activity,
   Target,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -68,6 +69,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Deploy', href: '/admin/deploy', icon: Rocket, group: 'Sistema' },
   { label: 'Rollbacks', href: '/admin/rollbacks', icon: RotateCcw, group: 'Sistema' },
   { label: 'Health Check', href: '/admin/health', icon: HeartPulse, group: 'Sistema' },
+  { label: 'Saúde do Banco', href: '/admin/database-health', icon: Database, group: 'Sistema' },
   { label: 'Auditoria', href: '/admin/audit', icon: ShieldCheck, group: 'Sistema' },
 ];
 

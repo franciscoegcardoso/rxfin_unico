@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LogOut,
@@ -10,12 +10,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerClose,
-} from '@/components/ui/drawer';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenuSections } from '@/hooks/useNavMenuPages';
@@ -37,6 +36,17 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   const { signOut } = useAuth();
   const { sections, isLoading } = useMobileMenuSections();
 
+  // ESC key closes sidebar (mobile menu)
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOpenChange(false);
+    };
+    if (open) {
+      window.addEventListener('keydown', handleEsc);
+      return () => window.removeEventListener('keydown', handleEsc);
+    }
+  }, [open, onOpenChange]);
+
   const handleNavigate = (path: string, isLocked: boolean, isComingSoon: boolean, label: string, canAccessAsAdmin?: boolean) => {
     // Admin can navigate through "coming soon" pages
     if (canAccessAsAdmin) {
@@ -55,28 +65,30 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   const handleSignOut = async () => {
     onOpenChange(false);
     await signOut();
-    navigate('/auth');
+    navigate('/login', { replace: true });
   };
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="pb-safe max-h-[85vh]">
-        <DrawerHeader className="relative">
-          <DrawerTitle className="text-center">Menu</DrawerTitle>
-          <DrawerClose asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-2 top-2 h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-        </DrawerHeader>
-        
-        <div className="px-4 pb-6 overflow-y-auto">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="left"
+        className="w-[min(18rem,85vw)] max-w-full p-0 flex flex-col data-[state=closed]:duration-300 data-[state=open]:duration-300 [&>button]:hidden"
+      >
+        <SheetHeader className="relative border-b px-4 py-3 text-left">
+          <SheetTitle className="text-lg">Menu</SheetTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-2 h-8 w-8"
+            onClick={() => onOpenChange(false)}
+            aria-label="Fechar menu"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2">
           {/* Fale com a Cibelia - top of menu */}
           <button
             onClick={() => {
@@ -168,7 +180,7 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
             </button>
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   );
 };

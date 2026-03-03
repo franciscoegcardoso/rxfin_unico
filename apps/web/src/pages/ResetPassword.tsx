@@ -32,8 +32,8 @@ const ResetPassword: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`,
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email },
       });
 
       if (error) {
@@ -43,7 +43,6 @@ const ResetPassword: React.FC = () => {
       setIsSuccess(true);
     } catch (error: any) {
       console.error('Error sending reset email:', error);
-      // Mesmo em caso de erro, mostramos mensagem genérica (segurança)
       setIsSuccess(true);
     } finally {
       setIsLoading(false);
@@ -62,7 +61,7 @@ const ResetPassword: React.FC = () => {
             </div>
             <h2 className="text-xl font-semibold mb-2">Verifique seu Email</h2>
             <p className="text-muted-foreground mb-2">
-              Se existe uma conta com o email <strong className="text-foreground">{email}</strong>, você receberá um link para redefinir sua senha.
+              Se existe uma conta com o email <strong className="text-foreground">{email}</strong>, você receberá as instruções para redefinir sua senha.
             </p>
             <div className="mt-6 space-y-3">
               <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">

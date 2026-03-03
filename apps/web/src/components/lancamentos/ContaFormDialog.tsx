@@ -23,6 +23,7 @@ interface ContaFormDialogProps {
   onOpenChange: (open: boolean) => void;
   editingConta: Conta | null;
   defaultTipo?: ContaTipo;
+  defaultTipoCobranca?: TipoCobranca;
   onSave: (data: {
     conta: Partial<Conta>;
     tipoCobranca: TipoCobranca;
@@ -39,6 +40,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
   onOpenChange,
   editingConta,
   defaultTipo = 'pagar',
+  defaultTipoCobranca,
   onSave,
 }) => {
   const [newConta, setNewConta] = useState<Partial<Conta>>({
@@ -68,6 +70,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
         if (editingConta.dataFimRecorrencia) setDataFimRecorrencia(editingConta.dataFimRecorrencia);
         setSemDataFim(editingConta.semDataFim ?? true);
       } else {
+        const initialCobranca = defaultTipoCobranca || 'unica';
         setNewConta({
           tipo: defaultTipo,
           nome: '',
@@ -75,10 +78,10 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
           dataVencimento: format(new Date(), 'yyyy-MM-dd'),
           categoria: '',
           formaPagamento: 'boleto',
-          recorrente: false,
-          tipoCobranca: 'unica',
+          recorrente: initialCobranca === 'recorrente',
+          tipoCobranca: initialCobranca,
         });
-        setTipoCobranca('unica');
+        setTipoCobranca(initialCobranca);
         setNumParcelas(2);
         setParcelasConfig([]);
         setDiaRecorrencia(new Date().getDate());
@@ -86,7 +89,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
         setSemDataFim(true);
       }
     }
-  }, [open, editingConta, defaultTipo]);
+  }, [open, editingConta, defaultTipo, defaultTipoCobranca]);
 
   // Generate installment dates
   useEffect(() => {
@@ -117,7 +120,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>
             {editingConta ? 'Editar Conta' : (
@@ -128,7 +131,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
 
         <div className="space-y-4">
           {!editingConta && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant={newConta.tipo === 'receber' ? 'default' : 'outline'}
                 className="flex-1 gap-2"
@@ -149,6 +152,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
           <div className="space-y-2">
             <Label>Nome</Label>
             <Input
+              className="w-full"
               value={newConta.nome || ''}
               onChange={(e) => setNewConta({ ...newConta, nome: e.target.value })}
               placeholder="Ex: Conta de luz, Aluguel..."
@@ -169,7 +173,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
               value={newConta.categoria || ''}
               onValueChange={(value) => setNewConta({ ...newConta, categoria: value })}
             >
-              <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
               <SelectContent className="max-h-60">
                 {categories.map((cat) => (
                   <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
@@ -195,7 +199,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
                 value={newConta.formaPagamento || 'boleto'}
                 onValueChange={(value) => setNewConta({ ...newConta, formaPagamento: value as PaymentMethod })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {paymentMethods.map((method) => (
                     <SelectItem key={method.value} value={method.value}>{method.label}</SelectItem>
@@ -207,7 +211,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
 
           <div className="space-y-2">
             <Label>Tipo de Cobrança</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant={tipoCobranca === 'unica' ? 'default' : 'outline'} size="sm" onClick={() => setTipoCobranca('unica')} disabled={!!editingConta}>Única</Button>
               <Button variant={tipoCobranca === 'parcelada' ? 'default' : 'outline'} size="sm" onClick={() => setTipoCobranca('parcelada')} disabled={!!editingConta}>Parcelada</Button>
               <Button variant={tipoCobranca === 'recorrente' ? 'default' : 'outline'} size="sm" onClick={() => setTipoCobranca('recorrente')} disabled={!!editingConta}>Recorrente</Button>
@@ -215,7 +219,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
 
             {tipoCobranca === 'recorrente' && (
               <div className="space-y-3 p-3 rounded-lg bg-muted/30 border mt-2">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label className="text-sm">Dia da recorrência</Label>
                     <Select value={diaRecorrencia.toString()} onValueChange={(v) => setDiaRecorrencia(parseInt(v))}>
@@ -264,9 +268,9 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave}>{editingConta ? 'Salvar' : 'Adicionar'}</Button>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
+          <Button onClick={handleSave} className="w-full sm:w-auto">{editingConta ? 'Salvar' : 'Adicionar'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

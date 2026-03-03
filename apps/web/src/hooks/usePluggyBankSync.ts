@@ -138,7 +138,7 @@ export function usePluggyBankSync() {
       const lancamentos = chunk.map(r => r.lancamento);
 
       const { data, error } = await supabase
-        .from('lancamentos_realizados')
+        .from('lancamentos_realizados_v')
         .insert(lancamentos)
         .select('id');
 

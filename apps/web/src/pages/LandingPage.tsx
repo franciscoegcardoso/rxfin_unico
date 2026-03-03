@@ -57,7 +57,7 @@ const LandingPage: React.FC = () => {
       icon: TrendingUp,
       title: 'Valor de mercado (FIPE)',
       description: 'Acesse o histórico completo de preços e projete o custo real de propriedade.',
-      path: '/simulador-fipe',
+      path: '/simuladores/veiculos/simulador-fipe',
       available: false
     },
     {
@@ -168,7 +168,7 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between h-14">
             <img src={logoHorizontal} alt="RXFin" className="h-8 object-contain" />
             <div className="flex items-center gap-2">
-              <Link to="/simulador-fipe">
+              <Link to="/simuladores/veiculos/simulador-fipe">
                 <Button variant="ghost" size="sm" className="hidden sm:flex text-white/80 hover:text-white hover:bg-white/10">
                   <Play className="h-3 w-3 mr-1" />
                   Testar Grátis
@@ -225,7 +225,7 @@ const LandingPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Link to="/simulador-fipe">
+              <Link to="/simuladores/veiculos/simulador-fipe">
                 <Button 
                   size="lg" 
                   className="gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 text-base px-8 h-12 group"
@@ -274,7 +274,7 @@ const LandingPage: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <Link to="/simulador-fipe">
+            <Link to="/simuladores/veiculos/simulador-fipe">
               <Card className="relative overflow-hidden border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-background hover:border-primary/50 hover:shadow-xl transition-all duration-300 group cursor-pointer">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl transform translate-x-8 -translate-y-8" />
                 <CardContent className="p-6 sm:p-8">
@@ -649,7 +649,7 @@ const LandingPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link to="/simulador-fipe">
+              <Link to="/simuladores/veiculos/simulador-fipe">
                 <Button size="sm" className="bg-white text-[hsl(145,30%,15%)] hover:bg-white/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
                   Testar Simulador
                 </Button>

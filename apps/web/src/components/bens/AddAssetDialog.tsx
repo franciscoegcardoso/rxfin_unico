@@ -907,7 +907,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[90vh] max-h-[90dvh] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="max-w-[calc(100%-1.5rem)] sm:max-w-2xl mx-3 sm:mx-auto h-[90vh] max-h-[90dvh] p-0 flex flex-col overflow-hidden">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center justify-between">
             <span>

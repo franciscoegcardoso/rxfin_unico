@@ -33,14 +33,27 @@ const VerificarEmail: React.FC = () => {
     }
   }, [cooldown]);
 
+  const resolvePostVerifyRoute = async (): Promise<string> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return '/inicio';
+    const { data } = await supabase
+      .from('profiles')
+      .select('onboarding_phase')
+      .eq('id', session.user.id)
+      .single();
+    const phase = (data as { onboarding_phase?: string } | null)?.onboarding_phase;
+    return phase === 'completed' ? '/inicio' : '/onboarding';
+  };
+
   // Check if verified via magic link
   useEffect(() => {
     const verified = searchParams.get('verified');
     if (verified === 'true') {
       setIsVerified(true);
       toast.success('Email verificado com sucesso!');
-      // Redirect to /inicio
-      setTimeout(() => navigate('/inicio'), 2000);
+      resolvePostVerifyRoute().then((route) => {
+        setTimeout(() => navigate(route, { replace: true }), 1500);
+      });
     }
   }, [searchParams, navigate]);
 
@@ -99,12 +112,12 @@ const VerificarEmail: React.FC = () => {
       if (data.success) {
         setIsVerified(true);
         toast.success('Email verificado com sucesso!');
-        
-        // Redirect to magic link or /inicio
         if (data.redirectUrl && data.redirectUrl.startsWith('http')) {
           window.location.href = data.redirectUrl;
         } else {
-          setTimeout(() => navigate('/inicio'), 1500);
+          resolvePostVerifyRoute().then((route) => {
+            setTimeout(() => navigate(route, { replace: true }), 1500);
+          });
         }
       } else {
         setError(data.error || 'Código inválido');

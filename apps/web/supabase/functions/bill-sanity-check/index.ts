@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     }
 
     const { data: allTxs, error: queryError } = await supabase
-      .from('credit_card_transactions')
+      .from('credit_card_transactions_v')
       .select('id, store_name, transaction_date, credit_card_bill_id, pluggy_transaction_id, card_id, value')
       .eq('user_id', user.id)
       .not('credit_card_bill_id', 'is', null);
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
 
     // ─── Step 2: Find orphan transactions (bill_id IS NULL) ───
     const { data: orphanTxs } = await supabase
-      .from('credit_card_transactions')
+      .from('credit_card_transactions_v')
       .select('id, store_name, transaction_date, card_id, value')
       .eq('user_id', user.id)
       .is('credit_card_bill_id', null);
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
     const badIds = badLinks.map(b => b.id);
     for (let i = 0; i < badIds.length; i += 100) {
       await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .update({ credit_card_bill_id: null })
         .in('id', badIds.slice(i, i + 100))
         .eq('user_id', user.id);
@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < uniqueOrphanIds.length; i += 200) {
       const chunk = uniqueOrphanIds.slice(i, i + 200);
       const { data: txsToFix } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .select('id, transaction_date, card_id')
         .in('id', chunk)
         .eq('user_id', user.id);
@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
 
         if (matchedBillId) {
           await supabase
-            .from('credit_card_transactions')
+            .from('credit_card_transactions_v')
             .update({ credit_card_bill_id: matchedBillId })
             .eq('id', tx.id);
           relinkedCount++;

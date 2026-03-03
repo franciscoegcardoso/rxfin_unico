@@ -4,6 +4,7 @@ import { useCreditCardTransactions, CreditCardTransaction } from './useCreditCar
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { logCrudOperation } from '@/core/auditLog';
 
 export type ConsolidatedOrigin = 'lancamento' | 'cartao';
 export type ConsolidatedTipo = 'receita' | 'despesa';
@@ -76,12 +77,35 @@ export function useConsolidatedData() {
       const txIds = records.filter(r => ids.includes(r.id) && r.origin === 'cartao').map(r => r.id);
 
       for (const id of lancIds) {
-        const { error } = await supabase.from('lancamentos_realizados').delete().eq('id', id);
+        const start = performance.now();
+        const { data: oldRow } = await supabase.from('lancamentos_realizados_v').select('*').eq('id', id).single();
+        const { error } = await supabase.from('lancamentos_realizados_v').delete().eq('id', id);
+        await logCrudOperation({
+          operation: 'DELETE',
+          tableName: 'lancamentos_realizados_v',
+          recordId: id,
+          oldData: oldRow as Record<string, unknown>,
+          success: !error,
+          errorMessage: error?.message,
+          errorCode: error?.code,
+          durationMs: Math.round(performance.now() - start),
+        });
         if (error) throw error;
       }
 
       if (txIds.length > 0) {
-        const { error } = await supabase.from('credit_card_transactions').delete().in('id', txIds);
+        const startTx = performance.now();
+        const { error } = await supabase.from('credit_card_transactions_v').delete().in('id', txIds);
+        await logCrudOperation({
+          operation: 'DELETE',
+          tableName: 'credit_card_transactions_v',
+          recordId: undefined,
+          newData: { count: txIds.length, ids: txIds },
+          success: !error,
+          errorMessage: error?.message,
+          errorCode: error?.code,
+          durationMs: Math.round(performance.now() - startTx),
+        });
         if (error) throw error;
       }
 
@@ -103,7 +127,7 @@ export function useConsolidatedData() {
 
     try {
       const { error: lancError } = await supabase
-        .from('lancamentos_realizados')
+        .from('lancamentos_realizados_v')
         .delete()
         .eq('user_id', user.id)
         .neq('id', '00000000-0000-0000-0000-000000000000'); // match all
@@ -111,7 +135,7 @@ export function useConsolidatedData() {
       if (lancError) throw lancError;
 
       const { error: txError } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .delete()
         .eq('user_id', user.id)
         .neq('id', '00000000-0000-0000-0000-000000000000');

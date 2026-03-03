@@ -2,6 +2,13 @@
   "framework": null,
   "buildCommand": "npm run build:web",
   "outputDirectory": "apps/web/dist",
+  "redirects": [
+    {
+      "source": "/simulador-fipe",
+      "destination": "/simuladores/veiculos/simulador-fipe",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

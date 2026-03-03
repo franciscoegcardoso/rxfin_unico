@@ -97,7 +97,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
       const maxDate = dates.sort().reverse()[0];
       
       const { data: existing } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .select('store_name, transaction_date, installment_current, installment_total, value')
         .eq('card_id', account.id)
         .gte('transaction_date', minDate)
@@ -213,7 +213,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
         updates.bill_from_pluggy = billFromPluggy;
         if (Object.keys(updates).length > 0) {
           await supabase
-            .from('credit_card_transactions')
+            .from('credit_card_transactions_v')
             .update(updates)
             .eq('id', transactionIds[j]);
         }
@@ -348,7 +348,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
 
     pollingRef.current = setInterval(async () => {
       const { data } = await supabase
-        .from('sync_jobs')
+        .from('sync_jobs_v')
         .select('id, status, progress, current_step, transactions_saved, bills_linked')
         .eq('id', jobId)
         .single();
@@ -441,7 +441,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
       console.error('Error in historical load:', err);
       toast.error('Erro na carga histórica');
       if (jobId) {
-        await supabase.from('sync_jobs').update({ status: 'error', error_message: String(err), updated_at: new Date().toISOString() }).eq('id', jobId);
+        await supabase.from('sync_jobs_v').update({ status: 'error', error_message: String(err), updated_at: new Date().toISOString() }).eq('id', jobId);
       }
       return { pluggyImported: totalPluggyImported, creditCardImported: 0 };
     } finally {

@@ -132,7 +132,7 @@ export const EconomicIndicators: React.FC = () => {
     const unitLabel = isDollar ? 'R$' : '%';
 
     return (
-      <div className="h-[200px]">
+      <div className="w-full overflow-hidden h-48 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <CartesianGrid {...premiumGrid} />

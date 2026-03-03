@@ -261,7 +261,7 @@ export const GestaoVeiculos: React.FC = () => {
                       <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(v.fipe_value ?? 0)}</p>
                       <Badge variant="secondary" className="mt-2 text-xs">{typeLabel}</Badge>
                       {v.fipe_code && (
-                        <Link to={`/simulador-fipe?code=${v.fipe_code}`} className="block mt-2 text-xs text-primary hover:underline">
+                        <Link to={`/simuladores/veiculos/simulador-fipe?code=${v.fipe_code}`} className="block mt-2 text-xs text-primary hover:underline">
                           Ver simulador FIPE
                         </Link>
                       )}

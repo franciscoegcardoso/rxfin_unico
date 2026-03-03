@@ -583,9 +583,9 @@ export const CartaoCreditoSection: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Action Buttons Row */}
+      {/* Action Buttons Row — mobile: empilhar; desktop: linha */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-wrap">
           {isOpenFinance && <SyncOpenFinanceDialog />}
           <ImportFaturaDialog />
           <Dialog>

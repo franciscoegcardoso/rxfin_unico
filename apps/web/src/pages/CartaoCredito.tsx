@@ -127,7 +127,7 @@ const CartaoCredito: React.FC = () => {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Total faturas
                     </p>
-                    <p className="text-lg font-semibold">{formatCurrency(totalBills)}</p>
+                    <p className="text-lg font-semibold tabular-nums">{formatCurrency(totalBills)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -140,7 +140,7 @@ const CartaoCredito: React.FC = () => {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Total pago
                     </p>
-                    <p className="text-lg font-semibold text-green-600">{formatCurrency(totalPaid)}</p>
+                    <p className="text-lg font-semibold text-green-600 tabular-nums">{formatCurrency(totalPaid)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -160,7 +160,7 @@ const CartaoCredito: React.FC = () => {
                     </p>
                     <p
                       className={cn(
-                        'text-lg font-semibold',
+                        'text-lg font-semibold tabular-nums whitespace-nowrap',
                         pending > 0 ? 'text-amber-600' : 'text-green-600'
                       )}
                     >
@@ -186,11 +186,11 @@ const CartaoCredito: React.FC = () => {
                           <p className="font-bold">{bill.card_name ?? 'Cartão'}</p>
                           {getStatusBadge(bill)}
                         </div>
-                        <p className="mt-2 text-lg font-semibold">{formatCurrency(total)}</p>
+                        <p className="mt-2 text-xl sm:text-2xl font-semibold tabular-nums">{formatCurrency(total)}</p>
                         <Progress value={pct} className="mt-2 h-2" />
                         <p className="mt-2 text-sm text-muted-foreground">{getDueText(bill)}</p>
                         {bill.status !== 'paid' && (
-                          <Button variant="outline" size="sm" className="mt-3" disabled>
+                          <Button variant="outline" size="sm" className="mt-3 min-h-[44px] touch-manipulation w-full sm:w-auto" disabled>
                             Registrar pagamento
                           </Button>
                         )}
@@ -220,7 +220,7 @@ const CartaoCredito: React.FC = () => {
                               <Badge variant="secondary" className="text-xs mt-1.5">{tx.category}</Badge>
                             )}
                           </div>
-                          <p className="font-semibold text-foreground shrink-0">{formatCurrency(tx.value ?? 0)}</p>
+                          <p className="font-semibold text-foreground shrink-0 tabular-nums whitespace-nowrap">{formatCurrency(tx.value ?? 0)}</p>
                         </div>
                         {tx.card_id && (
                           <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 truncate">{tx.card_id}</p>
@@ -229,17 +229,17 @@ const CartaoCredito: React.FC = () => {
                     );
                   })}
                 </div>
-                {/* Desktop: tabela */}
+                {/* Desktop: tabela com overflow e colunas responsivas */}
                 <Card className="hidden md:block rounded-[14px] border border-border/80 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[400px] text-sm">
+                  <div className="overflow-x-auto min-w-0">
+                    <table className="w-full min-w-[320px] text-sm">
                       <thead>
                         <tr className="border-b border-border/80 bg-muted/30">
                           <th className="px-4 py-3 text-left font-medium">Data</th>
-                          <th className="px-4 py-3 text-left font-medium">Loja</th>
-                          <th className="px-4 py-3 text-left font-medium">Categoria</th>
+                          <th className="px-4 py-3 text-left font-medium min-w-0">Loja</th>
+                          <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Categoria</th>
                           <th className="px-4 py-3 text-right font-medium">Valor</th>
-                          <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cartão</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Cartão</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -254,8 +254,8 @@ const CartaoCredito: React.FC = () => {
                               className="border-b border-border/50 last:border-0 hover:bg-muted/20"
                             >
                               <td className="px-4 py-3 text-muted-foreground">{dateFormatted}</td>
-                              <td className="px-4 py-3 font-medium">{tx.store_name ?? '—'}</td>
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3 font-medium max-w-[160px] truncate" title={tx.store_name ?? undefined}>{tx.store_name ?? '—'}</td>
+                              <td className="px-4 py-3 hidden sm:table-cell">
                                 {tx.category ? (
                                   <Badge variant="secondary" className="text-xs">
                                     {tx.category}
@@ -264,10 +264,10 @@ const CartaoCredito: React.FC = () => {
                                   '—'
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-right font-medium">
+                              <td className="px-4 py-3 text-right font-medium tabular-nums">
                                 {formatCurrency(tx.value ?? 0)}
                               </td>
-                              <td className="px-4 py-3 text-xs text-muted-foreground">{tx.card_id ?? '—'}</td>
+                              <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{tx.card_id ?? '—'}</td>
                             </tr>
                           );
                         })}

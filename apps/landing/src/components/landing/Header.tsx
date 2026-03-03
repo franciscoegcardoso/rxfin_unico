@@ -13,7 +13,7 @@ export function Header() {
             <img src="/Logo_RXFin-10.png" alt="RXFin" width={120} height={32} className="h-8 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-2">
-            <a href={`${APP_URL}/simulador-fipe`} target="_blank" rel="noopener noreferrer">
+            <a href={`${APP_URL}/simuladores/veiculos/simulador-fipe`} target="_blank" rel="noopener noreferrer">
               <Button variant="ghost" size="sm" className="hidden sm:flex text-white/80 hover:text-white hover:bg-white/10">
                 <Play className="h-3 w-3 mr-1" />
                 Testar Grátis

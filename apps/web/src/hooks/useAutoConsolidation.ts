@@ -63,7 +63,7 @@ export function useAutoConsolidation() {
       try {
         // Fetch all transactions
         const { data: transactions, error: fetchError } = await supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .select('*')
           .eq('user_id', user.id);
 
@@ -102,7 +102,7 @@ export function useAutoConsolidation() {
             await Promise.all(
               batch.map(u =>
                 supabase
-                  .from('credit_card_transactions')
+                  .from('credit_card_transactions_v')
                   .update({ installment_current: u.installment_current, installment_total: u.installment_total })
                   .eq('id', u.id)
               )
@@ -205,7 +205,7 @@ export function useAutoConsolidation() {
             await Promise.all(
               batch.map(u =>
                 supabase
-                  .from('credit_card_transactions')
+                  .from('credit_card_transactions_v')
                   .update({
                     installment_current: u.installment_current,
                     installment_total: u.installment_total,
@@ -295,7 +295,7 @@ export function useAutoConsolidation() {
         let totalUpdated = 0;
         for (const [, { groupId, transactionIds }] of purchaseGroups) {
           const { error: updateError } = await supabase
-            .from('credit_card_transactions')
+            .from('credit_card_transactions_v')
             .update({ installment_group_id: groupId })
             .in('id', transactionIds);
 

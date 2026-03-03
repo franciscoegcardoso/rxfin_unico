@@ -49,10 +49,10 @@ const Signup: React.FC = () => {
   const [signupSuccess, setSignupSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && !signupSuccess) {
       navigate('/inicio');
     }
-  }, [user, navigate]);
+  }, [user, signupSuccess, navigate]);
 
   // Password strength indicators
   const passwordChecks = {
@@ -259,13 +259,20 @@ const Signup: React.FC = () => {
               <div className="text-sm text-muted-foreground space-y-1">
                 <p>Não recebeu? Verifique sua pasta de spam.</p>
               </div>
-              
-              <Link to="/login">
-                <Button variant="outline" className="mt-4">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Voltar para Login
-                </Button>
-              </Link>
+
+              <div className="flex flex-col gap-2 mt-4">
+                <Link to={`/verificar-email?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name.trim())}`}>
+                  <Button className="w-full">
+                    Inserir código de verificação
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button variant="outline" className="w-full">
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Voltar para Login
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>

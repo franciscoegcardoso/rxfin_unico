@@ -374,23 +374,25 @@ export function RaioXChat() {
 
   return (
     <>
-      {/* Floating button — Cibelia avatar (desktop only) */}
-      {!isMobile && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => setIsOpen(true)}
-              className="fixed bottom-6 right-6 z-50 h-16 w-16 rounded-full shadow-lg border-2 border-primary overflow-hidden hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              style={{ backgroundColor: '#0e7051' }}
-            >
-              <img src={cibeliaAvatar} alt="Cibelia — Assistente IA" className="h-full w-full object-cover" />
-            </button>
-          </TooltipTrigger>
-          {shouldStartAIOnboarding && (
-            <TooltipContent side="left">Olá! Sou a Cibelia, sua assistente pessoal 💼</TooltipContent>
-          )}
-        </Tooltip>
-      )}
+      {/* Floating button — Cibelia avatar (desktop z-50; mobile z-40 acima do bottom-nav) */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setIsOpen(true)}
+            className={cn(
+              'fixed right-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg border-2 border-primary overflow-hidden hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              isMobile ? 'bottom-20 z-40' : 'bottom-6 z-50'
+            )}
+            style={{ backgroundColor: '#0e7051' }}
+            aria-label="Abrir chat com Cibelia"
+          >
+            <img src={cibeliaAvatar} alt="Cibelia — Assistente IA" className="h-full w-full object-cover" />
+          </button>
+        </TooltipTrigger>
+        {shouldStartAIOnboarding && (
+          <TooltipContent side="left">Olá! Sou a Cibelia, sua assistente pessoal 💼</TooltipContent>
+        )}
+      </Tooltip>
 
       {/* Chat Panel */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>

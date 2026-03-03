@@ -474,14 +474,14 @@ export const EquityEvolutionSection: React.FC<EquityEvolutionSectionProps> = ({ 
       
       {/* Gráfico de Evolução */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Gráfico de Evolução Patrimonial
+        <CardHeader className="p-3 sm:pb-3 sm:px-6 sm:pt-6">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary shrink-0" />
+            <span className="min-w-0 truncate">Gráfico de Evolução Patrimonial</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
+        <CardContent className="p-3 sm:p-6">
+          <div className="h-48 sm:h-64 w-full overflow-hidden">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={years.map(year => ({
@@ -561,8 +561,8 @@ export const EquityEvolutionSection: React.FC<EquityEvolutionSectionProps> = ({ 
         </CardContent>
       </Card>
       
-      {/* Legenda */}
-      <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
+      {/* Legenda — wrap em mobile para não sobrepor */}
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary/40" />
           <span>Ano atual</span>

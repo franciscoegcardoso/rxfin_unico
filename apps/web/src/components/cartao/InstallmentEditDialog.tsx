@@ -150,7 +150,7 @@ export function InstallmentEditDialog({
     if (billChanged && selectedBillId !== (transaction.credit_card_bill_id || '')) {
       const newBillId = selectedBillId || null;
       const { error: billErr } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .update({
           credit_card_bill_id: newBillId,
           bill_from_pluggy: false, // Manual override
@@ -168,7 +168,7 @@ export function InstallmentEditDialog({
     // If turning OFF installment or already split, just update fields directly
     if (!isInstallment) {
       const { error: updateErr } = await supabase
-        .from('credit_card_transactions')
+        .from('credit_card_transactions_v')
         .update({
           installment_current: null,
           installment_total: null,

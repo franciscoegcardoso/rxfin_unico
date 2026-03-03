@@ -8,6 +8,7 @@ import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
 import { ContasListSection } from '@/components/lancamentos/ContasListSection';
 import { ContaFormDialog } from '@/components/lancamentos/ContaFormDialog';
+import { RecorrentesSection } from '@/components/lancamentos/RecorrentesSection';
 import { ConfirmPaymentDialog } from '@/components/lancamentos/ConfirmPaymentDialog';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -66,7 +67,7 @@ import { LancamentoDetailDialog } from '@/components/lancamentos/LancamentoDetai
 import { MarkAsPaidLancamentoDialog } from '@/components/lancamentos/MarkAsPaidLancamentoDialog';
 import { LancamentoFriendlyNameDialog } from '@/components/lancamentos/LancamentoFriendlyNameDialog';
 import { applyLancamentoFriendlyNameRule } from '@/utils/lancamentoFriendlyNameRules';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 type LancamentoTipo = 'entrada' | 'saida';
 
@@ -75,6 +76,10 @@ export const Lancamentos: React.FC = () => {
   const { isHidden } = useVisibility();
   const { isManual } = useFinanceMode();
   const { user } = useAuth();
+  // Month selector state (declarado antes do hook para passar ao useLancamentosRealizados)
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+
   const {
     lancamentos,
     loading,
@@ -88,7 +93,12 @@ export const Lancamentos: React.FC = () => {
     markLancamentoPaid,
     markLancamentoPaidWithValues,
     duplicateLancamentoNextMonth,
-  } = useLancamentosRealizados();
+    page,
+    setPage,
+    totalCount,
+    totalPages,
+    pageSize,
+  } = useLancamentosRealizados({ paginated: true, mesReferencia: selectedMonth });
   const {
     contas,
     rawContas,
@@ -97,6 +107,7 @@ export const Lancamentos: React.FC = () => {
     addMultipleContas,
     updateConta,
     deleteConta,
+    fetchContas,
     getContaByVinculoCartao,
   } = useContasPagarReceber();
   const { items: purchaseItems, markAsPurchased, getItemsByStatus, addItem: addPurchaseItem } = usePurchaseRegistry();
@@ -108,9 +119,6 @@ export const Lancamentos: React.FC = () => {
   const enabledIncomes = config.incomeItems.filter(i => i.enabled);
   const enabledExpenses = config.expenseItems.filter(i => i.enabled);
 
-  // Month selector state
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
   const { data: rpcSummary, refetch: refetchSummary } = useLancamentosSummary(selectedMonth);
   const summaryTotals = rpcSummary?.summary ?? (rpcSummary as Record<string, unknown>);
@@ -238,6 +246,7 @@ export const Lancamentos: React.FC = () => {
   const [contaDialogOpen, setContaDialogOpen] = useState(false);
   const [contaDialogTipo, setContaDialogTipo] = useState<ContaTipo>('pagar');
   const [editingConta, setEditingConta] = useState<Conta | null>(null);
+  const [defaultTipoCobrancaConta, setDefaultTipoCobrancaConta] = useState<'unica' | 'parcelada' | 'recorrente' | undefined>(undefined);
   const [confirmPaymentConta, setConfirmPaymentConta] = useState<Conta | null>(null);
   const [uploadingComprovante, setUploadingComprovante] = useState(false);
   const [detailItem, setDetailItem] = useState<LancamentoRealizado | null>(null);
@@ -247,6 +256,7 @@ export const Lancamentos: React.FC = () => {
   // Contas filtered
   const contasPagar = useMemo(() => contas.filter(c => c.tipo === 'pagar' && !c.dataPagamento && c.dataVencimento.startsWith(selectedMonth)), [contas, selectedMonth]);
   const contasReceber = useMemo(() => contas.filter(c => c.tipo === 'receber' && !c.dataPagamento && c.dataVencimento.startsWith(selectedMonth)), [contas, selectedMonth]);
+  const recorrrentes = useMemo(() => rawContas.filter(c => c.recorrente === true), [rawContas]);
 
   // Sync credit card accounts with financial institutions
   useEffect(() => {
@@ -281,8 +291,10 @@ export const Lancamentos: React.FC = () => {
     syncCreditCardContas();
   }, [config.financialInstitutions, user, loadingContas]);
 
-  const handleOpenContaDialog = (tipo: ContaTipo) => { setContaDialogTipo(tipo); setEditingConta(null); setContaDialogOpen(true); };
-  const handleEditConta = (conta: Conta) => { setEditingConta(conta); setContaDialogTipo(conta.tipo); setContaDialogOpen(true); };
+  const handleOpenContaDialog = (tipo: ContaTipo) => { setDefaultTipoCobrancaConta(undefined); setContaDialogTipo(tipo); setEditingConta(null); setContaDialogOpen(true); };
+  const handleEditConta = (conta: Conta) => { setDefaultTipoCobrancaConta(undefined); setEditingConta(conta); setContaDialogTipo(conta.tipo); setContaDialogOpen(true); };
+  const handleOpenNewRecorrente = () => { setDefaultTipoCobrancaConta('recorrente'); setContaDialogTipo('pagar'); setEditingConta(null); setContaDialogOpen(true); };
+  const handleContaDialogOpenChange = (open: boolean) => { if (!open) setDefaultTipoCobrancaConta(undefined); setContaDialogOpen(open); };
   const handleDeleteConta = async (id: string) => {
     const conta = contas.find(c => c.id === id);
     if (conta?.vinculoCartaoId) { toast.error('Esta conta está vinculada a um cartão de crédito.'); return; }
@@ -393,6 +405,7 @@ export const Lancamentos: React.FC = () => {
   const [dialogStep, setDialogStep] = useState<'select' | 'method' | 'form'>('select');
   const [lancamentoTipo, setLancamentoTipo] = useState<LancamentoTipo | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Handle URL query params for quick actions (e.g., from mobile quick actions)
   useEffect(() => {
@@ -757,7 +770,7 @@ export const Lancamentos: React.FC = () => {
           {/* Single Add Button with Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="hero" className="gap-2">
+              <Button variant="hero" className="gap-2 min-h-[44px] min-w-[44px] touch-manipulation">
                 <Plus className="h-4 w-4" />
                 Novo
                 <ChevronDown className="h-3.5 w-3.5 opacity-70" />
@@ -872,7 +885,7 @@ export const Lancamentos: React.FC = () => {
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagos</p>
                     <p className="text-lg font-semibold">{paid.count ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(paid.total ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(paid.total ?? 0)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -884,7 +897,7 @@ export const Lancamentos: React.FC = () => {
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pendentes</p>
                     <p className="text-lg font-semibold">{pending.count ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(pending.total ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(pending.total ?? 0)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -896,7 +909,7 @@ export const Lancamentos: React.FC = () => {
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Atrasados</p>
                     <p className="text-lg font-semibold">{overdue.count ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(overdue.total ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(overdue.total ?? 0)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1043,13 +1056,13 @@ export const Lancamentos: React.FC = () => {
 
         {/* Dialog */}
         <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md mx-4 sm:mx-auto">
             {dialogStep === 'select' ? (
               <>
                 <DialogHeader>
                   <DialogTitle>Novo Lançamento</DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                   <button
                     onClick={() => handleSelectTipo('entrada')}
                     className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-income/30 bg-income/5 hover:border-income hover:bg-income/10 transition-all"
@@ -1147,6 +1160,7 @@ export const Lancamentos: React.FC = () => {
                     <Input
                       id="name"
                       placeholder="Ex: Salário, Freelance..."
+                      className="w-full"
                       value={newEntrada.name}
                       onChange={(e) => setNewEntrada(prev => ({ ...prev, name: e.target.value }))}
                     />
@@ -1164,7 +1178,7 @@ export const Lancamentos: React.FC = () => {
                       value={newEntrada.type}
                       onValueChange={(value) => setNewEntrada(prev => ({ ...prev, type: value }))}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1185,13 +1199,13 @@ export const Lancamentos: React.FC = () => {
                       onChange={(e) => setNewEntrada(prev => ({ ...prev, date: e.target.value }))}
                     />
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     {!editingId && (
-                      <Button variant="outline" onClick={() => setDialogStep('method')} className="flex-1">
+                      <Button variant="outline" onClick={() => setDialogStep('method')} className="w-full sm:flex-1">
                         Voltar
                       </Button>
                     )}
-                    <Button onClick={handleAddEntrada} className={`${editingId ? 'w-full' : 'flex-1'} bg-income hover:bg-income/90`}>
+                    <Button onClick={handleAddEntrada} className={`w-full min-h-[44px] touch-manipulation ${!editingId ? 'sm:flex-1' : ''} bg-income hover:bg-income/90`}>
                       {editingId ? 'Salvar Alterações' : 'Registrar Entrada'}
                     </Button>
                   </div>
@@ -1211,6 +1225,7 @@ export const Lancamentos: React.FC = () => {
                     <Input
                       id="name"
                       placeholder="Ex: Aluguel, Supermercado..."
+                      className="w-full"
                       value={newSaida.name}
                       onChange={(e) => setNewSaida(prev => ({ ...prev, name: e.target.value }))}
                     />
@@ -1228,7 +1243,7 @@ export const Lancamentos: React.FC = () => {
                       value={newSaida.category}
                       onValueChange={(value) => setNewSaida(prev => ({ ...prev, category: value }))}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione a categoria" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1246,7 +1261,7 @@ export const Lancamentos: React.FC = () => {
                       value={newSaida.method}
                       onValueChange={(value) => setNewSaida(prev => ({ ...prev, method: value as PaymentMethod }))}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Selecione a forma" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1364,13 +1379,13 @@ export const Lancamentos: React.FC = () => {
                       </>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     {!editingId && (
-                      <Button variant="outline" onClick={() => setDialogStep('method')} className="flex-1">
+                      <Button variant="outline" onClick={() => setDialogStep('method')} className="w-full sm:flex-1">
                         Voltar
                       </Button>
                     )}
-                    <Button onClick={handleAddSaida} className={`${editingId ? 'w-full' : 'flex-1'} bg-expense hover:bg-expense/90`}>
+                    <Button onClick={handleAddSaida} className={`w-full min-h-[44px] touch-manipulation ${!editingId ? 'sm:flex-1' : ''} bg-expense hover:bg-expense/90`}>
                       {editingId ? 'Salvar Alterações' : 'Registrar Saída'}
                     </Button>
                   </div>
@@ -1380,7 +1395,7 @@ export const Lancamentos: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Search and Filters - responsivo: full width em mobile, touch-friendly */}
+        {/* Search and Filters — mobile: busca + botão Filtros; desktop: linha única */}
         <div className="flex flex-col gap-2 mb-4">
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
             <div className="relative flex-1 min-w-0">
@@ -1392,6 +1407,15 @@ export const Lancamentos: React.FC = () => {
                 className="pl-9 min-h-[44px] w-full touch-manipulation"
               />
             </div>
+            <Button
+              variant="outline"
+              className="sm:hidden gap-2 min-h-[44px] touch-manipulation"
+              onClick={() => setFiltersOpen((o) => !o)}
+            >
+              <Filter className="h-4 w-4" />
+              Filtros{filtersOpen ? ' ▲' : ' ▼'}
+            </Button>
+            <div className={cn('flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2', filtersOpen ? 'flex' : 'hidden sm:flex')}>
             <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
               <SelectTrigger className="w-full sm:w-[140px] min-h-[44px] touch-manipulation">
                 <SelectValue placeholder="Tipo" />
@@ -1443,8 +1467,9 @@ export const Lancamentos: React.FC = () => {
                 )}
               </PopoverContent>
             </Popover>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className={cn('flex flex-wrap gap-2', filtersOpen ? 'flex' : 'hidden sm:flex')}>
           {availableBanks.length > 0 && (
           <Select value={selectedBank} onValueChange={setSelectedBank}>
               <SelectTrigger className="w-full sm:w-[220px]">
@@ -1578,12 +1603,25 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Transações</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{allLancamentos.length}</p>
+                      <p className="text-base sm:text-xl font-bold text-foreground">{totalCount}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            <RecorrentesSection
+              recorrrentes={recorrrentes}
+              userId={user?.id}
+              onOpenNewRecorrente={handleOpenNewRecorrente}
+              onEditRecorrente={handleEditConta}
+              onDeleteRecorrente={async (id) => {
+                const ok = await deleteConta(id);
+                if (ok) fetchContas();
+                return ok;
+              }}
+              loading={loadingContas}
+            />
 
             <CategoryAssignmentCard
               title="Atribuir categorias aos lançamentos"
@@ -1631,9 +1669,38 @@ export const Lancamentos: React.FC = () => {
             <CollapsibleModule
               title="Todos os Lançamentos"
               icon={<Layers className="h-4 w-4 text-primary" />}
-              count={allLancamentos.length}
+              count={totalCount}
               useDialogOnDesktop
             >
+              {totalCount > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-border mb-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
+                    <span className="sm:hidden">p. {page + 1}/{Math.max(1, totalPages)}</span>
+                    <span className="hidden sm:inline">Página {page + 1} de {Math.max(1, totalPages)} ({totalCount} registro{totalCount !== 1 ? 's' : ''})</span>
+                  </p>
+                  <div className="flex items-center gap-1 order-1 sm:order-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[36px] touch-manipulation"
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-xs text-muted-foreground px-1 sm:hidden">{page + 1}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="min-h-[36px] touch-manipulation"
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={page >= Math.max(1, totalPages) - 1}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                </div>
+              )}
               {loading ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">Carregando...</div>
               ) : allLancamentos.length === 0 ? (
@@ -1641,7 +1708,8 @@ export const Lancamentos: React.FC = () => {
                   Nenhum lançamento registrado. Clique em "Novo" para adicionar.
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div className="overflow-x-auto">
+                  <div className="divide-y divide-border min-w-0">
                   {allLancamentos.map((item) => {
                     const isEntrada = item.tipo === 'receita';
                     const source = getSourceInfo(item.source_id);
@@ -1649,7 +1717,7 @@ export const Lancamentos: React.FC = () => {
                     const isPaid = !!item.data_pagamento;
                     return (
                       <div key={item.id} 
-                        className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
+                        className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 min-h-[44px] cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
                         onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
                       >
                         <Checkbox
@@ -1659,7 +1727,7 @@ export const Lancamentos: React.FC = () => {
                           className="shrink-0"
                           aria-label={isEntrada ? 'Recebido' : 'Pago'}
                         />
-                        <div className={`w-1 self-stretch rounded-full shrink-0 ${isEntrada ? 'bg-income' : 'bg-expense'}`} />
+                        <div className={`w-1 self-stretch rounded-full shrink-0 min-h-[24px] ${isEntrada ? 'bg-income' : 'bg-expense'}`} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -1679,12 +1747,12 @@ export const Lancamentos: React.FC = () => {
                                 </span>
                               )}
                             </div>
-                            <p className={`font-bold text-sm whitespace-nowrap ${isEntrada ? 'text-income' : 'text-expense'}`}>
+                            <p className={`font-bold text-sm whitespace-nowrap shrink-0 text-right tabular-nums ${isEntrada ? 'text-income' : 'text-expense'}`}>
                               {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                             </p>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="hidden sm:flex items-center gap-1.5 min-w-0">
                               <span className="text-xs text-muted-foreground truncate">{item.categoria}</span>
                               {source && (
                                 <>
@@ -1696,7 +1764,7 @@ export const Lancamentos: React.FC = () => {
                                 </>
                               )}
                             </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 ml-auto sm:ml-0">
                               {item.data_pagamento
                                 ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                                 : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
@@ -1707,6 +1775,7 @@ export const Lancamentos: React.FC = () => {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </CollapsibleModule>
@@ -1801,25 +1870,26 @@ export const Lancamentos: React.FC = () => {
                   Nenhuma entrada registrada. Clique em "Novo" para adicionar.
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div className="overflow-x-auto">
+                  <div className="divide-y divide-border min-w-0">
                   {entradas.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors"
+                      className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 min-h-[44px] cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors"
                       onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
                     >
-                      <div className="w-1 self-stretch rounded-full shrink-0 bg-income" />
+                      <div className="w-1 self-stretch rounded-full shrink-0 min-h-[24px] bg-income" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <p className="font-medium text-sm text-foreground truncate">
                             {item.friendly_name || item.nome}
                           </p>
-                          <p className="font-bold text-sm text-income whitespace-nowrap">
+                          <p className="font-bold text-sm text-income whitespace-nowrap shrink-0 text-right tabular-nums">
                             + {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="hidden sm:flex items-center gap-1.5 min-w-0">
                             <span className="text-xs text-muted-foreground truncate">{item.categoria}</span>
                             {(() => { const s = getSourceInfo(item.source_id); return s ? (
                               <>
@@ -1831,7 +1901,7 @@ export const Lancamentos: React.FC = () => {
                               </>
                             ) : null; })()}
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 ml-auto sm:ml-0">
                             {item.data_pagamento 
                               ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                               : parseLocalDate(item.data_registro).toLocaleDateString('pt-BR')
@@ -1841,6 +1911,7 @@ export const Lancamentos: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  </div>
                 </div>
               )}
             </CollapsibleModule>
@@ -1935,16 +2006,17 @@ export const Lancamentos: React.FC = () => {
                   Nenhuma saída registrada. Clique em "Novo" para adicionar.
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div className="overflow-x-auto">
+                  <div className="divide-y divide-border min-w-0">
                   {saidas.map((item) => {
                     const recon = getReconciliation(item.id);
                     return (
                     <div
                       key={item.id}
-                      className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
+                      className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 min-h-[44px] cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
                       onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
                     >
-                      <div className="w-1 self-stretch rounded-full shrink-0 bg-expense" />
+                      <div className="w-1 self-stretch rounded-full shrink-0 min-h-[24px] bg-expense" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 min-w-0">
@@ -1964,19 +2036,19 @@ export const Lancamentos: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <p className="font-bold text-sm text-expense whitespace-nowrap">
+                          <p className="font-bold text-sm text-expense whitespace-nowrap shrink-0 text-right tabular-nums">
                             - {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
                         <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="hidden sm:flex items-center gap-1.5 min-w-0">
                             <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[100px]">
                               {item.categoria}
                             </span>
                             {item.forma_pagamento && (
                               <span className="text-[10px] flex items-center gap-0.5 text-muted-foreground whitespace-nowrap">
                                 {getPaymentMethodIcon(item.forma_pagamento)}
-                                <span className="hidden sm:inline">{getPaymentMethodLabel(item.forma_pagamento)}</span>
+                                <span>{getPaymentMethodLabel(item.forma_pagamento)}</span>
                               </span>
                             )}
                             {(() => { const s = getSourceInfo(item.source_id); return s ? (
@@ -1989,7 +2061,7 @@ export const Lancamentos: React.FC = () => {
                               </>
                             ) : null; })()}
                           </div>
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 ml-auto sm:ml-0">
                             {item.data_pagamento
                               ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                               : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
@@ -2000,6 +2072,7 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </CollapsibleModule>
@@ -2047,9 +2120,10 @@ export const Lancamentos: React.FC = () => {
     {/* Conta Form Dialog */}
     <ContaFormDialog
       open={contaDialogOpen}
-      onOpenChange={setContaDialogOpen}
+      onOpenChange={handleContaDialogOpenChange}
       editingConta={editingConta}
       defaultTipo={contaDialogTipo}
+      defaultTipoCobranca={defaultTipoCobrancaConta}
       onSave={handleSaveContaForm}
     />
 

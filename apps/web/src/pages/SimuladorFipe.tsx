@@ -17,18 +17,26 @@ const SimuladorFipe: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div>
+      <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
+        <div className="px-0 sm:px-0">
           <BackLink to="/simuladores" label="Simuladores" className="mb-2 min-h-[44px] touch-manipulation" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Valor de mercado (FIPE) e Custo real de propriedade</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground leading-tight">
+            Valor de mercado (FIPE) e Custo real de propriedade
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 max-w-3xl">
             Não olhe apenas o preço de compra e venda. Acesse o histórico completo de preços e projete quanto esse veículo realmente custa para o seu bolso.
           </p>
         </div>
-        <FipeSimulator registeredVehicles={registeredVehicles} />
-        
+        <div className="min-w-0 w-full">
+          <FipeSimulator registeredVehicles={registeredVehicles} />
+        </div>
+
         {/* CTA for public (non-authenticated) users */}
-        {!user && <FipePublicCTA />}
+        {!user && (
+          <div className="min-w-0 w-full">
+            <FipePublicCTA />
+          </div>
+        )}
       </div>
     </AppLayout>
   );

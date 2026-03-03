@@ -157,7 +157,7 @@ export const OpenFinanceSection: React.FC = () => {
     if (accountIds.length > 0) {
       const [{ count: txCount }, { count: billCount }] = await Promise.all([
         supabase
-          .from('credit_card_transactions')
+          .from('credit_card_transactions_v')
           .select('id', { count: 'exact', head: true })
           .in('card_id', accountIds),
         supabase

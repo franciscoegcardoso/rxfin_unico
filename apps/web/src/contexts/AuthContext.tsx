@@ -37,27 +37,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           queryClient.clear();
         }
         
-        // Update last_login_at on sign in and activate user
+        // On sign in: invalidate queries; do NOT set status to 'active' here (only email verification does that)
         if (event === 'SIGNED_IN' && session?.user) {
-          // Invalidate all queries to fetch fresh data for the new user
           queryClient.invalidateQueries();
-          
-          // Show success toast for OAuth logins (detected by checking provider)
           const provider = session.user.app_metadata?.provider;
           if (provider && provider !== 'email') {
             toast.success('Login realizado com sucesso!');
           }
-          
           setTimeout(async () => {
             await supabase
               .from('profiles')
-              .update({ 
-                last_login_at: new Date().toISOString(),
-                status: 'active' // Activate user after email confirmation
-              })
+              .update({ last_login_at: new Date().toISOString() })
               .eq('id', session.user.id);
-            
-            // Trigger daily auto-sync (once per day per user)
             supabase.rpc('check_and_create_sync_job', { p_user_id: session.user.id })
               .then(({ data, error }) => {
                 if (error) console.error('[DailySync] RPC error:', error.message);

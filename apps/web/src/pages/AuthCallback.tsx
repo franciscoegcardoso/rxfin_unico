@@ -5,9 +5,20 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * Resolve the redirect route for an authenticated user.
- * v3: Always sends to dashboard. Demo mode banner handles onboarding CTA.
+ * Uses onboarding_phase: not_started → /onboarding, completed → returning_user_route or /inicio.
  */
 async function resolveRedirectRoute(userId: string): Promise<string> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_phase')
+    .eq('id', userId)
+    .single();
+
+  const phase = (profile as { onboarding_phase?: string } | null)?.onboarding_phase;
+  if (phase !== 'completed') {
+    return '/onboarding';
+  }
+
   const { data: settingsRows } = await supabase
     .from('app_settings')
     .select('setting_key, setting_value')
@@ -18,8 +29,7 @@ async function resolveRedirectRoute(userId: string): Promise<string> {
     settingsMap[row.setting_key] = row.setting_value as string;
   });
 
-  const returningUserRoute = settingsMap['returning_user_route'] || '/simuladores';
-  return returningUserRoute;
+  return settingsMap['returning_user_route'] || '/inicio';
 }
 
 const AuthCallback = () => {

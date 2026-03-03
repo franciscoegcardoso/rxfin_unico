@@ -115,7 +115,7 @@ export async function getTotalInvestido(userId: string): Promise<number> {
 
 export async function getSyncJobAtivo(userId: string) {
   const { data, error } = await supabase
-    .from('sync_jobs')
+    .from('sync_jobs_v')
     .select('*')
     .eq('user_id', userId)
     .in('status', ['pending', 'running'])

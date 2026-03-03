@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logCrudOperation } from '@/core/auditLog';
 import { Asset } from '@/types/financial';
 import { toast } from 'sonner';
 
@@ -73,8 +74,19 @@ export function useUserAssets() {
 
   const addAsset = useMutation({
     mutationFn: async (asset: Omit<Asset, 'id'>) => {
+      const start = performance.now();
       const dbRow = appToDb(asset, userId);
       const { data, error } = await supabase.from('user_assets' as any).insert(dbRow).select('id').single();
+      await logCrudOperation({
+        operation: 'CREATE',
+        tableName: 'user_assets',
+        recordId: (data as any)?.id,
+        newData: dbRow as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
       return (data as any).id as string;
     },
@@ -87,8 +99,9 @@ export function useUserAssets() {
 
   const updateAsset = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Asset> }) => {
+      const start = performance.now();
       const { data: current, error: fetchErr } = await supabase
-        .from('user_assets' as any).select('metadata').eq('id', id).single();
+        .from('user_assets' as any).select('*').eq('id', id).single();
       if (fetchErr) throw fetchErr;
 
       const dbRow = appToDb(updates);
@@ -96,6 +109,17 @@ export function useUserAssets() {
       dbRow.metadata = { ...existingMeta, ...dbRow.metadata };
 
       const { error } = await supabase.from('user_assets' as any).update(dbRow).eq('id', id);
+      await logCrudOperation({
+        operation: 'UPDATE',
+        tableName: 'user_assets',
+        recordId: id,
+        oldData: current as Record<string, unknown>,
+        newData: dbRow as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -107,7 +131,19 @@ export function useUserAssets() {
 
   const removeAsset = useMutation({
     mutationFn: async (id: string) => {
+      const start = performance.now();
+      const { data: oldRow } = await supabase.from('user_assets' as any).select('*').eq('id', id).single();
       const { error } = await supabase.from('user_assets' as any).delete().eq('id', id);
+      await logCrudOperation({
+        operation: 'DELETE',
+        tableName: 'user_assets',
+        recordId: id,
+        oldData: oldRow as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
     },
     onSuccess: () => {

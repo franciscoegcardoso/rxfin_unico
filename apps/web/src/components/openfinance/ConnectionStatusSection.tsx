@@ -125,7 +125,7 @@ export const ConnectionStatusSection: React.FC = () => {
 
   const fetchJobs = useCallback(async () => {
     const { data } = await supabase
-      .from('pluggy_sync_jobs')
+      .from('pluggy_sync_jobs_v')
       .select('id, item_id, status, action, error_message, created_at, finished_at')
       .order('created_at', { ascending: false })
       .limit(50);

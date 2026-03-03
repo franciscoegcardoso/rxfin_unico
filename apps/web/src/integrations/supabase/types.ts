@@ -1351,6 +1351,118 @@ export type Database = {
           },
         ]
       }
+      credit_card_transactions_v: {
+        Row: {
+          ai_suggested_category: string | null
+          ai_suggested_category_id: string | null
+          bill_from_pluggy: boolean | null
+          card_id: string | null
+          category: string | null
+          category_id: string | null
+          confidence_level: string | null
+          created_at: string
+          credit_card_bill_id: string | null
+          friendly_name: string | null
+          id: string
+          import_batch_id: string | null
+          installment_current: number | null
+          installment_group_id: string | null
+          installment_total: number | null
+          is_category_confirmed: boolean | null
+          is_recurring: boolean | null
+          pluggy_transaction_id: string | null
+          purchase_date: string | null
+          purchase_registry_id: string | null
+          recurring_group_id: string | null
+          status: string
+          store_name: string
+          transaction_date: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          ai_suggested_category?: string | null
+          ai_suggested_category_id?: string | null
+          bill_from_pluggy?: boolean | null
+          card_id?: string | null
+          category?: string | null
+          category_id?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          credit_card_bill_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          import_batch_id?: string | null
+          installment_current?: number | null
+          installment_group_id?: string | null
+          installment_total?: number | null
+          is_category_confirmed?: boolean | null
+          is_recurring?: boolean | null
+          pluggy_transaction_id?: string | null
+          purchase_date?: string | null
+          purchase_registry_id?: string | null
+          recurring_group_id?: string | null
+          status?: string
+          store_name: string
+          transaction_date: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          ai_suggested_category?: string | null
+          ai_suggested_category_id?: string | null
+          bill_from_pluggy?: boolean | null
+          card_id?: string | null
+          category?: string | null
+          category_id?: string | null
+          confidence_level?: string | null
+          created_at?: string
+          credit_card_bill_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          import_batch_id?: string | null
+          installment_current?: number | null
+          installment_group_id?: string | null
+          installment_total?: number | null
+          is_category_confirmed?: boolean | null
+          is_recurring?: boolean | null
+          pluggy_transaction_id?: string | null
+          purchase_date?: string | null
+          purchase_registry_id?: string | null
+          recurring_group_id?: string | null
+          status?: string
+          store_name?: string
+          transaction_date?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_transactions_credit_card_bill_id_fkey"
+            columns: ["credit_card_bill_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_credit_card_bill_id_fkey"
+            columns: ["credit_card_bill_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_bills_with_totals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_transactions_purchase_registry_id_fkey"
+            columns: ["purchase_registry_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activities: {
         Row: {
           activity_type: string

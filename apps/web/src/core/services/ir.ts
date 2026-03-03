@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { Tables, TablesInsert } from '@/integrations/supabase/types'
+import { logCrudOperation } from '@/core/auditLog'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -27,18 +28,42 @@ export async function getComprovantes(
 }
 
 export async function createComprovante(comp: IrComprovanteInsert): Promise<IrComprovante> {
+  const start = performance.now()
   const { data, error } = await supabase
     .from('ir_comprovantes')
     .insert(comp)
     .select()
     .single()
 
+  await logCrudOperation({
+    operation: 'CREATE',
+    tableName: 'ir_comprovantes',
+    recordId: data?.id,
+    newData: comp as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
   return data
 }
 
 export async function deleteComprovante(id: string): Promise<void> {
+  const start = performance.now()
+  const { data: oldRow } = await supabase.from('ir_comprovantes').select('*').eq('id', id).single()
   const { error } = await supabase.from('ir_comprovantes').delete().eq('id', id)
+
+  await logCrudOperation({
+    operation: 'DELETE',
+    tableName: 'ir_comprovantes',
+    recordId: id,
+    oldData: oldRow as Record<string, unknown>,
+    success: !error,
+    errorMessage: error?.message,
+    errorCode: error?.code,
+    durationMs: Math.round(performance.now() - start),
+  })
   if (error) throw error
 }
 

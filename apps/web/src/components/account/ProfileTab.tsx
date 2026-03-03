@@ -13,6 +13,7 @@ import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { logCrudOperation } from '@/core/auditLog';
 
 const GoogleIcon = () => (
   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24">
@@ -72,7 +73,21 @@ export const ProfileTab: React.FC = () => {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: Partial<ProfileData>) => {
       if (!user?.id) throw new Error('User not authenticated');
+      const start = performance.now();
+      const { data: oldRow } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       const { error } = await supabase.from('profiles').update(data).eq('id', user.id);
+      await logCrudOperation({
+        operation: 'UPDATE',
+        tableName: 'profiles',
+        recordId: user.id,
+        oldData: oldRow as Record<string, unknown>,
+        newData: data as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+        endpoint: '/perfil',
+      });
       if (error) throw error;
     },
     onSuccess: () => {

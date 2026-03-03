@@ -8,6 +8,7 @@ import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useContasPagarReceber } from '@/hooks/useContasPagarReceber';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
 import {
   ChevronRight,
@@ -43,29 +44,25 @@ export const MonthSummaryCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between p-3 sm:p-4">
         <CardTitle className="text-base">Resumo do Mês</CardTitle>
         <button onClick={() => navigate('/lancamentos')} className="text-xs text-primary flex items-center gap-0.5">
           Ver mais <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>
-      <CardContent className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground flex items-center gap-2">
-            <TrendingUp className="h-3.5 w-3.5 text-income" /> Receitas
-          </span>
-          <span className="text-sm font-medium text-income">{fmt(summary.receitas)}</span>
+      <CardContent className="space-y-2.5 p-3 sm:p-4 pt-0">
+        <div className="flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0"><TrendingUp className="h-3.5 w-3.5 text-income" /> Receitas</span>
+          <span className="text-sm font-medium text-income truncate tabular-nums">{fmt(summary.receitas)}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground flex items-center gap-2">
-            <TrendingDown className="h-3.5 w-3.5 text-expense" /> Despesas
-          </span>
-          <span className="text-sm font-medium text-expense">{fmt(summary.despesas)}</span>
+        <div className="flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0"><TrendingDown className="h-3.5 w-3.5 text-expense" /> Despesas</span>
+          <span className="text-sm font-medium text-expense truncate tabular-nums">{fmt(summary.despesas)}</span>
         </div>
-        <div className="border-t pt-2 flex items-center justify-between">
-          <span className="text-sm font-medium">Saldo</span>
+        <div className="border-t pt-2 flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm font-medium shrink-0">Saldo</span>
           <span className={cn(
-            "text-sm font-bold",
+            "text-sm font-bold truncate tabular-nums",
             summary.saldo >= 0 ? "text-income" : "text-expense"
           )}>
             {fmt(summary.saldo)}
@@ -109,22 +106,22 @@ export const ExpensesStatusCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 p-3 sm:p-4">
         <CardTitle className="text-base">Despesas do Mês</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Realizadas</span>
-          <span className="text-sm font-medium">{fmt(stats.despesasRealizadas)}</span>
+      <CardContent className="space-y-2.5 p-3 sm:p-4 pt-0">
+        <div className="flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm text-muted-foreground shrink-0">Realizadas</span>
+          <span className="text-sm font-medium truncate tabular-nums">{fmt(stats.despesasRealizadas)}</span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+        <div className="flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm text-muted-foreground flex items-center gap-1.5 shrink-0">
             <Clock className="h-3.5 w-3.5 text-warning" /> Em aberto
             {stats.qtdEmAberto > 0 && (
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{stats.qtdEmAberto}</Badge>
             )}
           </span>
-          <span className="text-sm font-medium text-warning">{fmt(stats.despesasEmAberto)}</span>
+          <span className="text-sm font-medium text-warning truncate tabular-nums">{fmt(stats.despesasEmAberto)}</span>
         </div>
       </CardContent>
     </Card>
@@ -153,18 +150,18 @@ export const CreditCardSpendingCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between p-3 sm:p-4">
         <CardTitle className="text-base flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-primary" /> Cartão de Crédito
         </CardTitle>
-        <button onClick={() => navigate('/cartao-credito')} className="text-xs text-primary flex items-center gap-0.5">
+        <button onClick={() => navigate('/cartao-credito')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
           Ver mais <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Fatura do mês</span>
-          <span className="text-sm font-bold">{fmt(totalCartao)}</span>
+      <CardContent className="p-3 sm:p-4 pt-0">
+        <div className="flex items-center justify-between min-w-0 gap-2">
+          <span className="text-sm text-muted-foreground shrink-0">Fatura do mês</span>
+          <span className="text-sm font-bold truncate tabular-nums">{fmt(totalCartao)}</span>
         </div>
       </CardContent>
     </Card>
@@ -176,6 +173,7 @@ export const CreditCardSpendingCard: React.FC = () => {
 export const BudgetCompositionCard: React.FC = () => {
   const { isHidden } = useVisibility();
   const { lancamentos } = useLancamentosRealizados();
+  const isMobile = useIsMobile();
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
@@ -217,19 +215,21 @@ export const BudgetCompositionCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 p-3 sm:p-4">
         <CardTitle className="text-base flex items-center gap-2">
           <Wallet className="h-4 w-4 text-primary" /> Composição do Orçamento
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <InteractiveTreemap
-          data={treemapData}
-          formatValue={fmt}
-          isHidden={isHidden}
-          height={160}
-          showLegend={true}
-        />
+      <CardContent className="p-3 sm:p-4 pt-0">
+        <div className="w-full overflow-hidden">
+          <InteractiveTreemap
+            data={treemapData}
+            formatValue={fmt}
+            isHidden={isHidden}
+            height={isMobile ? 192 : 256}
+            showLegend={true}
+          />
+        </div>
       </CardContent>
     </Card>
   );
@@ -266,15 +266,15 @@ export const PendingCategorizationCard: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between p-3 sm:p-4">
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-warning" /> Categorização Pendente
         </CardTitle>
-        <button onClick={() => navigate('/lancamentos')} className="text-xs text-primary flex items-center gap-0.5">
+        <button onClick={() => navigate('/lancamentos')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
           Categorizar <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 p-3 sm:p-4 pt-0">
         {pendingItems.map((item) => (
           <div key={item.id} className="flex items-center justify-between py-1 border-b border-border/50 last:border-0">
             <div className="flex items-center gap-2 min-w-0">

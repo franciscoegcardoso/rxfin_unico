@@ -165,7 +165,7 @@ export function LancamentoCategorySection({
     setUpdatingId(item.id);
     try {
       const { error } = await supabase
-        .from('lancamentos_realizados')
+        .from('lancamentos_realizados_v')
         .update({
           categoria: newCategory,
           category_id: getCategoryId(newCategory),
@@ -186,7 +186,7 @@ export function LancamentoCategorySection({
     setUpdatingId(item.id);
     try {
       const { error } = await supabase
-        .from('lancamentos_realizados')
+        .from('lancamentos_realizados_v')
         .update({ is_category_confirmed: true, updated_at: new Date().toISOString() } as any)
         .eq('id', item.id);
       if (error) throw error;

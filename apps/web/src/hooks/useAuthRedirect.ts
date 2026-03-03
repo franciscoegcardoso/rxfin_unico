@@ -47,19 +47,14 @@ export function useAuthRedirect(): AuthRedirectConfig {
   const onboardingPhase: string = profile?.onboarding_phase ?? 'not_started';
   const isFirstLogin = profile ? profile.onboarding_completed !== true : false;
 
-  // v3: Users are NOT forced to onboarding — they see dashboard with demo mode.
-  // shouldShowOnboarding is now only true when explicitly navigating to /onboarding.
   const shouldShowOnboarding = false;
-
-  // Always send to the returning user route (dashboard). Default /inicio per product spec.
-  const targetRoute = settings.returning_user_route || '/inicio';
   const skipRoute = settings.onboarding_skip_route || '/inicio';
 
-  console.log('[AuthRedirect]', {
-    userId: user?.id, profilePending, onboardingPhase,
-    onboardingCompleted: profile?.onboarding_completed,
-    shouldShowOnboarding, targetRoute,
-  });
+  // Post-login redirect: not_started or no profile → /onboarding; completed → returning_user_route or /inicio
+  const targetRoute =
+    !profile || onboardingPhase !== 'completed'
+      ? '/onboarding'
+      : (settings.returning_user_route || '/inicio');
 
   return {
     shouldShowOnboarding,

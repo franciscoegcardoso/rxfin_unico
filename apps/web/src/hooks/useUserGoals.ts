@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FinancialGoal } from '@/types/financial';
 import { toast } from 'sonner';
+import { logCrudOperation } from '@/core/auditLog';
 
 const QUERY_KEY = 'user-goals';
 
@@ -47,13 +48,25 @@ export function useUserGoals() {
 
   const addGoal = useMutation({
     mutationFn: async (goal: Omit<FinancialGoal, 'id'>) => {
-      const { error } = await supabase.from('user_goals' as any).insert({
+      const start = performance.now();
+      const payload = {
         user_id: userId,
         name: goal.name,
         target_amount: goal.targetAmount,
         current_amount: goal.currentAmount,
         deadline: goal.deadline instanceof Date ? goal.deadline.toISOString().split('T')[0] : goal.deadline,
-      } as any);
+      };
+      const { data, error } = await supabase.from('user_goals' as any).insert(payload as any).select('id').single();
+      await logCrudOperation({
+        operation: 'CREATE',
+        tableName: 'user_goals',
+        recordId: (data as any)?.id,
+        newData: payload as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
@@ -62,6 +75,7 @@ export function useUserGoals() {
 
   const updateGoal = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<FinancialGoal> }) => {
+      const start = performance.now();
       const dbUpdates: any = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.targetAmount !== undefined) dbUpdates.target_amount = updates.targetAmount;
@@ -69,7 +83,19 @@ export function useUserGoals() {
       if (updates.deadline !== undefined) {
         dbUpdates.deadline = updates.deadline instanceof Date ? updates.deadline.toISOString().split('T')[0] : updates.deadline;
       }
+      const { data: oldRow } = await supabase.from('user_goals' as any).select('*').eq('id', id).single();
       const { error } = await supabase.from('user_goals' as any).update(dbUpdates).eq('id', id);
+      await logCrudOperation({
+        operation: 'UPDATE',
+        tableName: 'user_goals',
+        recordId: id,
+        oldData: oldRow as Record<string, unknown>,
+        newData: dbUpdates as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
@@ -78,7 +104,19 @@ export function useUserGoals() {
 
   const removeGoal = useMutation({
     mutationFn: async (id: string) => {
+      const start = performance.now();
+      const { data: oldRow } = await supabase.from('user_goals' as any).select('*').eq('id', id).single();
       const { error } = await supabase.from('user_goals' as any).delete().eq('id', id);
+      await logCrudOperation({
+        operation: 'DELETE',
+        tableName: 'user_goals',
+        recordId: id,
+        oldData: oldRow as Record<string, unknown>,
+        success: !error,
+        errorMessage: error?.message,
+        errorCode: error?.code,
+        durationMs: Math.round(performance.now() - start),
+      });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),

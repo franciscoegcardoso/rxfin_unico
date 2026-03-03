@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as lancamentosService from '@/core/services/lancamentos';
@@ -7,35 +7,66 @@ import type { LancamentoRealizado, LancamentoInput } from '@/core/types/lancamen
 // Re-export types for backward compatibility
 export type { LancamentoRealizado, LancamentoInput };
 
-export function useLancamentosRealizados() {
+const PAGE_SIZE = 50;
+
+export type UseLancamentosRealizadosOptions = {
+  /** Se true, busca apenas uma página (evita travar com muitos registros). */
+  paginated?: boolean;
+  pageSize?: number;
+  /** Filtro por mês (yyyy-MM); ao mudar, page é resetada para 0. */
+  mesReferencia?: string | null;
+};
+
+export function useLancamentosRealizados(options: UseLancamentosRealizadosOptions = {}) {
+  const { paginated = false, pageSize = PAGE_SIZE, mesReferencia } = options;
   const { user } = useAuth();
   const [lancamentos, setLancamentos] = useState<LancamentoRealizado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchLancamentos = async () => {
+  const fetchLancamentos = useCallback(async (pageIndex?: number) => {
     if (!user) {
       setLancamentos([]);
+      setTotalCount(0);
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const data = await lancamentosService.fetchLancamentos(user.id);
-      setLancamentos(data);
+      if (paginated) {
+        const p = pageIndex ?? page;
+        const { data, count } = await lancamentosService.fetchLancamentosPaginated(
+          user.id,
+          p,
+          pageSize,
+          mesReferencia ?? undefined
+        );
+        setLancamentos(data);
+        setTotalCount(count);
+      } else {
+        const data = await lancamentosService.fetchLancamentos(user.id);
+        setLancamentos(data);
+        setTotalCount(data.length);
+      }
       setError(null);
     } catch (err) {
       console.error('Error fetching lancamentos:', err);
-      setError('Erro ao carregar lan?amentos');
+      setError('Erro ao carregar lançamentos');
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, paginated, pageSize, mesReferencia, ...(paginated ? [page] : [])]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [mesReferencia]);
 
   useEffect(() => {
     fetchLancamentos();
-  }, [user]);
+  }, [fetchLancamentos]);
 
   const addLancamento = async (input: LancamentoInput) => {
     if (!user) {
@@ -114,12 +145,12 @@ export function useLancamentosRealizados() {
   const deleteLancamento = async (id: string) => {
     try {
       await lancamentosService.deleteLancamento(id);
-      setLancamentos(prev => prev.filter(l => l.id !== id));
-      toast.success('Lan?amento removido');
+      if (paginated) await fetchLancamentos(); else setLancamentos(prev => prev.filter(l => l.id !== id));
+      toast.success('Lançamento removido');
       return true;
     } catch (err) {
       console.error('Error deleting lancamento:', err);
-      toast.error('Erro ao remover lan?amento');
+      toast.error('Erro ao remover lançamento');
       return false;
     }
   };
@@ -203,13 +234,15 @@ export function useLancamentosRealizados() {
     }
   };
 
-  const getLancamentosByMonth = (mesReferencia: string) => {
-    return lancamentos.filter(l => l.mes_referencia === mesReferencia);
+  const getLancamentosByMonth = (mes: string) => {
+    return lancamentos.filter(l => l.mes_referencia === mes);
   };
 
-  const isMonthConsolidated = (mesReferencia: string) => {
-    return lancamentos.some(l => l.mes_referencia === mesReferencia);
+  const isMonthConsolidated = (mes: string) => {
+    return lancamentos.some(l => l.mes_referencia === mes);
   };
+
+  const totalPages = paginated && pageSize > 0 ? Math.ceil(totalCount / pageSize) : 1;
 
   return {
     lancamentos,
@@ -227,5 +260,12 @@ export function useLancamentosRealizados() {
     duplicateLancamentoNextMonth,
     getLancamentosByMonth,
     isMonthConsolidated,
+    ...(paginated && {
+      page,
+      setPage,
+      totalCount,
+      totalPages,
+      pageSize,
+    }),
   };
 }

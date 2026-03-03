@@ -15,7 +15,7 @@ export async function getTransacoesPorFatura(
   billId: string
 ): Promise<CreditCardTransaction[]> {
   const { data, error } = await supabase
-    .from('credit_card_transactions')
+    .from('credit_card_transactions_v')
     .select('*')
     .eq('user_id', userId)
     .eq('credit_card_bill_id', billId)
@@ -31,7 +31,7 @@ export async function getTransacoesPorCartao(
   limit = 50
 ): Promise<CreditCardTransaction[]> {
   const { data, error } = await supabase
-    .from('credit_card_transactions')
+    .from('credit_card_transactions_v')
     .select('*')
     .eq('user_id', userId)
     .eq('card_id', cardId)
@@ -44,7 +44,7 @@ export async function getTransacoesPorCartao(
 
 export async function getTransacoesNaoCategorizadas(userId: string): Promise<CreditCardTransaction[]> {
   const { data, error } = await supabase
-    .from('credit_card_transactions')
+    .from('credit_card_transactions_v')
     .select('*')
     .eq('user_id', userId)
     .eq('is_category_confirmed', false)
@@ -59,7 +59,7 @@ export async function updateTransacao(
   updates: TablesUpdate<'credit_card_transactions'>
 ): Promise<CreditCardTransaction> {
   const { data, error } = await supabase
-    .from('credit_card_transactions')
+    .from('credit_card_transactions_v')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
