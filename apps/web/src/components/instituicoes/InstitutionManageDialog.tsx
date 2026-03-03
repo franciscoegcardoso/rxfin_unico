@@ -449,7 +449,7 @@ export const InstitutionManageDialog: React.FC<InstitutionManageDialogProps> = (
                 </div>
 
                 <p className="text-sm">
-                  Acesse a página de <strong>Bens e Direitos</strong> para gerenciar seus investimentos.
+                  Acesse a página de <strong>Bens e Investimentos</strong> para gerenciar seus investimentos.
                 </p>
               </div>
             </AlertDialogDescription>
@@ -458,7 +458,7 @@ export const InstitutionManageDialog: React.FC<InstitutionManageDialogProps> = (
             <AlertDialogCancel>Fechar</AlertDialogCancel>
             <AlertDialogAction onClick={handleGoToInvestments} className="gap-2">
               <ExternalLink className="h-4 w-4" />
-               Ir para Bens e Direitos
+               Ir para Bens e Investimentos
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -499,7 +499,7 @@ export const InstitutionManageDialog: React.FC<InstitutionManageDialogProps> = (
                 </div>
 
                 <p className="text-sm">
-                  Acesse a página de <strong>Bens e Direitos</strong> para gerenciar seus investimentos.
+                  Acesse a página de <strong>Bens e Investimentos</strong> para gerenciar seus investimentos.
                 </p>
               </div>
             </AlertDialogDescription>

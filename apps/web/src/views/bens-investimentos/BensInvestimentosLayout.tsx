@@ -257,7 +257,7 @@ const BensInvestimentosLayout: React.FC = () => {
           />
 
           <PageHeader
-            title="Bens e Direitos"
+            title="Bens e Investimentos"
             description="Gerencie seu patrimônio, consórcios e financiamentos"
             icon={<Building2 className="h-5 w-5 text-primary" />}
           >

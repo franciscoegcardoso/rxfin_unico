@@ -45,9 +45,9 @@ import {
 import { PageHelpSlideContent } from '@/components/shared/PageHelpSlideDialog';
 
 export const PAGE_HELP_SLIDE_CONTENT: Record<string, PageHelpSlideContent> = {
-  // ========== INVESTIMENTOS ==========
+  // ========== BENS E INVESTIMENTOS ==========
   bensInvestimentos: {
-    title: 'Investimentos',
+    title: 'Bens e Investimentos',
     icon: <Building2 className="h-5 w-5" />,
     slides: [
       {

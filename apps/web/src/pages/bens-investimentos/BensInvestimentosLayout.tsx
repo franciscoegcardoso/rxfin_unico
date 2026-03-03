@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, Target as TargetIcon, LayoutDashboard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -64,6 +65,11 @@ const BensInvestimentosLayout: React.FC = () => {
       setCurrentTab(tabParam);
     }
   }, [tabParam]);
+
+  useEffect(() => {
+    document.title = 'Bens e Investimentos | RXFin';
+    return () => { document.title = 'RXFin'; };
+  }, []);
 
   const formatCurrency = useCallback((value: number) => isHidden ? '••••••' : formatCurrencyBase(value), [isHidden]);
 
