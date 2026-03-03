@@ -188,6 +188,12 @@ export function RaioXChat() {
     const msg = text || inputValue.trim();
     if (!msg || !user?.id) return;
 
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
     setInputValue('');
     setLastFailedMessage(null);
     const sid = sessionId || (await createSession());
@@ -235,15 +241,23 @@ export function RaioXChat() {
         throw fnError;
       }
 
-      if (data?.error) {
-        toast.error(data.error);
-        throw new Error(data.error);
+      if (data?.code === 'MISSING_AUTH' || data?.code === 'INVALID_TOKEN') {
+        toast.error('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      if (data?.code === 'RATE_LIMIT') {
+        toast.error('Muitas mensagens. Aguarde alguns segundos.');
+        return;
+      }
+      if (data?.error && !data?.content) {
+        toast.error(data.error || 'Erro ao conectar com a Cibélia. Tente novamente.');
+        return;
       }
 
-      assistantContent = data.content || 'Sem resposta.';
-      tokensFromResponse = data.tokens_used || 0;
+      assistantContent = data?.content || 'Sem resposta.';
+      tokensFromResponse = data?.tokens_used || 0;
 
-      if (data.formato_raio_x && data.dados_raio_x) {
+      if (data?.formato_raio_x && data?.dados_raio_x) {
         raioXData = { formato: data.formato_raio_x, dados: data.dados_raio_x };
       }
 
@@ -256,7 +270,7 @@ export function RaioXChat() {
           role: 'assistant',
           content: assistantContent,
           tokens_used: tokensFromResponse,
-          model_used: data.model || model.id,
+          model_used: data?.model || model.id,
         })
         .select('id')
         .single();
@@ -304,13 +318,7 @@ export function RaioXChat() {
     } catch (err: any) {
       if (err.message !== 'rate_limit' && err.message !== 'unauthorized') {
         setLastFailedMessage(msg);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: 'Estou com dificuldades técnicas agora. Tente novamente em alguns instantes.',
-          },
-        ]);
+        toast.error(err?.message || 'Erro ao conectar com a Cibélia. Tente novamente.');
       }
     } finally {
       setIsLoading(false);
