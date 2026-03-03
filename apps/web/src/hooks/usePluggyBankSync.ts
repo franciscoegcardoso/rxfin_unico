@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokePluggySync } from '@/lib/pluggySync';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useLancamentosRealizados } from './useLancamentosRealizados';
@@ -203,12 +204,10 @@ export function usePluggyBankSync() {
         let nextResumePage: Record<string, number> | null = null;
 
         while (!done) {
-          const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-            body: {
-              action: 'historical-load',
-              jobId,
-              resumePage: nextResumePage,
-            },
+          const { data, error } = await invokePluggySync({
+            action: 'historical-load',
+            jobId,
+            resumePage: nextResumePage,
           });
           if (error) throw error;
           jobId = data?.jobId || jobId;
@@ -217,9 +216,7 @@ export function usePluggyBankSync() {
         }
       } else {
         // Incremental: last 15 days
-        const { error } = await supabase.functions.invoke('pluggy-sync', {
-          body: { action: 'incremental-sync' },
-        });
+        const { error } = await invokePluggySync({ action: 'incremental-sync' });
         if (error) throw error;
       }
 

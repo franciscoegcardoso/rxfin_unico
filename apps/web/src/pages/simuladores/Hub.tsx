@@ -2,92 +2,96 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Car,
-  GitCompare,
+  ArrowLeftRight,
   Scale,
   Clock,
   BadgePercent,
-  ShieldAlert,
+  AlertCircle,
   Building2,
-  TrendingUp,
+  LineChart,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { getSessionId } from '@/lib/simulatorSession';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { PublicSimuladoresHeader } from '@/components/simuladores/PublicSimuladoresHeader';
+import { SimuladorCard } from '@/components/simuladores/SimuladorCard';
 
-interface SimulatorConfig {
+interface SimulatorItem {
   title: string;
-  publicPath: string;
-  privatePath?: string;
-  icon: React.ElementType;
   description: string;
-  isNew?: boolean;
+  icon: LucideIcon;
+  path: string;
+  isPublic: boolean;
+  badge?: string;
 }
 
-const SIMULATORS: SimulatorConfig[] = [
+const SIMULATORS: SimulatorItem[] = [
   {
-    title: 'Valor FIPE e Custo Real',
-    publicPath: '/simuladores/veiculos/simulador-fipe',
-    privatePath: '/simuladores/veiculos/simulador-fipe',
+    title: 'Valor de Mercado (FIPE)',
+    description: 'Consulte o valor de mercado do seu veículo e calcule o custo real de propriedade.',
     icon: Car,
-    description: 'Descubra o valor de mercado do seu veículo e quanto realmente custa mantê-lo',
-    isNew: true,
+    path: '/simuladores/veiculos/simulador-fipe',
+    isPublic: true,
+    badge: 'Novo',
   },
   {
-    title: 'Comparador A vs B',
-    publicPath: '/simuladores/veiculos/simulador-carro-ab',
-    privatePath: '/simuladores/veiculos/simulador-carro-ab',
-    icon: GitCompare,
-    description: 'Compare dois carros lado a lado: preço, custos e depreciação',
-    isNew: true,
+    title: 'Comparador: Carro A vs B',
+    description: 'Compare dois veículos lado a lado considerando financiamento, seguro, IPVA e manutenção.',
+    icon: ArrowLeftRight,
+    path: '/simuladores/veiculos/simulador-carro-ab',
+    isPublic: false,
+    badge: 'Novo',
   },
   {
-    title: 'Carro vs Alternativas',
-    publicPath: '/simuladores/veiculos/simulador-custo-oportunidade-carro',
-    privatePath: '/simuladores/veiculos/simulador-custo-oportunidade-carro',
+    title: 'Carro Próprio vs Alternativas',
+    description: 'Descubra se vale mais a pena ter carro ou usar apps de mobilidade e transporte público.',
     icon: Scale,
-    description: 'Ter carro próprio compensa? Compare com transporte público, app e aluguel',
+    path: '/simuladores/veiculos/simulador-custo-oportunidade-carro',
+    isPublic: false,
+  },
+  {
+    title: 'Financiamento vs Consórcio',
+    description: 'Simule e compare as duas modalidades para encontrar a melhor estratégia de compra.',
+    icon: Building2,
+    path: '/simuladores/dividas/financiamento-consorcio',
+    isPublic: false,
+  },
+  {
+    title: 'SOS Quitação de Dívidas',
+    description: 'Organize suas dívidas e encontre o melhor plano para sair no menor tempo e custo.',
+    icon: AlertCircle,
+    path: '/simuladores/dividas/renegociacao-dividas',
+    isPublic: false,
   },
   {
     title: 'Quanto vale sua Hora?',
-    publicPath: '/simulador-custo-hora',
-    privatePath: '/simuladores/planejamento/simulador-custo-hora',
+    description: 'Calcule o custo real da sua hora de trabalho incluindo todos os encargos e despesas.',
     icon: Clock,
-    description: 'Descubra o valor real da sua hora considerando todos os custos',
+    path: '/simuladores/planejamento/simulador-custo-hora',
+    isPublic: false,
   },
   {
-    title: 'Desconto Justo',
-    publicPath: '/simuladores/planejamento/simulador-desconto-justo',
-    privatePath: '/simuladores/planejamento/simulador-desconto-justo',
+    title: 'Mestre da Negociação',
+    description: 'Descubra qual desconto é realmente justo considerando custo de oportunidade e inflação.',
     icon: BadgePercent,
-    description: 'Calcule se o desconto à vista realmente vale a pena',
+    path: '/simuladores/planejamento/simulador-desconto-justo',
+    isPublic: false,
   },
   {
-    title: 'SOS Dívidas',
-    publicPath: '/simuladores/dividas/renegociacao-dividas',
-    privatePath: '/simuladores/dividas/renegociacao-dividas',
-    icon: ShieldAlert,
-    description: 'Simule renegociação e quitação de dívidas',
-  },
-  {
-    title: 'Financ. vs Consórcio',
-    publicPath: '/simuladores/dividas/financiamento-consorcio',
-    privatePath: '/simuladores/dividas/financiamento-consorcio',
-    icon: Building2,
-    description: 'Compare financiamento e consórcio para descobrir a melhor opção',
-  },
-  {
-    title: 'EconoGraph',
-    publicPath: '/simuladores/planejamento/econograph',
-    privatePath: '/simuladores/planejamento/econograph',
-    icon: TrendingUp,
-    description: 'Histórico de índices econômicos (IPCA, Selic, CDI, dólar)',
+    title: 'EconoGraph — Índices Econômicos',
+    description: 'Visualize o histórico de IPCA, Selic, CDI e outros índices econômicos brasileiros.',
+    icon: LineChart,
+    path: '/simuladores/planejamento/econograph',
+    isPublic: false,
   },
 ];
+
+const PUBLIC_SIMULATORS = SIMULATORS.filter((s) => s.isPublic);
+const LOCKED_SIMULATORS = SIMULATORS.filter((s) => !s.isPublic);
 
 export default function Hub() {
   const { user } = useAuth();
@@ -101,74 +105,112 @@ export default function Hub() {
       .then(() => {});
   }, []);
 
+  const isLoggedIn = user !== null;
+
+  // Layout para usuário LOGADO: AppLayout + grid único
+  if (isLoggedIn) {
+    return (
+      <AppLayout>
+        <div className="p-4 sm:p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Simuladores Financeiros
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Ferramentas para decisões financeiras inteligentes
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {SIMULATORS.map((sim) => (
+              <SimuladorCard
+                key={sim.path}
+                title={sim.title}
+                description={sim.description}
+                icon={sim.icon}
+                path={sim.path}
+                isPublic={sim.isPublic}
+                isLoggedIn={true}
+                badge={sim.badge}
+              />
+            ))}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Layout para usuário NÃO LOGADO: header público + hero + seções + CTA
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="max-w-4xl mx-auto px-4 py-8 sm:py-10">
-        <header className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+    <div className="min-h-screen bg-muted/30 dark:bg-gray-950">
+      <PublicSimuladoresHeader />
+
+      <main className="max-w-7xl mx-auto px-4 py-8 sm:py-12 space-y-10">
+        <div className="text-center space-y-3">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
             Simuladores Financeiros
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Ferramentas gratuitas para tomar decisões inteligentes
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Tome decisões financeiras com mais clareza. Experimente grátis agora.
           </p>
-        </header>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {SIMULATORS.map((item) => {
-            const Icon = item.icon;
-            const path = user && item.privatePath ? item.privatePath : item.publicPath;
-
-            return (
-              <Card
-                key={item.publicPath}
-                className="rounded-2xl border border-border/80 bg-card hover:border-primary/30 transition-colors overflow-hidden"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    {item.isNew && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-green-600 text-white shrink-0"
-                      >
-                        Novo
-                      </Badge>
-                    )}
-                  </div>
-                  <h2 className="font-semibold text-foreground mb-1">{item.title}</h2>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {item.description}
-                  </p>
-                  <Link to={path}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-2 group"
-                    >
-                      Simular
-                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            );
-          })}
         </div>
 
-        <footer className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            Quer mais? Com RXFin você organiza toda sua vida financeira.
+        {PUBLIC_SIMULATORS.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold text-foreground">
+              Disponível agora, sem cadastro
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              {PUBLIC_SIMULATORS.map((sim) => (
+                <SimuladorCard
+                  key={sim.path}
+                  title={sim.title}
+                  description={sim.description}
+                  icon={sim.icon}
+                  path={sim.path}
+                  isPublic={true}
+                  isLoggedIn={false}
+                  badge={sim.badge}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            Acesse todos com cadastro gratuito
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {LOCKED_SIMULATORS.map((sim) => (
+              <SimuladorCard
+                key={sim.path}
+                title={sim.title}
+                description={sim.description}
+                icon={sim.icon}
+                path={sim.path}
+                isPublic={false}
+                isLoggedIn={false}
+                badge={sim.badge}
+              />
+            ))}
+          </div>
+        </section>
+
+        <div className="text-center py-8 px-4 border rounded-xl bg-card shadow-sm space-y-3">
+          <p className="font-semibold text-lg text-foreground">
+            Acesse todos os simuladores + gestão financeira completa
           </p>
-          <Link to="/signup">
-            <Button size="lg" className="gap-2">
-              Criar conta grátis
+          <p className="text-muted-foreground text-sm">
+            Cadastro 100% gratuito, sem cartão de crédito
+          </p>
+          <Button size="lg" asChild>
+            <Link to="/signup" className="gap-2">
+              Criar minha conta grátis
               <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </footer>
-      </div>
+            </Link>
+          </Button>
+        </div>
+      </main>
     </div>
   );
 }

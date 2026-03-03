@@ -50,7 +50,7 @@ export const StepMetas: React.FC<StepMetasProps> = ({ userId, onComplete }) => {
   const handleCreate = async () => {
     if (!goalName || !parsedTarget) return;
     setSaving(true);
-    const { error } = await supabase.from('user_goals').insert({
+    const { error } = await supabase.from('user_dreams' as any).insert({
       user_id: userId,
       name: goalName,
       target_amount: parsedTarget,

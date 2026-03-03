@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokePluggySync } from '@/lib/pluggySync';
+import type { Session } from '@supabase/supabase-js';
 import { AlertTriangle } from 'lucide-react';
 import { PluggyConnectButton } from '@/components/openfinance/PluggyConnectButton';
 
@@ -11,17 +13,24 @@ interface OutdatedConnection {
 }
 
 export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> = ({ onReconnected }) => {
+  const [session, setSession] = useState<Session | null>(null);
   const [outdated, setOutdated] = useState<OutdatedConnection[]>([]);
 
-  const fetchOutdated = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, s) => setSession(s ?? null));
+    return () => subscription.unsubscribe();
+  }, []);
 
-    // Refresh statuses from Pluggy API before querying local DB
+  const fetchOutdated = useCallback(async () => {
+    if (!session?.access_token) return;
+    const userId = session.user?.id;
+    if (!userId) return;
+
     try {
-      await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'refresh-statuses' },
-      });
+      await invokePluggySync({ action: 'refresh-statuses' });
     } catch (e) {
       console.error('Failed to refresh connection statuses:', e);
     }
@@ -29,16 +38,17 @@ export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> 
     const { data } = await supabase
       .from('pluggy_connections')
       .select('id, connector_name, item_id, execution_status')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('status', 'OUTDATED')
       .is('deleted_at', null);
 
     setOutdated(data || []);
-  }, []);
+  }, [session]);
 
   useEffect(() => {
+    if (!session) return;
     fetchOutdated();
-  }, [fetchOutdated]);
+  }, [session, fetchOutdated]);
 
   const handleSuccess = useCallback(() => {
     fetchOutdated();

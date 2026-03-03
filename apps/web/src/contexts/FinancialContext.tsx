@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserKVValue, getUserKVValue } from '@/hooks/useUserKV';
 import { dbIncomeToAppIncome, dbExpenseToAppExpense } from '@/hooks/useUserParameters';
-import { useUserGoals } from '@/hooks/useUserGoals';
+import { useUserDreams } from '@/hooks/useUserDreams';
 import { useUserAssets } from '@/hooks/useUserAssets';
 import { useUserMonthlyEntries } from '@/hooks/useUserMonthlyEntries';
 import { useUserAssetMonthlyEntries } from '@/hooks/useUserAssetMonthlyEntries';
@@ -39,9 +39,9 @@ interface FinancialContextType {
   addExpenseItem: (item: Omit<ExpenseItem, 'id'>) => void;
   addExpenseItemWithAssetLink: (item: Omit<ExpenseItem, 'id'>, assetId: string, linkedExpense: Omit<AssetLinkedExpense, 'expenseId'>) => void;
   addIncomeItem: (item: Omit<IncomeItem, 'id'>) => void;
-  addGoal: (goal: Omit<FinancialGoal, 'id'>) => void;
-  updateGoal: (id: string, updates: Partial<FinancialGoal>) => void;
-  removeGoal: (id: string) => void;
+  addDream: (dream: Omit<FinancialGoal, 'id'>) => void;
+  updateDream: (id: string, updates: Partial<FinancialGoal>) => void;
+  removeDream: (id: string) => void;
   addAsset: (asset: Omit<Asset, 'id'>) => void;
   updateAsset: (id: string, updates: Partial<Asset>) => void;
   removeAsset: (id: string) => void;
@@ -109,7 +109,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [onboardingCheckedFromDb, setOnboardingCheckedFromDb] = useState(false);
 
   // ===== SUPABASE HOOKS =====
-  const goalsHook = useUserGoals();
+  const dreamsHook = useUserDreams();
   const assetsHook = useUserAssets();
   const monthlyEntriesHook = useUserMonthlyEntries();
   const assetMonthlyEntriesHook = useUserAssetMonthlyEntries();
@@ -126,7 +126,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     incomeItems: localConfig.incomeItems,
     expenseItems: localConfig.expenseItems,
     sharedWith: sharedPersonsHook.sharedPersons,
-    goals: goalsHook.goals,
+    dreams: dreamsHook.dreams,
     assets: assetsHook.assets,
     monthlyEntries: monthlyEntriesHook.monthlyEntries,
     assetMonthlyEntries: assetMonthlyEntriesHook.assetMonthlyEntries,
@@ -156,10 +156,10 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (step !== null) setCurrentStep(step);
         });
 
-        // Load account_type AND onboarding_completed from Supabase (source of truth)
+        // Load account_type from profiles
         supabase
           .from('profiles')
-          .select('account_type, onboarding_completed')
+          .select('account_type')
           .eq('id', currentUserId)
           .single()
           .then(({ data }) => {
@@ -169,10 +169,17 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 accountType: (data.account_type as 'individual' | 'shared') || 'individual',
               }));
             }
-            // Use Supabase as source of truth for onboarding status
-            setIsOnboardingComplete(data?.onboarding_completed === true);
-            setOnboardingCheckedFromDb(true);
           });
+
+        // onboarding_completed lives in onboarding_state; use RPC get_user_profile_settings
+        supabase
+          .rpc('get_user_profile_settings')
+          .then(({ data }) => {
+            const profile = (data as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
+            setIsOnboardingComplete(profile?.onboarding_completed === true);
+            setOnboardingCheckedFromDb(true);
+          })
+          .catch(() => setOnboardingCheckedFromDb(true));
       } else {
         setLocalConfig({
           accountType: 'individual',
@@ -457,22 +464,22 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // ===== GOALS (Supabase) =====
-  const addGoal = (goal: Omit<FinancialGoal, 'id'>) => {
-    goalsHook.addGoal.mutate(goal, {
-      onSuccess: () => toast.success('Meta adicionada'),
+  // ===== DREAMS (Supabase) =====
+  const addDream = (dream: Omit<FinancialGoal, 'id'>) => {
+    dreamsHook.addDream.mutate(dream, {
+      onSuccess: () => toast.success('Sonho adicionado'),
     });
   };
 
-  const updateGoal = (id: string, updates: Partial<FinancialGoal>) => {
-    goalsHook.updateGoal.mutate({ id, updates }, {
-      onSuccess: () => toast.success('Meta atualizada'),
+  const updateDream = (id: string, updates: Partial<FinancialGoal>) => {
+    dreamsHook.updateDream.mutate({ id, updates }, {
+      onSuccess: () => toast.success('Sonho atualizado'),
     });
   };
 
-  const removeGoal = (id: string) => {
-    goalsHook.removeGoal.mutate(id, {
-      onSuccess: () => toast.success('Meta removida'),
+  const removeDream = (id: string) => {
+    dreamsHook.removeDream.mutate(id, {
+      onSuccess: () => toast.success('Sonho removido'),
     });
   };
 
@@ -743,9 +750,9 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addExpenseItem,
         addExpenseItemWithAssetLink,
         addIncomeItem,
-        addGoal,
-        updateGoal,
-        removeGoal,
+        addDream,
+        updateDream,
+        removeDream,
         addAsset,
         updateAsset,
         removeAsset,

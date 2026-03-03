@@ -56,7 +56,7 @@ const availableIcons = [
 ];
 
 export const Sonhos: React.FC = () => {
-  const { config, updateGoal, addGoal, removeGoal } = useFinancial();
+  const { config, updateDream, addDream, removeDream } = useFinancial();
   const { isHidden, formatValue } = useVisibility();
   const isMobile = useIsMobile();
 
@@ -143,7 +143,7 @@ export const Sonhos: React.FC = () => {
     if (!newGoal.name.trim() || newGoal.targetAmount <= 0) return;
     
     const goalId = `goal-${Date.now()}`;
-    addGoal({
+    addDream({
       name: newGoal.name,
       targetAmount: newGoal.targetAmount,
       currentAmount: newGoal.currentAmount,
@@ -172,7 +172,7 @@ export const Sonhos: React.FC = () => {
   };
 
   const saveEdit = (goalId: string) => {
-    updateGoal(goalId, {
+    updateDream(goalId, {
       name: editForm.name,
       targetAmount: editForm.targetAmount,
       deadline: new Date(editForm.deadline),
@@ -185,7 +185,7 @@ export const Sonhos: React.FC = () => {
   };
 
   // Goals sorted by deadline for timeline
-  const sortedGoals = [...config.goals].sort((a, b) => 
+  const sortedGoals = [...config.dreams].sort((a, b) => 
     new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
   );
 
@@ -305,7 +305,7 @@ export const Sonhos: React.FC = () => {
 
         {/* Summary Cards */}
         {(() => {
-          const totalAcumulado = config.goals.reduce((acc, g) => acc + g.currentAmount, 0);
+          const totalAcumulado = config.dreams.reduce((acc, g) => acc + g.currentAmount, 0);
           const totalPatrimonio = config.assets.reduce((acc, a) => acc + a.value, 0) + pluggyInvestmentsTotal + pluggyAccountsTotal;
           const hasInconsistency = totalAcumulado > totalPatrimonio && totalPatrimonio > 0;
           
@@ -336,7 +336,7 @@ export const Sonhos: React.FC = () => {
                       <Target className="h-5 w-5 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-base sm:text-xl font-bold text-foreground">{config.goals.length}</p>
+                      <p className="text-base sm:text-xl font-bold text-foreground">{config.dreams.length}</p>
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Sonhos cadastrados</p>
                     </div>
                   </CardContent>
@@ -385,7 +385,7 @@ export const Sonhos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-base sm:text-xl font-bold text-foreground truncate">
-                        {formatCurrency(config.goals.reduce((acc, g) => acc + g.targetAmount, 0))}
+                        {formatCurrency(config.dreams.reduce((acc, g) => acc + g.targetAmount, 0))}
                       </p>
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Meta total</p>
                     </div>
@@ -538,7 +538,7 @@ export const Sonhos: React.FC = () => {
 
         {/* Goals Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {config.goals.map((goal) => {
+          {config.dreams.map((goal) => {
             const progress = calculateProgress(goal.currentAmount, goal.targetAmount);
             const monthlyNeeded = calculateMonthlyNeeded(goal.currentAmount, goal.targetAmount, goal.deadline);
             const isEditing = editingGoal === goal.id;
@@ -627,7 +627,7 @@ export const Sonhos: React.FC = () => {
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => removeGoal(goal.id)}
+                                  onClick={() => removeDream(goal.id)}
                                   className="bg-expense hover:bg-expense/90"
                                 >
                                   Excluir
@@ -677,7 +677,7 @@ export const Sonhos: React.FC = () => {
                     </label>
                     <CurrencyInput
                       value={goal.currentAmount}
-                      onChange={(value) => updateGoal(goal.id, { currentAmount: value })}
+                      onChange={(value) => updateDream(goal.id, { currentAmount: value })}
                     />
                   </div>
 
@@ -704,7 +704,7 @@ export const Sonhos: React.FC = () => {
           })}
 
           {/* Empty State / Add Card */}
-          {config.goals.length === 0 && (
+          {config.dreams.length === 0 && (
             <Card className="border-dashed">
               <CardContent className="p-0">
                 <EmptyState

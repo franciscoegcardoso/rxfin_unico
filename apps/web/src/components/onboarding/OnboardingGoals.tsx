@@ -26,7 +26,7 @@ const formatCurrency = (value: number) => {
 };
 
 export const OnboardingGoals: React.FC = () => {
-  const { config, addGoal, removeGoal, setCurrentStep } = useFinancial();
+  const { config, addDream, removeDream, setCurrentStep } = useFinancial();
   const isMobile = useIsMobile();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newGoal, setNewGoal] = useState({
@@ -61,7 +61,7 @@ export const OnboardingGoals: React.FC = () => {
       return;
     }
 
-    addGoal({
+    addDream({
       name: newGoal.name.trim(),
       targetAmount: parseFloat(newGoal.targetAmount),
       currentAmount: parseFloat(newGoal.currentAmount) || 0,
@@ -79,7 +79,7 @@ export const OnboardingGoals: React.FC = () => {
   };
 
   const handleRemoveGoal = (id: string) => {
-    removeGoal(id);
+    removeDream(id);
     toast.success('Sonho removido');
   };
 
@@ -230,7 +230,7 @@ export const OnboardingGoals: React.FC = () => {
         </div>
 
         {/* Goals List */}
-        {config.goals.length === 0 ? (
+        {config.dreams.length === 0 ? (
           <div className="bg-card rounded-xl border border-border p-12 text-center shadow-sm">
             <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
               <Sparkles className="h-8 w-8 text-primary" />
@@ -248,7 +248,7 @@ export const OnboardingGoals: React.FC = () => {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {config.goals.map((goal) => {
+            {config.dreams.map((goal) => {
               const progress = goal.targetAmount > 0 
                 ? (goal.currentAmount / goal.targetAmount) * 100 
                 : 0;

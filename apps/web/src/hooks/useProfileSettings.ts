@@ -14,6 +14,9 @@ export interface ProfileSettingsProfile {
   finance_mode?: string | null;
   marketing_opt_in?: boolean | null;
   last_login_at?: string | null;
+  /** From onboarding_state (JOIN in get_user_profile_settings) */
+  onboarding_completed?: boolean | null;
+  onboarding_phase?: string | null;
 }
 
 export interface ProfileSettingsPlan {

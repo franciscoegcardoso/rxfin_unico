@@ -5,9 +5,9 @@ import { FinancialGoal } from '@/types/financial';
 import { toast } from 'sonner';
 import { logCrudOperation } from '@/core/auditLog';
 
-const QUERY_KEY = 'user-goals';
+const QUERY_KEY = 'user-dreams';
 
-interface DbGoal {
+interface DbDream {
   id: string;
   user_id: string;
   name: string;
@@ -18,7 +18,7 @@ interface DbGoal {
   order_index: number;
 }
 
-const dbToApp = (row: DbGoal): FinancialGoal => ({
+const dbToApp = (row: DbDream): FinancialGoal => ({
   id: row.id,
   name: row.name,
   targetAmount: row.target_amount,
@@ -26,7 +26,7 @@ const dbToApp = (row: DbGoal): FinancialGoal => ({
   deadline: row.deadline ? new Date(row.deadline) : new Date(),
 });
 
-export function useUserGoals() {
+export function useUserDreams() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const userId = user?.id;
@@ -36,30 +36,30 @@ export function useUserGoals() {
     queryFn: async () => {
       if (!userId) return [];
       const { data, error } = await supabase
-        .from('user_goals' as any)
+        .from('user_dreams' as any)
         .select('*')
         .eq('user_id', userId)
         .order('order_index');
       if (error) throw error;
-      return (data as unknown as DbGoal[]).map(dbToApp);
+      return (data as unknown as DbDream[]).map(dbToApp);
     },
     enabled: !!userId,
   });
 
-  const addGoal = useMutation({
-    mutationFn: async (goal: Omit<FinancialGoal, 'id'>) => {
+  const addDream = useMutation({
+    mutationFn: async (dream: Omit<FinancialGoal, 'id'>) => {
       const start = performance.now();
       const payload = {
         user_id: userId,
-        name: goal.name,
-        target_amount: goal.targetAmount,
-        current_amount: goal.currentAmount,
-        deadline: goal.deadline instanceof Date ? goal.deadline.toISOString().split('T')[0] : goal.deadline,
+        name: dream.name,
+        target_amount: dream.targetAmount,
+        current_amount: dream.currentAmount,
+        deadline: dream.deadline instanceof Date ? dream.deadline.toISOString().split('T')[0] : dream.deadline,
       };
-      const { data, error } = await supabase.from('user_goals' as any).insert(payload as any).select('id').single();
+      const { data, error } = await supabase.from('user_dreams' as any).insert(payload as any).select('id').single();
       await logCrudOperation({
         operation: 'CREATE',
-        tableName: 'user_goals',
+        tableName: 'user_dreams',
         recordId: (data as any)?.id,
         newData: payload as Record<string, unknown>,
         success: !error,
@@ -70,10 +70,10 @@ export function useUserGoals() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
-    onError: () => toast.error('Erro ao adicionar meta'),
+    onError: () => toast.error('Erro ao adicionar sonho'),
   });
 
-  const updateGoal = useMutation({
+  const updateDream = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<FinancialGoal> }) => {
       const start = performance.now();
       const dbUpdates: any = {};
@@ -83,11 +83,11 @@ export function useUserGoals() {
       if (updates.deadline !== undefined) {
         dbUpdates.deadline = updates.deadline instanceof Date ? updates.deadline.toISOString().split('T')[0] : updates.deadline;
       }
-      const { data: oldRow } = await supabase.from('user_goals' as any).select('*').eq('id', id).single();
-      const { error } = await supabase.from('user_goals' as any).update(dbUpdates).eq('id', id);
+      const { data: oldRow } = await supabase.from('user_dreams' as any).select('*').eq('id', id).single();
+      const { error } = await supabase.from('user_dreams' as any).update(dbUpdates).eq('id', id);
       await logCrudOperation({
         operation: 'UPDATE',
-        tableName: 'user_goals',
+        tableName: 'user_dreams',
         recordId: id,
         oldData: oldRow as Record<string, unknown>,
         newData: dbUpdates as Record<string, unknown>,
@@ -99,17 +99,17 @@ export function useUserGoals() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
-    onError: () => toast.error('Erro ao atualizar meta'),
+    onError: () => toast.error('Erro ao atualizar sonho'),
   });
 
-  const removeGoal = useMutation({
+  const removeDream = useMutation({
     mutationFn: async (id: string) => {
       const start = performance.now();
-      const { data: oldRow } = await supabase.from('user_goals' as any).select('*').eq('id', id).single();
-      const { error } = await supabase.from('user_goals' as any).delete().eq('id', id);
+      const { data: oldRow } = await supabase.from('user_dreams' as any).select('*').eq('id', id).single();
+      const { error } = await supabase.from('user_dreams' as any).delete().eq('id', id);
       await logCrudOperation({
         operation: 'DELETE',
-        tableName: 'user_goals',
+        tableName: 'user_dreams',
         recordId: id,
         oldData: oldRow as Record<string, unknown>,
         success: !error,
@@ -120,15 +120,14 @@ export function useUserGoals() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [QUERY_KEY] }),
-    onError: () => toast.error('Erro ao remover meta'),
+    onError: () => toast.error('Erro ao remover sonho'),
   });
 
   return {
-    goals: query.data ?? [],
+    dreams: query.data ?? [],
     isLoading: query.isLoading,
-    addGoal,
-    updateGoal,
-    removeGoal,
+    addDream,
+    updateDream,
+    removeDream,
   };
 }
-// sync

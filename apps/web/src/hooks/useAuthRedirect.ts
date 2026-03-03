@@ -23,20 +23,16 @@ export function useAuthRedirect(): AuthRedirectConfig {
   const { user } = useAuth();
   const { settings, isLoading: settingsLoading } = useAppSettings();
 
-  const { data: profile, isPending: profilePending } = useQuery({
+  const { data: profileData, isPending: profilePending } = useQuery({
     queryKey: ['profile-onboarding-status', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('onboarding_completed, status, onboarding_phase, onboarding_control_done, onboarding_control_phase')
-        .eq('id', user.id)
-        .single();
+      const { data, error } = await supabase.rpc('get_user_profile_settings');
       if (error) {
-        console.error('Error fetching onboarding status:', error);
+        console.error('Error fetching profile settings (onboarding status):', error);
         return null;
       }
-      return data as any;
+      return (data as { profile?: { onboarding_completed?: boolean | null; onboarding_phase?: string | null } | null })?.profile ?? null;
     },
     enabled: !!user?.id,
     staleTime: 0,
@@ -44,17 +40,18 @@ export function useAuthRedirect(): AuthRedirectConfig {
 
   const isLoading = settingsLoading || (!!user?.id && profilePending);
 
+  const profile = profileData;
   const onboardingPhase: string = profile?.onboarding_phase ?? 'not_started';
   const isFirstLogin = profile ? profile.onboarding_completed !== true : false;
 
   const shouldShowOnboarding = false;
   const skipRoute = settings.onboarding_skip_route || '/inicio';
 
-  // Post-login redirect: not_started or no profile → /onboarding; completed → returning_user_route or /inicio
+  // Post-login redirect: only when profile loaded (!isLoading). Use onboarding_completed from onboarding_state (RPC).
   const targetRoute =
-    !profile || onboardingPhase !== 'completed'
-      ? '/onboarding'
-      : (settings.returning_user_route || '/inicio');
+    profile && profile.onboarding_completed === true
+      ? (settings.returning_user_route || '/inicio')
+      : '/onboarding';
 
   return {
     shouldShowOnboarding,

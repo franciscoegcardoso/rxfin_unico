@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokePluggySync } from '@/lib/pluggySync';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { PendingTransaction, useCreditCardTransactions } from './useCreditCardTransactions';
@@ -24,7 +25,7 @@ interface SyncJobProgress {
 }
 
 export function usePluggyCreditCardSync(autoSync = false) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [historicalLoading, setHistoricalLoading] = useState(false);
   const [lastSyncResult, setLastSyncResult] = useState<{ imported: number; skipped: number } | null>(null);
@@ -312,9 +313,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
       }
 
       // 1. Call edge function backfill
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'backfill-bills' },
-      });
+      const { data, error } = await invokePluggySync({ action: 'backfill-bills' });
 
       if (error) {
         console.error('Backfill edge function error:', error);
@@ -405,12 +404,10 @@ export function usePluggyCreditCardSync(autoSync = false) {
       // Loop: call edge function in chunks until done
       let done = false;
       while (!done) {
-        const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-          body: {
-            action: 'historical-load',
-            jobId,
-            resumePage: nextResumePage,
-          },
+        const { data, error } = await invokePluggySync({
+          action: 'historical-load',
+          jobId,
+          resumePage: nextResumePage,
         });
 
         if (error) throw error;
@@ -459,9 +456,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
 
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'incremental-sync' },
-      });
+      const { data, error } = await invokePluggySync({ action: 'incremental-sync' });
 
       if (error) throw error;
       const pluggyImported = data?.totalTransactions || 0;
@@ -482,22 +477,20 @@ export function usePluggyCreditCardSync(autoSync = false) {
     }
   }, [user, localSync]);
 
-  // Auto-sync on mount
+  // Auto-sync on mount — only when session is ready to avoid 401
   useEffect(() => {
-    if (autoSync && user && !hasSynced.current) {
+    if (autoSync && session?.access_token && user && !hasSynced.current) {
       hasSynced.current = true;
       incrementalSync();
     }
-  }, [autoSync, user, incrementalSync]);
+  }, [autoSync, session?.access_token, user, incrementalSync]);
 
   // ─── RECONCILE BILLS: Match bank statement payments to unpaid bills ───
   const reconcileBills = useCallback(async (): Promise<{ reconciled: number; manualCheck: number }> => {
     if (!user) return { reconciled: 0, manualCheck: 0 };
 
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'reconcile-bills' },
-      });
+      const { data, error } = await invokePluggySync({ action: 'reconcile-bills' });
 
       if (error) throw error;
       console.log(`[Reconcile] Result: ${data?.reconciled || 0} reconciled, ${data?.manualCheck || 0} manual check`);

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokePluggySync } from '@/lib/pluggySync';
 import { useToast } from '@/hooks/use-toast';
 
 interface PluggyConnection {
@@ -195,9 +196,7 @@ export function usePluggyConnect() {
   const saveConnection = useCallback(async (itemId: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'save-connection', itemId },
-      });
+      const { data, error } = await invokePluggySync({ action: 'save-connection', itemId });
 
       if (error) throw error;
       
@@ -245,9 +244,7 @@ export function usePluggyConnect() {
   const refreshConnection = useCallback(async (itemId: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'refresh', itemId },
-      });
+      const { data, error } = await invokePluggySync({ action: 'refresh', itemId });
 
       if (error) throw error;
       
@@ -279,9 +276,7 @@ export function usePluggyConnect() {
   const deleteConnection = useCallback(async (itemId: string) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'delete', itemId },
-      });
+      const { data, error } = await invokePluggySync({ action: 'delete', itemId });
 
       if (error) throw error;
       

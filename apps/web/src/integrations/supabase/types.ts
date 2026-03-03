@@ -6602,6 +6602,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_dreams: {
+        Row: {
+          created_at: string
+          current_amount: number
+          deadline: string | null
+          icon: string | null
+          id: string
+          name: string
+          order_index: number
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          order_index?: number
+          target_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          order_index?: number
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_home_shortcuts: {
         Row: {
           created_at: string

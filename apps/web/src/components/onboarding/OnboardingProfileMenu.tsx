@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -27,6 +28,7 @@ export const OnboardingProfileMenu: React.FC<OnboardingProfileMenuProps> = ({
   className,
 }) => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -41,6 +43,8 @@ export const OnboardingProfileMenu: React.FC<OnboardingProfileMenuProps> = ({
 
   const handleLogout = async () => {
     await signOut();
+    // replace: true evita que o "Voltar" do browser retorne ao onboarding após o logout
+    navigate('/login', { replace: true });
   };
 
   const isLight = variant === 'light';

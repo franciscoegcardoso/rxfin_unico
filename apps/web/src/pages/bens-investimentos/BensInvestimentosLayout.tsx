@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
-import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, Target as TargetIcon, LayoutDashboard } from 'lucide-react';
+import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -53,15 +53,16 @@ const BensInvestimentosLayout: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
-  const tabFromUrl = ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(pathSegment) ? pathSegment : 'overview';
+  const validTabs = ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros'] as const;
+  const tabFromUrl = validTabs.includes(pathSegment as any) ? pathSegment : 'overview';
 
   const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
   useEffect(() => {
-    setCurrentTab((prev) => (pathSegment && ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(pathSegment) ? pathSegment : prev));
+    setCurrentTab((prev) => (pathSegment && validTabs.includes(pathSegment as any) ? pathSegment : prev));
   }, [pathSegment]);
   const tabParam = searchParams.get('tab');
   useEffect(() => {
-    if (tabParam && ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros', 'metas'].includes(tabParam)) {
+    if (tabParam && validTabs.includes(tabParam as any)) {
       setCurrentTab(tabParam);
     }
   }, [tabParam]);
@@ -98,7 +99,6 @@ const BensInvestimentosLayout: React.FC = () => {
   const financiamentosList = patrimonioData?.financiamentos ?? [];
   const consorciosList = patrimonioData?.consorcios ?? [];
   const segurosList = patrimonioData?.seguros ?? [];
-  const goalsList = patrimonioData?.goals ?? [];
   const netWorth = patrimonioData?.net_worth;
 
   // --- Context callbacks ---
@@ -509,10 +509,6 @@ const BensInvestimentosLayout: React.FC = () => {
                 <Shield className="h-3.5 w-3.5 shrink-0" />
                 <span>Seguros</span>
               </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'metas' ? activeTabRef : undefined} value="metas" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <TargetIcon className="h-3.5 w-3.5 shrink-0" />
-                <span>Metas</span>
-              </TabsTrigger>
             </TabsList>
             </div>
 
@@ -570,23 +566,7 @@ const BensInvestimentosLayout: React.FC = () => {
                       <p className="text-sm text-muted-foreground">{segurosList.filter((s: { is_active?: boolean }) => s.is_active).length} ativos · {segurosList.filter((s: { is_active?: boolean }) => !s.is_active).length} vencidos</p>
                     </Card>
                   )}
-                  {goalsList.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80 p-4">
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <h3 className="font-semibold flex items-center gap-2"><TargetIcon className="h-4 w-4" /> Metas</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('metas')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
-                      </div>
-                      <div className="space-y-2">
-                        {goalsList.slice(0, 4).map((g: { name?: string; pct?: number }, i: number) => (
-                          <div key={i}>
-                            <div className="flex justify-between text-xs mb-0.5"><span className="truncate">{g.name}</span><span>{g.pct ?? 0}%</span></div>
-                            <Progress value={g.pct ?? 0} className="h-1.5" />
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  )}
-                  {imoveis.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && goalsList.length === 0 && (
+                  {imoveis.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado de patrimônio no momento.</p>
                   )}
                 </div>
@@ -700,37 +680,6 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
-              {currentTab === 'metas' && (
-                <div className="space-y-4">
-                  {goalsList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhuma meta cadastrada.</p>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {goalsList.map((g: { name?: string; icon?: string; target?: number; current?: number; pct?: number; deadline?: string }, i: number) => {
-                        const pct = g.pct ?? 0;
-                        const barColor = pct > 50 ? 'bg-green-600' : pct > 25 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500';
-                        const deadlineStr = g.deadline ? format(new Date(g.deadline), 'dd/MM/yyyy', { locale: ptBR }) : null;
-                        const now = new Date();
-                        const dead = g.deadline ? new Date(g.deadline) : null;
-                        const monthsLeft = dead ? Math.max(0, (dead.getFullYear() - now.getFullYear()) * 12 + (dead.getMonth() - now.getMonth())) : null;
-                        return (
-                          <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-2">
-                                {g.icon && <span className="text-xl">{g.icon}</span>}
-                                <p className="font-bold">{g.name ?? '—'}</p>
-                              </div>
-                              <Progress value={Math.min(100, pct)} className={cn('mt-3 h-3', barColor)} />
-                              <p className="mt-2 text-sm font-medium">{formatCurrency(g.current ?? 0)} de {formatCurrency(g.target ?? 0)} · {pct}%</p>
-                              {deadlineStr && <p className="text-xs text-muted-foreground mt-1">Prazo: {deadlineStr}{monthsLeft != null && ` · Faltam ${monthsLeft} meses`}</p>}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </Tabs>
         </div>

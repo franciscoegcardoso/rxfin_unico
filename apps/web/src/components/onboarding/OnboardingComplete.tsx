@@ -161,7 +161,7 @@ export const OnboardingComplete: React.FC = () => {
             </div>
             <div className="bg-accent rounded-xl p-4 text-center">
               <Target className="h-6 w-6 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-primary">{config.goals.length}</p>
+              <p className="text-2xl font-bold text-primary">{config.dreams.length}</p>
               <p className="text-sm text-muted-foreground">Sonhos</p>
             </div>
             <div className="bg-primary/10 rounded-xl p-4 text-center">
@@ -298,14 +298,14 @@ export const OnboardingComplete: React.FC = () => {
               )}
 
               {/* Sonhos */}
-              {config.goals.length > 0 && (
+              {config.dreams.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                     <Target className="h-4 w-4 text-primary" />
                     Sonhos Cadastrados
                   </h3>
                   <div className="space-y-2">
-                    {config.goals.map((goal) => (
+                    {config.dreams.map((goal) => (
                       <div key={goal.id} className="bg-accent/50 rounded-lg p-3 flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">{goal.name}</span>
                         <span className="text-sm text-muted-foreground">

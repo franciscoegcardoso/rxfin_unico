@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { invokePluggySync } from '@/lib/pluggySync';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface RecurringPayment {
@@ -47,9 +48,7 @@ export function useRecurringPayments() {
   const syncRecurringPayments = useCallback(async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase.functions.invoke('pluggy-sync', {
-        body: { action: 'sync-recurring-payments' },
-      });
+      const { data, error } = await invokePluggySync({ action: 'sync-recurring-payments' });
       if (error) throw error;
       console.log('Recurring payments synced:', data);
       await fetchPayments();

@@ -2,56 +2,70 @@ import { supabase } from '@/integrations/supabase/client'
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types'
 import { logCrudOperation } from '@/core/auditLog'
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+// ─── Tipos (Sonhos: user_dreams) ───────────────────────────────────────────────
 
-export type UserGoal = Tables<'user_goals'>
-export type UserGoalInsert = TablesInsert<'user_goals'>
-export type UserGoalUpdate = TablesUpdate<'user_goals'>
+/** Row da tabela user_dreams (backend já migrado de user_goals) */
+export interface UserDreamRow {
+  id: string
+  user_id: string
+  name: string
+  target_amount: number
+  current_amount: number
+  deadline: string | null
+  icon: string | null
+  order_index: number
+  created_at: string
+  updated_at: string
+}
+export type UserDream = UserDreamRow
+export type UserDreamInsert = Omit<UserDreamRow, 'id' | 'created_at' | 'updated_at'> & { id?: string; created_at?: string; updated_at?: string }
+export type UserDreamUpdate = Partial<Omit<UserDreamRow, 'id' | 'user_id' | 'created_at'>>
+
 export type PurchaseRegistry = Tables<'purchase_registry'>
 export type PurchaseRegistryInsert = TablesInsert<'purchase_registry'>
 export type PurchaseRegistryUpdate = TablesUpdate<'purchase_registry'>
 
-// ─── Metas do Usuário ─────────────────────────────────────────────────────────
+// ─── Sonhos do Usuário ────────────────────────────────────────────────────────
 
-export async function getMetas(userId: string): Promise<UserGoal[]> {
+export async function getDreams(userId: string): Promise<UserDream[]> {
   const { data, error } = await supabase
-    .from('user_goals')
+    .from('user_dreams' as any)
     .select('*')
     .eq('user_id', userId)
     .order('order_index', { ascending: true })
 
   if (error) throw error
-  return data
+  return (data ?? []) as UserDream[]
 }
 
-export async function createMeta(meta: UserGoalInsert): Promise<UserGoal> {
+export async function createDream(dream: UserDreamInsert): Promise<UserDream> {
   const start = performance.now()
   const { data, error } = await supabase
-    .from('user_goals')
-    .insert(meta)
+    .from('user_dreams' as any)
+    .insert(dream)
     .select()
     .single()
 
   await logCrudOperation({
     operation: 'CREATE',
-    tableName: 'user_goals',
+    tableName: 'user_dreams',
     recordId: data?.id,
-    newData: meta as Record<string, unknown>,
+    newData: dream as Record<string, unknown>,
     success: !error,
     errorMessage: error?.message,
     errorCode: error?.code,
     durationMs: Math.round(performance.now() - start),
   })
   if (error) throw error
-  return data
+  return data as UserDream
 }
 
-export async function updateMeta(id: string, updates: UserGoalUpdate): Promise<UserGoal> {
+export async function updateDream(id: string, updates: UserDreamUpdate): Promise<UserDream> {
   const start = performance.now()
-  const { data: oldRow } = await supabase.from('user_goals').select('*').eq('id', id).single()
+  const { data: oldRow } = await supabase.from('user_dreams' as any).select('*').eq('id', id).single()
   const payload = { ...updates, updated_at: new Date().toISOString() }
   const { data, error } = await supabase
-    .from('user_goals')
+    .from('user_dreams' as any)
     .update(payload)
     .eq('id', id)
     .select()
@@ -59,7 +73,7 @@ export async function updateMeta(id: string, updates: UserGoalUpdate): Promise<U
 
   await logCrudOperation({
     operation: 'UPDATE',
-    tableName: 'user_goals',
+    tableName: 'user_dreams',
     recordId: id,
     oldData: oldRow as Record<string, unknown>,
     newData: payload as Record<string, unknown>,
@@ -69,17 +83,17 @@ export async function updateMeta(id: string, updates: UserGoalUpdate): Promise<U
     durationMs: Math.round(performance.now() - start),
   })
   if (error) throw error
-  return data
+  return data as UserDream
 }
 
-export async function deleteMeta(id: string): Promise<void> {
+export async function deleteDream(id: string): Promise<void> {
   const start = performance.now()
-  const { data: oldRow } = await supabase.from('user_goals').select('*').eq('id', id).single()
-  const { error } = await supabase.from('user_goals').delete().eq('id', id)
+  const { data: oldRow } = await supabase.from('user_dreams' as any).select('*').eq('id', id).single()
+  const { error } = await supabase.from('user_dreams' as any).delete().eq('id', id)
 
   await logCrudOperation({
     operation: 'DELETE',
-    tableName: 'user_goals',
+    tableName: 'user_dreams',
     recordId: id,
     oldData: oldRow as Record<string, unknown>,
     success: !error,

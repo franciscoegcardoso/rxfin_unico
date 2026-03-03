@@ -5,17 +5,16 @@ import { Loader2 } from 'lucide-react';
 
 /**
  * Resolve the redirect route for an authenticated user.
- * Uses onboarding_phase: not_started → /onboarding, completed → returning_user_route or /inicio.
+ * Uses get_user_profile_settings (onboarding_state JOIN) for onboarding_completed.
  */
-async function resolveRedirectRoute(userId: string): Promise<string> {
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('onboarding_phase')
-    .eq('id', userId)
-    .single();
-
-  const phase = (profile as { onboarding_phase?: string } | null)?.onboarding_phase;
-  if (phase !== 'completed') {
+async function resolveRedirectRoute(): Promise<string> {
+  const { data, error } = await supabase.rpc('get_user_profile_settings');
+  if (error) {
+    console.error('[AuthCallback] get_user_profile_settings error:', error);
+    return '/inicio';
+  }
+  const profile = (data as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
+  if (profile?.onboarding_completed !== true) {
     return '/onboarding';
   }
 
@@ -50,14 +49,14 @@ const AuthCallback = () => {
       }, 2000);
     }, 10000);
 
-    const handleAuthenticated = async (userId: string) => {
+    const handleAuthenticated = async () => {
       clearTimeout(timeout);
       if (isPopup) {
         window.close();
         return;
       }
       try {
-        const route = await resolveRedirectRoute(userId);
+        const route = await resolveRedirectRoute();
         navigate(route, { replace: true });
       } catch (err) {
         console.error('[AuthCallback] Error resolving redirect:', err);
@@ -67,13 +66,13 @@ const AuthCallback = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        handleAuthenticated(session.user.id);
+        handleAuthenticated();
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        handleAuthenticated(session.user.id);
+        handleAuthenticated();
       }
     });
 

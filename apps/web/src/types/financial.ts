@@ -440,7 +440,7 @@ export interface FinancialConfig {
   sharedWith: SharedPerson[];
   incomeItems: IncomeItem[];
   expenseItems: ExpenseItem[];
-  goals: FinancialGoal[];
+  dreams: FinancialGoal[];
   assets: Asset[];
   monthlyEntries: MonthlyEntry[];
   assetMonthlyEntries: AssetMonthlyEntry[];
