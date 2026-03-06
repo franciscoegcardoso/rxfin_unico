@@ -14,6 +14,7 @@ Plataforma brasileira de finanças pessoais com foco em:
 - Gestão de ativos (veículos, imóveis, seguros, consórcios, financiamentos)
 - IR (importação de declaração, comprovantes, chat fiscal com IA)
 - App mobile (React Native/Expo)
+- 
 
 ## Arquitetura
 
