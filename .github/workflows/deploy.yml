@@ -1,36 +1,30 @@
-name: Deploy
-
+name: Deploy Pipeline
 on:
   push:
     branches: [main]
 
 jobs:
-  notify:
+  pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Detect migrations
+      - name: Detectar migrações
         id: migrations
         run: |
           if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            # First push or force push: consider as having migrations if any exist
-            HAS_MIGRATIONS=$(git ls-files 'apps/web/supabase/migrations/' 'supabase/migrations/' 2>/dev/null | wc -l)
-            [ "$HAS_MIGRATIONS" -gt 0 ] && echo "has_migrations=true" >> $GITHUB_OUTPUT || echo "has_migrations=false" >> $GITHUB_OUTPUT
+            CHANGED=$(git ls-files apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
           else
-            CHANGED=$(git diff --name-only "${{ github.event.before }}" HEAD -- apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
-            if [ -n "$CHANGED" ]; then
-              echo "has_migrations=true" >> $GITHUB_OUTPUT
-            else
-              echo "has_migrations=false" >> $GITHUB_OUTPUT
-            fi
+            CHANGED=$(git diff --name-only ${{ github.event.before }} HEAD -- apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
           fi
+          HAS=$([ -n "$CHANGED" ] && echo true || echo false)
+          echo "has_migrations=$HAS" >> $GITHUB_OUTPUT
 
-      - name: Notify n8n webhook
+      - name: Notificar n8n
         run: |
-          curl -sS -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -d '{"branch":"${{ github.ref_name }}","commit":"${{ github.sha }}","has_migrations":${{ steps.migrations.outputs.has_migrations }},"pusher":"${{ github.actor }}"}'
+            -H "x-webhook-secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d "{\"branch\":\"${{ github.ref_name }}\",\"commit\":\"${{ github.sha }}\",\"has_migrations\":${{ steps.migrations.outputs.has_migrations }},\"pusher\":\"${{ github.actor }}\"}"
