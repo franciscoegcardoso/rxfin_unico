@@ -60,7 +60,6 @@ export default function AdminDashboard() {
           usersRes,
           pagesActiveRes,
           pagesTotalRes,
-          leadsRes,
           automationsRes,
           aiFeedbackRes,
           pagesListRes,
@@ -70,7 +69,6 @@ export default function AdminDashboard() {
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('pages').select('*', { count: 'exact', head: true }).eq('is_active_users', true),
           supabase.from('pages').select('*', { count: 'exact', head: true }),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('crm_status', 'lead'),
           supabase.from('crm_automations').select('*', { count: 'exact', head: true }).eq('is_active', true),
           supabase.from('ai_feedback').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
           supabase.from('pages').select('slug, title, path, is_active_users, page_groups(name)').order('order_index'),
@@ -78,17 +76,13 @@ export default function AdminDashboard() {
           supabase.rpc('get_admin_dashboard_chart_data'),
         ]);
 
-        if (leadsRes.error) {
-          console.warn('[AdminDashboard] profiles.crm_status (leads count) failed — column may be missing:', leadsRes.error.message);
-        }
-
         const m30 = (metrics30dRes.data as Record<string, number>) ?? {};
 
         setMetrics({
           totalUsers: usersRes.count ?? 0,
           activePages: pagesActiveRes.count ?? 0,
           totalPages: pagesTotalRes.count ?? 0,
-          crmLeads: leadsRes.error ? 0 : (leadsRes.count ?? 0),
+          crmLeads: 0,
           automationsActive: automationsRes.count ?? 0,
           aiFeedbackPending: aiFeedbackRes.count ?? 0,
           activeUsers30d: m30.active_users_30d ?? 0,
