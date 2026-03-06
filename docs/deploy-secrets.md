@@ -1,4 +1,4 @@
-# Secrets para deploy (GitHub Actions) 
+# Secrets para deploy (GitHub Actions)  
 
 Configure estes secrets no repositório em **Settings → Secrets and variables → Actions** para que os workflows de deploy e notificação funcionem.
 
