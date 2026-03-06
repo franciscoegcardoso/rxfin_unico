@@ -34,7 +34,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           <p className="text-sm text-muted-foreground">{period}</p>
           <p
             className={cn(
-              "font-sans font-bold tracking-tight leading-none tabular-nums text-foreground text-[40px] md:text-[48px] truncate",
+              "font-numeric font-bold tracking-[-0.02em] leading-none tabular-nums text-foreground text-[40px] md:text-[48px] truncate",
               hidden && "select-none"
             )}
           >
@@ -48,7 +48,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             )}
             <span
               className={cn(
-                "text-sm font-sans font-semibold tabular-nums tracking-tight",
+                "text-sm font-numeric font-semibold tabular-nums tracking-[-0.02em]",
                 isPositive ? "text-income" : "text-expense"
               )}
             >

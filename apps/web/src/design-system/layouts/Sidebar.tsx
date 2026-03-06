@@ -45,29 +45,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <TooltipProvider delayDuration={200}>
       <aside
         className={cn(
-          "flex flex-col shrink-0 bg-card border-r border-border h-screen overflow-hidden transition-all duration-200 ease-in-out",
+          "flex flex-col shrink-0 bg-sidebar border-r border-sidebar-border h-screen overflow-hidden transition-all duration-200 ease-in-out",
           collapsed ? "w-16" : "w-60"
         )}
       >
-        {/* Logo: ícone + RXFin (versão original) */}
-        <div className="flex h-14 items-center justify-between border-b border-border px-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => navigate("/inicio")}
-            className="flex items-center gap-2 min-w-0 overflow-hidden text-primary font-sans font-bold tracking-tight hover:opacity-90 transition-opacity"
-          >
-            <img
-              src={logoSrc}
-              alt="RXFin"
-              className="h-8 w-8 shrink-0 object-contain"
-            />
+        {/* SidebarHeader — enterprise */}
+        <div className="border-b border-sidebar-border px-4 py-3 min-h-[60px] shrink-0">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => navigate("/inicio")}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 shrink-0"
+            >
+              <img
+                src={logoSrc}
+                alt="RXFin"
+                className="h-6 w-6 object-contain"
+              />
+            </button>
             {!collapsed && (
-              <span className="truncate text-base">RXFin</span>
+              <span className="font-semibold text-sidebar-foreground text-[15px] tracking-tight">
+                RXFin.
+              </span>
             )}
-          </button>
+          </div>
         </div>
 
-        {/* Nav items */}
+        {/* Nav items — SidebarMenuButton style */}
         <nav className="flex-1 flex flex-col gap-0.5 p-2 overflow-y-auto min-h-0">
           {NAV_ITEMS.map((item) => {
             const active = isNavActive(location.pathname, item.path);
@@ -77,11 +81,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 key={item.path}
                 type="button"
                 onClick={() => navigate(item.path)}
+                data-active={active}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out",
-                  active
-                    ? "bg-accent text-accent-foreground border-l-2 border-l-primary"
-                    : "text-muted-foreground border-l-2 border-l-transparent hover:bg-accent/50 hover:text-foreground"
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13.5px] font-[450] transition-colors duration-150",
+                  "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-semibold",
+                  "data-[active=true]:border-l-2 data-[active=true]:border-white/70 data-[active=true]:pl-[10px]"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -101,48 +106,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </nav>
 
-        {/* Footer: Avatar + nome + toggle */}
+        {/* SidebarFooter — perfil */}
         <div
           className={cn(
-            "flex items-center gap-2 border-t border-border p-2 shrink-0",
-            collapsed ? "flex-col justify-center py-3 gap-2" : "px-3 py-2"
+            "border-t border-sidebar-border p-3 shrink-0",
+            collapsed ? "flex flex-col items-center justify-center" : ""
           )}
         >
           <div
             className={cn(
-              "flex items-center gap-2 min-w-0",
-              collapsed && "flex-col"
+              "flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-sidebar-accent transition-colors cursor-pointer",
+              collapsed ? "justify-center" : ""
             )}
           >
             <Avatar className="h-8 w-8 shrink-0">
-              <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+              <AvatarFallback className="text-xs bg-sidebar-accent text-sidebar-foreground">
                 {initials || "?"}
               </AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="truncate min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
+                <p className="text-[12px] font-semibold text-sidebar-foreground truncate">
                   {userName || "Usuário"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-[11px] text-sidebar-foreground/60 truncate">
                   {userEmail || ""}
                 </p>
               </div>
             )}
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={onToggle}
-            aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
+            {!collapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 ml-auto"
+                onClick={onToggle}
+                aria-label="Recolher menu"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
             )}
-          </Button>
+          </div>
+          {collapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 mt-1"
+              onClick={onToggle}
+              aria-label="Expandir menu"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </aside>
     </TooltipProvider>

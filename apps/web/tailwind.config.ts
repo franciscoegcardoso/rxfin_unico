@@ -29,6 +29,7 @@ export default {
         mono: ["JetBrains Mono", "Fira Code", "Courier New", "monospace"],
         display: ["Inter", "sans-serif"],
         syne: ["Syne", "sans-serif"],
+        numeric: ['"Plus Jakarta Sans"', "Inter", "sans-serif"],
       },
       fontSize: {
         "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
@@ -137,6 +138,9 @@ export default {
           axis: "hsl(var(--chart-axis))",
           grid: "hsl(var(--chart-grid))",
         },
+        "text-primary-c": "hsl(var(--color-text-primary) / <alpha-value>)",
+        "text-secondary-c": "hsl(var(--color-text-secondary) / <alpha-value>)",
+        "text-tertiary-c": "hsl(var(--color-text-tertiary) / <alpha-value>)",
       },
       borderRadius: {
         sm:    "calc(var(--radius) - 3px)",

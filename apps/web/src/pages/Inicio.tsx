@@ -575,7 +575,7 @@ const Inicio: React.FC = () => {
                   Saldo Líquido do Mês:{" "}
                   <span
                     className={cn(
-                      "font-sans font-semibold tabular-nums tracking-tight",
+                      "font-numeric font-semibold tabular-nums tracking-[-0.02em]",
                       saldoLiquido >= 0 ? "text-income" : "text-expense"
                     )}
                   >
@@ -688,7 +688,7 @@ const Inicio: React.FC = () => {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Receitas
                     </p>
-                    <p className="text-sm sm:text-lg font-sans font-semibold tabular-nums tracking-tight text-income truncate">
+                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-income truncate">
                       {isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
                     </p>
                   </div>
@@ -705,7 +705,7 @@ const Inicio: React.FC = () => {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Despesas
                     </p>
-                    <p className="text-sm sm:text-lg font-sans font-semibold tabular-nums tracking-tight text-expense truncate">
+                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-expense truncate">
                       {isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
                     </p>
                   </div>
@@ -738,7 +738,7 @@ const Inicio: React.FC = () => {
                     </p>
                     <p
                       className={cn(
-                        "text-sm sm:text-lg font-sans font-semibold tabular-nums tracking-tight truncate",
+                        "text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] truncate",
                         (monthSummary.balance ?? 0) >= 0
                           ? "text-income"
                           : "text-expense"
@@ -760,7 +760,7 @@ const Inicio: React.FC = () => {
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Lançamentos
                     </p>
-                    <p className="text-sm sm:text-lg font-sans font-semibold tabular-nums tracking-tight text-foreground truncate">
+                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-foreground truncate">
                       {monthSummary.count_total ?? "—"}
                     </p>
                   </div>

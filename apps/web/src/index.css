@@ -1,249 +1,236 @@
-/* ════════════════════════════════════════════════════════
-   RXFin Design System v2.0 — Tokens de Cor
-   Light : Branco puro + borda (padrão anexo dashboard)
-   Dark  : Charcoal neutro #111318 / #1A1C23 (padrão anexo dark)
-   Brand : Verde RXFin preservado em todos os acentos
-   ════════════════════════════════════════════════════════ */
-
-:root {
-  /* ── BRAND (identidade RXFin — nunca alterar) ── */
-  --color-brand-950: 161 85% 10%;
-  --color-brand-900: 161 82% 14%;
-  --color-brand-800: 161 80% 18%;
-  --color-brand-700: 161 79% 25%;
-  --color-brand-600: 161 72% 30%;
-  --color-brand-500: 161 65% 36%;
-  --color-brand-400: 161 55% 46%;
-  --color-brand-300: 161 50% 60%;
-  --color-brand-200: 161 50% 80%;
-  --color-brand-100: 161 50% 93%;
-  --color-brand-50:  161 50% 97%;
-
-  /* ── NEUTRALS ── */
-  --color-neutral-950: 222 18% 8%;
-  --color-neutral-900: 222 16% 14%;
-  --color-neutral-800: 220 14% 22%;
-  --color-neutral-700: 220 12% 32%;
-  --color-neutral-600: 218 10% 44%;
-  --color-neutral-500: 216 8%  56%;
-  --color-neutral-400: 214 8%  68%;
-  --color-neutral-300: 213 10% 80%;
-  --color-neutral-200: 213 12% 88%;
-  --color-neutral-150: 214 14% 92%;
-  --color-neutral-100: 215 16% 95%;
-  --color-neutral-50:  216 20% 97%;
-  --color-neutral-25:  220 25% 99%;
-
-  /* ── SEMANTIC ── */
-  --color-income:      142 71% 40%;
-  --color-income-bg:   142 55% 94%;
-  --color-expense:     0 72% 51%;
-  --color-expense-bg:  0 72% 96%;
-  --color-warning:     38 90% 48%;
-  --color-warning-bg:  38 90% 95%;
-  --color-info:        214 89% 50%;
-  --color-info-bg:     214 89% 95%;
-
-  /* ── SURFACES LIGHT ──
-     Fundo de página : branco puro (igual ao anexo)
-     Cards           : branco puro — elevação via borda + shadow-sm
-     Inputs/alt rows : cinza muito suave
-  ── */
-  --color-surface-base:    0 0% 100%;      /* #FFFFFF */
-  --color-surface-raised:  0 0% 100%;      /* #FFFFFF */
-  --color-surface-overlay: 0 0% 100%;      /* #FFFFFF */
-  --color-surface-sunken:  210 20% 97%;    /* #F5F7FA */
-
-  /* ── BORDERS LIGHT — borda define elevação, não sombra pesada ── */
-  --color-border-subtle:   210 16% 93%;    /* #EBEEF2 */
-  --color-border-default:  210 14% 89%;    /* #E2E6EC */
-  --color-border-strong:   210 12% 78%;    /* #C4CAD6 */
-
-  /* ── TEXT LIGHT ── */
-  --color-text-primary:    220 26% 14%;    /* #1A2035 */
-  --color-text-secondary:  218 14% 42%;    /* #5D677E */
-  --color-text-tertiary:   216 10% 62%;    /* #919BAA */
-  --color-text-inverse:    0 0% 100%;
-  --color-text-brand:      var(--color-brand-700);
-
-  /* ── SIDEBAR LIGHT — verde vibrante do anexo dashboard ── */
-  --sidebar-background:         161 46% 20%;   /* #1B4D35 */
-  --sidebar-foreground:         160 30% 88%;   /* #D4EBE1 */
-  --sidebar-primary:            161 79% 25%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:             161 46% 16%;   /* #163D2A hover */
-  --sidebar-accent-foreground:  0 0% 100%;
-  --sidebar-border:             161 46% 16%;
-  --sidebar-ring:               var(--color-brand-400);
-
-  /* ── ALIASES — retrocompatibilidade total ── */
-  --background:           var(--color-surface-base);
-  --foreground:           var(--color-text-primary);
-  --card:                 var(--color-surface-raised);
-  --card-foreground:      var(--color-text-primary);
-  --popover:              var(--color-surface-overlay);
-  --popover-foreground:   var(--color-text-primary);
-  --primary:              var(--color-brand-700);
-  --primary-foreground:   0 0% 100%;
-  --secondary:            var(--color-neutral-100);
-  --secondary-foreground: var(--color-text-primary);
-  --muted:                var(--color-neutral-100);
-  --muted-foreground:     var(--color-text-secondary);
-  --accent:               var(--color-brand-100);
-  --accent-foreground:    var(--color-brand-700);
-  --destructive:          var(--color-expense);
-  --destructive-foreground: 0 0% 100%;
-  --border:               var(--color-border-default);
-  --input:                var(--color-border-default);
-  --ring:                 var(--color-brand-700);
-  --radius:               0.5rem;
-  --income:               var(--color-income);
-  --expense:              var(--color-expense);
-  --success:              var(--color-income);
-  --success-foreground:   0 0% 100%;
-
-  /* ── CHART PALETTE ── */
-  --chart-1: var(--color-brand-700);
-  --chart-2: var(--color-income);
-  --chart-3: var(--color-expense);
-  --chart-4: 214 89% 50%;
-  --chart-5: 38 90% 48%;
-  --chart-6: 271 68% 54%;
-  --chart-axis: var(--color-text-tertiary);
-  --chart-grid:  var(--color-border-subtle);
-
-  /* ── SHADOWS LIGHT — mínimas, borda faz o trabalho ── */
-  --shadow-xs: 0 1px 2px 0 hsl(220 18% 10% / 0.04);
-  --shadow-sm: 0 1px 3px 0 hsl(220 18% 10% / 0.06), 0 1px 2px -1px hsl(220 18% 10% / 0.04);
-  --shadow-md: 0 4px 6px -1px hsl(220 18% 10% / 0.07), 0 2px 4px -2px hsl(220 18% 10% / 0.04);
-  --shadow-lg: 0 10px 15px -3px hsl(220 18% 10% / 0.08), 0 4px 6px -4px hsl(220 18% 10% / 0.04);
-  --shadow-xl: 0 20px 25px -5px hsl(220 18% 10% / 0.10), 0 8px 10px -6px hsl(220 18% 10% / 0.04);
-  --shadow-glow: 0 0 20px hsl(var(--color-brand-700) / 0.15);
-
-  /* ── SPACING (base 4px) ── */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-5:  1.25rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-
-  /* ── TYPOGRAPHY SCALE ── */
-  --text-xs:   0.75rem;
-  --text-sm:   0.875rem;
-  --text-base: 1rem;
-  --text-lg:   1.125rem;
-  --text-xl:   1.25rem;
-  --text-2xl:  1.5rem;
-  --text-3xl:  1.875rem;
-  --text-4xl:  2.25rem;
-
-  /* ── GRADIENTS ── */
-  --gradient-primary: linear-gradient(135deg, hsl(var(--color-brand-700)), hsl(var(--color-brand-500)));
-  --gradient-surface: linear-gradient(180deg, hsl(var(--color-neutral-25)), hsl(0 0% 100%));
-  --gradient-hero: linear-gradient(160deg, hsl(var(--color-brand-100)) 0%, hsl(0 0% 98%) 60%);
-}
-
-/* ════════════════════════════════════════════════════════
-   DARK MODE — Charcoal Neutro
-   Background : #111318  → 228 16% 8%
-   Cards      : #1A1C23  → 228 14% 12%
-   Sidebar    : #0D0F13  → mais escuro que o fundo
-   Acentos    : verde RXFin em tons mais luminosos
-   ════════════════════════════════════════════════════════ */
-.dark,
-[data-theme="dark"] {
-  /* ── SURFACES DARK ── */
-  --color-surface-base:    228 16% 8%;     /* #111318 */
-  --color-surface-raised:  228 14% 12%;    /* #1A1C23 */
-  --color-surface-overlay: 228 13% 15%;    /* #21242E */
-  --color-surface-sunken:  228 17% 6%;     /* #0D0F13 */
-
-  /* ── BORDERS DARK ── */
-  --color-border-subtle:   228 12% 18%;    /* #262930 */
-  --color-border-default:  228 10% 22%;    /* #2E3140 */
-  --color-border-strong:   228 9%  30%;    /* #424659 */
-
-  /* ── TEXT DARK ── */
-  --color-text-primary:    220 14% 92%;    /* #E6E8F0 */
-  --color-text-secondary:  220 10% 64%;    /* #9CA3B5 */
-  --color-text-tertiary:   220 8%  45%;    /* #696F82 */
-  --color-text-inverse:    228 16% 8%;
-
-  /* ── SEMANTIC DARK — ajustados para contraste ── */
-  --color-income:      142 60% 48%;
-  --color-income-bg:   142 40% 10%;
-  --color-expense:     0 68% 58%;
-  --color-expense-bg:  0 50% 10%;
-  --color-warning:     38 85% 55%;
-  --color-warning-bg:  38 60% 10%;
-  --color-info:        214 80% 58%;
-  --color-info-bg:     214 60% 10%;
-
-  /* ── SIDEBAR DARK — mais escura que o fundo de página ── */
-  --sidebar-background:         228 17% 6%;    /* #0D0F13 */
-  --sidebar-foreground:         220 12% 72%;
-  --sidebar-primary:            var(--color-brand-500);
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent:             228 16% 10%;
-  --sidebar-accent-foreground:  220 14% 92%;
-  --sidebar-border:             228 12% 13%;
-  --sidebar-ring:               var(--color-brand-400);
-
-  /* ── ALIASES DARK ── */
-  --background:           var(--color-surface-base);
-  --foreground:           var(--color-text-primary);
-  --card:                 var(--color-surface-raised);
-  --card-foreground:      var(--color-text-primary);
-  --popover:              var(--color-surface-overlay);
-  --popover-foreground:   var(--color-text-primary);
-  --primary:              var(--color-brand-500);
-  --primary-foreground:   0 0% 100%;
-  --secondary:            228 14% 17%;
-  --secondary-foreground: var(--color-text-primary);
-  --muted:                228 14% 17%;
-  --muted-foreground:     var(--color-text-secondary);
-  --accent:               var(--color-brand-900);
-  --accent-foreground:    var(--color-brand-300);
-  --destructive:          var(--color-expense);
-  --destructive-foreground: 0 0% 100%;
-  --border:               var(--color-border-default);
-  --input:                var(--color-border-default);
-  --ring:                 var(--color-brand-500);
-  --income:               var(--color-income);
-  --expense:              var(--color-expense);
-  --success:              var(--color-income);
-  --success-foreground:   0 0% 100%;
-
-  /* ── CHART DARK ── */
-  --chart-1: var(--color-brand-400);
-  --chart-2: var(--color-income);
-  --chart-3: var(--color-expense);
-  --chart-4: 214 75% 60%;
-  --chart-5: 38 85% 55%;
-  --chart-6: 271 60% 62%;
-  --chart-axis: var(--color-text-tertiary);
-  --chart-grid:  var(--color-border-subtle);
-
-  /* ── SHADOWS DARK — mais sutis ── */
-  --shadow-xs: 0 1px 2px 0 hsl(228 20% 4% / 0.30);
-  --shadow-sm: 0 1px 3px 0 hsl(228 20% 4% / 0.40);
-  --shadow-md: 0 4px 6px -1px hsl(228 20% 4% / 0.50);
-  --shadow-lg: 0 10px 15px -3px hsl(228 20% 4% / 0.60);
-  --shadow-xl: 0 20px 25px -5px hsl(228 20% 4% / 0.70);
-  --shadow-glow: 0 0 24px hsl(var(--color-brand-500) / 0.18);
-  --gradient-hero: linear-gradient(160deg, hsl(var(--color-surface-base)) 0%, hsl(var(--color-surface-sunken)) 60%);
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* ── Brand — Verde RXFin ── */
+    --color-brand-950: 161 85% 10%;
+    --color-brand-900: 161 82% 14%;
+    --color-brand-800: 161 80% 18%;
+    --color-brand-700: 161 79% 25%;
+    --color-brand-600: 161 72% 30%;
+    --color-brand-500: 161 65% 36%;
+    --color-brand-400: 161 55% 46%;
+    --color-brand-300: 161 50% 60%;
+    --color-brand-200: 161 50% 80%;
+    --color-brand-100: 161 50% 93%;
+    --color-brand-50:  161 50% 97%;
+
+    /* ── Surfaces — Light ── */
+    --color-surface-base:    0 0% 100%;
+    --color-surface-raised:  0 0% 100%;
+    --color-surface-overlay: 0 0% 100%;
+    --color-surface-sunken:  210 20% 97%;
+
+    /* ── Borders — Light ── */
+    --color-border-subtle:   210 16% 93%;
+    --color-border-default:  210 14% 89%;
+    --color-border-strong:   210 12% 80%;
+
+    /* ── Neutrals (backward-compat) ── */
+    --color-neutral-25:  220 25% 99%;
+    --color-neutral-50:  216 20% 97%;
+    --color-neutral-100: 215 16% 95%;
+    --color-neutral-150: 214 14% 92%;
+    --color-neutral-200: 213 12% 88%;
+    --color-neutral-300: 213 10% 80%;
+    --color-neutral-400: 214 8% 68%;
+    --color-neutral-500: 216 8% 56%;
+    --color-neutral-600: 218 10% 44%;
+    --color-neutral-700: 220 12% 32%;
+    --color-neutral-800: 220 14% 22%;
+    --color-neutral-900: 222 16% 14%;
+    --color-neutral-950: 222 18% 8%;
+
+    /* ── Text — Light ── */
+    --color-text-primary:    220 26% 14%;
+    --color-text-secondary:  218 14% 42%;
+    --color-text-tertiary:   216 10% 62%;
+    --color-text-disabled:   216 8% 75%;
+
+    /* ── Semantic ── */
+    --color-income:          142 71% 40%;
+    --color-income-bg:       142 55% 94%;
+    --color-expense:         0 72% 51%;
+    --color-expense-bg:      0 72% 96%;
+    --color-warning:         38 90% 48%;
+    --color-warning-bg:      38 90% 95%;
+    --color-info:            214 89% 52%;
+    --color-info-bg:         214 89% 95%;
+
+    /* ── Sidebar — Light ── */
+    --sidebar-background:    161 46% 20%;
+    --sidebar-foreground:    160 30% 88%;
+    --sidebar-primary:       161 79% 25%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:        161 42% 24%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border:        161 46% 16%;
+    --sidebar-ring:          161 55% 46%;
+
+    /* ── Shadows ── */
+    --shadow-xs: 0 1px 2px 0 hsl(220 26% 14% / 0.04);
+    --shadow-sm: 0 1px 3px 0 hsl(220 26% 14% / 0.06), 0 1px 2px -1px hsl(220 26% 14% / 0.04);
+    --shadow-md: 0 4px 6px -1px hsl(220 26% 14% / 0.07), 0 2px 4px -2px hsl(220 26% 14% / 0.04);
+    --shadow-lg: 0 10px 15px -3px hsl(220 26% 14% / 0.08), 0 4px 6px -4px hsl(220 26% 14% / 0.04);
+    --shadow-xl: 0 20px 25px -5px hsl(220 26% 14% / 0.08), 0 8px 10px -6px hsl(220 26% 14% / 0.04);
+    --shadow-glow: 0 0 20px hsl(var(--color-brand-700) / 0.15);
+
+    /* ── Radius ── */
+    --radius: 0.5rem;
+    --radius-sm: 0.375rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /* ── Typography ── */
+    --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+    --font-numeric: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    --font-mono:    'DM Mono', 'Fira Code', monospace;
+
+    /* ── Spacing base ── */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* ── ALIASES backward-compat (shadcn/ui) ── */
+    --background:   var(--color-surface-base);
+    --foreground:   var(--color-text-primary);
+    --card:         var(--color-surface-raised);
+    --card-foreground: var(--color-text-primary);
+    --popover:      var(--color-surface-overlay);
+    --popover-foreground: var(--color-text-primary);
+    --primary:      var(--color-brand-700);
+    --primary-foreground: 0 0% 100%;
+    --secondary:    var(--color-surface-sunken);
+    --secondary-foreground: var(--color-text-primary);
+    --muted:        var(--color-surface-sunken);
+    --muted-foreground: var(--color-text-tertiary);
+    --accent:       var(--color-surface-sunken);
+    --accent-foreground: var(--color-text-primary);
+    --destructive:  var(--color-expense);
+    --destructive-foreground: 0 0% 100%;
+    --border:       var(--color-border-default);
+    --input:        var(--color-border-default);
+    --ring:         var(--color-brand-500);
+    --gradient-primary: linear-gradient(135deg, hsl(161 79% 25%), hsl(161 65% 35%));
+    --income:       var(--color-income);
+    --expense:      var(--color-expense);
+    --success:      var(--color-income);
+    --success-foreground: 0 0% 100%;
+    --chart-1: var(--color-brand-700);
+    --chart-2: var(--color-income);
+    --chart-3: var(--color-expense);
+    --chart-4: 214 89% 50%;
+    --chart-5: 38 90% 48%;
+    --chart-6: 271 68% 54%;
+    --chart-axis: var(--color-text-tertiary);
+    --chart-grid: var(--color-border-subtle);
+    --gradient-hero: linear-gradient(160deg, hsl(var(--color-brand-100)) 0%, hsl(0 0% 98%) 60%);
+    --color-text-brand: var(--color-brand-700);
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    /* ── Surfaces — Dark ── */
+    --color-surface-base:    228 16% 8%;
+    --color-surface-raised:  228 14% 12%;
+    --color-surface-overlay: 228 13% 15%;
+    --color-surface-sunken:  228 17% 6%;
+
+    /* ── Borders — Dark ── */
+    --color-border-subtle:   228 12% 18%;
+    --color-border-default:  228 10% 22%;
+    --color-border-strong:   228 8% 32%;
+
+    /* ── Text — Dark ── */
+    --color-text-primary:    220 14% 92%;
+    --color-text-secondary:  220 10% 64%;
+    --color-text-tertiary:   220 8% 45%;
+    --color-text-disabled:   220 6% 32%;
+
+    /* ── Semantic — Dark ── */
+    --color-income:          142 60% 48%;
+    --color-income-bg:       142 40% 10%;
+    --color-expense:         0 68% 58%;
+    --color-expense-bg:      0 50% 10%;
+    --color-warning:         38 85% 55%;
+    --color-warning-bg:      38 60% 10%;
+    --color-info:            214 80% 62%;
+    --color-info-bg:         214 60% 10%;
+
+    /* ── Sidebar — Dark ── */
+    --sidebar-background:    228 17% 6%;
+    --sidebar-foreground:    220 12% 72%;
+    --sidebar-primary:       161 60% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent:        228 14% 14%;
+    --sidebar-accent-foreground: 220 14% 92%;
+    --sidebar-border:        228 12% 13%;
+    --sidebar-ring:          161 55% 46%;
+
+    /* ── Shadows — Dark ── */
+    --shadow-xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.4), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.5), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.6), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.7), 0 8px 10px -6px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 24px hsl(var(--color-brand-500) / 0.18);
+
+    /* ── ALIASES backward-compat (shadcn/ui) ── */
+    --background:   var(--color-surface-base);
+    --foreground:   var(--color-text-primary);
+    --card:         var(--color-surface-raised);
+    --card-foreground: var(--color-text-primary);
+    --popover:      var(--color-surface-overlay);
+    --popover-foreground: var(--color-text-primary);
+    --primary:      161 60% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:    var(--color-surface-sunken);
+    --secondary-foreground: var(--color-text-primary);
+    --muted:        var(--color-surface-sunken);
+    --muted-foreground: var(--color-text-tertiary);
+    --accent:       var(--color-surface-raised);
+    --accent-foreground: var(--color-text-primary);
+    --destructive:  0 68% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border:       var(--color-border-default);
+    --input:        var(--color-border-default);
+    --ring:         161 55% 46%;
+    --gradient-primary: linear-gradient(135deg, hsl(161 60% 35%), hsl(161 50% 42%));
+    --sidebar-background: var(--color-surface-sunken);
+    --sidebar-foreground: var(--color-text-secondary);
+    --sidebar-accent: var(--color-surface-raised);
+    --sidebar-accent-foreground: var(--color-text-primary);
+    --sidebar-border: var(--color-border-subtle);
+    --income:       var(--color-income);
+    --expense:      var(--color-expense);
+    --success:      var(--color-income);
+    --success-foreground: 0 0% 100%;
+    --chart-1: var(--color-brand-400);
+    --chart-2: var(--color-income);
+    --chart-3: var(--color-expense);
+    --chart-4: 214 75% 60%;
+    --chart-5: 38 85% 55%;
+    --chart-6: 271 60% 62%;
+    --chart-axis: var(--color-text-tertiary);
+    --chart-grid: var(--color-border-subtle);
+    --gradient-hero: linear-gradient(160deg, hsl(var(--color-surface-base)) 0%, hsl(var(--color-surface-sunken)) 60%);
+    --color-text-brand: var(--color-brand-400);
+  }
+
+  /* ── Card base style ── */
+  .card, [data-card] {
+    border: 1px solid hsl(var(--color-border-default));
+    box-shadow: var(--shadow-sm);
+  }
 
   /* ─── Base styles ─── */
   * {
@@ -253,7 +240,7 @@
   html { @apply text-sm; }
   html, body { overflow-x: hidden; max-width: 100vw; }
   body {
-    font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+    font-family: var(--font-sans);
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv11", "ss01";
     font-size: 14px;
@@ -410,4 +397,76 @@
   .safe-area-bottom {
     padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
   }
+
+  /* Surfaces (Fase 0) */
+  .surface-base    { background: hsl(var(--color-surface-base)); }
+  .surface-raised  { background: hsl(var(--color-surface-raised)); box-shadow: var(--shadow-sm); }
+  .surface-overlay { background: hsl(var(--color-surface-overlay)); box-shadow: var(--shadow-lg); }
+  .surface-sunken  { background: hsl(var(--color-surface-sunken)); }
+
+  /* Text semantic (Fase 0) */
+  .text-primary-content   { color: hsl(var(--color-text-primary)); }
+  .text-secondary-content { color: hsl(var(--color-text-secondary)); }
+  .text-tertiary-content  { color: hsl(var(--color-text-tertiary)); }
+  .text-brand             { color: hsl(var(--color-brand-700)); }
+  .text-income            { color: hsl(var(--color-income)); }
+  .text-expense           { color: hsl(var(--color-expense)); }
+
+  /* Badges (Fase 0) */
+  .badge-income  { color: hsl(var(--color-income));   background: hsl(var(--color-income) / 0.1);  }
+  .badge-expense { color: hsl(var(--color-expense));  background: hsl(var(--color-expense) / 0.1); }
+  .badge-warning { color: hsl(var(--color-warning));  background: hsl(var(--color-warning) / 0.1); }
+  .badge-info    { color: hsl(var(--color-info));     background: hsl(var(--color-info) / 0.1);    }
+
+  /* Typography — financeira (Fase 0) */
+  .font-numeric {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "kern" 1;
+    letter-spacing: -0.02em;
+  }
+  .font-mono-code {
+    font-family: 'DM Mono', 'Fira Code', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Layout grids (Fase 0) */
+  .page-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  @media (min-width: 768px) {
+    .page-grid { grid-template-columns: repeat(8, 1fr); }
+  }
+  @media (min-width: 1025px) {
+    .page-grid { grid-template-columns: repeat(12, 1fr); }
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  @media (min-width: 1025px) {
+    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .content-zone {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 768px) {
+    .content-zone { padding-left: 1.5rem; padding-right: 1.5rem; }
+  }
+  @media (min-width: 1025px) {
+    .content-zone { padding-left: 2rem; padding-right: 2rem; }
+  }
+
+  /* Safe area mobile (Fase 0) */
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 }

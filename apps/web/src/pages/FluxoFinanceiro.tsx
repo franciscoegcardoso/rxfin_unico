@@ -14,7 +14,7 @@ import {
   ComposedChart,
 } from 'recharts';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,7 +95,7 @@ const FluxoFinanceiro: React.FC = () => {
       <div className="space-y-6">
         <PageHeader
           title="Fluxo Financeiro"
-          actions={
+          action={
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mês anterior">
                 <ChevronLeft className="h-4 w-4" />
