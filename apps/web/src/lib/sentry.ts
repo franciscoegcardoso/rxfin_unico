@@ -4,10 +4,7 @@ export function initSentry() {
   if (import.meta.env.MODE === 'development') return;
 
   const dsn = import.meta.env.VITE_SENTRY_DSN;
-  if (!dsn) {
-    console.warn('[RXFin] VITE_SENTRY_DSN não configurada — Sentry desativado');
-    return;
-  }
+  if (!dsn) return;
 
   Sentry.init({
     dsn,
