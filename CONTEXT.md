@@ -13,7 +13,7 @@ Plataforma brasileira de finanças pessoais com foco em:
 - Simuladores públicos (FIPE, custo-hora, comparativo de carros)
 - Gestão de ativos (veículos, imóveis, seguros, consórcios, financiamentos)
 - IR (importação de declaração, comprovantes, chat fiscal com IA)
-- App mobile (React Native/Expo)
+- App mobile (React Native/Expo) 
 
 ## Arquitetura
 
