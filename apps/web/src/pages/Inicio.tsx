@@ -557,33 +557,47 @@ const Inicio: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center justify-between"
+          className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start"
         >
-          <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14 border-2 border-border">
-              <AvatarImage src={avatarUrl} alt={displayFirstName} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                {getInitials(displayFirstName || "U")}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Olá, {displayFirstName || "Usuário"}! 👋
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Saldo Líquido do Mês:{" "}
-                <span
-                  className={cn(
-                    "font-sans font-semibold tabular-nums tracking-tight",
-                    saldoLiquido >= 0 ? "text-income" : "text-expense"
-                  )}
-                >
-                  {formatCurrencyFull(saldoLiquido)}
-                </span>
-              </p>
+          <div className="flex items-center justify-between min-w-0">
+            <div className="flex items-center gap-4 min-w-0">
+              <Avatar className="h-14 w-14 border-2 border-border shrink-0">
+                <AvatarImage src={avatarUrl} alt={displayFirstName} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                  {getInitials(displayFirstName || "U")}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-foreground">
+                  Olá, {displayFirstName || "Usuário"}! 👋
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Saldo Líquido do Mês:{" "}
+                  <span
+                    className={cn(
+                      "font-sans font-semibold tabular-nums tracking-tight",
+                      saldoLiquido >= 0 ? "text-income" : "text-expense"
+                    )}
+                  >
+                    {formatCurrencyFull(saldoLiquido)}
+                  </span>
+                </p>
+              </div>
             </div>
+            <VisibilityToggle />
           </div>
-          <VisibilityToggle />
+          {dashboardLoading ? (
+            <Skeleton className="h-32 w-full rounded-xl" />
+          ) : (
+            <div className="w-full min-w-0">
+              <BalanceCard
+                balance={saldoLiquido}
+                variationPercent={balanceVariation.pct}
+                variationValue={balanceVariation.value}
+                period={periodLabel}
+              />
+            </div>
+          )}
         </motion.div>
 
         {isDemoMode && <OnboardingInsightCard />}
@@ -594,17 +608,6 @@ const Inicio: React.FC = () => {
           <UpcomingEventsCard />
           <PackagesSummaryCard />
         </div>
-
-        {dashboardLoading ? (
-          <Skeleton className="h-32 w-full rounded-xl" />
-        ) : (
-          <BalanceCard
-            balance={saldoLiquido}
-            variationPercent={balanceVariation.pct}
-            variationValue={balanceVariation.value}
-            period={periodLabel}
-          />
-        )}
 
         <QuickActions />
 

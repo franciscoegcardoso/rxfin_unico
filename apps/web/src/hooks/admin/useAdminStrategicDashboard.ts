@@ -127,13 +127,47 @@ export interface AdminStrategicDashboardData {
   generated_at?: string;
 }
 
+const ARR_TARGET = 1_000_000;
+const MRR_TARGET = 83_333;
+
+function emptyStrategicData(): AdminStrategicDashboardData {
+  return {
+    generated_at: new Date().toISOString(),
+    valuation: {
+      current_arr: 0,
+      arr_target: ARR_TARGET,
+      current_mrr: 0,
+      mrr_target: MRR_TARGET,
+      paying_users: 0,
+      paying_target: 3333,
+      free_users: 0,
+      free_target: 66600,
+      conversion_rate: 0,
+      conversion_target_pct: 5,
+    },
+    roadmap: [],
+    aarrr: {},
+    campaigns: [],
+  };
+}
+
 export function useAdminStrategicDashboard() {
   return useQuery({
     queryKey: ['admin', 'strategic-dashboard'],
     queryFn: async (): Promise<AdminStrategicDashboardData | null> => {
-      const { data, error } = await supabase.rpc('get_admin_strategic_dashboard');
-      if (error) throw error;
-      return (data as AdminStrategicDashboardData) ?? null;
+      try {
+        const { data, error } = await supabase.rpc('get_admin_strategic_dashboard');
+        if (error) {
+          console.warn('[Estrategico] get_admin_strategic_dashboard RPC failed:', error.message);
+          return emptyStrategicData();
+        }
+        const raw = Array.isArray(data) ? data[0] : data;
+        const parsed = (raw as AdminStrategicDashboardData | null) ?? null;
+        return parsed ?? emptyStrategicData();
+      } catch (e) {
+        console.warn('[Estrategico] get_admin_strategic_dashboard error:', e);
+        return emptyStrategicData();
+      }
     },
     staleTime: 60 * 1000,
   });

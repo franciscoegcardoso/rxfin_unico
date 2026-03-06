@@ -981,7 +981,7 @@ export const Lancamentos: React.FC = () => {
               <CardContent>
                 <div className="h-[200px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'var(--income)' }, { name: 'Despesas', valor: totalExpense, fill: 'var(--expense)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                    <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(142, 71%, 32%)' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(0, 72%, 51%)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
