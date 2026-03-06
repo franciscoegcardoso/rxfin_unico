@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Crown, Car, CreditCard } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Crown, Car, CreditCard, ClipboardList, Calculator } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -101,6 +101,18 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
         { path: '/planejamento', label: 'Planejamento Mensal', icon: Calendar, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/planejamento-anual', label: 'Planejamento Anual', icon: CalendarRange, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/planejamento?tab=metas', label: 'Metas Mensais', icon: Target, accessLevel: 'free', canAccessAsAdmin: true },
+      ],
+    },
+    {
+      title: 'Controles', slug: 'controles', icon: ClipboardList, items: [
+        { path: '/recorrentes', label: 'Recorrentes', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
+        { path: '/contas', label: 'Contas a pagar/receber', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
+      ],
+    },
+    {
+      title: 'Simuladores', slug: 'simuladores', icon: Calculator, items: [
+        { path: '/simuladores', label: 'Hub Simuladores', icon: Calculator, accessLevel: 'free', canAccessAsAdmin: true },
+        { path: '/simuladores/veiculos/simulador-fipe', label: 'Simulador FIPE', icon: Car, accessLevel: 'free', canAccessAsAdmin: true },
       ],
     },
     {

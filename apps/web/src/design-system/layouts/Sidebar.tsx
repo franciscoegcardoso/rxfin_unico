@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, isNavActive } from "./nav-config";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,6 +12,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import logoRxfin from "@/assets/logo-rxfin-icon.png";
+import logoRxfinWhite from "@/assets/logo-rxfin-white.png";
 
 const STORAGE_KEY = "rxfin-sidebar-collapsed";
 
@@ -29,6 +32,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
+  const logoSrc = resolvedTheme === "dark" ? logoRxfinWhite : logoRxfin;
   const initials = userName
     .split(" ")
     .map((s) => s[0])
@@ -44,21 +49,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           collapsed ? "w-16" : "w-60"
         )}
       >
-        {/* Logo */}
+        {/* Logo: ícone + RXFin (versão original) */}
         <div className="flex h-14 items-center justify-between border-b border-border px-3 shrink-0">
           <button
             type="button"
             onClick={() => navigate("/inicio")}
-            className="flex items-center gap-2 min-w-0 overflow-hidden text-primary font-syne font-bold tracking-tight hover:opacity-90 transition-opacity"
+            className="flex items-center gap-2 min-w-0 overflow-hidden text-primary font-sans font-bold tracking-tight hover:opacity-90 transition-opacity"
           >
-            <span
-              className={cn(
-                "truncate transition-all duration-200",
-                collapsed ? "text-base shrink-0" : "text-xl"
-              )}
-            >
-              {collapsed ? "RX" : "RXFin"}
-            </span>
+            <img
+              src={logoSrc}
+              alt="RXFin"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
+            {!collapsed && (
+              <span className="truncate text-base">RXFin</span>
+            )}
           </button>
         </div>
 

@@ -8,8 +8,9 @@ const SESSION_KEY = 'demo-banner-minimized';
 
 export const DemoDataBanner: React.FC = () => {
   const { isDemoMode, isLoading } = useDemoMode();
+  // Padrão: minimizada para não sobrepor o conteúdo; só expande se o usuário já tiver clicado para expandir
   const [minimized, setMinimized] = useState(() => {
-    try { return sessionStorage.getItem(SESSION_KEY) === 'true'; } catch { return false; }
+    try { return sessionStorage.getItem(SESSION_KEY) !== 'false'; } catch { return true; }
   });
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export const DemoDataBanner: React.FC = () => {
 
   return (
     <div className="fixed top-14 left-0 right-0 z-40 w-full bg-destructive text-destructive-foreground">
-      <div className="max-w-[1800px] mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="max-w-[1800px] mx-auto px-4 py-1.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <p className="text-sm font-medium truncate">
