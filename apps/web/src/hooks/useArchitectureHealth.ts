@@ -42,10 +42,14 @@ export function useArchitectureHealth(autoRefreshMs = 0) {
     try {
       const { data: result, error: err } = await supabase.rpc('get_architecture_health_snapshot');
       if (err) throw err;
-      setData((result as ArchitectureHealthSnapshot) ?? null);
+      const raw = Array.isArray(result) ? result[0] : result;
+      const snapshot = (raw as ArchitectureHealthSnapshot | null) ?? null;
+      setData(snapshot && typeof snapshot === 'object' && 'rls' in snapshot ? snapshot : null);
       setLastRefresh(new Date());
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar snapshot');
+      const msg = e instanceof Error ? e.message : 'Erro ao carregar snapshot';
+      const isMissingRpc = typeof msg === 'string' && (msg.includes('get_architecture_health_snapshot') || msg.includes('function') || msg.includes('404') || msg.includes('PGRST'));
+      setError(isMissingRpc ? 'Snapshot de arquitetura indisponível (RPC não configurado neste ambiente).' : msg);
       setData(null);
     } finally {
       setLoading(false);

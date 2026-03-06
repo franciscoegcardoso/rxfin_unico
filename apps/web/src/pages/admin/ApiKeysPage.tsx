@@ -192,10 +192,10 @@ export default function ApiKeysPage() {
   }, [filtered]);
 
   useEffect(() => {
-    if (!loading && credentials.length >= 0) {
+    if (!loading && !error) {
       fetchExpirationSummary().then(setExpirationSummary);
     }
-  }, [loading, credentials.length, fetchExpirationSummary]);
+  }, [loading, error, fetchExpirationSummary]);
 
   useEffect(() => {
     const now = Date.now();

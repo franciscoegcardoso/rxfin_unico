@@ -86,6 +86,7 @@ const SECURITY_DEFINER_VIEWS = [
 
 export default function AdminArchitecturePage() {
   const { data: snapshot, loading, error, lastRefresh, refresh } = useArchitectureHealth(0);
+  const { data: fipeSummary, loading: fipeLoading, error: fipeError, refresh: fipeRefresh } = useFipeAdminSummary();
   const [completedIds, setCompletedIds] = useState<string[]>(() => getArchChecklistCompleted());
   const [cursorModal, setCursorModal] = useState<{ open: boolean; itemId: string | null }>({ open: false, itemId: null });
   const [activeTab, setActiveTab] = useState('saude');

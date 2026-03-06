@@ -103,9 +103,12 @@ export function useFipeAdminSummary() {
     try {
       const { data: result, error: err } = await supabase.rpc('get_fipe_admin_summary');
       if (err) throw err;
-      setData((result as FipeAdminSummary) ?? null);
+      const raw = Array.isArray(result) ? result[0] : result;
+      setData((raw as FipeAdminSummary) ?? null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar resumo FIPE');
+      const msg = e instanceof Error ? e.message : 'Erro ao carregar resumo FIPE';
+      const isMissingRpc = typeof msg === 'string' && (msg.includes('get_fipe_admin_summary') || msg.includes('function') || msg.includes('404') || msg.includes('PGRST'));
+      setError(isMissingRpc ? 'Resumo FIPE indisponível (RPC não configurado neste ambiente).' : msg);
       setData(null);
     } finally {
       setLoading(false);

@@ -38,9 +38,8 @@ Deno.serve(async (req) => {
     });
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
+    // Validar JWT: usar getUser() sem args para usar o header do client (compatível com Edge)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return jsonResponse(
         { code: "UNAUTHORIZED", error: "Invalid or expired token" },
