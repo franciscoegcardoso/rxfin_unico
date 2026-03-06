@@ -550,7 +550,7 @@ const Inicio: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="w-full max-w-full min-w-0 space-y-6">
         {errorBlock}
 
         <motion.div
@@ -611,9 +611,9 @@ const Inicio: React.FC = () => {
 
         <QuickActions />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <Card className="rounded-xl border border-border bg-card">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="min-w-0">
+            <Card className="rounded-xl border border-border bg-card h-full">
               <CardHeader className="pb-2 p-4">
                 <CardTitle className="text-base">Transações recentes</CardTitle>
               </CardHeader>
@@ -634,11 +634,13 @@ const Inicio: React.FC = () => {
             </Card>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0">
             <FluxoPlaceholderCard />
+          </div>
 
-            {showMetasMensais && top3Goals.length > 0 && (
-              <Card className="rounded-xl border border-border bg-card">
+          {showMetasMensais && top3Goals.length > 0 && (
+            <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+              <Card className="rounded-xl border border-border bg-card h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -667,8 +669,8 @@ const Inicio: React.FC = () => {
                   ))}
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {monthSummary && (

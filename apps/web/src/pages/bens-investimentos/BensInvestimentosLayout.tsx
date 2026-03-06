@@ -256,7 +256,7 @@ const BensInvestimentosLayout: React.FC = () => {
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
       <AppLayout>
-        <div className="space-y-4">
+        <div className="w-full max-w-full min-w-0 space-y-4">
           <PageHeader
             title="Bens e Investimentos"
             description="Gerencie seu patrimônio, consórcios e financiamentos"
@@ -516,9 +516,9 @@ const BensInvestimentosLayout: React.FC = () => {
 
             <div className="mt-4 space-y-4">
               {currentTab === 'overview' && (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                   {imoveis.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80 p-4">
+                    <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4" /> Imóveis</h3>
                         <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('imoveis')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
@@ -531,7 +531,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </Card>
                   )}
                   {investimentosList.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80 p-4">
+                    <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Investimentos</h3>
                         <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('investimentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
@@ -544,7 +544,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </Card>
                   )}
                   {(financiamentosList.length > 0 || consorciosList.length > 0) && (
-                    <Card className="rounded-[14px] border border-border/80 p-4">
+                    <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Financiamentos</h3>
                         <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('financiamentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
@@ -560,7 +560,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </Card>
                   )}
                   {segurosList.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80 p-4">
+                    <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Seguros</h3>
                         <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('seguros')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
@@ -569,7 +569,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </Card>
                   )}
                   {imoveis.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum dado de patrimônio no momento.</p>
+                    <p className="text-sm text-muted-foreground text-center py-8 col-span-full">Nenhum dado de patrimônio no momento.</p>
                   )}
                 </div>
               )}
