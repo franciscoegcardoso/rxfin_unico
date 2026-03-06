@@ -57,7 +57,7 @@ const PlanosTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8 w-full max-w-full xl:max-w-[95%] 2xl:max-w-[1800px] mx-auto">
+    <div className="space-y-8 w-full max-w-full min-w-0 mx-auto">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

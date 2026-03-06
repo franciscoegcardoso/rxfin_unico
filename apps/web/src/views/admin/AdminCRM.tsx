@@ -235,7 +235,7 @@ export default function AdminCRM() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[1600px] mx-auto px-4 py-6 space-y-4">
+      <div className="w-full max-w-full mx-auto px-4 py-6 space-y-4">
         <AdminPageHeader
           title="CRM"
           description={`Exibindo ${filtered.length} de ${users.length} usuários`}

@@ -91,7 +91,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
 
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto min-w-0">
-          <div className="max-w-full xl:max-w-[95%] 2xl:max-w-[1800px]">
+          <div className="w-full max-w-full min-w-0">
             <PageTransition>
               {children}
             </PageTransition>
@@ -135,7 +135,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
           </div>
         </aside>
         <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-full xl:max-w-[95%] 2xl:max-w-[1800px]">
+          <div className="w-full max-w-full min-w-0">
             <PageTransition>
               {children}
             </PageTransition>

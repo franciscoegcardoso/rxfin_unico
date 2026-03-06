@@ -145,7 +145,7 @@ export default function Hub() {
     <div className="min-h-screen bg-background">
       <PublicSimuladoresHeader />
 
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:py-12 space-y-10">
+      <main className="w-full max-w-full px-4 py-8 sm:py-12 space-y-10">
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-bold text-foreground tracking-tight">
             Simuladores Financeiros

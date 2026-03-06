@@ -11,24 +11,24 @@ interface PageContainerProps {
 }
 
 /**
- * Stripe-style page container with consistent max-width and spacing.
- * Wrap all page content in this component for layout consistency.
+ * Wrapper padrão de conteúdo de página (desktop). Padrão: largura total.
+ * Use narrow para formulários/leitura. Ver PLANO_PADRONIZACAO_LAYOUT_DESKTOP.md.
  */
 export const PageContainer: React.FC<PageContainerProps> = ({
   children,
   className,
   narrow = false,
-  fullWidth = false,
+  fullWidth = true,
 }) => {
   return (
     <div 
       className={cn(
-        "w-full mx-auto space-y-8",
-        fullWidth 
-          ? "" 
-          : narrow 
-            ? "max-w-3xl" 
-            : "max-w-full xl:max-w-[95%] 2xl:max-w-[1800px]",
+        "w-full max-w-full min-w-0 mx-auto space-y-8",
+        narrow 
+          ? "md:max-w-3xl" 
+          : fullWidth 
+            ? "" 
+            : "xl:max-w-[95%] 2xl:max-w-[1800px]",
         className
       )}
     >
