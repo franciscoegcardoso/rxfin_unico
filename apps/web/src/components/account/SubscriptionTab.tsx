@@ -142,21 +142,21 @@ export const SubscriptionTab: React.FC = () => {
 
                 <div className="flex gap-2 pt-2">
                   {isExpired ? (
-                    <Link to="/planos" className="flex-1">
+                    <Link to="/financeiro/planos" className="flex-1">
                       <Button size="sm" className="w-full h-9">
                         <CreditCard className="h-3.5 w-3.5 mr-1.5" />
                         Renovar Assinatura
                       </Button>
                     </Link>
                   ) : !isPro ? (
-                    <Link to="/planos" className="flex-1">
+                    <Link to="/financeiro/planos" className="flex-1">
                       <Button size="sm" className="w-full h-9 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600">
                         <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                         Fazer Upgrade para PRO
                       </Button>
                     </Link>
                   ) : (
-                    <Link to="/planos" className="flex-1">
+                    <Link to="/financeiro/planos" className="flex-1">
                       <Button variant="outline" size="sm" className="w-full h-9">
                         Ver Todos os Planos
                         <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
@@ -176,7 +176,7 @@ export const SubscriptionTab: React.FC = () => {
                     Escolha um plano para desbloquear todos os recursos
                   </p>
                 </div>
-                <Link to="/planos">
+                <Link to="/financeiro/planos">
                   <Button size="sm">
                     <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                     Ver Planos Disponíveis

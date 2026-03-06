@@ -247,7 +247,7 @@ export function useAdminGate() {
   useEffect(() => {
     // Skip if already authenticated (handles remounts after MFA)
     if (state.isAuthenticated) {
-      console.log('[AdminGate] Already authenticated, skipping init');
+      // Already authenticated (e.g. after MFA); skip init
       _moduleInitialized = true;
       return;
     }

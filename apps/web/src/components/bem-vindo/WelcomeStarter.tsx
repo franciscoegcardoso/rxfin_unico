@@ -241,7 +241,7 @@ export const WelcomeStarter: React.FC = () => {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <Link to="/planos">
+          <Link to="/financeiro/planos">
             <Button variant="ghost" className="gap-2">
               Ver todos os planos
             </Button>

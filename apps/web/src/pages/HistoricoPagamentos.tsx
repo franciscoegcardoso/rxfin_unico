@@ -81,7 +81,7 @@ export default function HistoricoPagamentos() {
                 <AlertCircle className="h-6 w-6 text-muted-foreground" />
               </div>
               <p className="font-medium text-foreground">Nenhum pagamento registrado</p>
-              <Link to="/planos">
+              <Link to="/financeiro/planos">
                 <Button variant="outline" size="sm" className="mt-4">
                   Ver planos
                 </Button>

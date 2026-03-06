@@ -91,7 +91,6 @@ import Alertas from "./pages/Alertas";
 import Recorrentes from "./pages/Recorrentes";
 import Notificacoes from "./pages/Notificacoes";
 import Lixeira from "./pages/Lixeira";
-import Planos from "./pages/Planos";
 import AuthCallback from "./pages/AuthCallback";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -185,7 +184,7 @@ const App = () => (
                   <Route path="/update-password" element={<UpdatePassword />} /> {/* Public - handles password recovery */}
                   <Route path="/verificar-email" element={<VerificarEmail />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route path="/planos" element={<Planos />} />
+                  <Route path="/planos" element={<Navigate to="/financeiro/planos" replace />} />
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
                   <Route path="/onboarding" element={<OnboardingRoute />} />
                   <Route path="/onboarding-controle" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingControlPage /></Suspense></ProtectedRoute>} />

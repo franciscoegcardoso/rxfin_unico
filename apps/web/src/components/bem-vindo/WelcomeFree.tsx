@@ -228,7 +228,7 @@ export const WelcomeFree: React.FC = () => {
         transition={{ delay: 0.6 }}
         className="text-center"
       >
-        <Link to="/planos">
+        <Link to="/financeiro/planos">
           <Button variant="ghost" className="gap-2">
             Ver comparativo completo dos planos
             <ArrowRight className="h-4 w-4" />

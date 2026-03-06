@@ -29,7 +29,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const content = (
     <>
       <DemoDataBanner />
-      <div className="w-full mx-auto max-w-[95%] 2xl:max-w-[1800px]">
+      <div className="w-full max-w-full">
         <PageTransition>
           {children}
         </PageTransition>

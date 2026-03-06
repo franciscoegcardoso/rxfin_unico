@@ -102,7 +102,7 @@ export const AccountOverviewTab: React.FC = () => {
           {plan?.price_monthly != null && (
             <p className="text-sm text-muted-foreground">{formatCurrency(plan.price_monthly)}/mês</p>
           )}
-          <Link to="/planos">
+          <Link to="/financeiro/planos">
             <Button variant="outline" size="sm" className="mt-2 gap-1">
               Gerenciar plano
               <LinkIcon className="h-3 w-3" />

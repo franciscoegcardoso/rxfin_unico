@@ -78,13 +78,17 @@ export default function AdminDashboard() {
           supabase.rpc('get_admin_dashboard_chart_data'),
         ]);
 
+        if (leadsRes.error) {
+          console.warn('[AdminDashboard] profiles.crm_status (leads count) failed — column may be missing:', leadsRes.error.message);
+        }
+
         const m30 = (metrics30dRes.data as Record<string, number>) ?? {};
 
         setMetrics({
           totalUsers: usersRes.count ?? 0,
           activePages: pagesActiveRes.count ?? 0,
           totalPages: pagesTotalRes.count ?? 0,
-          crmLeads: leadsRes.count ?? 0,
+          crmLeads: leadsRes.error ? 0 : (leadsRes.count ?? 0),
           automationsActive: automationsRes.count ?? 0,
           aiFeedbackPending: aiFeedbackRes.count ?? 0,
           activeUsers30d: m30.active_users_30d ?? 0,

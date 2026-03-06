@@ -589,9 +589,11 @@ const Inicio: React.FC = () => {
         {isDemoMode && <OnboardingInsightCard />}
         {showControlBanner && <ControlOnboardingBanner />}
 
-        <InsuranceExpirationAlerts />
-        <UpcomingEventsCard />
-        <PackagesSummaryCard />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <InsuranceExpirationAlerts />
+          <UpcomingEventsCard />
+          <PackagesSummaryCard />
+        </div>
 
         {dashboardLoading ? (
           <Skeleton className="h-32 w-full rounded-xl" />

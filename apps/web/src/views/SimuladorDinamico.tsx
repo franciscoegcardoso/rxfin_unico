@@ -213,7 +213,7 @@ export const SimuladorDinamico: React.FC = () => {
 
               <div className="flex flex-col gap-3">
                 <Button className="w-full" variant="hero" asChild>
-                  <Link to="/planos">
+                  <Link to="/financeiro/planos">
                     <Crown className="h-4 w-4 mr-2" />
                     Ver Planos Premium
                   </Link>

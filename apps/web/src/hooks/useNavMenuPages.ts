@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Crown, Car, CreditCard, ClipboardList, Calculator } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -71,7 +71,7 @@ const EXCLUDED_NAV_GROUP_SLUGS = ['menu-principal', 'administracao'];
 
 // Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos; alertas/notificações acessíveis via sino no top bar; itens removidos do Planejamento)
 // Slugs de páginas que NÃO devem aparecer nos menus
-const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira'];
+const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'assinatura', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira'];
 
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
@@ -118,7 +118,6 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
     {
       title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [
         { path: '/minha-conta', label: 'Minha Conta', icon: User, accessLevel: 'free', canAccessAsAdmin: true },
-        { path: '/assinatura', label: 'Assinatura', icon: Crown, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
       ],
     },

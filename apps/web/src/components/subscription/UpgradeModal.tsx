@@ -74,7 +74,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       const urlWithEmail = buildCheckoutUrl(checkoutUrl, user?.email);
       window.open(urlWithEmail, '_blank');
     } else {
-      window.location.href = '/planos';
+      window.location.href = '/financeiro/planos';
     }
     onOpenChange(false);
   };
