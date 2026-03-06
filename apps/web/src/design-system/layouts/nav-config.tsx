@@ -7,12 +7,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/** Itens da bottom nav (mobile) e sidebar. Estrutura canônica: Início, Bens e Invest., Lançamentos, Simuladores, Minha Conta. */
 export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
-  { path: "/inicio", label: "Home", icon: Home },
+  { path: "/inicio", label: "Início", icon: Home },
   { path: "/lancamentos", label: "Lançamentos", icon: ArrowLeftRight },
-  { path: "/bens-investimentos", label: "Investimentos", icon: TrendingUp },
-  { path: "/simuladores", label: "FIPE", icon: Car },
-  { path: "/minha-conta", label: "Perfil", icon: User },
+  { path: "/bens-investimentos", label: "Bens e Invest.", icon: TrendingUp },
+  { path: "/simuladores", label: "Simuladores", icon: Car },
+  { path: "/minha-conta", label: "Minha Conta", icon: User },
 ];
 
 const TITLE_MAP: Record<string, string> = {

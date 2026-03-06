@@ -86,13 +86,13 @@ function isPageHiddenFromMenu(page: { slug: string; title: string }): boolean {
 /**
  * Fallback estático para quando o banco de dados está vazio (ex: ambiente de staging não populado).
  * Só é usado quando a query retorna 0 resultados. Garante navegação básica funcional.
+ * Estrutura canônica: 3 itens principais (Início, Bens e Investimentos, Lançamentos); grupos Planejamento, Controles, Simuladores, Configurações.
  */
 function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: NavMenuSection[] } {
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/lancamentos', label: 'Lançamentos', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
-    { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
   ];
 
   const groupedSections: NavMenuSection[] = [
@@ -119,6 +119,7 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
       title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [
         { path: '/minha-conta', label: 'Minha Conta', icon: User, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/assinatura', label: 'Assinatura', icon: Crown, accessLevel: 'free', canAccessAsAdmin: true },
+        { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
       ],
     },
   ];
