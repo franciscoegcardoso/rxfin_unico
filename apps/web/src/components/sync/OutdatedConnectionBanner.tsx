@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { invokePluggySync } from '@/lib/pluggySync';
 import { AlertTriangle } from 'lucide-react';
 import { PluggyConnectButton } from '@/components/openfinance/PluggyConnectButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,12 +20,7 @@ export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> 
     const userId = session.user?.id;
     if (!userId) return;
 
-    try {
-      await invokePluggySync({ action: 'refresh-statuses' });
-    } catch (e) {
-      console.error('Failed to refresh connection statuses:', e);
-    }
-
+    // Lista vem só do banco; refresh-statuses (Edge) não é chamado no load para evitar 401 em /lancamentos
     const { data } = await supabase
       .from('pluggy_connections')
       .select('id, connector_name, item_id, execution_status')
@@ -40,7 +34,7 @@ export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> 
   useEffect(() => {
     if (!session?.access_token) return;
     fetchOutdated();
-  }, [session, fetchOutdated]);
+  }, [session?.access_token, fetchOutdated]);
 
   const handleSuccess = useCallback(() => {
     fetchOutdated();
