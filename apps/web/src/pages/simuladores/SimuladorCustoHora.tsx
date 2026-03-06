@@ -28,7 +28,8 @@ export default function SimuladorCustoHora() {
     supabase
       .from('page_views')
       .insert({ page: '/simulador-custo-hora', session_id: sessionId })
-      .then(() => {});
+      .then(() => {})
+      .catch(() => {});
   }, []);
 
   const result = useMemo(() => {

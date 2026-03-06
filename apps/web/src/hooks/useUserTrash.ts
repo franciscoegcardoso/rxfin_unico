@@ -66,6 +66,10 @@ export function useUserTrash() {
       if (error) throw error;
       setAuditLogs((data || []) as AuditLogEntry[]);
     } catch (err: any) {
+      if (err?.code === 'PGRST205' || err?.message?.includes('deletion_audit_log')) {
+        setAuditLogs([]);
+        return;
+      }
       console.error('Error fetching audit logs:', err);
     }
   }, [user]);
@@ -137,6 +141,7 @@ export function useUserTrash() {
       await fetchAuditLogs();
       return true;
     } catch (err: any) {
+      if (err?.code === 'PGRST205' || err?.message?.includes('deletion_audit_log')) return false;
       console.error('Error logging deletion:', err);
       return false;
     }

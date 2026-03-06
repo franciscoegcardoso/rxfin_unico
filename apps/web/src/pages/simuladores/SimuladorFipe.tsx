@@ -63,7 +63,8 @@ export default function SimuladorFipe() {
     supabase
       .from('page_views')
       .insert({ page: '/simuladores/veiculos/simulador-fipe', session_id: sessionId })
-      .then(() => {});
+      .then(() => {})
+      .catch(() => {});
   }, []);
 
   // Default cost estimates when FIPE price is set

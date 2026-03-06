@@ -34,6 +34,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { hasRoutePermission, loading: permissionsLoading, isAdmin, isImpersonating } = useSubscriptionPermissions();
   const location = useLocation();
   const { isAvailable, isLoading: availabilityLoading, pageName, canAdminBypass } = usePageAvailability(location.pathname);
+  const isInicio = location.pathname === '/inicio';
 
   const { data: profile, isPending: profilePending } = useQuery({
     queryKey: ['profile-status', user?.id],
@@ -52,18 +53,31 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   });
 
   const needsOnboardingCheck = location.pathname === '/inicio' && !localStorage.getItem(ONBOARDING_CACHE_KEY);
+  const ONBOARDING_RPC_TIMEOUT_MS = 8_000;
+
   const { data: settingsData, isPending: onboardingCheckPending } = useQuery({
     queryKey: ['onboarding-status', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_user_profile_settings');
-      if (error) return null;
-      return data as { profile?: { onboarding_completed?: boolean | null } | null };
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), ONBOARDING_RPC_TIMEOUT_MS);
+      });
+      const rpcPromise = supabase.rpc('get_user_profile_settings').then(({ data, error }) => {
+        if (error) return null;
+        return data as { profile?: { onboarding_completed?: boolean | null } | null };
+      });
+      try {
+        return await Promise.race([rpcPromise, timeoutPromise]);
+      } catch {
+        return null;
+      }
     },
     enabled: !!user?.id && needsOnboardingCheck,
     staleTime: 60_000,
+    retry: 1,
   });
 
   const onboardingCompleteFromDb = settingsData?.profile?.onboarding_completed === true;
+  const onboardingRpcFailedOrNull = !onboardingCheckPending && needsOnboardingCheck && settingsData == null && !!user?.id;
 
   useEffect(() => {
     if (onboardingCompleteFromDb) {
@@ -71,11 +85,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
   }, [onboardingCompleteFromDb]);
 
+  useEffect(() => {
+    if (onboardingRpcFailedOrNull) {
+      localStorage.setItem(ONBOARDING_CACHE_KEY, 'true');
+    }
+  }, [onboardingRpcFailedOrNull]);
+
   const redirectTo = location.pathname + location.search;
   const loginRedirect = redirectTo && redirectTo !== '/login' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login';
 
   const onboardingLoading = needsOnboardingCheck && onboardingCheckPending;
-  if (authLoading || permissionsLoading || availabilityLoading || (!!user?.id && profilePending) || onboardingLoading) {
+  const waitForAvailability = !isInicio && availabilityLoading;
+  if (authLoading || permissionsLoading || waitForAvailability || (!!user?.id && profilePending) || onboardingLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RXFinLoadingSpinner size={56} />
@@ -91,11 +112,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to={`/verificar-email?email=${encodeURIComponent(user.email ?? '')}`} replace />;
   }
 
-  // Post-auth onboarding: cache first; if missing, use onboarding_state via RPC
+  // Post-auth onboarding: cache first; if missing, use onboarding_state via RPC. Em falha/timeout do RPC, permitir /inicio.
   if (location.pathname === '/inicio') {
     const cacheSet = !!localStorage.getItem(ONBOARDING_CACHE_KEY);
     if (!cacheSet && !onboardingCheckPending) {
-      if (!onboardingCompleteFromDb) {
+      if (onboardingRpcFailedOrNull) {
+        // RPC falhou ou deu timeout: não bloquear; cache já foi setado no useEffect
+      } else if (!onboardingCompleteFromDb) {
         return <Navigate to="/onboarding" replace />;
       }
     }
@@ -106,9 +129,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // Check if page is available (is_active_users = true)
-  // If page is disabled, show "Coming Soon" regardless of plan
-  if (!isAvailable) {
+  // Check if page is available (is_active_users = true). /inicio is always available.
+  if (!isInicio && !isAvailable) {
     const featureName = pageName || ROUTE_FEATURE_NAMES[location.pathname];
     return <ComingSoon featureName={featureName} />;
   }

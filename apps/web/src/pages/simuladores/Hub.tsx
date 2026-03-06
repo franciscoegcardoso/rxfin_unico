@@ -102,7 +102,8 @@ export default function Hub() {
     supabase
       .from('page_views')
       .insert({ page: '/simuladores', session_id: sessionId })
-      .then(() => {});
+      .then(() => {})
+      .catch(() => {});
   }, []);
 
   const isLoggedIn = user !== null;
