@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+build
+.next
+.expo
+web-build
+.turbo
+
+# Git and IDE
+.git
+.idea
+.vscode
+
+# Logs and cache
+*.log
+.cache
+coverage
+
+# Supabase local
+supabase/.temp
+supabase/.branches
+
+# Misc
+*.tgz
+.DS_Store
+Thumbs.db

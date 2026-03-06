@@ -37,6 +37,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
         size="icon"
         className="h-8 w-8 shrink-0"
         onClick={() => onMonthChange(addMonths(selectedMonth, -1))}
+        aria-label="Mês anterior"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -68,6 +69,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
         size="icon"
         className="h-8 w-8 shrink-0"
         onClick={() => onMonthChange(addMonths(selectedMonth, 1))}
+        aria-label="Próximo mês"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

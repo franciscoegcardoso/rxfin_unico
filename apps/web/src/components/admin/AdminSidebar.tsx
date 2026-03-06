@@ -8,7 +8,6 @@ import {
   Kanban,
   Zap,
   ShieldCheck,
-  Car,
   LayoutDashboard,
   ChevronLeft,
   ChevronRight,
@@ -22,9 +21,11 @@ import {
   HeartPulse,
   Handshake,
   Eye,
-  Activity,
   Target,
   Database,
+  Server,
+  KeyRound,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -64,12 +65,13 @@ const NAV_ITEMS: NavItem[] = [
 
   // Sistema
   { label: 'Impersonar', href: '/admin/impersonate', icon: Eye, group: 'Sistema' },
-  { label: 'FIPE Sync', href: '/admin/fipe-sync', icon: Car, group: 'Sistema' },
-  { label: 'FIPE Saúde', href: '/admin/fipe-health', icon: Activity, group: 'Sistema' },
   { label: 'Deploy', href: '/admin/deploy', icon: Rocket, group: 'Sistema' },
   { label: 'Rollbacks', href: '/admin/rollbacks', icon: RotateCcw, group: 'Sistema' },
   { label: 'Health Check', href: '/admin/health', icon: HeartPulse, group: 'Sistema' },
   { label: 'Saúde do Banco', href: '/admin/database-health', icon: Database, group: 'Sistema' },
+  { label: 'Arquitetura', href: '/admin/architecture', icon: Server, group: 'Sistema' },
+  { label: 'API Keys', href: '/admin/api-keys', icon: KeyRound, group: 'Sistema' },
+  { label: 'Roles & Acesso', href: '/admin/roles', icon: UserCog, group: 'Sistema' },
   { label: 'Auditoria', href: '/admin/audit', icon: ShieldCheck, group: 'Sistema' },
 ];
 

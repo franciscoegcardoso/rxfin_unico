@@ -59,7 +59,7 @@ export const MonthSummaryCard: React.FC = () => {
           <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0"><TrendingDown className="h-3.5 w-3.5 text-expense" /> Despesas</span>
           <span className="text-sm font-medium text-expense truncate tabular-nums">{fmt(summary.despesas)}</span>
         </div>
-        <div className="border-t pt-2 flex items-center justify-between min-w-0 gap-2">
+        <div className="border-t border-border pt-2 flex items-center justify-between min-w-0 gap-2">
           <span className="text-sm font-medium shrink-0">Saldo</span>
           <span className={cn(
             "text-sm font-bold truncate tabular-nums",

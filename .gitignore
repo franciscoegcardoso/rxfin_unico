@@ -17,11 +17,12 @@ web-build/
 # Variáveis de ambiente locais (nunca commitar)
 .env
 .env.local
+.env.*
+.env*.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env*.local
-.env.*.local
 apps/web-next/.env.local
 
 # IDE
@@ -30,6 +31,9 @@ apps/web-next/.env.local
 *.swp
 *.swo
 *~
+
+# Temp / test
+.tmp-webhook-body.json
 
 # OS
 .DS_Store
@@ -53,6 +57,7 @@ coverage/
 
 # Supabase
 supabase/.temp/
+**/supabase/.temp/
 supabase/.branches/
 
 # n8n (don't commit credentials)

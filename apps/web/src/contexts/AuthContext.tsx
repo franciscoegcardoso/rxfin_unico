@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import * as authService from '@/core/services/auth';
 import type { OAuthProvider } from '@/core/types/auth';
+import { setSentryUser } from '@/lib/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setSentryUser(session?.user?.id ?? null);
         setLoading(false);
         
         // Clear React Query cache on auth state changes to prevent data leakage
@@ -68,12 +70,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setSentryUser(session?.user?.id ?? null);
         setLoading(false);
       })
       .catch((err) => {
         console.error('[Auth] Failed to get session:', err);
         setSession(null);
         setUser(null);
+        setSentryUser(null);
         setLoading(false);
       });
 

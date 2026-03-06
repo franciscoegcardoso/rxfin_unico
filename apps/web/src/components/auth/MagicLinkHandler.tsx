@@ -76,13 +76,10 @@ export const MagicLinkHandler: React.FC<{ children: React.ReactNode }> = ({ chil
             return;
           }
 
-          // Check if user needs onboarding (first access)
+          // Check if user needs onboarding (first access); use get_user_profile_settings (onboarding_state) as source of truth
           if (data.user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('status, onboarding_completed')
-              .eq('id', data.user.id)
-              .single();
+            const { data: settings } = await supabase.rpc('get_user_profile_settings');
+            const profile = (settings as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
 
             // Check if onboarding is enabled and user hasn't completed it
             const isFirstLogin = profile?.onboarding_completed !== true;

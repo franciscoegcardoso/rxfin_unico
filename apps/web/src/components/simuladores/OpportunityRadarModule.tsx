@@ -510,7 +510,7 @@ export const OpportunityRadarModule: React.FC<OpportunityRadarModuleProps> = ({ 
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-1">Economia Anual Total</p>
-                <p className="text-5xl font-bold text-emerald-500">
+                <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-emerald-500">
                   R$ {calculations.annualSavings.toLocaleString('pt-BR')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">

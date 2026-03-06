@@ -74,17 +74,17 @@ export const AdminSecureLayout: React.FC<AdminSecureLayoutProps> = ({ children }
     <AdminPendingChangesProvider>
       <div className="min-h-screen bg-background flex flex-col">
         {/* Secure admin bar */}
-        <div className="bg-zinc-900 text-zinc-100 px-4 py-2 flex items-center justify-between shrink-0">
+        <div className="bg-card border-b border-border text-foreground px-4 py-2 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4 text-green-400" />
+            <Shield className="h-4 w-4 text-primary" />
             <span className="font-medium">Painel Admin</span>
-            <span className="text-zinc-400">•</span>
-            <span className="text-zinc-400 text-xs">Sessão segura (MFA verificado)</span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground text-xs">Sessão segura (MFA verificado)</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 gap-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800"
+            className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-accent-foreground hover:bg-accent"
             onClick={logout}
           >
             <LogOut className="h-3.5 w-3.5" />

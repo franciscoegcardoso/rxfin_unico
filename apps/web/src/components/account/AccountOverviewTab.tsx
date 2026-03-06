@@ -71,7 +71,7 @@ export const AccountOverviewTab: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Card Perfil */}
-      <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
         <CardHeader className="p-0 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
@@ -90,7 +90,7 @@ export const AccountOverviewTab: React.FC = () => {
       </Card>
 
       {/* Card Plano */}
-      <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
         <CardHeader className="p-0 pb-4 flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Crown className="h-4 w-4 text-primary" />
@@ -112,7 +112,7 @@ export const AccountOverviewTab: React.FC = () => {
       </Card>
 
       {/* Card Notificações */}
-      <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
         <CardHeader className="p-0 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Bell className="h-4 w-4 text-primary" />
@@ -138,7 +138,7 @@ export const AccountOverviewTab: React.FC = () => {
       </Card>
 
       {/* Card Estatísticas */}
-      <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
         <CardHeader className="p-0 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" />
@@ -165,7 +165,7 @@ export const AccountOverviewTab: React.FC = () => {
       </Card>
 
       {/* Card Preferências */}
-      <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6">
+      <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
         <CardHeader className="p-0 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Settings2 className="h-4 w-4 text-primary" />

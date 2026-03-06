@@ -166,7 +166,7 @@ export const AddInstitutionFlowDialog: React.FC<AddInstitutionFlowDialogProps> =
         <DialogHeader>
           <div className="flex items-center gap-2">
             {step !== 'choose' && (
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setStep('choose')}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 min-h-[44px] min-w-[44px]" onClick={() => setStep('choose')} aria-label="Voltar">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}

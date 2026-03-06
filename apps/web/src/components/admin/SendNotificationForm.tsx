@@ -81,8 +81,9 @@ export const SendNotificationForm: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Título</Label>
+              <Label htmlFor="notif-title">Título</Label>
               <Input
+                id="notif-title"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Título da notificação"
@@ -90,9 +91,9 @@ export const SendNotificationForm: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Prioridade</Label>
+              <Label htmlFor="notif-priority">Prioridade</Label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger>
+                <SelectTrigger id="notif-priority" aria-label="Prioridade">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -106,8 +107,9 @@ export const SendNotificationForm: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Mensagem</Label>
+            <Label htmlFor="notif-message">Mensagem</Label>
             <Textarea
+              id="notif-message"
               value={message}
               onChange={e => setMessage(e.target.value)}
               placeholder="Corpo da notificação..."
@@ -117,8 +119,9 @@ export const SendNotificationForm: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Link de destino (opcional)</Label>
+            <Label htmlFor="notif-action-url">Link de destino (opcional)</Label>
             <Input
+              id="notif-action-url"
               value={actionUrl}
               onChange={e => setActionUrl(e.target.value)}
               placeholder="/planos ou https://..."

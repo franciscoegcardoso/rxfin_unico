@@ -560,42 +560,23 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { data: existingHist } = await supabase
-        .from('pluggy_sync_jobs')
-        .select('id')
-        .eq('item_id', histItemId)
-        .eq('action', 'historical-load')
-        .in('status', ['pending', 'running'])
-        .limit(1)
-        .maybeSingle();
-
-      if (existingHist) {
-        return new Response(
-          JSON.stringify({ success: true, queued: true, jobId: existingHist.id, alreadyRunning: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      console.log('[historical-load] Queuing background job via enqueue_pluggy_job...');
+      const { data: result, error: enqueueError } = await supabase
+        .rpc('enqueue_pluggy_job', {
+          p_user_id: user.id,
+          p_item_id: histItemId,
+          p_action: 'historical-load',
+          p_priority: 3,
+        });
+      if (enqueueError) {
+        console.error('[historical-load] Error queuing job:', enqueueError);
+        throw enqueueError;
       }
-
-      const { data: job, error: jobError } = await supabase
-        .from('pluggy_sync_jobs')
-        .insert({
-          user_id: user.id,
-          item_id: histItemId,
-          action: 'historical-load',
-          priority: 3,
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-
-      if (jobError) {
-        console.error('[historical-load] Error queuing job:', jobError);
-        throw jobError;
-      }
-
-      console.log(`[historical-load] Queued job ${job.id}`);
+      const alreadyRunning = result?.queued === false;
+      const jobId = result?.job_id || result?.existing_job_id;
+      console.log(`[historical-load] enqueue_pluggy_job result: ${JSON.stringify(result)}`);
       return new Response(
-        JSON.stringify({ success: true, queued: true, jobId: job.id }),
+        JSON.stringify({ success: true, queued: true, jobId, alreadyRunning }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -632,42 +613,23 @@ Deno.serve(async (req) => {
         }
       }
 
-      const { data: existingInc } = await supabase
-        .from('pluggy_sync_jobs')
-        .select('id')
-        .eq('item_id', incItemId)
-        .eq('action', 'incremental-sync')
-        .in('status', ['pending', 'running'])
-        .limit(1)
-        .maybeSingle();
-
-      if (existingInc) {
-        return new Response(
-          JSON.stringify({ success: true, queued: true, jobId: existingInc.id, alreadyRunning: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      console.log('[incremental-sync] Queuing background job via enqueue_pluggy_job...');
+      const { data: result, error: enqueueError } = await supabase
+        .rpc('enqueue_pluggy_job', {
+          p_user_id: user.id,
+          p_item_id: incItemId,
+          p_action: 'incremental-sync',
+          p_priority: 2,
+        });
+      if (enqueueError) {
+        console.error('[incremental-sync] Error queuing job:', enqueueError);
+        throw enqueueError;
       }
-
-      const { data: job, error: jobError } = await supabase
-        .from('pluggy_sync_jobs')
-        .insert({
-          user_id: user.id,
-          item_id: incItemId,
-          action: 'incremental-sync',
-          priority: 2,
-          status: 'pending',
-        })
-        .select('id')
-        .single();
-
-      if (jobError) {
-        console.error('[incremental-sync] Error queuing job:', jobError);
-        throw jobError;
-      }
-
-      console.log(`[incremental-sync] Queued job ${job.id}`);
+      const alreadyRunning = result?.queued === false;
+      const jobId = result?.job_id || result?.existing_job_id;
+      console.log(`[incremental-sync] enqueue_pluggy_job result: ${JSON.stringify(result)}`);
       return new Response(
-        JSON.stringify({ success: true, queued: true, jobId: job.id }),
+        JSON.stringify({ success: true, queued: true, jobId, alreadyRunning }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -752,32 +714,17 @@ Deno.serve(async (req) => {
       }
 
       if (!queuedViaDispatcher) {
-        const { data: existingInit } = await supabase
-          .from('pluggy_sync_jobs')
-          .select('id')
-          .eq('item_id', itemId)
-          .in('status', ['pending', 'running'])
-          .limit(1)
-          .maybeSingle();
-
-        let jobError = null;
-        if (!existingInit) {
-          const { error } = await supabase
-            .from('pluggy_sync_jobs')
-            .insert({
-              user_id: user.id,
-              item_id: itemId,
-              action: 'initial-sync',
-              priority: 1,
-              status: 'pending',
-            });
-          jobError = error;
-        }
-
-        if (jobError) {
-          console.error('Error queuing sync job:', jobError);
+        const { data: enqueueResult, error: enqueueErr } = await supabase
+          .rpc('enqueue_pluggy_job', {
+            p_user_id: user.id,
+            p_item_id: itemId,
+            p_action: 'initial-sync',
+            p_priority: 1,
+          });
+        if (enqueueErr) {
+          console.error('Error queuing sync job:', enqueueErr);
         } else {
-          console.log(`[save-connection] Queued initial-sync job for item ${itemId}`);
+          console.log(`[save-connection] enqueue_pluggy_job result: ${JSON.stringify(enqueueResult)}`);
         }
       }
 

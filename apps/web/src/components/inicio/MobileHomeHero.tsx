@@ -34,7 +34,7 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground -mx-4 -mt-4 px-5 pt-6 pb-8 rounded-b-3xl">
+      <div className="mobile-hero-bg text-foreground -mx-4 -mt-4 px-5 pt-6 pb-8 rounded-b-3xl">
         {/* Top row: avatar + visibility toggle */}
         <div className="flex items-center justify-between mb-4">
           <Avatar className="h-12 w-12 border-2 border-primary-foreground/30">
@@ -50,7 +50,7 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
         <div className="mb-6">
           <h1 className="text-lg font-medium text-primary-foreground">Olá, {firstName || 'Usuário'} 👋</h1>
           <p className="text-xs text-primary-foreground/70 mt-0.5">Saldo Líquido do Mês</p>
-          <p className="text-2xl sm:text-3xl font-bold mt-1 text-primary-foreground tabular-nums">{formatCurrency(saldoLiquido)}</p>
+          <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-2xl sm:text-[32px] mt-1 text-primary-foreground">{formatCurrency(saldoLiquido)}</p>
         </div>
 
         {/* Quick actions */}

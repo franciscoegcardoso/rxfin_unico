@@ -159,7 +159,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({
             <div className="flex items-baseline justify-center gap-1">
               <span className="text-lg text-muted-foreground">R$</span>
               <p className={cn(
-                "text-5xl font-extrabold tracking-tight",
+                "font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px]",
                 plan.has_promo ? "text-green-600 dark:text-green-400" : "text-foreground"
               )}>
                 {priceParts[0]}

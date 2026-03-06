@@ -851,7 +851,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                             );
                           })()}
                         </div>
-                        <p className="text-3xl lg:text-4xl font-bold text-income">{fipe.price.Valor}</p>
+                        <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-income text-[40px] md:text-[48px]">{fipe.price.Valor}</p>
                         <p className="text-sm lg:text-base font-medium text-foreground/80">
                           {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
                         </p>

@@ -252,10 +252,10 @@ const IndicacoesTab: React.FC = () => {
         <p className="text-xs font-medium text-muted-foreground">Seu link de indicação</p>
         <div className="flex gap-2">
           <Input readOnly value={referralLink} className="font-mono text-xs" />
-          <Button variant="outline" size="icon" onClick={copyLink} title="Copiar link">
+          <Button variant="outline" size="icon" onClick={copyLink} title="Copiar link" aria-label="Copiar link">
             <Copy className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={() => setShareOpen(true)} title="Compartilhar">
+          <Button variant="outline" size="icon" onClick={() => setShareOpen(true)} title="Compartilhar" aria-label="Compartilhar">
             <Share2 className="h-4 w-4" />
           </Button>
         </div>

@@ -10,6 +10,7 @@ import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
 import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { useShell } from '@/design-system/layouts/ShellContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,13 +18,47 @@ interface AppLayoutProps {
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
+  const { insideShell } = useShell();
   const { isDemoMode } = useDemoMode();
   const { needsPhone, currentEmail } = usePhoneCompletion();
   const [phoneCompleted, setPhoneCompleted] = useState(false);
-  // Run automatic consolidation on first login of the day
   useAutoConsolidation();
 
   const showPhoneDialog = needsPhone && !phoneCompleted;
+
+  const content = (
+    <>
+      <DemoDataBanner />
+      <div className="w-full mx-auto max-w-[95%] 2xl:max-w-[1800px]">
+        <PageTransition>
+          {children}
+        </PageTransition>
+      </div>
+    </>
+  );
+
+  if (insideShell) {
+    return (
+      <MobileMenuProvider>
+        <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
+          <main
+            className={`
+              w-full max-w-full overflow-x-hidden flex-1
+              px-4 md:px-6 lg:px-8
+              py-4 md:py-6
+            `}
+          >
+            {content}
+          </main>
+        </div>
+        <PhoneCompletionDialog
+          open={showPhoneDialog}
+          onComplete={() => setPhoneCompleted(true)}
+          currentEmail={currentEmail}
+        />
+      </MobileMenuProvider>
+    );
+  }
 
   return (
     <MobileMenuProvider>
@@ -38,21 +73,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           ${isMobile ? 'pb-20' : ''}
         `}
       >
-        <DemoDataBanner />
-        <div className="w-full mx-auto max-w-[95%] 2xl:max-w-[1800px]">
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </div>
+        {content}
       </main>
       {!isMobile && (
-        <footer className="w-full border-t py-2 px-6 flex justify-center">
+        <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
           <SecureConnectionBadge />
         </footer>
       )}
       {isMobile && <MobileBottomNav />}
 
-      {/* Global phone completion dialog - shows after login if phone is missing */}
       <PhoneCompletionDialog
         open={showPhoneDialog}
         onComplete={() => setPhoneCompleted(true)}

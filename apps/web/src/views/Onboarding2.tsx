@@ -35,12 +35,11 @@ const Onboarding2: React.FC = () => {
     if (!user?.id) return;
     let cancelled = false;
     supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('id', user.id)
-      .single()
+      .rpc('get_user_profile_settings')
       .then(({ data }) => {
-        if (!cancelled && data?.onboarding_completed === true) {
+        if (cancelled) return;
+        const profile = (data as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
+        if (profile?.onboarding_completed === true) {
           console.log('[Onboarding2] Already completed, redirecting away');
           navigate('/simuladores', { replace: true });
         }

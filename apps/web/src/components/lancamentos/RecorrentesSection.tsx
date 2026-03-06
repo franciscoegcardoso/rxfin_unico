@@ -188,16 +188,18 @@ export const RecorrentesSection: React.FC<RecorrentesSectionProps> = ({
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
+                                className="h-8 w-8 min-h-[44px] min-w-[44px]"
                                 onClick={() => onEditRecorrente(conta)}
+                                aria-label="Editar recorrente"
                               >
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                className="h-8 w-8 text-destructive hover:text-destructive min-h-[44px] min-w-[44px]"
                                 onClick={() => setDeleteId(conta.id)}
+                                aria-label="Excluir recorrente"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>

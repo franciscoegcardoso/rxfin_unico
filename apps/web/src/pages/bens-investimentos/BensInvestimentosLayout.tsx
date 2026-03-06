@@ -41,10 +41,14 @@ import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { assetIcons, formatCurrencyBase, type AssetDependencies } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
+import { InvestmentCard } from '@/design-system/components/InvestmentCard';
+import { EmptyInvestimentos } from '@/design-system/components/empty-states';
+import { ErrorCard } from '@/design-system/components/ErrorCard';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
-  const { data: patrimonioData, error: patrimonioError } = usePatrimonioOverview();
+  const { data: patrimonioData, error: patrimonioError, refetch: refetchPatrimonio } = usePatrimonioOverview();
   const { isHidden } = useVisibility();
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
@@ -425,9 +429,7 @@ const BensInvestimentosLayout: React.FC = () => {
           </PageHeader>
 
           {patrimonioError && (
-            <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
-              <p className="text-sm text-destructive">{patrimonioError}</p>
-            </Card>
+            <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
           )}
           {netWorth != null && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -602,22 +604,130 @@ const BensInvestimentosLayout: React.FC = () => {
               )}
 
               {currentTab === 'investimentos' && (
-                <div className="space-y-4">
-                  {investimentosList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum investimento cadastrado.</p>
+                <div className="space-y-6">
+                  {patrimonioError ? (
+                    <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
+                  ) : investimentosList.length === 0 ? (
+                    <EmptyInvestimentos />
                   ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {investimentosList.map((a: { name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number }, i: number) => (
-                        <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
-                          <CardContent className="p-4">
-                            <p className="font-bold truncate">{a.name ?? '—'}</p>
-                            <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
-                            {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
-                            {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}%</Badge>}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                    (() => {
+                      const totalReturn = investimentosList.reduce((sum: number, a: { current_value?: number; purchase_value?: number }) => {
+                        const cur = a.current_value ?? 0;
+                        const buy = a.purchase_value ?? cur;
+                        return sum + (cur - buy);
+                      }, 0);
+                      const donutData = investimentosList.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
+                        const cat = (a as any).category ?? 'Investimentos';
+                        const existing = acc.find((x) => x.name === cat);
+                        const val = a.current_value ?? 0;
+                        if (existing) existing.value += val;
+                        else acc.push({ name: cat, value: val });
+                        return acc;
+                      }, []);
+                      const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+                      return (
+                        <>
+                          <p className={cn('font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px]', totalReturn >= 0 ? 'text-income' : 'text-expense')}>
+                            {formatCurrency(totalReturn)} rentabilidade total
+                          </p>
+                          {/* Mobile: donut no topo + lista de InvestmentCard */}
+                          <div className="flex flex-col gap-6 md:hidden">
+                            <div className="h-[240px] w-full rounded-xl border border-border bg-card p-4">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" nameKey="name">
+                                    {donutData.map((_, i) => (
+                                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                                  <Legend />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className="space-y-3">
+                              {investimentosList.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                                const cur = a.current_value ?? 0;
+                                const buy = a.purchase_value ?? cur;
+                                const returnVal = cur - buy;
+                                const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
+                                return (
+                                  <InvestmentCard
+                                    key={i}
+                                    name={a.name ?? '—'}
+                                    ticker={(a as any).ticker}
+                                    currentValue={cur}
+                                    returnPercent={returnPct}
+                                    returnValue={returnVal}
+                                    category={(a as any).category ?? 'Investimentos'}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {/* Desktop: donut à esquerda + tabela detalhada à direita */}
+                          <div className="hidden md:grid md:grid-cols-[280px_1fr] md:gap-6">
+                            <div className="h-[240px] w-full rounded-xl border border-border bg-card p-4">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" nameKey="name">
+                                    {donutData.map((_, i) => (
+                                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                                  <Legend />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className="overflow-x-auto rounded-xl border border-border bg-card min-w-0">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
+                                    <th className="text-left p-3 font-medium">Nome</th>
+                                    <th className="text-left p-3 font-medium">Ticker</th>
+                                    <th className="text-right p-3 font-medium">Valor atual</th>
+                                    <th className="text-right p-3 font-medium">Rentab. %</th>
+                                    <th className="text-right p-3 font-medium">Rentab. R$</th>
+                                    <th className="text-left p-3 font-medium">Categoria</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {investimentosList.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                                    const cur = a.current_value ?? 0;
+                                    const buy = a.purchase_value ?? cur;
+                                    const returnVal = cur - buy;
+                                    const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
+                                    return (
+                                      <tr
+                                        key={i}
+                                        className={cn(
+                                          'border-t border-border transition-colors hover:bg-accent/50',
+                                          i % 2 === 0 ? 'bg-card' : 'bg-muted/30'
+                                        )}
+                                      >
+                                        <td className="p-3 font-medium text-foreground">{a.name ?? '—'}</td>
+                                        <td className="p-3 text-muted-foreground text-xs">{(a as any).ticker ?? '—'}</td>
+                                        <td className="p-3 text-right font-syne font-bold text-foreground tabular-nums">{formatCurrency(cur)}</td>
+                                        <td className={cn('p-3 text-right font-syne font-bold tabular-nums', returnPct >= 0 ? 'text-income' : 'text-expense')}>
+                                          {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(2)}%
+                                        </td>
+                                        <td className={cn('p-3 text-right font-sans font-semibold tabular-nums tracking-tight', returnVal >= 0 ? 'text-income' : 'text-expense')}>
+                                          {returnVal >= 0 ? '+' : ''}{formatCurrency(returnVal)}
+                                        </td>
+                                        <td className="p-3">
+                                          <span className="text-xs rounded-full bg-primary/10 text-primary px-2 py-1">{(a as any).category ?? 'Investimentos'}</span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()
                   )}
                 </div>
               )}

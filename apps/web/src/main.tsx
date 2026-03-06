@@ -1,7 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { initSentry } from "@/lib/sentry";
 import App from "./App.tsx";
 import "./index.css";
+
+initSentry();
 
 /**
  * Boot cleanup: runs ONCE before React mounts.

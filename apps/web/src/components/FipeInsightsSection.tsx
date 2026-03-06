@@ -457,7 +457,7 @@ export const FipeInsightsSection: React.FC<FipeInsightsSectionProps> = ({
                     </CardDescription>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" className="shrink-0">
+                <Button variant="ghost" size="icon" className="shrink-0" aria-label={showOwnershipCost ? 'Recolher custo de propriedade' : 'Expandir custo de propriedade'}>
                   {showOwnershipCost ? (
                     <ChevronUp className="h-5 w-5" />
                   ) : (

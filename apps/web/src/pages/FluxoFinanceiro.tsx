@@ -112,7 +112,7 @@ const FluxoFinanceiro: React.FC = () => {
         />
 
         {error && (
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 border-destructive/50 bg-destructive/5">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6 border-destructive/50 bg-destructive/5">
             <p className="text-sm text-destructive mb-3">{String(error)}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -122,29 +122,29 @@ const FluxoFinanceiro: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-[hsl(150,60%,40%)]" />
+                <TrendingUp className="h-4 w-4 text-income" />
                 Entrada total
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <p className="text-xl font-semibold text-[hsl(150,60%,40%)]">{formatCurrency(income)}</p>
+              <p className="text-xl font-semibold text-income">{formatCurrency(income)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingDown className="h-4 w-4 text-red-600" />
+                <TrendingDown className="h-4 w-4 text-expense" />
                 Saída total
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <p className="text-xl font-semibold text-red-600">{formatCurrency(expense)}</p>
+              <p className="text-xl font-semibold text-expense">{formatCurrency(expense)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                 <Minus className="h-4 w-4" />
@@ -154,7 +154,7 @@ const FluxoFinanceiro: React.FC = () => {
             <CardContent className="p-0">
               <p className={cn(
                 'text-xl font-semibold',
-                balance >= 0 ? 'text-[hsl(210,80%,45%)]' : 'text-red-600'
+                balance >= 0 ? 'text-[hsl(210,80%,45%)]' : 'text-expense'
               )}>
                 {formatCurrency(balance)}
               </p>
@@ -162,7 +162,7 @@ const FluxoFinanceiro: React.FC = () => {
           </Card>
         </div>
 
-        <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
           <CardHeader>
             <CardTitle className="text-base">Receitas e despesas por semana</CardTitle>
           </CardHeader>
@@ -191,7 +191,7 @@ const FluxoFinanceiro: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
           <CardHeader>
             <CardTitle className="text-base">Últimos 10 lançamentos</CardTitle>
           </CardHeader>
@@ -202,7 +202,7 @@ const FluxoFinanceiro: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100">
+                    <tr className="border-b border-border">
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Data</th>
                       <th className="text-left py-2 px-2 font-medium text-muted-foreground">Nome</th>
                       <th className="text-right py-2 px-2 font-medium text-muted-foreground">Valor</th>
@@ -211,12 +211,12 @@ const FluxoFinanceiro: React.FC = () => {
                   </thead>
                   <tbody>
                     {last10.map((l, i) => (
-                      <tr key={i} className="border-b border-gray-50">
+                      <tr key={i} className="border-b border-border">
                         <td className="py-2 px-2">{l.date ? format(new Date(l.date), 'dd/MM/yyyy') : '—'}</td>
                         <td className="py-2 px-2 font-medium">{l.nome ?? '—'}</td>
                         <td className={cn(
                           'py-2 px-2 text-right font-medium',
-                          l.tipo === 'receita' ? 'text-[hsl(150,60%,40%)]' : 'text-red-600'
+                          l.tipo === 'receita' ? 'text-income' : 'text-expense'
                         )}>
                           {formatCurrency(l.valor ?? 0)}
                         </td>

@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { BrandSearchSelect } from '@/components/ui/brand-search-select';
-import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, BarChart3, Sparkles, DollarSign, RefreshCw, HelpCircle, Star } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, TrendingUp, BarChart3, Sparkles, DollarSign, RefreshCw, Star } from 'lucide-react';
 import { useFipe, VehicleType, formatFipeYearName, formatFipeAnoModelo } from '@/hooks/useFipe';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
@@ -17,12 +16,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSimulatorContext } from '@/hooks/useSimulatorContext';
 import { useFipeFavorites } from '@/hooks/useFipeFavorites';
 import { Asset } from '@/types/financial';
-import { BarChart as RechartsBarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { premiumGrid, premiumXAxis, premiumYAxis } from '@/components/charts/premiumChartTheme';
 import { useCohortMatrix } from '@/hooks/useCohortMatrix';
 import { AnimatedChartContainer } from '@/components/charts/AnimatedChartContainer';
 import { FipeOwnershipCostCard } from './FipeOwnershipCostCard';
 import { inferVehicleCategory, highTheftVehicles } from '@/utils/insuranceEstimator';
+import { EmptyFipe } from '@/design-system/components/empty-states';
+import { ErrorCard } from '@/design-system/components/ErrorCard';
 
 import { Calculator } from 'lucide-react';
 import { DepreciationCurveChart } from './DepreciationCurveChart';
@@ -34,18 +35,12 @@ import { MobileSectionDrawer } from './MobileSectionDrawer';
 // LAZY-LOADED HEAVY CHART COMPONENTS
 // These components are loaded on-demand to improve initial page performance
 // ============================================================================
-import { SuspenseTimeSeriesChart } from './LazyChartComponents';
-import { SafraAnalysisSection } from './SafraAnalysisSection';
+import { SuspenseTimeSeriesChart, SuspenseCohortMatrix } from './LazyChartComponents';
 import { 
   FipePriceResultSkeleton, 
   YearPricesChartSkeleton,
   DepreciationChartSkeleton 
 } from './FipeSimulatorSkeleton';
-import { 
-  FieldWrapper, 
-  getValidationState, 
-  validationMessages 
-} from './FipeInputValidation';
 import { 
   calculateDepreciationCurve, 
   convertYearPricesToAgePoints,
@@ -514,7 +509,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
+    <div className="space-y-6">
       {/* Quick Select from Registered Vehicles & Favorites */}
       {(registeredVehicles.length > 0 || fipeFavoritesProps.favoriteVehicles.length > 0) && (
         <Card className="border-primary/20 bg-primary/5">
@@ -563,7 +558,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
             {fipeFavoritesProps.favoriteVehicles.length > 0 && (
               <div className="space-y-1.5">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <span className="text-amber-400">★</span> Favoritos
+                  <Star className="h-3 w-3 text-primary" />
+                  Favoritos
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {fipeFavoritesProps.favoriteVehicles.map((fav) => {
@@ -619,168 +615,130 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         </Card>
       )}
 
-      {/* Main Simulator */}
-      <Card>
+      {/* Main Simulator — VehicleSearch + FIPEResultCard (C5A) */}
+      <Card className="bg-card border border-border rounded-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Car className="h-5 w-5 text-primary" />
             Dados do veículo na FIPE
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            {/* Left Column - Selection */}
+            {/* Left Column — VehicleSearch */}
             <div className="space-y-4 flex flex-col">
-              {/* Vehicle Type - Card Buttons */}
+              {/* Vehicle Type */}
               <div className="space-y-2">
-                <Label>Tipo de Veículo</Label>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de veículo</span>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: 'carros' as VehicleType, label: 'Carros', icon: Car, color: 'text-blue-600 dark:text-blue-400' },
-                    { value: 'motos' as VehicleType, label: 'Motos', icon: Bike, color: 'text-orange-600 dark:text-orange-400' },
-                    { value: 'caminhoes' as VehicleType, label: 'Caminhões', icon: Truck, color: 'text-emerald-600 dark:text-emerald-400' },
+                    { value: 'carros' as VehicleType, label: 'Carros', icon: Car },
+                    { value: 'motos' as VehicleType, label: 'Motos', icon: Bike },
+                    { value: 'caminhoes' as VehicleType, label: 'Caminhões', icon: Truck },
                   ].map((type) => {
                     const isSelected = fipe.vehicleType === type.value;
                     const IconComponent = type.icon;
-                    
                     return (
                       <button
                         key={type.value}
                         type="button"
                         onClick={() => fipe.setVehicleType(type.value)}
-                        className={`
-                          flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border-2 transition-all duration-200
-                          ${isSelected 
-                            ? 'border-primary bg-primary/10 shadow-sm' 
-                            : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50'
-                          }
-                        `}
+                        className={cn(
+                          "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-foreground"
+                            : "border-border bg-card hover:border-primary/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+                        )}
                       >
-                        <IconComponent 
-                          className={`h-6 w-6 transition-colors ${isSelected ? type.color : 'text-muted-foreground'}`} 
-                        />
-                        <span className={`text-xs font-medium transition-colors ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {type.label}
-                        </span>
+                        <IconComponent className="h-6 w-6" />
+                        <span className="text-xs font-medium">{type.label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Brand */}
-              <FieldWrapper
-                label="Marca"
-                required
-                state={getValidationState({
-                  isLoading: fipe.loading.brands,
-                  hasValue: !!fipe.selectedBrand,
-                  hasError: !!fipe.error && !fipe.selectedBrand,
-                })}
-                message={
-                  fipe.loading.brands 
-                    ? validationMessages.brand.loading 
-                    : fipe.selectedBrand 
-                      ? validationMessages.brand.valid 
-                      : undefined
-                }
-                hint={!fipe.selectedBrand && !fipe.loading.brands ? "Selecione a marca do veículo" : undefined}
-              >
-                <BrandSearchSelect
-                  fipeBrands={fipe.brands}
-                  value={fipe.selectedBrand}
-                  onValueChange={fipe.setSelectedBrand}
-                  disabled={fipe.loading.brands}
-                  loading={fipe.loading.brands}
-                  placeholder="Selecione a marca"
-                  searchPlaceholder="Buscar marca..."
-                />
-              </FieldWrapper>
+              {/* Marca */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Marca</span>
+                {fipe.loading.brands ? (
+                  <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
+                ) : (
+                  <div className="[&_button]:h-12 [&_button]:rounded-xl [&_button]:bg-card [&_button]:border [&_button]:border-border [&_button]:text-foreground">
+                    <BrandSearchSelect
+                      fipeBrands={fipe.brands}
+                      value={fipe.selectedBrand}
+                      onValueChange={fipe.setSelectedBrand}
+                      disabled={fipe.loading.brands}
+                      loading={fipe.loading.brands}
+                      placeholder="Selecione a marca"
+                      searchPlaceholder="Buscar marca..."
+                    />
+                  </div>
+                )}
+              </div>
 
-              {/* Model */}
-              <FieldWrapper
-                label="Modelo"
-                required
-                state={getValidationState({
-                  isLoading: fipe.loading.models,
-                  hasValue: !!fipe.selectedModel,
-                  isDisabled: !fipe.selectedBrand,
-                  hasError: !!fipe.error && fipe.selectedBrand && !fipe.selectedModel,
-                })}
-                message={
-                  fipe.loading.models 
-                    ? validationMessages.model.loading 
-                    : fipe.selectedModel 
-                      ? validationMessages.model.valid 
-                      : undefined
-                }
-                hint={
-                  !fipe.selectedBrand 
-                    ? validationMessages.model.disabled 
-                    : !fipe.selectedModel && !fipe.loading.models 
-                      ? "Escolha o modelo do veículo" 
-                      : undefined
-                }
-              >
-                <SearchableSelect
-                  options={fipe.models.map((model) => ({
-                    value: String(model.codigo),
-                    label: model.nome,
-                  }))}
-                  value={fipe.selectedModel}
-                  onValueChange={fipe.setSelectedModel}
-                  disabled={!fipe.selectedBrand || fipe.loading.models}
-                  loading={fipe.loading.models}
-                  placeholder="Selecione o modelo"
-                  searchPlaceholder="Buscar modelo..."
-                  emptyMessage="Nenhum modelo encontrado."
-                />
-              </FieldWrapper>
+              {/* Modelo */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Modelo</span>
+                {fipe.loading.models ? (
+                  <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
+                ) : (
+                  <div className="[&_button]:h-12 [&_button]:rounded-xl [&_button]:bg-card [&_button]:border [&_button]:border-border [&_button]:text-foreground">
+                    <SearchableSelect
+                      options={fipe.models.map((m) => ({ value: String(m.codigo), label: m.nome }))}
+                      value={fipe.selectedModel}
+                      onValueChange={fipe.setSelectedModel}
+                      disabled={!fipe.selectedBrand || fipe.loading.models}
+                      loading={fipe.loading.models}
+                      placeholder="Selecione o modelo"
+                      searchPlaceholder="Buscar modelo..."
+                      emptyMessage="Nenhum modelo encontrado."
+                    />
+                  </div>
+                )}
+              </div>
 
-              {/* Year */}
-              <FieldWrapper
-                label="Ano/Modelo"
-                required
-                state={getValidationState({
-                  isLoading: fipe.loading.years,
-                  hasValue: !!fipe.selectedYear,
-                  isDisabled: !fipe.selectedModel,
-                  hasError: !!fipe.error && fipe.selectedModel && !fipe.selectedYear,
-                })}
-                message={
-                  fipe.loading.years 
-                    ? validationMessages.year.loading 
-                    : fipe.selectedYear 
-                      ? validationMessages.year.valid 
-                      : undefined
-                }
-                hint={
-                  !fipe.selectedModel 
-                    ? validationMessages.year.disabled 
-                    : !fipe.selectedYear && !fipe.loading.years 
-                      ? "Selecione o ano de fabricação" 
-                      : undefined
-                }
-              >
-                <SearchableSelect
-                  options={fipe.years.map((year) => ({
-                    value: year.codigo,
-                    label: formatFipeYearName(year.nome),
-                  }))}
-                  value={fipe.selectedYear}
-                  onValueChange={fipe.setSelectedYear}
-                  disabled={!fipe.selectedModel || fipe.loading.years}
-                  loading={fipe.loading.years}
-                  placeholder="Selecione o ano"
-                  searchPlaceholder="Buscar ano..."
-                  emptyMessage="Nenhum ano encontrado."
-                />
-              </FieldWrapper>
+              {/* Ano */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Ano</span>
+                {fipe.loading.years ? (
+                  <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
+                ) : (
+                  <div className="[&_button]:h-12 [&_button]:rounded-xl [&_button]:bg-card [&_button]:border [&_button]:border-border [&_button]:text-foreground">
+                    <SearchableSelect
+                      options={fipe.years.map((y) => ({ value: y.codigo, label: formatFipeYearName(y.nome) }))}
+                      value={fipe.selectedYear}
+                      onValueChange={fipe.setSelectedYear}
+                      disabled={!fipe.selectedModel || fipe.loading.years}
+                      loading={fipe.loading.years}
+                      placeholder="Selecione o ano"
+                      searchPlaceholder="Buscar ano..."
+                      emptyMessage="Nenhum ano encontrado."
+                    />
+                  </div>
+                )}
+              </div>
 
-              {/* Global Error Message */}
+              {/* Botão Consultar */}
+              <Button
+                type="button"
+                disabled={!fipe.selectedBrand || !fipe.selectedModel || !fipe.selectedYear || fipe.loading.price}
+                className="min-h-[52px] w-full bg-primary text-primary-foreground font-sans font-bold rounded-xl hover:bg-primary/90"
+              >
+                {fipe.loading.price ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Consultando...
+                  </>
+                ) : (
+                  'Consultar'
+                )}
+              </Button>
+
               <AnimatePresence>
                 {fipe.error && (
                   <motion.div
@@ -820,112 +778,110 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex-1 flex flex-col"
                   >
-                    {/* FIPE Result with Age Badge */}
-                    <div className="p-6 lg:p-8 rounded-xl bg-income/10 border border-income/30 flex-1 flex flex-col justify-center relative overflow-hidden">
-                      {/* Success indicator */}
-                      <div className="absolute top-3 right-3">
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-income/20 text-income text-xs font-medium">
+                    {/* FIPEResultCard — C5A */}
+                    <div className="p-6 rounded-xl bg-card border border-border flex-1 flex flex-col gap-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-muted-foreground">Valor FIPE</span>
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                           <CheckCircle2 className="h-3.5 w-3.5" />
-                          <span>Consulta realizada</span>
+                          Consulta realizada
                         </div>
                       </div>
-                      
-                      <div className="text-center space-y-3 pt-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <p className="text-sm text-muted-foreground">Valor FIPE</p>
-                          {(() => {
-                            const currentYear = new Date().getFullYear();
-                            const vehicleAge = currentYear - fipe.price.AnoModelo;
-                            const ageBadge = vehicleAge <= 0 
-                              ? { color: 'bg-emerald-500', label: '0 km' }
-                              : vehicleAge <= 3 
-                              ? { color: 'bg-emerald-500', label: `${vehicleAge} ${vehicleAge === 1 ? 'ano' : 'anos'}` }
-                              : vehicleAge <= 5
-                              ? { color: 'bg-amber-500', label: `${vehicleAge} anos` }
-                              : vehicleAge <= 10
-                              ? { color: 'bg-orange-500', label: `${vehicleAge} anos` }
-                              : { color: 'bg-red-500', label: `${vehicleAge} anos` };
-                            return (
-                              <Badge className={ageBadge.color + ' text-white text-xs px-2 py-0.5'}>
-                                {ageBadge.label}
-                              </Badge>
-                            );
-                          })()}
+                      <p className="font-syne font-extrabold text-4xl text-foreground">{fipe.price.Valor}</p>
+                      <p className="font-syne font-bold text-xl text-foreground">
+                        {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Mês de referência: {fipe.price.MesReferencia}</p>
+                      {/* Variação mensal (últimos 2 pontos do histórico) */}
+                      {(() => {
+                        const hist = fipeHistory.priceHistory;
+                        if (hist.length >= 2) {
+                          const prev = hist[hist.length - 2].price;
+                          const last = hist[hist.length - 1].price;
+                          const pct = prev > 0 ? ((last - prev) / prev) * 100 : 0;
+                          const positive = pct >= 0;
+                          return (
+                            <div className={cn("flex items-center gap-1.5 text-sm font-medium", positive ? "text-income" : "text-expense")}>
+                              {positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                              <span>{positive ? '+' : ''}{pct.toFixed(2)}% variação mensal</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      {/* Badge categoria */}
+                      {(() => {
+                        const mdlName = fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || '';
+                        const category = inferVehicleCategory(mdlName, fipe.vehicleType);
+                        return (
+                          <span className="inline-flex w-fit bg-primary/10 text-primary text-xs rounded-full px-2 py-1 capitalize">
+                            {category.replace(/_/g, ' ')}
+                          </span>
+                        );
+                      })()}
+                      {/* Gráfico de linha — histórico de preços */}
+                      {fipeHistory.priceHistory.length > 0 && (
+                        <div className="mt-2 h-[180px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={fipeHistory.priceHistory.map((p) => ({ ...p, valor: p.price }))}
+                              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="fipeResultArea" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis
+                                dataKey="monthLabel"
+                                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                                axisLine={{ stroke: 'hsl(var(--border))' }}
+                              />
+                              <YAxis
+                                hide
+                                domain={['auto', 'auto']}
+                              />
+                              <Tooltip
+                                content={({ active, payload }) => {
+                                  if (!active || !payload?.[0]) return null;
+                                  const p = payload[0].payload;
+                                  return (
+                                    <div className="bg-card border border-border rounded-lg p-2 shadow-lg text-xs">
+                                      <p className="text-muted-foreground">{p.monthLabel}</p>
+                                      <p className="font-sans font-semibold tabular-nums tracking-tight text-foreground">{formatCurrency(p.price)}</p>
+                                    </div>
+                                  );
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="valor"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={2}
+                                fill="url(#fipeResultArea)"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
                         </div>
-                        <p className="text-3xl lg:text-4xl font-bold text-income">{fipe.price.Valor}</p>
-                        <p className="text-sm lg:text-base font-medium text-foreground/80">
-                          {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
-                        </p>
-                      </div>
+                      )}
                       <div className="flex items-center justify-center pt-2">
                         <Button
                           variant={fipeFavoritesProps.isFavorited ? "secondary" : "outline"}
                           size="sm"
                           onClick={fipeFavoritesProps.onAddFavorite}
                           disabled={fipeFavoritesProps.isFavorited}
-                          className="gap-1.5"
+                          className="gap-1.5 border-border bg-card text-foreground hover:bg-accent"
                         >
-                          <span className={fipeFavoritesProps.isFavorited ? "text-amber-400" : ""}>★</span>
+                          <Star className={cn("h-4 w-4", fipeFavoritesProps.isFavorited && "fill-primary text-primary")} />
                           {fipeFavoritesProps.isFavorited ? 'Favoritado' : 'Favoritar'}
                         </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs lg:text-sm text-muted-foreground pt-4 mt-4 border-t border-income/20">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
                         <p>Código: {fipe.price.CodigoFipe}</p>
-                        <p className="text-right">Ref: {fipe.price.MesReferencia}</p>
-                        <p>Combustível: {fipe.price.Combustivel}</p>
-                        <p className="text-right">Ano Modelo: {formatFipeAnoModelo(fipe.price.AnoModelo)}</p>
+                        <p className="text-right">Combustível: {fipe.price.Combustivel}</p>
                       </div>
-                      {/* Faixa para Compra + Categoria */}
-                      {(() => {
-                        const negotiationMin = fipe.priceValue * 0.95;
-                        const mdlName = fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || '';
-                        const category = inferVehicleCategory(mdlName, fipe.vehicleType);
-                        return (
-                          <div className="grid grid-cols-2 gap-3 pt-3 mt-3 border-t border-income/20">
-                            <div className="text-center">
-                              <div className="flex items-center justify-center gap-1 mb-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Faixa p/ Compra</p>
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <button type="button" className="p-0.5 hover:bg-muted rounded-full transition-colors" aria-label="Ajuda: Faixa para Compra">
-                                      <HelpCircle className="h-3 w-3 text-muted-foreground hover:text-primary" />
-                                    </button>
-                                  </DialogTrigger>
-                                  <DialogContent className="max-w-md">
-                                    <DialogHeader>
-                                      <DialogTitle className="flex items-center gap-2 text-base">
-                                        <HelpCircle className="h-4 w-4 text-primary" />
-                                        Faixa para Compra
-                                      </DialogTitle>
-                                    </DialogHeader>
-                                    <div className="text-sm text-muted-foreground space-y-2">
-                                      <p>
-                                        A <strong>Tabela FIPE</strong> representa um valor de referência para veículos usados no Brasil, 
-                                        calculado com base em preços praticados no mercado.
-                                      </p>
-                                      <p>
-                                        Na prática, a maioria das negociações acontece entre <strong>95% e 100%</strong> do valor FIPE:
-                                      </p>
-                                      <ul className="list-disc list-inside space-y-1 mt-2">
-                                        <li><strong>95%:</strong> Bom ponto de partida para negociação</li>
-                                        <li><strong>100%:</strong> Valor máximo recomendado</li>
-                                        <li><strong>&lt;90%:</strong> Pode indicar problemas ocultos ou oportunidade</li>
-                                        <li><strong>&gt;100%:</strong> Prêmio por modelo/versão diferenciada</li>
-                                      </ul>
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                              </div>
-                              <p className="text-sm font-semibold text-primary">{formatCurrency(negotiationMin)}</p>
-                              <p className="text-[10px] text-muted-foreground">até {fipe.price.Valor} (FIPE)</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Categoria</p>
-                              <p className="text-sm font-medium capitalize">{category.replace(/_/g, ' ')}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
                     </div>
                   </motion.div>
                 )}
@@ -936,15 +892,9 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center p-8 rounded-xl bg-muted/50 text-center flex-1 border-2 border-dashed border-muted-foreground/20"
+                    className="flex-1 flex flex-col items-center justify-center"
                   >
-                    <Car className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                    <p className="text-muted-foreground text-sm font-medium mb-1">
-                      Consulte o valor do seu veículo
-                    </p>
-                    <p className="text-muted-foreground/70 text-xs max-w-[200px]">
-                      Selecione marca, modelo e ano para ver o preço na tabela FIPE
-                    </p>
+                    <EmptyFipe />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1031,22 +981,22 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
           badge={<Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20">Avançado</Badge>}
           isTabletOrMobile={isTabletOrMobile}
         >
-          <SafraAnalysisSection
+          <SuspenseCohortMatrix
             fipeCode={fipe.price.CodigoFipe}
-            modelYear={fipe.price.AnoModelo}
+            modelName={fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || ''}
           />
         </MobileSectionDrawer>
       )}
 
       {/* Error or no history available - fallback with retry button */}
       {fipe.price && !fipeHistory.hasHistory && !fipeHistory.loading && fipeHistory.error && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-warning/30 bg-warning/5">
           <CardContent className="py-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-start gap-3">
-                <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <Info className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                  <p className="text-sm font-medium text-warning">
                     Histórico temporal indisponível
                   </p>
                   <p className="text-xs text-muted-foreground">

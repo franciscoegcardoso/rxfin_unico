@@ -261,10 +261,10 @@ const RegistrosTab: React.FC = () => {
                     )}
                   </div>
                   <div className="flex">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openRecordDialog(record)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => openRecordDialog(record)} aria-label="Editar registro">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-expense" onClick={() => handleDeleteRecord(record.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-expense" onClick={() => handleDeleteRecord(record.id)} aria-label="Excluir registro">
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>

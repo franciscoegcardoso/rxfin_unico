@@ -122,7 +122,7 @@ export default function AIMetrics() {
             <Target className="h-5 w-5" />
             <span className="text-sm opacity-80">% de novos usuários que viram o Raio-X até D+1</span>
           </div>
-          <p className="text-5xl font-bold">{metrics?.taxa_ativacao_pct ?? 0}%</p>
+          <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px]">{metrics?.taxa_ativacao_pct ?? 0}%</p>
           <p className="text-sm opacity-70 mt-2">
             {metrics?.ativados_total ?? 0} de {metrics?.novos_total ?? 0} novos usuários ativaram o Raio-X
           </p>

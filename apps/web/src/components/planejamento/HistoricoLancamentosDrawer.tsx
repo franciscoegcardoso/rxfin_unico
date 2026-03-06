@@ -197,7 +197,7 @@ export function HistoricoLancamentosDrawer({
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={exportToCSV} title="Exportar CSV">
+              <Button variant="outline" size="icon" onClick={exportToCSV} title="Exportar CSV" aria-label="Exportar CSV">
                 <Download className="h-4 w-4" />
               </Button>
             </div>

@@ -1,0 +1,44 @@
+import {
+  Home,
+  ArrowLeftRight,
+  TrendingUp,
+  Car,
+  User,
+  type LucideIcon,
+} from "lucide-react";
+
+export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
+  { path: "/inicio", label: "Home", icon: Home },
+  { path: "/lancamentos", label: "Lançamentos", icon: ArrowLeftRight },
+  { path: "/bens-investimentos", label: "Investimentos", icon: TrendingUp },
+  { path: "/simuladores", label: "FIPE", icon: Car },
+  { path: "/minha-conta", label: "Perfil", icon: User },
+];
+
+const TITLE_MAP: Record<string, string> = {
+  "/inicio": "Início",
+  "/lancamentos": "Lançamentos",
+  "/bens-investimentos": "Bens e Investimentos",
+  "/bens-investimentos/consolidado": "Consolidado",
+  "/bens-investimentos/patrimonio": "Patrimônio",
+  "/bens-investimentos/investimentos": "Investimentos",
+  "/bens-investimentos/credito": "Crédito",
+  "/bens-investimentos/seguros": "Seguros",
+  "/simuladores": "Simuladores",
+  "/simuladores/veiculos/simulador-fipe": "Simulador FIPE",
+  "/minha-conta": "Minha Conta",
+};
+
+export function getPageTitle(pathname: string): string {
+  if (TITLE_MAP[pathname]) return TITLE_MAP[pathname];
+  for (const [path, title] of Object.entries(TITLE_MAP)) {
+    if (path !== "/inicio" && pathname.startsWith(path)) return title;
+  }
+  const item = NAV_ITEMS.find((i) => pathname === i.path || pathname.startsWith(i.path + "/"));
+  return item ? item.label : "RXFin";
+}
+
+export function isNavActive(pathname: string, itemPath: string): boolean {
+  if (itemPath === "/inicio") return pathname === "/inicio";
+  return pathname === itemPath || pathname.startsWith(itemPath + "/");
+}

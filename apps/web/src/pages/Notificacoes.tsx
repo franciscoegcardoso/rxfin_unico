@@ -28,6 +28,8 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { EmptyNotificacoes } from '@/design-system/components/empty-states';
+import { ErrorCard } from '@/design-system/components/ErrorCard';
 
 const PAGE_SIZE = 20;
 
@@ -284,9 +286,7 @@ export default function Notificacoes() {
           )}
 
           {error && (
-            <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
-              <p className="text-sm text-destructive">{error}</p>
-            </Card>
+            <ErrorCard message="Não foi possível carregar os dados." onRetry={() => loadInitial()} />
           )}
 
           {loading && (
@@ -307,10 +307,7 @@ export default function Notificacoes() {
           )}
 
           {!loading && !error && list.length === 0 && (
-            <Card className="rounded-[14px] border border-border/80 p-12 text-center">
-              <Bell className="mx-auto h-14 w-14 text-muted-foreground/50" />
-              <p className="mt-4 text-lg font-medium">Nenhuma notificação ainda</p>
-            </Card>
+            <EmptyNotificacoes />
           )}
 
           {!loading && !error && list.length > 0 && filteredList.length === 0 && (

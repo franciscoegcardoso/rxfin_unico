@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { invokePluggySync } from '@/lib/pluggySync';
-import type { Session } from '@supabase/supabase-js';
 import { AlertTriangle } from 'lucide-react';
 import { PluggyConnectButton } from '@/components/openfinance/PluggyConnectButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OutdatedConnection {
   id: string;
@@ -13,16 +13,8 @@ interface OutdatedConnection {
 }
 
 export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> = ({ onReconnected }) => {
-  const [session, setSession] = useState<Session | null>(null);
+  const { session } = useAuth();
   const [outdated, setOutdated] = useState<OutdatedConnection[]>([]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_, s) => setSession(s ?? null));
-    return () => subscription.unsubscribe();
-  }, []);
 
   const fetchOutdated = useCallback(async () => {
     if (!session?.access_token) return;
@@ -46,7 +38,7 @@ export const OutdatedConnectionBanner: React.FC<{ onReconnected?: () => void }> 
   }, [session]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!session?.access_token) return;
     fetchOutdated();
   }, [session, fetchOutdated]);
 

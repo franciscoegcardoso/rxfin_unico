@@ -7,7 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SliderInput } from '@/components/ui/slider-input';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { FinancialTermTooltip, InsightCard } from './FinancialTermTooltip';
 import { 
   Car, 
@@ -15,7 +16,6 @@ import {
   UserCheck, 
   TrendingUp, 
   DollarSign, 
-  Percent,
   BarChart3,
   Layers,
   Download,
@@ -396,96 +396,111 @@ export const FinanciamentoSimulator: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Coluna de Inputs */}
+        {/* Coluna de Inputs — C5B formulário */}
         <div className="xl:col-span-4 space-y-4">
-          {/* Card Principal de Inputs */}
-          <Card>
+          <Card className="bg-card border border-border rounded-xl">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <Wallet className="h-4 w-4 text-primary" />
                 Dados do Financiamento
               </CardTitle>
-              <CardDescription className="text-xs">
+              <CardDescription className="text-muted-foreground text-xs">
                 Preencha os valores para simular
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-6">
               {/* Valor do Bem */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Valor do Bem</Label>
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Valor do veículo</span>
                 <CurrencyInput
                   value={valorBem}
                   onChange={setValorBem}
                   placeholder="0,00"
+                  inputMode="decimal"
+                  className="font-sans font-bold text-2xl h-12 rounded-xl border border-border bg-card text-foreground tabular-nums"
                 />
               </div>
 
-              {/* Entrada */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-medium flex items-center gap-1">
-                    <FinancialTermTooltip termKey="entrada" iconOnly />
-                    Entrada
-                  </Label>
-                  {data.entryPercentage > 0 && (
-                    <span className={cn(
-                      "text-xs font-bold",
-                      data.entryPercentage >= 20 ? "text-income" : 
-                      data.entryPercentage >= 10 ? "text-amber-600" : "text-expense"
-                    )}>
-                      {data.entryPercentage.toFixed(0)}%
-                    </span>
-                  )}
-                </div>
-                <CurrencyInput
-                  value={entrada}
-                  onChange={setEntrada}
-                  placeholder="0,00"
-                />
-              </div>
-
-              {/* Prazo e Taxa */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Prazo</Label>
+              {/* Entrada % e R$ side-by-side sincronizados */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Entrada</span>
+                <div className="grid grid-cols-2 gap-3">
                   <div className="relative">
-                    <input
+                    <Input
                       type="number"
-                      value={prazo}
-                      onChange={(e) => setPrazo(Number(e.target.value))}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-bold pr-14 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={valorBem > 0 ? ((entrada / valorBem) * 100).toFixed(1) : '0'}
+                      onChange={(e) => {
+                        const pct = parseFloat(e.target.value);
+                        if (!Number.isNaN(pct)) setEntrada((valorBem * Math.min(100, Math.max(0, pct))) / 100);
+                      }}
+                      className="h-12 rounded-xl border border-border bg-card text-foreground font-sans font-semibold tabular-nums pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">meses</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium flex items-center gap-1">
-                    <FinancialTermTooltip termKey="juros" iconOnly />
-                    Taxa Juros
-                  </Label>
-                  <SliderInput
-                    value={taxaNominal}
-                    onChange={setTaxaNominal}
-                    min={0}
-                    max={5}
-                    step={0.01}
-                    suffix="% a.m."
-                    decimalPlaces={2}
+                  <CurrencyInput
+                    value={entrada}
+                    onChange={setEntrada}
+                    placeholder="0,00"
+                    inputMode="decimal"
+                    className="h-12 rounded-xl border border-border bg-card text-foreground font-syne font-bold"
                   />
+                </div>
+              </div>
+
+              {/* Prazo — slider customizado */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Prazo (meses)</span>
+                <div className="space-y-3">
+                  <Slider
+                    value={[prazo]}
+                    onValueChange={([v]) => setPrazo(v)}
+                    min={6}
+                    max={tipo === 'imovel' ? 360 : 84}
+                    step={1}
+                    className="[&_.relative.h-2]:bg-muted [&_.relative.h-2]:rounded-full [&_.block.h-5.w-5]:bg-primary [&_.block.h-5.w-5]:border-2 [&_.block.h-5.w-5]:border-primary-foreground [&_.block.h-5.w-5]:rounded-full"
+                  />
+                  <p className="font-sans font-semibold tabular-nums tracking-tight text-primary text-xl">{prazo} meses</p>
+                </div>
+              </div>
+
+              {/* Taxa de juros — input com sufixo % a.m. */}
+              <div className="space-y-2">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <FinancialTermTooltip termKey="juros" iconOnly />
+                  Taxa de juros
+                </span>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.01}
+                    value={taxaNominal.toFixed(2)}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value.replace(',', '.'));
+                      if (!Number.isNaN(v)) setTaxaNominal(Math.min(10, Math.max(0, v)));
+                    }}
+                    className="h-12 rounded-xl border border-border bg-card text-foreground font-sans font-semibold tabular-nums pr-16"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">% a.m.</span>
                 </div>
               </div>
 
               {/* Sistema de Amortização */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium">Como prefere pagar?</Label>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Como prefere pagar?</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
+                    type="button"
                     onClick={() => setSistema('PRICE')}
                     className={cn(
-                      "p-3 rounded-lg border text-left transition-all",
-                      sistema === 'PRICE' 
-                        ? "bg-primary/10 border-primary ring-1 ring-primary" 
-                        : "bg-background border-border hover:border-primary/50"
+                      "p-3 rounded-xl border text-left transition-all",
+                      sistema === 'PRICE'
+                        ? "bg-primary/10 border-primary text-foreground"
+                        : "bg-card border-border hover:border-primary/50 text-muted-foreground"
                     )}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -495,12 +510,13 @@ export const FinanciamentoSimulator: React.FC = () => {
                     <div className="text-[10px] text-muted-foreground leading-tight">Valor igual todo mês</div>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSistema('SAC')}
                     className={cn(
-                      "p-3 rounded-lg border text-left transition-all",
-                      sistema === 'SAC' 
-                        ? "bg-primary/10 border-primary ring-1 ring-primary" 
-                        : "bg-background border-border hover:border-primary/50"
+                      "p-3 rounded-xl border text-left transition-all",
+                      sistema === 'SAC'
+                        ? "bg-primary/10 border-primary text-foreground"
+                        : "bg-card border-border hover:border-primary/50 text-muted-foreground"
                     )}
                   >
                     <div className="flex items-center gap-2 mb-1">
@@ -565,51 +581,67 @@ export const FinanciamentoSimulator: React.FC = () => {
             </Collapsible>
           )}
 
-          {/* Card Resumo CET */}
-          <Card className="bg-primary text-primary-foreground overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10" />
-            <CardContent className="pt-6 relative z-10">
-              <div className="flex items-center gap-2 mb-2 opacity-80">
-                <Percent className="h-4 w-4" />
-                <span className="text-[10px] font-bold uppercase tracking-widest">
-                  <FinancialTermTooltip termKey="cet">Custo Efetivo Total</FinancialTermTooltip>
-                </span>
+          {/* FinancingResultCard — C5B */}
+          <Card className="bg-card border border-border rounded-xl">
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Parcela mensal</p>
+                <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-foreground text-[40px] md:text-[48px]">
+                  {formatMoney(data.pmtInicial)}
+                </p>
               </div>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-bold">{data.cetAnual.toFixed(2)}%</span>
-                <span className="opacity-70 font-bold">a.a.</span>
-              </div>
-              
-              <div className="space-y-2 pt-4 border-t border-white/20">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm opacity-80">
-                    {sistema === 'PRICE' ? 'Parcela Fixa' : '1ª Parcela'}
-                  </span>
-                  <span className="text-xl font-bold">{formatMoney(data.pmtInicial)}</span>
-                </div>
-                {sistema === 'SAC' && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs opacity-60">Última Parcela</span>
-                    <span className="text-sm font-bold opacity-80">{formatMoney(data.pmtFinal)}</span>
-                  </div>
-                )}
-              </div>
-
               {/* Breakdown */}
-              <div className="mt-4 pt-3 border-t border-white/20 grid grid-cols-3 gap-2">
-                <div className="text-center">
-                  <p className="text-[10px] opacity-60 uppercase tracking-wide">Financiado</p>
-                  <p className="text-sm font-bold">{formatMoney(data.principalPuro + data.iof + data.taxasIniciais)}</p>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Valor financiado</p>
+                  <p className="text-sm font-sans font-semibold tabular-nums tracking-tight text-foreground">{formatMoney(data.principalPuro + data.iof + data.taxasIniciais)}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[10px] opacity-60 uppercase tracking-wide">Juros</p>
-                  <p className="text-sm font-bold">{formatMoney(data.totalJuros)}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Total de juros</p>
+                  <p className="text-sm font-sans font-semibold tabular-nums tracking-tight text-expense">{formatMoney(data.totalJuros)}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[10px] opacity-60 uppercase tracking-wide">Total</p>
-                  <p className="text-sm font-bold">{formatMoney(data.totalPago)}</p>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Custo total</p>
+                  <p className="text-sm font-sans font-semibold tabular-nums tracking-tight text-foreground">{formatMoney(data.totalPago)}</p>
                 </div>
               </div>
+              {/* Barra de composição principal vs juros */}
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Composição</p>
+                <div className="h-3 rounded-full overflow-hidden flex bg-muted">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${data.pctPrincipal}%` }}
+                  />
+                  <div
+                    className="h-full bg-expense transition-all"
+                    style={{ width: `${data.pctJuros}%` }}
+                  />
+                  {data.pctEncargos > 0 && (
+                    <div
+                      className="h-full bg-muted transition-all"
+                      style={{ width: `${data.pctEncargos}%` }}
+                    />
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {prazo} parcelas · {taxaNominal.toFixed(2)}% a.m.
+                {data.cetAnual > 0 && (
+                  <span className="ml-1">
+                    · CET <FinancialTermTooltip termKey="cet" variant="inline" showIcon={false}>{data.cetAnual.toFixed(2)}% a.a.</FinancialTermTooltip>
+                  </span>
+                )}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full bg-card border border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-xl font-sans font-bold"
+                onClick={handleExportCSV}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Salvar simulação (CSV)
+              </Button>
             </CardContent>
           </Card>
 

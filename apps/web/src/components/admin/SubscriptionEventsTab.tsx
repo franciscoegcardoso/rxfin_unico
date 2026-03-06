@@ -52,7 +52,7 @@ const EVENT_TYPE_CONFIG: Record<string, { label: string; icon: typeof CheckCircl
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  free: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
+  free: 'bg-muted text-muted-foreground',
   basic: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   pro: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
   premium: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',

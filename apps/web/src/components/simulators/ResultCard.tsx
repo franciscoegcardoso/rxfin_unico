@@ -21,7 +21,7 @@ export function ResultCard({
   valueClassName = 'text-3xl font-bold text-green-700 dark:text-green-400',
 }: ResultCardProps) {
   return (
-    <Card className={cn('bg-white dark:bg-card shadow-lg rounded-2xl border-2 border-green-200 dark:border-green-800', className)}>
+    <Card className={cn('bg-card shadow-lg rounded-2xl border-2 border-border', className)}>
       <CardContent className="p-6">
         {icon && <div className="mb-3 flex justify-center">{icon}</div>}
         <p className="text-sm font-medium text-muted-foreground mb-1">{label}</p>

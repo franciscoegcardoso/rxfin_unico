@@ -444,7 +444,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
                             {getAgeBadge(vehicleAge).label}
                           </Badge>
                         </div>
-                        <p className="text-4xl lg:text-5xl font-bold text-income">
+                        <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-income text-[40px] md:text-[48px]">
                           {fipe.price.Valor}
                         </p>
                         <div className="space-y-1.5">

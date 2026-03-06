@@ -73,7 +73,7 @@ const Contas: React.FC = () => {
         />
 
         {error && (
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 border-destructive/50 bg-destructive/5">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6 border-destructive/50 bg-destructive/5">
             <p className="text-sm text-destructive mb-3">{String(error)}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -83,18 +83,18 @@ const Contas: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-[hsl(150,60%,40%)]" />
+                <TrendingUp className="h-4 w-4 text-income" />
                 Receita Prevista
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <p className="text-xl font-semibold text-[hsl(150,60%,40%)]">{formatCurrency(plannedIncome)}</p>
+              <p className="text-xl font-semibold text-income">{formatCurrency(plannedIncome)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                 <Wallet className="h-4 w-4" />
@@ -105,18 +105,18 @@ const Contas: React.FC = () => {
               <p className="text-xl font-semibold">{formatCurrency(realizedIncome)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingDown className="h-4 w-4 text-red-600" />
+                <TrendingDown className="h-4 w-4 text-expense" />
                 Despesa Prevista
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <p className="text-xl font-semibold text-red-600">{formatCurrency(plannedExpense)}</p>
+              <p className="text-xl font-semibold text-expense">{formatCurrency(plannedExpense)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader className="p-0 pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
                 <Receipt className="h-4 w-4" />
@@ -129,13 +129,13 @@ const Contas: React.FC = () => {
               )}
             </CardHeader>
             <CardContent className="p-0">
-              <p className="text-xl font-semibold text-red-600">{formatCurrency(realizedExpense)}</p>
+              <p className="text-xl font-semibold text-expense">{formatCurrency(realizedExpense)}</p>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader>
               <CardTitle className="text-base">Receitas</CardTitle>
             </CardHeader>
@@ -148,13 +148,13 @@ const Contas: React.FC = () => {
                     <div
                       key={item.id ?? i}
                       className={cn(
-                        'flex items-center justify-between py-2 px-3 rounded-xl border border-gray-100',
-                        item.is_received && 'bg-[hsl(150,40%,96%)]'
+                        'flex items-center justify-between py-2 px-3 rounded-xl border border-border',
+                        item.is_received && 'bg-income/10'
                       )}
                     >
                       <div className="flex items-center gap-2">
                         {item.is_received ? (
-                          <CheckCircle2 className="h-4 w-4 text-[hsl(150,60%,40%)] shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-income shrink-0" />
                         ) : (
                           <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
                         )}
@@ -171,7 +171,7 @@ const Contas: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
             <CardHeader>
               <CardTitle className="text-base">Despesas</CardTitle>
             </CardHeader>
@@ -184,13 +184,13 @@ const Contas: React.FC = () => {
                     <div
                       key={item.id ?? i}
                       className={cn(
-                        'flex items-center justify-between py-2 px-3 rounded-xl border border-gray-100',
-                        item.is_paid && 'bg-gray-50'
+                        'flex items-center justify-between py-2 px-3 rounded-xl border border-border',
+                        item.is_paid && 'bg-muted/50'
                       )}
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         {item.is_paid ? (
-                          <CheckCircle2 className="h-4 w-4 text-[hsl(150,60%,40%)] shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-income shrink-0" />
                         ) : (
                           <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
                         )}
@@ -207,7 +207,7 @@ const Contas: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-4 text-sm shrink-0">
                         <span className="text-muted-foreground">{formatCurrency(item.planned ?? 0)}</span>
-                        <span className="font-medium text-red-600">{formatCurrency(item.realized ?? 0)}</span>
+                        <span className="font-medium text-expense">{formatCurrency(item.realized ?? 0)}</span>
                       </div>
                     </div>
                   ))}
@@ -217,14 +217,14 @@ const Contas: React.FC = () => {
           </Card>
         </div>
 
-        <Card className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <Card className="bg-card rounded-2xl shadow-sm border border-border p-6">
           <CardContent className="p-0">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Saldo projetado</p>
                 <p className={cn(
                   'text-lg font-semibold',
-                  projectedBalance >= 0 ? 'text-[hsl(150,60%,40%)]' : 'text-red-600'
+                  projectedBalance >= 0 ? 'text-income' : 'text-expense'
                 )}>
                   {formatCurrency(projectedBalance)}
                 </p>
@@ -233,7 +233,7 @@ const Contas: React.FC = () => {
                 <p className="text-sm text-muted-foreground">Saldo real</p>
                 <p className={cn(
                   'text-lg font-semibold',
-                  actualBalance >= 0 ? 'text-[hsl(150,60%,40%)]' : 'text-red-600'
+                  actualBalance >= 0 ? 'text-income' : 'text-expense'
                 )}>
                   {formatCurrency(actualBalance)}
                 </p>

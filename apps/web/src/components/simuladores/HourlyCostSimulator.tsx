@@ -600,7 +600,7 @@ const DashboardStep: React.FC<DashboardStepProps> = ({ data, onChange, onNext, o
           <CardContent className="pt-6 pb-6">
             <div className="text-center">
               <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">Hora Real Líquida</p>
-              <div className="text-5xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-primary mb-2">
+              <div className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-primary mb-2">
                 {formatMoney(calculations.realRate)}
               </div>
               <p className="text-sm text-muted-foreground">

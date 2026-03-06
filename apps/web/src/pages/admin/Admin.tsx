@@ -20,6 +20,7 @@ export default function Admin() {
       deploy: '/admin/deploy',
       rollbacks: '/admin/rollbacks',
       health: '/admin/health',
+      architecture: '/admin/architecture',
     };
     const target = tabRouteMap[tabParam] || '/admin/usuarios';
     const suffix = tabParam === 'usuarios' && subtabParam ? `?subtab=${subtabParam}` : '';

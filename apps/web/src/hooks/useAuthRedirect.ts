@@ -48,10 +48,13 @@ export function useAuthRedirect(): AuthRedirectConfig {
   const skipRoute = settings.onboarding_skip_route || '/inicio';
 
   // Post-login redirect: only when profile loaded (!isLoading). Use onboarding_completed from onboarding_state (RPC).
-  const targetRoute =
+  let targetRoute =
     profile && profile.onboarding_completed === true
       ? (settings.returning_user_route || '/inicio')
       : '/onboarding';
+  if (targetRoute === '/inicio' && typeof window !== 'undefined' && !localStorage.getItem('rxfin-onboarding-done')) {
+    targetRoute = '/onboarding';
+  }
 
   return {
     shouldShowOnboarding,

@@ -5,7 +5,7 @@ import { ProfileTab } from '@/components/account/ProfileTab';
 import { WorkspaceTab } from '@/components/account/WorkspaceTab';
 import { SecurityTab } from '@/components/account/SecurityTab';
 import { SubscriptionTab } from '@/components/account/SubscriptionTab';
-import { PreferencesTab } from '@/components/account/PreferencesTab';
+import PreferenciasTab from '@/pages/minha-conta/PreferenciasTab';
 import { AccountOverviewTab } from '@/components/account/AccountOverviewTab';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
@@ -57,7 +57,7 @@ const MinhaContaContent: React.FC = () => {
       case 'workspace': return <WorkspaceTab />;
       case 'seguranca': return <SecurityTab />;
       case 'assinatura': return <SubscriptionTab />;
-      case 'preferencias': return <PreferencesTab />;
+      case 'preferencias': return <PreferenciasTab />;
       default: return <AccountOverviewTab />;
     }
   };
@@ -147,7 +147,7 @@ const MinhaContaContent: React.FC = () => {
           <TabsContent value="workspace" className="mt-6"><WorkspaceTab /></TabsContent>
           <TabsContent value="seguranca" className="mt-6"><SecurityTab /></TabsContent>
           <TabsContent value="assinatura" className="mt-6"><SubscriptionTab /></TabsContent>
-          <TabsContent value="preferencias" className="mt-6"><PreferencesTab /></TabsContent>
+          <TabsContent value="preferencias" className="mt-6"><PreferenciasTab /></TabsContent>
         </Tabs>
       </div>
     </SettingsLayout>

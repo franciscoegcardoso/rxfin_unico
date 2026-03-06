@@ -18,12 +18,9 @@ export function useAIOnboarding() {
     const check = async () => {
       hasChecked.current = true;
       try {
-        // 1. Check if onboarding_completed is false
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarding_completed, created_at')
-          .eq('id', user.id)
-          .single();
+        // 1. Check if onboarding_completed is false (source of truth: get_user_profile_settings / onboarding_state)
+        const { data: settings } = await supabase.rpc('get_user_profile_settings');
+        const profile = (settings as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
 
         if (!profile || profile.onboarding_completed === true) {
           setShouldStartAIOnboarding(false);

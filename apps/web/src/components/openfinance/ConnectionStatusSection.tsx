@@ -356,7 +356,7 @@ export const ConnectionStatusSection: React.FC = () => {
                       </Tooltip>
                     </TooltipProvider>
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px]" aria-label="Abrir opções de conexão">
                         <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
                       </Button>
                     </CollapsibleTrigger>

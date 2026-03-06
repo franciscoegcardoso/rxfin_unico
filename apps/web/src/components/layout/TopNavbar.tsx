@@ -11,6 +11,7 @@ import {
   Rocket,
   Menu,
   X,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -134,7 +135,7 @@ export const TopNavbar: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/60 overflow-x-hidden shadow-sm bg-background" style={{ backgroundColor: 'hsl(var(--background))' }}>
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border overflow-x-hidden shadow-sm bg-background">
       <div className="flex h-14 items-center justify-between px-4 md:px-6 w-full max-w-full mx-auto">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -204,12 +205,14 @@ export const TopNavbar: React.FC = () => {
             return (
               <button
                 key={item.path}
+                type="button"
                 onClick={(e) => handleItemClick(item as NavMenuItem, e as any)}
                 data-tour={tourId}
                 className={cn(
-                  "relative flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all cursor-pointer",
+                  "relative flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all cursor-pointer min-h-[44px] min-w-[44px] touch-manipulation",
                   "text-muted-foreground/50 hover:bg-muted/50"
                 )}
+                aria-label={item.label}
               >
                 <item.icon className="h-4 w-4" />
                 <span className="hidden lg:inline">{item.label}</span>
@@ -302,6 +305,23 @@ export const TopNavbar: React.FC = () => {
 
           {/* Notification Bell */}
           <NotificationBell />
+
+          {/* Lixeira - Admin only, quick access */}
+          {isAdmin && (
+            <Link
+              to="/lixeira"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all min-h-[44px] min-w-[44px] touch-manipulation",
+                location.pathname === '/lixeira'
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+              title="Lixeira"
+              aria-label="Lixeira"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Link>
+          )}
 
           {/* Admin Button */}
           {isAdmin && (

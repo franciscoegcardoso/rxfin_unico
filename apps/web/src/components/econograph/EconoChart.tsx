@@ -205,7 +205,7 @@ export const EconoChart: React.FC<EconoChartProps> = ({
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
                   Total atual
                 </p>
-                <p className="text-5xl font-black text-red-500">{totalWeight}%</p>
+                <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-red-500">{totalWeight}%</p>
                 <p className="text-sm text-slate-500 mt-2">
                   {totalWeight < 100 
                     ? `Faltam ${100 - totalWeight}%` 

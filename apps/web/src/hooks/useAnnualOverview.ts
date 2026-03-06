@@ -20,6 +20,7 @@ export interface SavingsGoal {
   current?: number;
   pct?: number;
   deadline?: string | null;
+  category?: string;
 }
 
 export interface AnnualOverviewTotals {

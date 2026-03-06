@@ -141,7 +141,7 @@ export default function Hub() {
 
   // Layout para usuário NÃO LOGADO: header público + hero + seções + CTA
   return (
-    <div className="min-h-screen bg-muted/30 dark:bg-gray-950">
+    <div className="min-h-screen bg-background">
       <PublicSimuladoresHeader />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:py-12 space-y-10">

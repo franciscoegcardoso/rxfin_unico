@@ -71,7 +71,7 @@ const EXCLUDED_NAV_GROUP_SLUGS = ['menu-principal', 'administracao'];
 
 // Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos; alertas/notificações acessíveis via sino no top bar; itens removidos do Planejamento)
 // Slugs de páginas que NÃO devem aparecer nos menus
-const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros'];
+const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira'];
 
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];

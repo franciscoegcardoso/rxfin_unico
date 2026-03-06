@@ -117,7 +117,7 @@ export default function SimuladorFipe() {
       subtitle="Descubra o valor de mercado do seu veículo e quanto realmente custa mantê-lo."
     >
       {/* Step 1 — Selecionar veículo */}
-      <Card className="bg-white dark:bg-card shadow-lg rounded-xl sm:rounded-2xl border border-border/80 w-full min-w-0">
+      <Card className="bg-card shadow-lg rounded-xl sm:rounded-2xl border border-border w-full min-w-0">
         <CardContent className="p-4 sm:p-6 space-y-4">
           <div>
             <Label className="text-sm font-medium">Tipo</Label>
@@ -209,7 +209,7 @@ export default function SimuladorFipe() {
             value={price.Valor}
             valueClassName="text-2xl sm:text-3xl font-bold text-green-700 dark:text-green-400"
           />
-          <Card className="bg-white dark:bg-card shadow-lg rounded-xl sm:rounded-2xl border-2 border-green-200 dark:border-green-800 w-full min-w-0">
+          <Card className="bg-white dark:bg-card shadow-lg rounded-xl sm:rounded-2xl border-2 border-border w-full min-w-0">
             <CardContent className="p-4 sm:p-6">
               <h3 className="font-semibold mb-3 sm:mb-4 text-base sm:text-lg">Custo de propriedade (mensal)</h3>
               <p className="text-xs text-muted-foreground mb-4">

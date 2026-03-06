@@ -1,0 +1,296 @@
+{
+  "name": "RXFin — Deploy Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rxfin-deploy",
+        "responseMode": "onReceived",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        "authentication": "headerAuth"
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "id": "a1-webhook-github-push",
+      "name": "GitHub Push",
+      "webhookId": "rxfin-deploy"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-has-migrations",
+              "leftValue": "={{ $json.body.has_migrations }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "id": "a2-if-migrations",
+      "name": "Has Migrations?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.supabase.com/v1/projects/kneaniaifzgqibpajyji/database/migrations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 180],
+      "id": "a3-run-migration",
+      "name": "Run Supabase Migration"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [680, 300],
+      "id": "a4-merge",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [900, 300],
+      "id": "a5-wait",
+      "name": "Wait for Vercel"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.vercel.com/v13/deployments?teamId=&limit=1",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.VERCEL_TOKEN }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "id": "a6-check-vercel",
+      "name": "Check Vercel Deploy"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-deploy-ready",
+              "leftValue": "={{ $json.deployments && $json.deployments[0] && $json.deployments[0].state }}",
+              "rightValue": "READY",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300],
+      "id": "a7-if-ready",
+      "name": "Deploy Ready?"
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.N8N_FROM_EMAIL || 'n8n@rxfin.com.br' }}",
+        "toEmail": "contato@rxfin.com.br",
+        "subject": "=✅ Deploy RXFin concluído — commit {{ $('GitHub Push').first().json.body.commit.slice(0,7) }}",
+        "emailFormat": "text",
+        "text": "=✅ Deploy RXFin concluído — commit {{ $('GitHub Push').first().json.body.commit.slice(0,7) }} por {{ $('GitHub Push').first().json.body.pusher }}"
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1560, 180],
+      "id": "a8-notify-success",
+      "name": "Notify Success",
+      "notesInFlow": true,
+      "notes": "Envia e-mail para contato@rxfin.com.br. Configure credencial SMTP e opcionalmente N8N_FROM_EMAIL."
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.N8N_FROM_EMAIL || 'n8n@rxfin.com.br' }}",
+        "toEmail": "contato@rxfin.com.br",
+        "subject": "=❌ Deploy RXFin com problema — commit {{ $('GitHub Push').first().json.body.commit.slice(0,7) }}",
+        "emailFormat": "text",
+        "text": "=❌ Deploy RXFin com problema — verifique os logs. Commit: {{ $('GitHub Push').first().json.body.commit.slice(0,7) }}"
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1560, 420],
+      "id": "a9-notify-failure",
+      "name": "Notify Failure",
+      "notesInFlow": true,
+      "notes": "Envia e-mail para contato@rxfin.com.br. Configure credencial SMTP e opcionalmente N8N_FROM_EMAIL."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "GitHub Push": {
+      "main": [
+        [
+          {
+            "node": "Has Migrations?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Migrations?": {
+      "main": [
+        [
+          {
+            "node": "Run Supabase Migration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Run Supabase Migration": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Wait for Vercel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Vercel": {
+      "main": [
+        [
+          {
+            "node": "Check Vercel Deploy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Vercel Deploy": {
+      "main": [
+        [
+          {
+            "node": "Deploy Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deploy Ready?": {
+      "main": [
+        [
+          {
+            "node": "Notify Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

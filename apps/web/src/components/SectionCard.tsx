@@ -90,6 +90,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
                   className="h-7 w-7 text-muted-foreground hover:text-foreground transition-colors"
                   onClick={() => setIsExpanded(true)}
                   title="Expandir gráfico"
+                  aria-label="Expandir gráfico"
                 >
                   <Maximize2 className="h-4 w-4" />
                 </Button>
@@ -132,6 +133,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                 onClick={() => setIsExpanded(false)}
+                aria-label="Fechar"
               >
                 <X className="h-5 w-5" />
               </Button>

@@ -75,7 +75,7 @@ export default function HistoricoPagamentos() {
         <h1 className="text-xl font-semibold text-foreground">Histórico de Pagamentos</h1>
 
         {!events || events.length === 0 ? (
-          <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm">
+          <Card className="rounded-2xl border border-border bg-card shadow-sm">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center">
               <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                 <AlertCircle className="h-6 w-6 text-muted-foreground" />
@@ -89,7 +89,7 @@ export default function HistoricoPagamentos() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm overflow-hidden">
+          <Card className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>

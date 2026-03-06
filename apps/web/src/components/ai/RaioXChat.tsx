@@ -100,12 +100,9 @@ export function RaioXChat() {
   const createSession = useCallback(async () => {
     if (!user?.id || sessionId) return sessionId;
 
-    // Check onboarding status
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_completed, created_at')
-      .eq('id', user.id)
-      .single();
+    // Check onboarding status (source of truth: get_user_profile_settings / onboarding_state)
+    const { data: settings } = await supabase.rpc('get_user_profile_settings');
+    const profile = (settings as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
 
     const sessionType = profile?.onboarding_completed ? 'consulta' : 'onboarding';
 
@@ -514,7 +511,7 @@ export function RaioXChat() {
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               disabled={isLoading}
             />
-            <Button size="icon" onClick={() => sendMessage()} disabled={isLoading || !inputValue.trim()}>
+            <Button size="icon" onClick={() => sendMessage()} disabled={isLoading || !inputValue.trim()} aria-label="Enviar mensagem">
               <Send className="h-4 w-4" />
             </Button>
           </div>

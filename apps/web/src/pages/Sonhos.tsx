@@ -599,21 +599,21 @@ export const Sonhos: React.FC = () => {
                     <div className="flex items-center gap-1">
                       {isEditing ? (
                         <>
-                          <Button size="icon" variant="ghost" onClick={() => saveEdit(goal.id)}>
+                          <Button size="icon" variant="ghost" onClick={() => saveEdit(goal.id)} aria-label="Salvar">
                             <Check className="h-4 w-4 text-income" />
                           </Button>
-                          <Button size="icon" variant="ghost" onClick={cancelEdit}>
+                          <Button size="icon" variant="ghost" onClick={cancelEdit} aria-label="Cancelar">
                             <X className="h-4 w-4 text-expense" />
                           </Button>
                         </>
                       ) : (
                         <>
-                          <Button size="icon" variant="ghost" onClick={() => startEditing(goal)}>
+                          <Button size="icon" variant="ghost" onClick={() => startEditing(goal)} aria-label="Editar sonho">
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="icon" variant="ghost">
+                              <Button size="icon" variant="ghost" aria-label="Excluir sonho">
                                 <Trash2 className="h-4 w-4 text-expense" />
                               </Button>
                             </AlertDialogTrigger>

@@ -72,7 +72,7 @@ export default function SimuladorCustoHora() {
       title="Quanto vale sua hora?"
       subtitle="Descubra o valor real da sua hora considerando todos os seus custos fixos."
     >
-      <Card className="bg-white dark:bg-card shadow-lg rounded-2xl border border-border/80">
+      <Card className="bg-card shadow-lg rounded-2xl border border-border">
         <CardContent className="p-6 space-y-4">
           <CurrencyInput
             label="Renda mensal bruta (R$)"
@@ -139,7 +139,7 @@ export default function SimuladorCustoHora() {
             value={formatCurrency(result.valorHora)}
             valueClassName="text-3xl font-bold text-green-700 dark:text-green-400"
           />
-          <Card className="bg-white dark:bg-card shadow-lg rounded-2xl border border-border/80">
+          <Card className="bg-card shadow-lg rounded-2xl border border-border">
             <CardContent className="p-6 space-y-3">
               <p className="text-sm text-muted-foreground">
                 Horas efetivas/mês: <strong className="text-foreground">{result.horasEfetivasMes.toFixed(1)} h</strong>
@@ -153,7 +153,7 @@ export default function SimuladorCustoHora() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-card shadow-lg rounded-2xl border border-border/80">
+          <Card className="bg-card shadow-lg rounded-2xl border border-border">
             <CardContent className="p-6 space-y-2">
               <p className="text-sm">
                 Seu tempo de deslocamento custa{' '}

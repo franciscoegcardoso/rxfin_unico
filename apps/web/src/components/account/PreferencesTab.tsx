@@ -37,7 +37,7 @@ const ThemePreview: React.FC<{
       <div 
         className={cn(
           "relative w-full aspect-[4/3] rounded-lg overflow-hidden border shadow-sm",
-          isLight ? "bg-white border-gray-200" : "bg-gray-900 border-gray-700"
+          isLight ? "bg-card border-border" : "bg-muted border-border"
         )}
       >
         <div className={cn("h-3 flex items-center gap-1 px-1.5", isLight ? "bg-gray-100" : "bg-gray-800")}>
@@ -51,7 +51,7 @@ const ThemePreview: React.FC<{
           <div className="flex gap-1">
             <div className={cn("w-4 h-8 rounded-sm", isLight ? "bg-gray-100" : "bg-gray-800")} />
             <div className="flex-1 space-y-1">
-              <div className={cn("h-2 rounded-sm w-3/4", isLight ? "bg-gray-200" : "bg-gray-700")} />
+              <div className={cn("h-2 rounded-sm w-3/4", isLight ? "bg-muted" : "bg-muted")} />
               <div className={cn("h-4 rounded-sm", isLight ? "bg-blue-100" : "bg-blue-900/50")} />
             </div>
           </div>

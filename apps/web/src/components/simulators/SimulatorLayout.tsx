@@ -13,7 +13,7 @@ interface SimulatorLayoutProps {
  */
 export function SimulatorLayout({ title, subtitle, children, className }: SimulatorLayoutProps) {
   return (
-    <div className={cn('min-h-screen bg-gray-50 dark:bg-gray-950 w-full max-w-full overflow-x-hidden', className)}>
+    <div className={cn('min-h-screen bg-background w-full max-w-full overflow-x-hidden', className)}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-10">
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight px-1">

@@ -233,7 +233,7 @@ export const DescontoJustoSimulator: React.FC = () => {
                       key={calculations.fairDiscountPercent}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="text-5xl font-bold text-blue-400"
+                      className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-blue-400"
                     >
                       {formatPercent(calculations.fairDiscountPercent)}
                     </motion.span>
@@ -444,7 +444,7 @@ export const DescontoJustoSimulator: React.FC = () => {
                 <p className="text-sm text-green-600 dark:text-green-400 font-semibold uppercase tracking-wider mb-2">
                   Sua economia anual potencial
                 </p>
-                <p className="text-4xl md:text-5xl font-extrabold text-green-700 dark:text-green-300">
+                <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-green-700 dark:text-green-300">
                   R$ {annualSavings.annualTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <p className="text-xs text-muted-foreground mt-3">

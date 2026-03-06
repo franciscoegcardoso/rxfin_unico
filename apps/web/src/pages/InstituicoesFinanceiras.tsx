@@ -119,7 +119,7 @@ const InstituicoesFinanceiras: React.FC = () => {
             <h3 className="text-sm font-semibold text-foreground">Instituições conectadas</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {bankingOverview!.institutions!.map((inst, i) => (
-                <Card key={i} className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm overflow-hidden">
+                <Card key={i} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -147,7 +147,7 @@ const InstituicoesFinanceiras: React.FC = () => {
 
         {/* Empty state when no banking data from RPC */}
         {!bankingLoading && !hasBankingInstitutions && hasChosen && mode === 'openfinance' && (
-          <Card className="rounded-2xl border border-dashed border-gray-200 dark:border-border">
+          <Card className="rounded-2xl border border-dashed border-border">
             <CardContent className="py-12 flex flex-col items-center justify-center text-center">
               <Building2 className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="font-medium text-foreground">Conecte sua conta bancária para sincronizar automaticamente</p>
@@ -200,7 +200,7 @@ const InstituicoesFinanceiras: React.FC = () => {
                                 {isCustom && !displayCode && <CardDescription>Adicionada manualmente</CardDescription>}
                               </div>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => { setEditingInstitution(userInst); setEditDialogOpen(true); }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 min-h-[44px] min-w-[44px] text-muted-foreground hover:text-primary" onClick={() => { setEditingInstitution(userInst); setEditDialogOpen(true); }} aria-label="Editar instituição">
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </div>

@@ -60,7 +60,7 @@ export const MobileSectionDrawer: React.FC<MobileSectionDrawerProps> = ({
               {title}
             </DrawerTitle>
             <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Fechar">
                 <X className="h-4 w-4" />
               </Button>
             </DrawerClose>

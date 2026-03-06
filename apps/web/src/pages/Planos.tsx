@@ -82,7 +82,7 @@ export default function Planos() {
               return (
                 <Card
                   key={plan.slug ?? plan.name}
-                  className="rounded-2xl border border-gray-100 dark:border-border bg-white dark:bg-card shadow-sm p-6 flex flex-col"
+                  className="rounded-2xl border border-border bg-card shadow-sm p-6 flex flex-col"
                 >
                   <CardHeader className="p-0 pb-4 flex flex-row items-start justify-between gap-2">
                     <div>

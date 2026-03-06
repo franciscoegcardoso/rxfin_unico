@@ -48,9 +48,11 @@ import { PluggySyncStatus } from '@/components/sync/PluggySyncStatus';
 import { OutdatedConnectionBanner } from '@/components/sync/OutdatedConnectionBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, addMonths } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { useLancamentosRealizados, LancamentoRealizado, LancamentoInput } from '@/hooks/useLancamentosRealizados';
+import { EmptyLancamentos } from '@/design-system/components/empty-states';
+import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { useLancamentosSummary } from '@/hooks/useLancamentosSummary';
 import { useContasPagarReceber, Conta, ContaInput, ContaTipo } from '@/hooks/useContasPagarReceber';
 import { useTransactionSourceMap } from '@/hooks/useTransactionSourceMap';
@@ -68,6 +70,8 @@ import { MarkAsPaidLancamentoDialog } from '@/components/lancamentos/MarkAsPaidL
 import { LancamentoFriendlyNameDialog } from '@/components/lancamentos/LancamentoFriendlyNameDialog';
 import { applyLancamentoFriendlyNameRule } from '@/utils/lancamentoFriendlyNameRules';
 import { cn, formatCurrency } from '@/lib/utils';
+import { LancamentoForm } from '@/design-system/components/LancamentoForm';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type LancamentoTipo = 'entrada' | 'saida';
 
@@ -83,6 +87,7 @@ export const Lancamentos: React.FC = () => {
   const {
     lancamentos,
     loading,
+    error: lancamentosError,
     fetchLancamentos,
     addLancamento,
     addMultipleLancamentos,
@@ -228,6 +233,17 @@ export const Lancamentos: React.FC = () => {
     [...filteredLancamentos].sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro || '')),
     [filteredLancamentos]
   );
+
+  const isMobile = useIsMobile();
+  const lancamentosGroupedByDate = useMemo(() => {
+    const map = new Map<string, LancamentoRealizado[]>();
+    allLancamentos.forEach((l) => {
+      const dateStr = l.data_pagamento || l.data_vencimento || l.data_registro?.slice(0, 10) || '—';
+      if (!map.has(dateStr)) map.set(dateStr, []);
+      map.get(dateStr)!.push(l);
+    });
+    return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
+  }, [allLancamentos]);
 
   // Warranty state
   const warranty = useWarrantyState();
@@ -833,7 +849,7 @@ export const Lancamentos: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
           </PageHeader>
-          <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+          {isMobile && <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />}
         </div>
 
         {!isManual && <PluggySyncStatus accountType="BANK" compact />}
@@ -844,71 +860,71 @@ export const Lancamentos: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <Card className="rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-                    <ArrowUpCircle className="h-5 w-5 text-green-600" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-income/10">
+                    <ArrowUpCircle className="h-5 w-5 text-income" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Receitas</p>
-                    <p className="text-lg font-semibold text-green-600">{formatCurrency(totalIncome)}</p>
+                    <p className="text-lg font-semibold text-income">{formatCurrency(totalIncome)}</p>
                     <p className="text-xs text-muted-foreground">{countIncome} itens</p>
                   </div>
                 </CardContent>
               </Card>
               <Card className="rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
-                    <ArrowDownCircle className="h-5 w-5 text-red-600" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-expense/10">
+                    <ArrowDownCircle className="h-5 w-5 text-expense" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Despesas</p>
-                    <p className="text-lg font-semibold text-red-600">{formatCurrency(totalExpense)}</p>
+                    <p className="text-lg font-semibold text-expense">{formatCurrency(totalExpense)}</p>
                     <p className="text-xs text-muted-foreground">{countExpense} itens</p>
                   </div>
                 </CardContent>
               </Card>
               <Card className="rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${balance >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                    <Scale className={`h-5 w-5 ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${balance >= 0 ? 'bg-income/10' : 'bg-expense/10'}`}>
+                    <Scale className={`h-5 w-5 ${balance >= 0 ? 'text-income' : 'text-expense'}`} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Saldo</p>
-                    <p className={`text-lg font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</p>
+                    <p className={`text-lg font-semibold ${balance >= 0 ? 'text-income' : 'text-expense'}`}>{formatCurrency(balance)}</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagos</p>
-                    <p className="text-lg font-semibold">{paid.count ?? 0}</p>
+                    <p className="text-lg font-semibold text-foreground">{paid.count ?? 0}</p>
                     <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(paid.total ?? 0)}</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                    <Clock className="h-5 w-5 text-amber-600" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/10">
+                    <Clock className="h-5 w-5 text-warning" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pendentes</p>
-                    <p className="text-lg font-semibold">{pending.count ?? 0}</p>
+                    <p className="text-lg font-semibold text-foreground">{pending.count ?? 0}</p>
                     <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(pending.total ?? 0)}</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Atrasados</p>
-                    <p className="text-lg font-semibold">{overdue.count ?? 0}</p>
+                    <p className="text-lg font-semibold text-foreground">{overdue.count ?? 0}</p>
                     <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(overdue.total ?? 0)}</p>
                   </div>
                 </CardContent>
@@ -969,7 +985,7 @@ export const Lancamentos: React.FC = () => {
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
-                      <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                      <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
                       <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -1002,7 +1018,7 @@ export const Lancamentos: React.FC = () => {
                             <Cell key={row.category} fill={getCategoryColor(row.category)} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                        <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
@@ -1146,393 +1162,275 @@ export const Lancamentos: React.FC = () => {
                   </Button>
                 </div>
               </>
-            ) : lancamentoTipo === 'entrada' ? (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-income" />
-                    {editingId ? 'Editar Entrada' : 'Registrar Nova Entrada'}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Descrição</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ex: Salário, Freelance..."
-                      className="w-full"
-                      value={newEntrada.name}
-                      onChange={(e) => setNewEntrada(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Valor</Label>
-                    <CurrencyInput
-                      value={newEntrada.amount}
-                      onChange={(value) => setNewEntrada(prev => ({ ...prev, amount: value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Tipo de Receita</Label>
-                    <Select
-                      value={newEntrada.type}
-                      onValueChange={(value) => setNewEntrada(prev => ({ ...prev, type: value }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {enabledIncomes.map((income) => (
-                          <SelectItem key={income.id} value={income.name}>
-                            {income.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Data</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={newEntrada.date}
-                      onChange={(e) => setNewEntrada(prev => ({ ...prev, date: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {!editingId && (
-                      <Button variant="outline" onClick={() => setDialogStep('method')} className="w-full sm:flex-1">
-                        Voltar
-                      </Button>
-                    )}
-                    <Button onClick={handleAddEntrada} className={`w-full min-h-[44px] touch-manipulation ${!editingId ? 'sm:flex-1' : ''} bg-income hover:bg-income/90`}>
-                      {editingId ? 'Salvar Alterações' : 'Registrar Entrada'}
-                    </Button>
-                  </div>
-                </div>
-              </>
             ) : (
               <>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-expense" />
-                    {editingId ? 'Editar Saída' : 'Registrar Nova Saída'}
+                    {lancamentoTipo === 'entrada' ? (
+                      <><TrendingUp className="h-5 w-5 text-income" /> {editingId ? 'Editar Entrada' : 'Registrar Nova Entrada'}</>
+                    ) : (
+                      <><TrendingDown className="h-5 w-5 text-expense" /> {editingId ? 'Editar Saída' : 'Registrar Nova Saída'}</>
+                    )}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Descrição</Label>
-                    <Input
-                      id="name"
-                      placeholder="Ex: Aluguel, Supermercado..."
-                      className="w-full"
-                      value={newSaida.name}
-                      onChange={(e) => setNewSaida(prev => ({ ...prev, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Valor</Label>
-                    <CurrencyInput
-                      value={newSaida.amount}
-                      onChange={(value) => setNewSaida(prev => ({ ...prev, amount: value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
-                    <Select
-                      value={newSaida.category}
-                      onValueChange={(value) => setNewSaida(prev => ({ ...prev, category: value }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione a categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {expenseCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="method">Forma de Pagamento</Label>
-                    <Select
-                      value={newSaida.method}
-                      onValueChange={(value) => setNewSaida(prev => ({ ...prev, method: value as PaymentMethod }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione a forma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {paymentMethods.map((method) => (
-                          <SelectItem key={method.value} value={method.value}>
-                            {method.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Data</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={newSaida.date}
-                      onChange={(e) => setNewSaida(prev => ({ ...prev, date: e.target.value }))}
-                    />
-                  </div>
-                  
-                  {/* Purchase Registry Link */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="purchaseItem" className="flex items-center gap-2">
-                        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-                        Vincular à Lista de Compras
-                      </Label>
-                      <Link 
-                        to="/registro-compras" 
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                      >
-                        Ver lista <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                    <div className="flex gap-2">
-                      <Select
-                        value={newSaida.purchaseItemId || "none"}
-                        onValueChange={(value) => setNewSaida(prev => ({ ...prev, purchaseItemId: value === "none" ? "" : value }))}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Nenhum (opcional)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {pendingPurchases.map((item) => (
-                            <SelectItem key={item.id} value={item.id}>
-                              {item.name} - R$ {item.estimated_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Popover open={quickAddPurchaseOpen} onOpenChange={setQuickAddPurchaseOpen}>
-                        <PopoverTrigger asChild>
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            size="icon"
-                            title="Criar novo item na lista de compras"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-3" align="end">
-                          <div className="space-y-3">
-                            <div className="space-y-1">
-                              <Label className="text-sm font-medium">Adicionar à Lista de Compras</Label>
-                              <p className="text-xs text-muted-foreground">
-                                Cria um item já marcado como comprado
-                              </p>
-                            </div>
-                            <Input
-                              placeholder="Nome do item (ex: iPhone 15)"
-                              value={quickPurchaseName}
-                              onChange={(e) => setQuickPurchaseName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  handleQuickAddPurchaseItem();
-                                }
-                              }}
-                            />
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="flex-1"
-                                onClick={() => {
-                                  setQuickAddPurchaseOpen(false);
-                                  setQuickPurchaseName('');
-                                }}
-                              >
-                                Cancelar
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                className="flex-1"
-                                onClick={handleQuickAddPurchaseItem}
-                                disabled={!quickPurchaseName.trim()}
-                              >
-                                Criar
-                              </Button>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    {newSaida.purchaseItemId && (
+                <div className="mt-4">
+                  <LancamentoForm
+                    tipo={lancamentoTipo === 'entrada' ? 'receita' : 'despesa'}
+                    onTipoChange={(t) => setLancamentoTipo(t === 'receita' ? 'entrada' : 'saida')}
+                    valor={lancamentoTipo === 'entrada' ? newEntrada.amount : newSaida.amount}
+                    onValorChange={(v) => lancamentoTipo === 'entrada' ? setNewEntrada((p) => ({ ...p, amount: v })) : setNewSaida((p) => ({ ...p, amount: v }))}
+                    categoria={lancamentoTipo === 'entrada' ? newEntrada.type : newSaida.category}
+                    onCategoriaChange={(v) => lancamentoTipo === 'entrada' ? setNewEntrada((p) => ({ ...p, type: v })) : setNewSaida((p) => ({ ...p, category: v }))}
+                    categorias={lancamentoTipo === 'entrada' ? enabledIncomes.map((i) => ({ value: i.name, label: i.name })) : expenseCategories.map((c) => ({ value: c.name, label: c.name }))}
+                    descricao={lancamentoTipo === 'entrada' ? newEntrada.name : newSaida.name}
+                    onDescricaoChange={(v) => lancamentoTipo === 'entrada' ? setNewEntrada((p) => ({ ...p, name: v })) : setNewSaida((p) => ({ ...p, name: v }))}
+                    data={lancamentoTipo === 'entrada' ? newEntrada.date : newSaida.date}
+                    onDataChange={(v) => lancamentoTipo === 'entrada' ? setNewEntrada((p) => ({ ...p, date: v })) : setNewSaida((p) => ({ ...p, date: v }))}
+                    contaLabel={lancamentoTipo === 'saida' ? 'Forma de pagamento' : undefined}
+                    contaValue={lancamentoTipo === 'saida' ? newSaida.method : undefined}
+                    onContaChange={lancamentoTipo === 'saida' ? (v) => setNewSaida((p) => ({ ...p, method: v as PaymentMethod })) : undefined}
+                    contaOptions={lancamentoTipo === 'saida' ? paymentMethods.map((m) => ({ value: m.value, label: m.label })) : []}
+                    onSubmit={lancamentoTipo === 'entrada' ? handleAddEntrada : handleAddSaida}
+                    onBack={!editingId ? () => setDialogStep('method') : undefined}
+                    isEditing={!!editingId}
+                    submitLabel={editingId ? 'Salvar alterações' : undefined}
+                    childrenSecondary={lancamentoTipo === 'saida' ? (
                       <>
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          <ShoppingBag className="h-3 w-3" />
-                          Item será marcado como comprado
-                        </p>
-                        <WarrantySection {...warranty} />
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="flex items-center gap-2 text-muted-foreground">
+                              <ShoppingBag className="h-4 w-4" />
+                              Vincular à Lista de Compras
+                            </Label>
+                            <Link to="/registro-compras" className="text-xs text-primary hover:underline flex items-center gap-1">Ver lista <ExternalLink className="h-3 w-3" /></Link>
+                          </div>
+                          <div className="flex gap-2">
+                            <Select value={newSaida.purchaseItemId || 'none'} onValueChange={(v) => setNewSaida((p) => ({ ...p, purchaseItemId: v === 'none' ? '' : v }))}>
+                              <SelectTrigger className="flex-1 rounded-xl border border-border bg-background"><SelectValue placeholder="Nenhum (opcional)" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Nenhum</SelectItem>
+                                {pendingPurchases.map((item) => (
+                                  <SelectItem key={item.id} value={item.id}>{item.name} - R$ {item.estimated_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Popover open={quickAddPurchaseOpen} onOpenChange={setQuickAddPurchaseOpen}>
+                              <PopoverTrigger asChild>
+                                <Button type="button" variant="outline" size="icon" title="Criar novo item na lista de compras" aria-label="Criar novo item na lista de compras"><Plus className="h-4 w-4" /></Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72 p-3" align="end">
+                                <div className="space-y-3">
+                                  <Label className="text-sm font-medium text-foreground">Adicionar à Lista de Compras</Label>
+                                  <p className="text-xs text-muted-foreground">Cria um item já marcado como comprado</p>
+                                  <Input placeholder="Nome do item" value={quickPurchaseName} onChange={(e) => setQuickPurchaseName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuickAddPurchaseItem(); } }} className="border-border bg-background" />
+                                  <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => { setQuickAddPurchaseOpen(false); setQuickPurchaseName(''); }}>Cancelar</Button>
+                                    <Button size="sm" className="flex-1" onClick={handleQuickAddPurchaseItem} disabled={!quickPurchaseName.trim()}>Criar</Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          {newSaida.purchaseItemId && (
+                            <>
+                              <p className="text-xs text-income flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Item será marcado como comprado</p>
+                              <WarrantySection {...warranty} />
+                            </>
+                          )}
+                        </div>
                       </>
-                    )}
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    {!editingId && (
-                      <Button variant="outline" onClick={() => setDialogStep('method')} className="w-full sm:flex-1">
-                        Voltar
-                      </Button>
-                    )}
-                    <Button onClick={handleAddSaida} className={`w-full min-h-[44px] touch-manipulation ${!editingId ? 'sm:flex-1' : ''} bg-expense hover:bg-expense/90`}>
-                      {editingId ? 'Salvar Alterações' : 'Registrar Saída'}
-                    </Button>
-                  </div>
+                    ) : undefined}
+                  />
                 </div>
               </>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* Search and Filters — mobile: busca + botão Filtros; desktop: linha única */}
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
-            <div className="relative flex-1 min-w-0">
+        {/* Filtros + conteúdo: mobile = chips + Tabs; desktop = grid sidebar | Tabs */}
+        <div className={cn(isMobile ? 'space-y-4 mb-6' : 'grid grid-cols-[240px_1fr] gap-0 mb-6')}>
+        {isMobile ? (
+          <>
+            <div className="overflow-x-auto flex gap-2 pb-2 -mx-1 px-1 scrollbar-thin">
+              <button
+                type="button"
+                onClick={() => { setFilterTipo('all'); setFilterCategories([]); }}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  filterTipo === 'all' && filterCategories.length === 0
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
+                )}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFilterTipo('receita'); setFilterCategories([]); }}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  filterTipo === 'receita' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                )}
+              >
+                Receitas
+              </button>
+              <button
+                type="button"
+                onClick={() => { setFilterTipo('despesa'); setFilterCategories([]); }}
+                className={cn(
+                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  filterTipo === 'despesa' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                )}
+              >
+                Despesas
+              </button>
+              {uniqueCategoriesForFilter.map((cat) => {
+                const active = filterCategories.length === 1 && filterCategories[0] === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => { setFilterTipo('all'); setFilterCategories(active ? [] : [cat]); }}
+                    className={cn(
+                      'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors truncate max-w-[140px]',
+                      active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 min-h-[44px] w-full touch-manipulation"
+                className="pl-9 min-h-[44px] w-full touch-manipulation border-border bg-background text-foreground"
               />
             </div>
-            <Button
-              variant="outline"
-              className="sm:hidden gap-2 min-h-[44px] touch-manipulation"
-              onClick={() => setFiltersOpen((o) => !o)}
-            >
-              <Filter className="h-4 w-4" />
-              Filtros{filtersOpen ? ' ▲' : ' ▼'}
-            </Button>
-            <div className={cn('flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2', filtersOpen ? 'flex' : 'hidden sm:flex')}>
-            <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
-              <SelectTrigger className="w-full sm:w-[140px] min-h-[44px] touch-manipulation">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="receita">Receitas</SelectItem>
-                <SelectItem value="despesa">Despesas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={(v: 'all' | 'paid' | 'pending' | 'overdue') => setFilterStatus(v)}>
-              <SelectTrigger className="w-full sm:w-[140px] min-h-[44px] touch-manipulation">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="paid">Pagos</SelectItem>
-                <SelectItem value="pending">Pendentes</SelectItem>
-                <SelectItem value="overdue">Atrasados</SelectItem>
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="gap-2 w-full sm:w-[180px] min-h-[44px] justify-start touch-manipulation">
-                  <Filter className="h-4 w-4" />
-                  <span className="truncate">{filterCategories.length === 0 ? 'Categorias' : `${filterCategories.length} categoria(s)`}</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-2" align="start">
-                <div className="max-h-64 overflow-y-auto space-y-1">
-                  {uniqueCategoriesForFilter.map((cat) => (
-                    <label key={cat} className="flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 hover:bg-muted">
-                      <Checkbox
-                        checked={filterCategories.includes(cat)}
-                        onCheckedChange={(checked) =>
-                          setFilterCategories((prev) =>
-                            checked ? [...prev, cat] : prev.filter((c) => c !== cat)
-                          )
-                        }
-                      />
-                      <span className="text-sm truncate">{cat}</span>
-                    </label>
-                  ))}
+          </>
+        ) : (
+            <aside className="w-[240px] shrink-0 bg-card border-r border-border p-4 space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
+                <div className="mt-1.5">
+                  <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
                 </div>
-                {filterCategories.length > 0 && (
-                  <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setFilterCategories([])}>
-                    Limpar
-                  </Button>
-                )}
-              </PopoverContent>
-            </Popover>
-            </div>
-          </div>
-          <div className={cn('flex flex-wrap gap-2', filtersOpen ? 'flex' : 'hidden sm:flex')}>
-          {availableBanks.length > 0 && (
-          <Select value={selectedBank} onValueChange={setSelectedBank}>
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <div className="flex items-center gap-2">
-                  {selectedBank !== 'all' ? (
-                    (() => {
-                      const bank = availableBanks.find(b => b.name === selectedBank);
-                      return bank ? (
-                        <ConnectorLogo imageUrl={bank.imageUrl} primaryColor={bank.primaryColor} connectorName={bank.name} size="sm" />
-                      ) : <Building2 className="h-4 w-4 text-muted-foreground" />;
-                    })()
-                  ) : (
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <SelectValue placeholder="Banco" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os bancos</SelectItem>
-                {availableBanks.map(bank => (
-                  <SelectItem key={bank.name} value={bank.name}>
-                    <div className="flex items-center gap-2">
-                      <ConnectorLogo imageUrl={bank.imageUrl} primaryColor={bank.primaryColor} connectorName={bank.name} size="sm" />
-                      {bank.name}
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
+                <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
+                  <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="receita">Receitas</SelectItem>
+                    <SelectItem value="despesa">Despesas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Status</Label>
+                <Select value={filterStatus} onValueChange={(v: 'all' | 'paid' | 'pending' | 'overdue') => setFilterStatus(v)}>
+                  <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="paid">Pagos</SelectItem>
+                    <SelectItem value="pending">Pendentes</SelectItem>
+                    <SelectItem value="overdue">Atrasados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Categoria</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="mt-1.5 w-full justify-between border-border bg-background text-foreground">
+                      <span className="truncate">{filterCategories.length === 0 ? 'Todas' : `${filterCategories.length} selecionada(s)`}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2" align="start">
+                    <div className="max-h-64 overflow-y-auto space-y-1">
+                      {uniqueCategoriesForFilter.map((cat) => (
+                        <label key={cat} className="flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 hover:bg-muted">
+                          <Checkbox
+                            checked={filterCategories.includes(cat)}
+                            onCheckedChange={(checked) =>
+                              setFilterCategories((prev) =>
+                                checked ? [...prev, cat] : prev.filter((c) => c !== cat)
+                              )
+                            }
+                          />
+                          <span className="text-sm truncate text-foreground">{cat}</span>
+                        </label>
+                      ))}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {availableAccountTypes.length > 0 && (
-          <Select value={selectedAccountType} onValueChange={setSelectedAccountType}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <div className="flex items-center gap-2">
-                  {selectedAccountType === 'Cartão de Crédito' ? (
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  ) : selectedAccountType !== 'all' ? (
-                    <Landmark className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                  )}
-                  <SelectValue placeholder="Tipo de conta" />
+                    {filterCategories.length > 0 && (
+                      <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => setFilterCategories([])}>
+                        Limpar
+                      </Button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {availableBanks.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Banco</Label>
+                  <Select value={selectedBank} onValueChange={setSelectedBank}>
+                    <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os bancos</SelectItem>
+                      {availableBanks.map(bank => (
+                        <SelectItem key={bank.name} value={bank.name}>
+                          <div className="flex items-center gap-2">
+                            <ConnectorLogo imageUrl={bank.imageUrl} primaryColor={bank.primaryColor} connectorName={bank.name} size="sm" />
+                            {bank.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as contas</SelectItem>
-                {availableAccountTypes.map(type => (
-                  <SelectItem key={type} value={type}>
-                    <div className="flex items-center gap-2">
-                      {type === 'Cartão de Crédito' ? (
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Landmark className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      {type}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          </div>
-        </div>
+              )}
+              {availableAccountTypes.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Conta</Label>
+                  <Select value={selectedAccountType} onValueChange={setSelectedAccountType}>
+                    <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as contas</SelectItem>
+                      {availableAccountTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Busca</Label>
+                <div className="relative mt-1.5">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Por nome..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 w-full border-border bg-background text-foreground text-sm"
+                  />
+                </div>
+              </div>
+            </aside>
+        )}
+        <div className={cn(!isMobile && 'min-w-0 overflow-hidden')}>
 
         {/* Tabs - responsivo */}
         <Tabs defaultValue="geral" className="w-full">
@@ -1682,7 +1580,7 @@ export const Lancamentos: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="min-h-[36px] touch-manipulation"
+                      className="min-h-[36px] touch-manipulation border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
                     >
@@ -1692,7 +1590,7 @@ export const Lancamentos: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="min-h-[36px] touch-manipulation"
+                      className="min-h-[36px] touch-manipulation border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                       onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                       disabled={page >= Math.max(1, totalPages) - 1}
                     >
@@ -1701,81 +1599,117 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </div>
               )}
-              {loading ? (
+              {lancamentosError ? (
+                <ErrorCard message="Não foi possível carregar os dados." onRetry={() => fetchLancamentos()} />
+              ) : loading ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">Carregando...</div>
               ) : allLancamentos.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  Nenhum lançamento registrado. Clique em "Novo" para adicionar.
+                <EmptyLancamentos />
+              ) : isMobile ? (
+                <div className="space-y-4">
+                  {lancamentosGroupedByDate.map(([dateStr, items]) => (
+                    <div key={dateStr}>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider py-2">
+                        {dateStr === '—' ? 'Sem data' : parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      <div className="space-y-2">
+                        {items.map((item) => {
+                          const isEntrada = item.tipo === 'receita';
+                          const recon = getReconciliation(item.id);
+                          return (
+                            <div
+                              key={item.id}
+                              className={cn(
+                                'rounded-xl border border-border bg-card p-4 flex items-center gap-3 cursor-pointer hover:bg-accent/50 transition-colors',
+                                recon?.isBillPayment && 'opacity-60'
+                              )}
+                              onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
+                            >
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary p-2">
+                                <Receipt className="h-5 w-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-foreground font-medium truncate">{item.friendly_name || item.nome}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {item.data_pagamento
+                                    ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
+                                    : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
+                                </p>
+                              </div>
+                              <p className={cn('font-sans font-semibold tabular-nums tracking-tight shrink-0', isEntrada ? 'text-income' : 'text-expense')}>
+                                {isEntrada ? '+' : '-'} {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <div className="divide-y divide-border min-w-0">
-                  {allLancamentos.map((item) => {
-                    const isEntrada = item.tipo === 'receita';
-                    const source = getSourceInfo(item.source_id);
-                    const recon = getReconciliation(item.id);
-                    const isPaid = !!item.data_pagamento;
-                    return (
-                      <div key={item.id} 
-                        className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 min-h-[44px] cursor-pointer hover:bg-muted/40 -mx-2 px-2 rounded-md transition-colors ${recon?.isBillPayment ? 'opacity-60' : ''}`}
-                        onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
-                      >
-                        <Checkbox
-                          checked={isPaid}
-                          onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
-                          onClick={(e) => e.stopPropagation()}
-                          className="shrink-0"
-                          aria-label={isEntrada ? 'Recebido' : 'Pago'}
-                        />
-                        <div className={`w-1 self-stretch rounded-full shrink-0 min-h-[24px] ${isEntrada ? 'bg-income' : 'bg-expense'}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <p className="font-medium text-sm text-foreground truncate">
-                                {item.friendly_name || item.nome}
-                              </p>
-                              {recon?.matched && recon.cardName && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
-                                  <Link2 className="h-3 w-3" />
-                                  Conciliado
-                                </span>
-                              )}
-                              {recon?.isBillPayment && !recon.matched && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-full shrink-0">
-                                  <AlertCircle className="h-3 w-3" />
-                                  Pgto. Fatura
-                                </span>
-                              )}
-                            </div>
-                            <p className={`font-bold text-sm whitespace-nowrap shrink-0 text-right tabular-nums ${isEntrada ? 'text-income' : 'text-expense'}`}>
-                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <div className="hidden sm:flex items-center gap-1.5 min-w-0">
-                              <span className="text-xs text-muted-foreground truncate">{item.categoria}</span>
-                              {source && (
-                                <>
-                                  <span className="text-xs text-muted-foreground/50">·</span>
-                                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground truncate rounded px-1 py-0.5" style={{ backgroundColor: source.primaryColor ? `#${source.primaryColor.replace(/^#/, '')}15` : undefined, borderLeft: source.primaryColor ? `2px solid #${source.primaryColor.replace(/^#/, '')}` : undefined }}>
-                                    <ConnectorLogo imageUrl={source.imageUrl} primaryColor={source.primaryColor} connectorName={source.institution} size="xs" />
-                                    {source.institution}
+                  <table className="w-full min-w-[600px] border-collapse">
+                    <thead>
+                      <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
+                        <th className="text-left py-3 px-3 font-medium">Nome</th>
+                        <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Categoria</th>
+                        <th className="text-right py-3 px-3 font-medium">Valor</th>
+                        <th className="text-right py-3 px-3 font-medium">Data</th>
+                        <th className="w-10" aria-label="Pago" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allLancamentos.map((item, index) => {
+                        const isEntrada = item.tipo === 'receita';
+                        const recon = getReconciliation(item.id);
+                        const isPaid = !!item.data_pagamento;
+                        return (
+                          <tr
+                            key={item.id}
+                            className={cn(
+                              'border-b border-border cursor-pointer transition-colors hover:bg-accent/50',
+                              index % 2 === 0 ? 'bg-card' : 'bg-muted/30',
+                              recon?.isBillPayment && 'opacity-60'
+                            )}
+                            onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
+                          >
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <p className="font-medium text-sm text-foreground truncate">{item.friendly_name || item.nome}</p>
+                                {recon?.matched && recon.cardName && (
+                                  <span className="inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                    <Link2 className="h-3 w-3" /> Conciliado
                                   </span>
-                                </>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0 ml-auto sm:ml-0">
+                                )}
+                                {recon?.isBillPayment && !recon.matched && (
+                                  <span className="inline-flex items-center gap-0.5 text-[10px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-full shrink-0">
+                                    <AlertCircle className="h-3 w-3" /> Pgto. Fatura
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-sm text-muted-foreground truncate hidden md:table-cell">{item.categoria}</td>
+                            <td className={cn('py-3 px-3 text-right font-sans font-semibold text-sm tabular-nums tracking-tight', isEntrada ? 'text-income' : 'text-expense')}>
+                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
+                            </td>
+                            <td className="py-3 px-3 text-right text-xs text-muted-foreground whitespace-nowrap">
                               {item.data_pagamento
                                 ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                                : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')
-                              }
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  </div>
+                                : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
+                            </td>
+                            <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={isPaid}
+                                onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
+                                className="shrink-0"
+                                aria-label={isEntrada ? 'Recebido' : 'Pago'}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CollapsibleModule>
@@ -2113,6 +2047,8 @@ export const Lancamentos: React.FC = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
+        </div>
 
       </div>
     </AppLayout>

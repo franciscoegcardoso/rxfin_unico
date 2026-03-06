@@ -16,6 +16,8 @@ interface CurrencyInputProps {
   autoFocus?: boolean; // Auto focus the input on mount/update
   onFocus?: () => void; // Custom focus handler
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void; // Custom keydown handler
+  /** Mobile: "decimal" for numeric keypad with comma. */
+  inputMode?: "numeric" | "decimal";
 }
 
 export interface CurrencyInputRef {
@@ -37,6 +39,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(({
   autoFocus = false,
   onFocus: customOnFocus,
   onKeyDown,
+  inputMode = "numeric",
 }, ref) => {
   const [displayValue, setDisplayValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +121,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(({
         ref={inputRef}
         id={id}
         type="text"
-        inputMode="numeric"
+        inputMode={inputMode}
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}
@@ -140,7 +143,7 @@ export const CurrencyInput = forwardRef<CurrencyInputRef, CurrencyInputProps>(({
         ref={inputRef}
         id={id}
         type="text"
-        inputMode="numeric"
+        inputMode={inputMode}
         value={displayValue}
         onChange={handleChange}
         onFocus={handleFocus}

@@ -1,9 +1,10 @@
 import React, { lazy, Suspense } from 'react';
+import * as Sentry from '@sentry/react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { FinancialProvider } from "@/contexts/FinancialContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { VisibilityProvider } from "@/contexts/VisibilityContext";
@@ -13,6 +14,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { GlobalSyncIndicator } from "@/components/sync/GlobalSyncIndicator";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AppShell } from "@/design-system/layouts/AppShell";
 // AdminProtectedRoute removed — all admin routes now use AdminSecureLayout (MFA-required)
 import { GuidedTour } from "@/components/tour/GuidedTour";
 import { ImpersonationFloater } from "@/components/admin/ImpersonationFloater";
@@ -108,8 +110,6 @@ const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
 const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
 const AdminHealthCheck = lazy(() => import('./pages/admin/AdminHealthCheck'));
 const DatabaseHealthDashboard = lazy(() => import('./pages/admin/DatabaseHealthDashboard'));
-const FipeSync = lazy(() => import('./pages/admin/FipeSync'));
-const FipeCatalogHealth = lazy(() => import('./pages/admin/FipeCatalogHealth'));
 const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
 const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
@@ -119,6 +119,9 @@ const AdminAfiliados = lazy(() => import('./pages/admin/AdminAfiliados'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const Estrategico = lazy(() => import('./pages/admin/Estrategico'));
 const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
+const AdminArchitecturePage = lazy(() => import('./pages/admin/AdminArchitecturePage'));
+const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
+const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
 import { RaioXChat } from "./components/ai/RaioXChat";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
@@ -126,7 +129,28 @@ import BemVindo from "./pages/BemVindo";
 import LegalDocument from "./pages/LegalDocument";
 import Onboarding2 from "./pages/Onboarding2";
 import { OnboardingWizardV3 } from "./components/onboarding/OnboardingWizardV3";
+import { OnboardingScreen } from "@/design-system/components/OnboardingScreen";
+import { useAuth } from "@/contexts/AuthContext";
+import { markOnboardingComplete } from "@/services/onboardingPersistence";
 const OnboardingControlPage = lazy(() => import('./pages/OnboardingControlPage'));
+
+const ONBOARDING_CACHE_KEY = 'rxfin-onboarding-done';
+
+function OnboardingRoute() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  return (
+    <OnboardingScreen
+      onComplete={async () => {
+        if (user?.id) {
+          await markOnboardingComplete(user.id);
+        }
+        localStorage.setItem(ONBOARDING_CACHE_KEY, 'true');
+        navigate('/inicio');
+      }}
+    />
+  );
+}
 // Perfil page removed - now part of MinhaConta
 
 const queryClient = new QueryClient();
@@ -144,7 +168,7 @@ const App = () => (
                     <Toaster />
                     <Sonner />
                     <GlobalSyncIndicator />
-                <BrowserRouter>
+                <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                   <TrackingProvider>
                   <MagicLinkHandler>
                     <GuidedTour />
@@ -163,39 +187,41 @@ const App = () => (
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/planos" element={<Planos />} />
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
-                  <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
+                  <Route path="/onboarding" element={<OnboardingRoute />} />
                   <Route path="/onboarding-controle" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingControlPage /></Suspense></ProtectedRoute>} />
                   <Route path="/app" element={<Navigate to="/inicio" replace />} />
-                  <Route path="/inicio" element={<ProtectedRoute><Inicio /></ProtectedRoute>} />
-                  <Route path="/dashboard" element={<Navigate to="/inicio" replace />} />
-                  <Route path="/parametros" element={<ProtectedRoute><Parametros /></ProtectedRoute>} />
-                  <Route path="/lancamentos" element={<ProtectedRoute><Lancamentos /></ProtectedRoute>} />
-                  <Route path="/contas" element={<ProtectedRoute><Contas /></ProtectedRoute>} />
-                  <Route path="/fluxo-financeiro" element={<ProtectedRoute><FluxoFinanceiro /></ProtectedRoute>} />
-                  <Route path="/bens-investimentos" element={<ProtectedRoute><BensInvestimentosLayout /></ProtectedRoute>}>
-                    <Route index element={<Navigate to="consolidado" replace />} />
-                    <Route path="consolidado" element={<ConsolidadoTab />} />
-                    <Route path="patrimonio" element={<PatrimonioTab />} />
-                    <Route path="investimentos" element={<InvestimentosTab />} />
-                    <Route path="credito" element={<CreditoTab />} />
-                    <Route path="seguros" element={<SegurosTab />} />
+                  {/* Authenticated app shell: mobile = bottom nav, desktop = sidebar */}
+                  <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
+                    <Route path="inicio" element={<Inicio />} />
+                    <Route path="dashboard" element={<Navigate to="/inicio" replace />} />
+                    <Route path="parametros" element={<Parametros />} />
+                    <Route path="lancamentos" element={<Lancamentos />} />
+                    <Route path="contas" element={<Contas />} />
+                    <Route path="fluxo-financeiro" element={<FluxoFinanceiro />} />
+                    <Route path="bens-investimentos" element={<BensInvestimentosLayout />}>
+                      <Route index element={<Navigate to="consolidado" replace />} />
+                      <Route path="consolidado" element={<ConsolidadoTab />} />
+                      <Route path="patrimonio" element={<PatrimonioTab />} />
+                      <Route path="investimentos" element={<InvestimentosTab />} />
+                      <Route path="credito" element={<CreditoTab />} />
+                      <Route path="seguros" element={<SegurosTab />} />
+                    </Route>
+                    <Route path="cartao-credito" element={<CartaoCredito />} />
+                    <Route path="planejamento" element={<PlanejamentoLayout />}>
+                      <Route index element={<Navigate to="visao-mensal" replace />} />
+                      <Route path="visao-mensal" element={<VisaoMensalTab />} />
+                      <Route path="metas" element={<MetasTab />} />
+                      <Route path="analises" element={<AnalisesTab />} />
+                    </Route>
+                    <Route path="planejamento-anual" element={<PlanejamentoAnual />} />
+                    <Route path="planejamento-cartao" element={<Navigate to="/cartao-credito" replace />} />
+                    <Route path="metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
+                    <Route path="registro-compras" element={<RegistroCompras />} />
+                    <Route path="compras" element={<Navigate to="/registro-compras" replace />} />
+                    <Route path="pacotes-orcamento" element={<PacotesOrcamento />} />
+                    <Route path="sonhos" element={<Sonhos />} />
+                    <Route path="minha-conta" element={<MinhaConta />} />
                   </Route>
-                  <Route path="/cartao-credito" element={<ProtectedRoute><CartaoCredito /></ProtectedRoute>} />
-                  <Route path="/planejamento" element={<ProtectedRoute><PlanejamentoLayout /></ProtectedRoute>}>
-                    <Route index element={<Navigate to="visao-mensal" replace />} />
-                    <Route path="visao-mensal" element={<VisaoMensalTab />} />
-                    <Route path="metas" element={<MetasTab />} />
-                    <Route path="analises" element={<AnalisesTab />} />
-                  </Route>
-                  <Route path="/planejamento-anual" element={<ProtectedRoute><PlanejamentoAnual /></ProtectedRoute>} />
-                  {/* Redirect old cartao routes to new standalone page */}
-                  <Route path="/planejamento-cartao" element={<Navigate to="/cartao-credito" replace />} />
-                  <Route path="/metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
-                  <Route path="/registro-compras" element={<ProtectedRoute><RegistroCompras /></ProtectedRoute>} />
-                  <Route path="/compras" element={<Navigate to="/registro-compras" replace />} />
-                  <Route path="/pacotes-orcamento" element={<ProtectedRoute><PacotesOrcamento /></ProtectedRoute>} />
-                  <Route path="/sonhos" element={<ProtectedRoute><Sonhos /></ProtectedRoute>} />
-                  <Route path="/minha-conta" element={<ProtectedRoute><MinhaConta /></ProtectedRoute>} />
                   {/* Redirects from old routes */}
                   <Route path="/configuracoes" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
                   <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
@@ -272,8 +298,6 @@ const App = () => (
                   <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminHealthCheck /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/database-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><DatabaseHealthDashboard /></Suspense></AdminSecureLayout>} />
-                  <Route path="/admin/fipe-sync" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeSync /></Suspense></AdminSecureLayout>} />
-                  <Route path="/admin/fipe-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><FipeCatalogHealth /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />
@@ -282,6 +306,9 @@ const App = () => (
                   <Route path="/admin/audit" element={<AdminSecureLayout><AdminAuditDashboard /></AdminSecureLayout>} />
                   <Route path="/admin/afiliados" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminAfiliados /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/impersonate" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminImpersonate /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/architecture" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminArchitecturePage /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/api-keys" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><ApiKeysPage /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/roles" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRolesPage /></Suspense></AdminSecureLayout>} />
                   {/* Legacy redirects */}
                   <Route path="/admin/simuladores" element={<Navigate to="/admin/paginas" replace />} />
                   <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
@@ -309,4 +336,16 @@ const App = () => (
   </QueryClientProvider>
 );
 
-export default App;
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div style={{ padding: 32, textAlign: 'center' }}>
+      <h2>Ocorreu um erro inesperado</h2>
+      <p>Nossa equipe foi notificada. Por favor, recarregue a página.</p>
+      <button type="button" onClick={() => window.location.reload()}>Recarregar</button>
+    </div>
+  );
+}
+
+export default Sentry.withErrorBoundary(App, {
+  fallback: ({ error }) => <ErrorFallback error={error} />,
+});

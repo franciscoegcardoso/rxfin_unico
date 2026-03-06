@@ -113,7 +113,7 @@ export const WealthPotentialHero: React.FC<WealthPotentialHeroProps> = ({
               <p className="text-sm text-muted-foreground mb-2">
                 Seu <span className="font-semibold text-foreground">Custo de Oportunidade</span> em {horizonText}
               </p>
-              <p className="text-4xl md:text-5xl font-bold text-amber-600 dark:text-amber-500">
+              <p className="font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px] text-amber-600 dark:text-amber-500">
                 {formatMoney(gapRiqueza)}
               </p>
               <p className="text-xs text-muted-foreground mt-3 max-w-md mx-auto">

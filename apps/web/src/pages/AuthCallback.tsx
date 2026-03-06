@@ -56,7 +56,10 @@ const AuthCallback = () => {
         return;
       }
       try {
-        const route = await resolveRedirectRoute();
+        let route = await resolveRedirectRoute();
+        if (route === '/inicio' && !localStorage.getItem('rxfin-onboarding-done')) {
+          route = '/onboarding';
+        }
         navigate(route, { replace: true });
       } catch (err) {
         console.error('[AuthCallback] Error resolving redirect:', err);

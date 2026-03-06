@@ -265,7 +265,7 @@ export const ComparisonCardGenerator: React.FC<ComparisonCardGeneratorProps> = (
           <DialogHeader className="p-4 pb-2">
             <DialogTitle className="flex items-center justify-between">
               Card de Comparação
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8">
+              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8" aria-label="Fechar">
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>

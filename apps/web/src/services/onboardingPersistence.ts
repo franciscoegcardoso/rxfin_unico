@@ -152,18 +152,27 @@ export async function persistOnboardingData(
 }
 
 /**
- * Check if user has completed onboarding in the database
+ * Check if user has completed onboarding (source of truth: onboarding_state via get_user_profile_settings RPC).
  */
 export async function checkOnboardingStatus(userId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('get_user_profile_settings');
+  if (error || !data) return false;
+  const profile = (data as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
+  return profile?.onboarding_completed === true;
+}
+
+/**
+ * Mark onboarding as complete for the user (updates profiles; used by public onboarding screen).
+ */
+export async function markOnboardingComplete(userId: string): Promise<{ success: boolean; error?: string }> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('onboarding_completed')
+    .update({ onboarding_completed: true })
     .eq('id', userId)
+    .select('id, onboarding_completed')
     .single();
 
-  if (error || !data) {
-    return false;
-  }
-
-  return data.onboarding_completed === true;
+  if (error) return { success: false, error: error.message };
+  if (!data?.onboarding_completed) return { success: false, error: 'Update did not set onboarding_completed' };
+  return { success: true };
 }
