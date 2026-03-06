@@ -1,0 +1,47 @@
+# RXFin — Contexto do Projeto
+
+## Stack
+- Frontend: React + TypeScript + Tailwind + Vite (apps/web)
+- Mobile: React Native + Expo (apps/mobile)
+- Backend: Supabase (PostgreSQL 17, Edge Functions/Deno, RLS, pg_cron)
+- Deploy: Vercel (web) + EAS Build (mobile)
+- Automação: n8n + Upstash Redis
+- Integrações: Pluggy (Open Finance), OpenRouter (AI/LLM)
+
+## Projetos Supabase
+- Produção: kneaniaifzgqibpajyji (sa-east-1)
+- Staging: rxfin-staging
+
+## Estrutura do Monorepo
+- apps/web — app React/Vite (Lovable-synced)
+- apps/mobile — React Native/Expo
+- supabase/functions/ — Edge Functions (Deno)
+- n8n/workflows/ — workflows exportados
+
+## Padrões de Banco
+- Migrações: apply_migration para DDL
+- Queries: execute_sql para reads e CREATE INDEX
+- Nunca usar CONCURRENTLY dentro de migrations
+- cron.unschedule() antes de cron.schedule()
+- Schemas: public (RPCs + views), fipe, audit, jobs
+
+## Padrões de Código
+- Edge Functions com verify_jwt: true usam frontend session guard
+- Edge Functions com verify_jwt: false validam JWT internamente
+- Sempre SET search_path TO 'public' em funções SECURITY DEFINER
+- RPCs aceitam p_user_id uuid DEFAULT auth.uid()
+
+## Domínios Importantes
+- /sonhos → user_dreams (objetivos de vida com valor e prazo)
+- /planejamento/metas → monthly_goals (metas mensais por categoria)
+- /financeiro/planos → subscription_plans
+- Pluggy sync → pluggy_transactions, pluggy_accounts, pluggy_connections
+
+## Convenções
+- Migrations: nomes descritivos em snake_case
+- Diagnose antes de corrigir: execute_sql antes de apply_migration
+- Cursor prompts numerados: B01, B02... para frontend; M01, M02... para migrations
+- Testes de RPC: passar p_user_id := '00000000-0000-0000-0000-000000000000'::uuid
+
+## Data de Lançamento
+- Beta público: 4 de abril de 2026
