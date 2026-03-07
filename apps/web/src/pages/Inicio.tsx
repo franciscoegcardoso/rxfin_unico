@@ -49,7 +49,6 @@ import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
 import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
-import { BalanceCard } from "@/design-system/components/BalanceCard";
 import { QuickActions } from "@/design-system/components/QuickActions";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
@@ -549,72 +548,91 @@ const Inicio: React.FC = () => {
   const avatarUrl =
     user?.user_metadata?.avatar_url || user?.user_metadata?.picture || "";
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
+  const isPositiveBalance = saldoLiquido >= 0;
+  const isPositiveVariation = balanceVariation.pct >= 0;
 
   return (
     <AppLayout>
       <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
-        <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1 w-full max-w-full min-w-0">
+        <div className="content-zone pt-4 pb-5 md:pt-4 md:pb-6 space-y-4 flex-1 w-full max-w-full min-w-0">
           {errorBlock}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start"
-        >
-          <div className="flex items-center justify-between min-w-0">
+          {/* Hero único: saudação + saldo + período em um bloco coeso */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-xl border border-border bg-card p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          >
             <div className="flex items-center gap-4 min-w-0">
-              <Avatar className="h-14 w-14 border-2 border-border shrink-0">
+              <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-border shrink-0">
                 <AvatarImage src={avatarUrl} alt={displayFirstName} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                   {getInitials(displayFirstName || "U")}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-foreground">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
                   Olá, {displayFirstName || "Usuário"}! 👋
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  Saldo Líquido do Mês:{" "}
-                  <span
-                    className={cn(
-                      "font-numeric font-semibold tabular-nums tracking-[-0.02em]",
-                      saldoLiquido >= 0 ? "text-income" : "text-expense"
-                    )}
-                  >
-                    {formatCurrencyFull(saldoLiquido)}
-                  </span>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {periodLabel}
                 </p>
               </div>
             </div>
-            <VisibilityToggle />
+            {dashboardLoading ? (
+              <Skeleton className="h-16 w-48 rounded-lg shrink-0" />
+            ) : (
+              <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+                <div className="flex flex-col items-end sm:items-end min-w-0">
+                  <p
+                    className={cn(
+                      "font-numeric text-2xl sm:text-3xl font-bold tabular-nums tracking-tight leading-tight",
+                      isPositiveBalance ? "text-income" : "text-expense"
+                    )}
+                  >
+                    {formatCurrencyFull(saldoLiquido)}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    {isPositiveVariation ? (
+                      <TrendingUp className="h-4 w-4 text-income shrink-0" aria-hidden />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-expense shrink-0" aria-hidden />
+                    )}
+                    <span
+                      className={cn(
+                        "text-sm font-numeric tabular-nums",
+                        isPositiveVariation ? "text-income" : "text-expense"
+                      )}
+                    >
+                      {isPositiveVariation ? "+" : ""}
+                      {balanceVariation.pct.toFixed(1)}%
+                    </span>
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      {" "}
+                      vs mês anterior
+                    </span>
+                  </div>
+                </div>
+                <VisibilityToggle />
+              </div>
+            )}
+          </motion.div>
+
+          {isDemoMode && <OnboardingInsightCard />}
+          {showControlBanner && <ControlOnboardingBanner />}
+
+          {/* Alertas e atalhos em uma única linha compacta */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <InsuranceExpirationAlerts />
+            <UpcomingEventsCard />
+            <PackagesSummaryCard />
           </div>
-          {dashboardLoading ? (
-            <Skeleton className="h-32 w-full rounded-xl" />
-          ) : (
-            <div className="w-full min-w-0">
-              <BalanceCard
-                balance={saldoLiquido}
-                variationPercent={balanceVariation.pct}
-                variationValue={balanceVariation.value}
-                period={periodLabel}
-              />
-            </div>
-          )}
-        </motion.div>
 
-        {isDemoMode && <OnboardingInsightCard />}
-        {showControlBanner && <ControlOnboardingBanner />}
+          <QuickActions />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          <InsuranceExpirationAlerts />
-          <UpcomingEventsCard />
-          <PackagesSummaryCard />
-        </div>
-
-        <QuickActions />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Transações, Fluxo e Metas em grid coeso */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           <div className="min-w-0">
             <Card className="rounded-xl border border-border bg-card h-full">
               <CardHeader className="pb-2 p-4">
@@ -642,7 +660,7 @@ const Inicio: React.FC = () => {
           </div>
 
           {showMetasMensais && top3Goals.length > 0 && (
-            <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+            <div className="min-w-0">
               <Card className="rounded-xl border border-border bg-card h-full">
                 <CardHeader className="pb-2 p-4">
                   <div className="flex items-center justify-between">
@@ -758,60 +776,62 @@ const Inicio: React.FC = () => {
           </div>
         )}
 
-        {expensesForBars.length > 0 && (
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
-                <div>
-                  <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Evolução Mensal</h2>
-                  <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Despesas por categoria</p>
+        {/* Evolução e Cartão lado a lado no desktop para reduzir espaços vazios */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {expensesForBars.length > 0 && (
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                  <div>
+                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Evolução Mensal</h2>
+                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Despesas por categoria</p>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-3 p-5">
-                {expensesForBars.map((row) => {
-                  const pct =
-                    totalExpensesForPct > 0
-                      ? ((row.total ?? 0) / totalExpensesForPct) * 100
-                      : row.pct ?? 0;
-                  const color = getCategoryColor(row.category ?? "");
-                  return (
-                    <div
-                      key={row.category}
-                      className="flex items-center gap-2 sm:gap-3 min-w-0"
-                    >
-                      <span className="w-24 sm:w-32 shrink-0 text-xs sm:text-sm font-medium truncate text-foreground">
-                        {row.category}
-                      </span>
-                      <div className="flex-1 h-6 rounded-md bg-muted overflow-hidden min-w-0">
-                        <div
-                          className="h-full rounded-md transition-all"
-                          style={{
-                            width: `${Math.min(100, pct)}%`,
-                            backgroundColor: color,
-                          }}
-                        />
+                <div className="space-y-3 p-5">
+                  {expensesForBars.map((row) => {
+                    const pct =
+                      totalExpensesForPct > 0
+                        ? ((row.total ?? 0) / totalExpensesForPct) * 100
+                        : row.pct ?? 0;
+                    const color = getCategoryColor(row.category ?? "");
+                    return (
+                      <div
+                        key={row.category}
+                        className="flex items-center gap-2 sm:gap-3 min-w-0"
+                      >
+                        <span className="w-24 sm:w-32 shrink-0 text-xs sm:text-sm font-medium truncate text-foreground">
+                          {row.category}
+                        </span>
+                        <div className="flex-1 h-6 rounded-md bg-muted overflow-hidden min-w-0">
+                          <div
+                            className="h-full rounded-md transition-all"
+                            style={{
+                              width: `${Math.min(100, pct)}%`,
+                              backgroundColor: color,
+                            }}
+                          />
+                        </div>
+                        <span className="shrink-0 text-sm text-muted-foreground tabular-nums whitespace-nowrap">
+                          {isHidden ? "••••" : formatCurrency(row.total ?? 0)} (
+                          {pct.toFixed(1)}%)
+                        </span>
                       </div>
-                      <span className="shrink-0 text-sm text-muted-foreground tabular-nums whitespace-nowrap">
-                        {isHidden ? "••••" : formatCurrency(row.total ?? 0)} (
-                        {pct.toFixed(1)}%)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </DemoCardWrapper>
-        )}
-
-        {bills.length > 0 && (
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
-                <div>
-                  <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Cartão de Crédito</h2>
-                  <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Faturas e status</p>
+                    );
+                  })}
                 </div>
               </div>
+            </DemoCardWrapper>
+          )}
+
+          {bills.length > 0 && (
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                  <div>
+                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Cartão de Crédito</h2>
+                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Faturas e status</p>
+                  </div>
+                </div>
               <div className="space-y-2 p-5">
                 {bills.map(
                   (
@@ -865,6 +885,7 @@ const Inicio: React.FC = () => {
             </div>
           </DemoCardWrapper>
         )}
+        </div>
 
         {insuranceAlerts.length > 0 && (
           <Link to="/alertas" className="block">
