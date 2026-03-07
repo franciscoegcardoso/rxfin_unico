@@ -65,7 +65,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session (com timeout para não travar se Supabase não responder)
+    const SESSION_TIMEOUT_MS = 12_000;
+    const timeoutId = setTimeout(() => {
+      setSession(null);
+      setUser(null);
+      setSentryUser(null);
+      setLoading(false);
+    }, SESSION_TIMEOUT_MS);
+
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         setSession(session);
@@ -79,9 +87,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
         setSentryUser(null);
         setLoading(false);
-      });
+      })
+      .finally(() => clearTimeout(timeoutId));
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSignUp = async (email: string, password: string, fullName?: string) => {

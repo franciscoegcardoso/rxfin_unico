@@ -96,13 +96,31 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   const onboardingLoading = needsOnboardingCheck && onboardingCheckPending;
   const waitForAvailability = !isInicio && availabilityLoading;
-  if (authLoading || permissionsLoading || waitForAvailability || (!!user?.id && profilePending) || onboardingLoading) {
+  const isWaiting = authLoading || permissionsLoading || waitForAvailability || (!!user?.id && profilePending) || onboardingLoading;
+
+  // Timeout de segurança: se o loading passar de 15s, não travar (redirecionar ou liberar)
+  const [loadingTimedOut, setLoadingTimedOut] = React.useState(false);
+  const LOADING_TIMEOUT_MS = 15_000;
+  React.useEffect(() => {
+    if (!isWaiting) {
+      setLoadingTimedOut(false);
+      return;
+    }
+    const t = setTimeout(() => setLoadingTimedOut(true), LOADING_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [isWaiting]);
+
+  if (isWaiting && !loadingTimedOut) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <RXFinLoadingSpinner size={56} />
       </div>
     );
   }
+  if (loadingTimedOut && authLoading) {
+    return <Navigate to={loginRedirect} replace />;
+  }
+  // loadingTimedOut sem authLoading: deixar seguir (permissões/perfil/onboarding podem estar lentos)
 
   if (!user) {
     return <Navigate to={loginRedirect} replace />;
