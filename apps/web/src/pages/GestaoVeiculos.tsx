@@ -190,6 +190,17 @@ export const GestaoVeiculos: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <PageHeader
+          icon={Car}
+          title="Gestão de Veículos"
+          subtitle="Veículos cadastrados, combustível e manutenção"
+          actions={
+            <>
+              <VisibilityToggle />
+              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.gestaoVeiculos} />
+            </>
+          }
+        />
         {vehicleDashboardError && (
           <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
             <p className="text-sm text-destructive">{vehicleDashboardError}</p>
@@ -324,18 +335,6 @@ export const GestaoVeiculos: React.FC = () => {
             </Card>
           </section>
         )}
-
-        <PageHeader
-          icon={Car}
-          title="Gestão de Veículos"
-          subtitle="Veículos cadastrados, combustível e manutenção"
-          actions={
-            <>
-              <VisibilityToggle />
-              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.gestaoVeiculos} />
-            </>
-          }
-        />
 
         {/* Lançar despesa - mobile only (full-width) */}
         <Button 
