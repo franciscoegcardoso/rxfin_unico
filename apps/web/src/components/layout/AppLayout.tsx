@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TopNavbar } from './TopNavbar';
 import { PageTransition } from './PageTransition';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MobileBottomNav } from '@/components/mobile/MobileBottomNav';
 import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -26,14 +27,33 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const showPhoneDialog = needsPhone && !phoneCompleted;
 
+  const errorFallback = (
+    <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
+      <div className="w-12 h-12 rounded-full bg-[hsl(var(--color-expense)/0.1)] flex items-center justify-center">
+        <span className="text-[hsl(var(--color-expense))] text-xl font-bold">!</span>
+      </div>
+      <p className="text-[15px] font-semibold text-[hsl(var(--color-text-primary))]">Algo deu errado</p>
+      <p className="text-[13px] text-[hsl(var(--color-text-secondary))] text-center max-w-[280px]">Recarregue a página para tentar novamente.</p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="text-[13px] font-medium text-[hsl(var(--color-brand-700))] hover:underline"
+      >
+        Recarregar
+      </button>
+    </div>
+  );
+
   const content = (
     <>
       <DemoDataBanner />
-      <div className="w-full max-w-full">
-        <PageTransition>
-          {children}
-        </PageTransition>
-      </div>
+      <ErrorBoundary fallback={errorFallback}>
+        <div className="w-full max-w-full">
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </div>
+      </ErrorBoundary>
     </>
   );
 

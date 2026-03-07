@@ -150,7 +150,7 @@ export const EconomicIndicators: React.FC = () => {
               }}
             />
             <Tooltip
-              contentStyle={premiumTooltipStyle}
+              contentStyle={premiumTooltipStyle.contentStyle}
               formatter={(value: number) => [
                 isDollar ? `R$ ${value.toFixed(4)}` : `${value.toFixed(2)}%`, 
                 indicator.name

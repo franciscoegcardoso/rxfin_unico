@@ -691,7 +691,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                     const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
                     const showTotal = availableCards.length > 1 && payload.length > 1;
                     return (
-                      <div style={premiumTooltipStyle} className="rounded-lg p-2.5 shadow-lg">
+                      <div style={premiumTooltipStyle.contentStyle} className="rounded-lg p-2.5 shadow-lg">
                         <p className="text-xs font-medium mb-1">{label}</p>
                         {payload.map((p: any) => {
                           const card = availableCards.find(c => c.id === p.dataKey);
@@ -788,7 +788,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                         const total = payload.reduce((s: number, p: any) => s + (p.value || 0), 0);
                         const showTotal = availableCards.length > 1 && payload.length > 1;
                         return (
-                          <div style={premiumTooltipStyle} className="rounded-lg p-2.5 shadow-lg">
+                          <div style={premiumTooltipStyle.contentStyle} className="rounded-lg p-2.5 shadow-lg">
                             <p className="text-xs font-medium mb-1">{label}</p>
                             {payload.map((p: any) => {
                               const card = availableCards.find(c => c.id === p.dataKey);
@@ -878,7 +878,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                         if (!active || !payload || payload.length === 0) return null;
                         const total = (payload[0]?.value as number || 0) + (payload[1]?.value as number || 0);
                         return (
-                          <div style={premiumTooltipStyle} className="rounded-lg p-2.5 shadow-lg">
+                          <div style={premiumTooltipStyle.contentStyle} className="rounded-lg p-2.5 shadow-lg">
                             <p className="text-xs font-medium mb-1">{label}</p>
                             {payload.map((p: any) => (
                               <p key={p.dataKey} className="text-xs" style={{ color: p.stroke }}>
@@ -973,7 +973,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                     </Pie>
                     <Tooltip
                       formatter={(value: number, name: string) => [formatCurrency(value), name]}
-                      contentStyle={premiumTooltipStyle}
+                      contentStyle={premiumTooltipStyle.contentStyle}
                     />
                   </RechartsPieChart>
                 </ResponsiveContainer>

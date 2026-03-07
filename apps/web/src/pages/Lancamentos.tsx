@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, Type, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
 import { ContasListSection } from '@/components/lancamentos/ContasListSection';
@@ -51,7 +52,6 @@ import { format, parseISO, addMonths } from 'date-fns';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { useLancamentosRealizados, LancamentoRealizado, LancamentoInput } from '@/hooks/useLancamentosRealizados';
-import { EmptyLancamentos } from '@/design-system/components/empty-states';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { useLancamentosSummary } from '@/hooks/useLancamentosSummary';
 import { useContasPagarReceber, Conta, ContaInput, ContaTipo } from '@/hooks/useContasPagarReceber';
@@ -858,7 +858,7 @@ export const Lancamentos: React.FC = () => {
         {rpcSummary != null && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="min-w-0 rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-income/10">
                     <ArrowUpCircle className="h-5 w-5 text-income" />
@@ -870,7 +870,7 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="min-w-0 rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-expense/10">
                     <ArrowDownCircle className="h-5 w-5 text-expense" />
@@ -882,7 +882,7 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
+              <Card className="min-w-0 rounded-[14px] border border-border/80">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${balance >= 0 ? 'bg-income/10' : 'bg-expense/10'}`}>
                     <Scale className={`h-5 w-5 ${balance >= 0 ? 'text-income' : 'text-expense'}`} />
@@ -893,7 +893,7 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-xl border border-border bg-card">
+              <Card className="min-w-0 rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -905,7 +905,7 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-xl border border-border bg-card">
+              <Card className="min-w-0 rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/10">
                     <Clock className="h-5 w-5 text-warning" />
@@ -917,7 +917,7 @@ export const Lancamentos: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-xl border border-border bg-card">
+              <Card className="min-w-0 rounded-xl border border-border bg-card">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
                     <AlertCircle className="h-5 w-5 text-destructive" />
@@ -1251,15 +1251,15 @@ export const Lancamentos: React.FC = () => {
         <div className={cn(isMobile ? 'space-y-4 mb-6' : 'grid grid-cols-[240px_1fr] gap-0 mb-6')}>
         {isMobile ? (
           <>
-            <div className="overflow-x-auto flex gap-2 pb-2 -mx-1 px-1 scrollbar-thin">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
               <button
                 type="button"
                 onClick={() => { setFilterTipo('all'); setFilterCategories([]); }}
                 className={cn(
-                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                   filterTipo === 'all' && filterCategories.length === 0
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-[hsl(var(--color-brand-700))] border-[hsl(var(--color-brand-700))] text-white hover:bg-[hsl(var(--color-brand-600))]'
+                    : 'border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-secondary))] hover:border-[hsl(var(--color-brand-400))] hover:text-[hsl(var(--color-brand-700))]'
                 )}
               >
                 Todos
@@ -1268,8 +1268,10 @@ export const Lancamentos: React.FC = () => {
                 type="button"
                 onClick={() => { setFilterTipo('receita'); setFilterCategories([]); }}
                 className={cn(
-                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                  filterTipo === 'receita' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
+                  filterTipo === 'receita'
+                    ? 'bg-[hsl(var(--color-brand-700))] border-[hsl(var(--color-brand-700))] text-white hover:bg-[hsl(var(--color-brand-600))]'
+                    : 'border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-secondary))] hover:border-[hsl(var(--color-brand-400))] hover:text-[hsl(var(--color-brand-700))]'
                 )}
               >
                 Receitas
@@ -1278,8 +1280,10 @@ export const Lancamentos: React.FC = () => {
                 type="button"
                 onClick={() => { setFilterTipo('despesa'); setFilterCategories([]); }}
                 className={cn(
-                  'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors',
-                  filterTipo === 'despesa' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
+                  filterTipo === 'despesa'
+                    ? 'bg-[hsl(var(--color-brand-700))] border-[hsl(var(--color-brand-700))] text-white hover:bg-[hsl(var(--color-brand-600))]'
+                    : 'border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-secondary))] hover:border-[hsl(var(--color-brand-400))] hover:text-[hsl(var(--color-brand-700))]'
                 )}
               >
                 Despesas
@@ -1292,8 +1296,10 @@ export const Lancamentos: React.FC = () => {
                     type="button"
                     onClick={() => { setFilterTipo('all'); setFilterCategories(active ? [] : [cat]); }}
                     className={cn(
-                      'shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors truncate max-w-[140px]',
-                      active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border truncate max-w-[140px]',
+                      active
+                        ? 'bg-[hsl(var(--color-brand-700))] border-[hsl(var(--color-brand-700))] text-white hover:bg-[hsl(var(--color-brand-600))]'
+                        : 'border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-secondary))] hover:border-[hsl(var(--color-brand-400))] hover:text-[hsl(var(--color-brand-700))]'
                     )}
                   >
                     {cat}
@@ -1602,9 +1608,30 @@ export const Lancamentos: React.FC = () => {
               {lancamentosError ? (
                 <ErrorCard message="Não foi possível carregar os dados." onRetry={() => fetchLancamentos()} />
               ) : loading ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">Carregando...</div>
+                <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] overflow-hidden">
+                  <div className="bg-[hsl(var(--color-surface-sunken))] h-10 border-b border-[hsl(var(--color-border-default))]" />
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex gap-4 px-4 py-3 border-b border-[hsl(var(--color-border-subtle))] last:border-0">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-4 flex-1" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                  ))}
+                </div>
               ) : allLancamentos.length === 0 ? (
-                <EmptyLancamentos />
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[hsl(var(--color-surface-sunken))] flex items-center justify-center">
+                    <Receipt className="w-5 h-5 text-[hsl(var(--color-text-tertiary))]" />
+                  </div>
+                  <p className="text-[14px] font-medium text-[hsl(var(--color-text-primary))]">
+                    Nenhum lançamento encontrado
+                  </p>
+                  <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] text-center max-w-[220px]">
+                    Adicione seu primeiro lançamento ou ajuste os filtros.
+                  </p>
+                </div>
               ) : isMobile ? (
                 <div className="space-y-4">
                   {lancamentosGroupedByDate.map(([dateStr, items]) => (
@@ -1647,69 +1674,70 @@ export const Lancamentos: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[600px] border-collapse">
-                    <thead>
-                      <tr className="bg-muted text-muted-foreground text-xs uppercase tracking-wider">
-                        <th className="text-left py-3 px-3 font-medium">Nome</th>
-                        <th className="text-left py-3 px-3 font-medium hidden md:table-cell">Categoria</th>
-                        <th className="text-right py-3 px-3 font-medium">Valor</th>
-                        <th className="text-right py-3 px-3 font-medium">Data</th>
-                        <th className="w-10" aria-label="Pago" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allLancamentos.map((item, index) => {
-                        const isEntrada = item.tipo === 'receita';
-                        const recon = getReconciliation(item.id);
-                        const isPaid = !!item.data_pagamento;
-                        return (
-                          <tr
-                            key={item.id}
-                            className={cn(
-                              'border-b border-border cursor-pointer transition-colors hover:bg-accent/50',
-                              index % 2 === 0 ? 'bg-card' : 'bg-muted/30',
-                              recon?.isBillPayment && 'opacity-60'
-                            )}
-                            onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
-                          >
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <p className="font-medium text-sm text-foreground truncate">{item.friendly_name || item.nome}</p>
-                                {recon?.matched && recon.cardName && (
-                                  <span className="inline-flex items-center gap-0.5 text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
-                                    <Link2 className="h-3 w-3" /> Conciliado
-                                  </span>
-                                )}
-                                {recon?.isBillPayment && !recon.matched && (
-                                  <span className="inline-flex items-center gap-0.5 text-[10px] text-warning bg-warning/10 px-1.5 py-0.5 rounded-full shrink-0">
-                                    <AlertCircle className="h-3 w-3" /> Pgto. Fatura
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 text-sm text-muted-foreground truncate hidden md:table-cell">{item.categoria}</td>
-                            <td className={cn('py-3 px-3 text-right font-sans font-semibold text-sm tabular-nums tracking-tight', isEntrada ? 'text-income' : 'text-expense')}>
-                              {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
-                            </td>
-                            <td className="py-3 px-3 text-right text-xs text-muted-foreground whitespace-nowrap">
-                              {item.data_pagamento
-                                ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
-                                : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
-                            </td>
-                            <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
-                              <Checkbox
-                                checked={isPaid}
-                                onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
-                                className="shrink-0"
-                                aria-label={isEntrada ? 'Recebido' : 'Pago'}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px] border-collapse">
+                      <thead>
+                        <tr className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))]">
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))]">Nome</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-left hidden sm:table-cell text-[hsl(var(--color-text-tertiary))]">Categoria</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Valor</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Data</th>
+                          <th className="w-10 h-10" aria-label="Pago" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allLancamentos.map((item) => {
+                          const isEntrada = item.tipo === 'receita';
+                          const recon = getReconciliation(item.id);
+                          const isPaid = !!item.data_pagamento;
+                          return (
+                            <tr
+                              key={item.id}
+                              className={cn(
+                                'border-b border-[hsl(var(--color-border-subtle))] transition-colors duration-100 hover:bg-[hsl(var(--color-surface-sunken))] last:border-0 cursor-pointer',
+                                recon?.isBillPayment && 'opacity-60'
+                              )}
+                              onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
+                            >
+                              <td className="px-4 py-3 text-[13px] text-[hsl(var(--color-text-primary))]">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <p className="font-medium truncate">{item.friendly_name || item.nome}</p>
+                                  {recon?.matched && recon.cardName && (
+                                    <span className="badge-info inline-flex items-center gap-1 shrink-0">
+                                      <Link2 className="h-3 w-3" /> Conciliado
+                                    </span>
+                                  )}
+                                  {recon?.isBillPayment && !recon.matched && (
+                                    <span className="badge-warning inline-flex items-center gap-1 shrink-0">
+                                      <AlertCircle className="h-3 w-3" /> Pgto. Fatura
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-[13px] text-[hsl(var(--color-text-primary))] truncate hidden sm:table-cell">{item.categoria}</td>
+                              <td className={cn('px-4 py-3 font-numeric text-[13px] font-semibold tracking-[-0.01em] tabular-nums whitespace-nowrap text-right', isEntrada ? 'text-[hsl(var(--color-income))]' : 'text-[hsl(var(--color-expense))]')}>
+                                {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
+                              </td>
+                              <td className="px-4 py-3 text-[12px] text-[hsl(var(--color-text-secondary))] tabular-nums whitespace-nowrap text-right">
+                                {item.data_pagamento
+                                  ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
+                                  : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
+                              </td>
+                              <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={isPaid}
+                                  onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
+                                  className="shrink-0"
+                                  aria-label={isEntrada ? 'Recebido' : 'Pago'}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </CollapsibleModule>

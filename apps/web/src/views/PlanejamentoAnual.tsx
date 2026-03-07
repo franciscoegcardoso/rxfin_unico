@@ -656,7 +656,7 @@ const PlanejamentoAnual: React.FC = () => {
                   <RechartsTooltipComponent 
                     formatter={(value: number) => formatCurrency(value)}
                     labelFormatter={(label) => `Ano: ${label}`}
-                    contentStyle={premiumTooltipStyle}
+                    contentStyle={premiumTooltipStyle.contentStyle}
                   />
                   <Legend />
                   <Area 
@@ -714,7 +714,7 @@ const PlanejamentoAnual: React.FC = () => {
                   <RechartsTooltipComponent 
                     formatter={(value: number) => formatCurrency(value)}
                     labelFormatter={(label) => `Ano: ${label}`}
-                    contentStyle={premiumTooltipStyle}
+                    contentStyle={premiumTooltipStyle.contentStyle}
                   />
                   <Legend />
                   <Area 

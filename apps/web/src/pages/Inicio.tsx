@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PageHeader } from "@/components/PageHeader";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVisibility } from "@/contexts/VisibilityContext";
@@ -484,9 +485,14 @@ const Inicio: React.FC = () => {
   if (isMobile) {
     return (
       <AppLayout>
-        <div className="space-y-4">
-          {errorBlock}
-          <MobileHomeHero
+        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+          <PageHeader
+            title="Início"
+            description={`Visão geral do mês de ${periodLabel}`}
+          />
+          <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
+            {errorBlock}
+            <MobileHomeHero
             firstName={displayFirstName}
             saldoLiquido={saldoLiquido}
           />
@@ -538,6 +544,7 @@ const Inicio: React.FC = () => {
 
           {!isDemoMode && <EconomicIndicators />}
           <BudgetInsightsSummary />
+          </div>
         </div>
       </AppLayout>
     );
@@ -550,8 +557,13 @@ const Inicio: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="w-full max-w-full min-w-0 space-y-6">
-        {errorBlock}
+      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <PageHeader
+          title="Início"
+          description={`Visão geral do mês de ${periodLabel}`}
+        />
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1 w-full max-w-full min-w-0">
+          {errorBlock}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -674,111 +686,97 @@ const Inicio: React.FC = () => {
         </div>
 
         {monthSummary && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            data-tour="metrics-cards"
-          >
+          <div className="kpi-grid" data-tour="metrics-cards">
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-income/10">
-                    <TrendingUp className="h-5 w-5 text-income" />
+              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Receitas</span>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-income)/0.1)]">
+                    <TrendingUp className="h-4 w-4 text-[hsl(var(--color-income))]" aria-hidden />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Receitas
-                    </p>
-                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-income truncate">
-                      {isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-income))] truncate">
+                  {isHidden ? "••••••" : (
+                    <>
+                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
+                      {(monthSummary.total_income ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </>
+                  )}
+                </p>
+              </div>
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-expense/10">
-                    <TrendingDown className="h-5 w-5 text-expense" />
+              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Despesas</span>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-expense)/0.1)]">
+                    <TrendingDown className="h-4 w-4 text-[hsl(var(--color-expense))]" aria-hidden />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Despesas
-                    </p>
-                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-expense truncate">
-                      {isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-expense))] truncate">
+                  {isHidden ? "••••••" : (
+                    <>
+                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
+                      {(monthSummary.total_expense ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </>
+                  )}
+                </p>
+              </div>
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Saldo</span>
                   <div
                     className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                      (monthSummary.balance ?? 0) >= 0
-                        ? "bg-income/10"
-                        : "bg-expense/10"
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px]",
+                      (monthSummary.balance ?? 0) >= 0 ? "bg-[hsl(var(--color-income)/0.1)]" : "bg-[hsl(var(--color-expense)/0.1)]"
                     )}
                   >
-                    <Wallet
-                      className={cn(
-                        "h-5 w-5",
-                        (monthSummary.balance ?? 0) >= 0
-                          ? "text-income"
-                          : "text-expense"
-                      )}
-                    />
+                    <Wallet className={cn("h-4 w-4", (monthSummary.balance ?? 0) >= 0 ? "text-[hsl(var(--color-income))]" : "text-[hsl(var(--color-expense))]")} aria-hidden />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Saldo
-                    </p>
-                    <p
-                      className={cn(
-                        "text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] truncate",
-                        (monthSummary.balance ?? 0) >= 0
-                          ? "text-income"
-                          : "text-expense"
-                      )}
-                    >
-                      {isHidden ? "••••••" : formatCurrency(monthSummary.balance ?? 0)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p
+                  className={cn(
+                    "font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] truncate",
+                    (monthSummary.balance ?? 0) >= 0 ? "text-[hsl(var(--color-income))]" : "text-[hsl(var(--color-expense))]"
+                  )}
+                >
+                  {isHidden ? "••••••" : (
+                    <>
+                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
+                      {(monthSummary.balance ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </>
+                  )}
+                </p>
+              </div>
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card className="rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-3 sm:p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-                    <Receipt className="h-5 w-5 text-muted-foreground" />
+              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Lançamentos</span>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-info)/0.1)]">
+                    <Receipt className="h-4 w-4 text-[hsl(var(--color-info))]" aria-hidden />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Lançamentos
-                    </p>
-                    <p className="text-sm sm:text-lg font-numeric font-semibold tabular-nums tracking-[-0.02em] text-foreground truncate">
-                      {monthSummary.count_total ?? "—"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-text-primary))] truncate">
+                  {monthSummary.count_total ?? "—"}
+                </p>
+              </div>
             </DemoCardWrapper>
           </div>
         )}
 
         {expensesForBars.length > 0 && (
           <DemoCardWrapper isDemoMode={isDemoMode}>
-            <Card className="rounded-xl border border-border bg-card">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="text-base">
-                  Despesas por Categoria
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 p-3 sm:p-4 pt-0">
+            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Evolução Mensal</h2>
+                  <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Despesas por categoria</p>
+                </div>
+              </div>
+              <div className="space-y-3 p-5">
                 {expensesForBars.map((row) => {
                   const pct =
                     totalExpensesForPct > 0
@@ -809,18 +807,21 @@ const Inicio: React.FC = () => {
                     </div>
                   );
                 })}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </DemoCardWrapper>
         )}
 
         {bills.length > 0 && (
           <DemoCardWrapper isDemoMode={isDemoMode}>
-            <Card className="rounded-xl border border-border bg-card">
-              <CardHeader className="pb-2 p-3 sm:p-4">
-                <CardTitle className="text-base">Cartões de Crédito</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 p-3 sm:p-4 pt-0">
+            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Cartão de Crédito</h2>
+                  <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Faturas e status</p>
+                </div>
+              </div>
+              <div className="space-y-2 p-5">
                 {bills.map(
                   (
                     bill: {
@@ -869,8 +870,8 @@ const Inicio: React.FC = () => {
                     </div>
                   )
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </DemoCardWrapper>
         )}
 
@@ -921,24 +922,22 @@ const Inicio: React.FC = () => {
         >
           {showMetasMensais && (
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card data-tour="category-goals" className="rounded-xl border border-border bg-card">
-                <CardHeader className="pb-3 p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      Gasto vs Meta por Categoria
-                    </CardTitle>
-                    <button
-                      type="button"
-                      onClick={() => navigate("/planejamento?tab=metas")}
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      Editar metas
-                      <ChevronRight className="h-3 w-3" />
-                    </button>
+              <div data-tour="category-goals" className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                  <div>
+                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>
+                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Gasto vs meta por categoria</p>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[300px] overflow-y-auto p-3 sm:p-4 pt-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/planejamento?tab=metas")}
+                    className="text-xs text-[hsl(var(--color-brand-700))] hover:underline flex items-center gap-1 font-medium"
+                  >
+                    Editar metas
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto p-5">
                   {categoryGoals.length > 0 ? (
                     categoryGoals.map((item) => (
                       <CategoryGoalItem
@@ -950,12 +949,12 @@ const Inicio: React.FC = () => {
                       />
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">
+                    <p className="text-sm text-[hsl(var(--color-text-tertiary))] text-center py-4">
                       Nenhuma categoria configurada. Configure em Parâmetros.
                     </p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </DemoCardWrapper>
           )}
 
@@ -970,6 +969,7 @@ const Inicio: React.FC = () => {
 
         {!isDemoMode && <EconomicIndicators />}
         <BudgetInsightsSummary />
+        </div>
       </div>
     </AppLayout>
   );

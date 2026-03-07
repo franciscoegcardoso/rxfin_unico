@@ -65,7 +65,7 @@ export function PageHeader({
             </p>
           )}
         </div>
-        {action && <div className="shrink-0">{action}</div>}
+        {action && <div className="shrink-0 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">{action}</div>}
       </div>
     </div>
   );

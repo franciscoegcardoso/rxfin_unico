@@ -219,7 +219,7 @@ export const MileageHistoryChart: React.FC<MileageHistoryChartProps> = ({ record
               <CartesianGrid {...premiumGrid} />
               <XAxis dataKey="month" {...premiumXAxis} />
               <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} {...premiumYAxis} domain={['dataMin - 1000', 'dataMax + 1000']} />
-              <Tooltip formatter={(value: number, name: string) => [`${value.toLocaleString('pt-BR')} km`, name]} labelFormatter={(label) => `1º de ${label}`} contentStyle={premiumTooltipStyle} />
+              <Tooltip formatter={(value: number, name: string) => [`${value.toLocaleString('pt-BR')} km`, name]} labelFormatter={(label) => `1º de ${label}`} contentStyle={premiumTooltipStyle.contentStyle} />
               <Legend />
               {vehicleNames.map((name, index) => (
                 <Line key={name} type="monotone" dataKey={name} name={name} stroke={colors[index % colors.length]} strokeWidth={3} dot={{ r: 3, fill: colors[index % colors.length] }} activeDot={{ r: 5, stroke: 'hsl(var(--background))', strokeWidth: 2 }} connectNulls />
@@ -249,7 +249,7 @@ export const MileageHistoryChart: React.FC<MileageHistoryChartProps> = ({ record
                   name
                 ]}
                 labelFormatter={(label) => `1º de ${label}`}
-                contentStyle={premiumTooltipStyle}
+                contentStyle={premiumTooltipStyle.contentStyle}
               />
               <Legend />
               {vehicleNames.map((name, index) => (

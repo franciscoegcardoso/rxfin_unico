@@ -34,7 +34,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </div>
           )}
           <div className="min-w-0 space-y-0.5">
-            <h1 className="text-2xl font-bold text-foreground tracking-[-0.02em] truncate">
+            <h1 className="text-2xl font-bold text-foreground tracking-[-0.02em] truncate line-clamp-1">
               {title}
             </h1>
             {description && (
@@ -43,7 +43,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         </div>
         {children && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
             {children}
           </div>
         )}

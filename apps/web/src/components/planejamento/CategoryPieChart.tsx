@@ -68,7 +68,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ selectedMont
                 </Pie>
                 <Tooltip
                   formatter={(v: number) => (isHidden ? '••••' : `R$ ${v.toLocaleString('pt-BR')}`)}
-                  contentStyle={premiumTooltipStyle}
+                  contentStyle={premiumTooltipStyle.contentStyle}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -100,7 +100,7 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ selectedMont
               </Pie>
               <Tooltip
                 formatter={(v: number) => (isHidden ? '••••' : `R$ ${v.toLocaleString('pt-BR')}`)}
-                contentStyle={premiumTooltipStyle}
+                contentStyle={premiumTooltipStyle.contentStyle}
               />
             </PieChart>
           </ResponsiveContainer>

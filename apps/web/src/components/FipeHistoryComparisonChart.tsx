@@ -146,7 +146,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                 hide
               />
               <Tooltip
-                contentStyle={premiumTooltipStyle}
+                contentStyle={premiumTooltipStyle.contentStyle}
                 labelFormatter={(label) => label}
                 formatter={(value: number, name: string) => [
                   formatMoney(value),

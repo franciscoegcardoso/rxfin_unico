@@ -58,7 +58,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   const total = paid + remaining;
 
   return (
-    <div style={premiumTooltipStyle} className="min-w-[180px]">
+    <div style={premiumTooltipStyle.contentStyle} className="min-w-[180px]">
       <p className="font-semibold text-xs text-foreground capitalize mb-2">{label}</p>
       <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-4">

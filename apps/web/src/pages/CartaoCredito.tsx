@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -95,12 +95,13 @@ const CartaoCredito: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
           title="Cartão de Crédito"
-          description="Gerencie suas faturas e transações de cartão de crédito"
-          icon={<CreditCard className="h-5 w-5 text-primary" />}
+          description="Faturas, lançamentos e sincronização"
+          breadcrumb={[{ label: 'RXFin' }, { label: 'Cartão de Crédito' }]}
         />
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
 
         {loading && (
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -288,6 +289,7 @@ const CartaoCredito: React.FC = () => {
         )}
 
         <CartaoCreditoSection />
+        </div>
       </div>
     </AppLayout>
   );

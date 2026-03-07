@@ -410,7 +410,7 @@ export const CarVsTransportChart: React.FC<CarVsTransportChartProps> = ({
               <RechartsTooltip 
                 formatter={(value: number, name: string) => [formatMoney(value), name]}
                 labelFormatter={(label) => `Mês: ${label}`}
-                contentStyle={premiumTooltipStyle}
+                contentStyle={premiumTooltipStyle.contentStyle}
               />
               <Legend />
               <Area

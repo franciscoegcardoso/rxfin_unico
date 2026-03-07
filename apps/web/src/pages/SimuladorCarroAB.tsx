@@ -1996,7 +1996,7 @@ const SimuladorCarroAB: React.FC = () => {
                             <YAxis type="category" dataKey="name" {...premiumYAxis} width={60} />
                             <Tooltip 
                               formatter={(value: number) => formatMoney(value)}
-                              contentStyle={premiumTooltipStyle}
+                              contentStyle={premiumTooltipStyle.contentStyle}
                               labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
                             />
                             <Bar dataKey="carroA" name="Carro A" fill="hsl(217, 91%, 60%)" radius={[0, 4, 4, 0]} />

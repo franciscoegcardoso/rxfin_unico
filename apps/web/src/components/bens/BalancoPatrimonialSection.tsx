@@ -444,7 +444,7 @@ export const BalancoPatrimonialSection: React.FC = () => {
                 />
                 <Tooltip 
                   formatter={(value: number) => formatMoney(value)}
-                  contentStyle={premiumTooltipStyle}
+                  contentStyle={premiumTooltipStyle.contentStyle}
                 />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} />
               </BarChart>

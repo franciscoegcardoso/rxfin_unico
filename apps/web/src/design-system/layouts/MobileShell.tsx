@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPageTitle } from "./nav-config";
 import { BottomNavigation } from "@/components/BottomNavigation";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -38,7 +39,14 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         )}
         style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
       >
-        {children}
+        <ErrorBoundary>
+          <div
+            key={location.pathname}
+            className="animate-in fade-in duration-200 ease-out"
+          >
+            {children}
+          </div>
+        </ErrorBoundary>
       </main>
 
       <BottomNavigation />

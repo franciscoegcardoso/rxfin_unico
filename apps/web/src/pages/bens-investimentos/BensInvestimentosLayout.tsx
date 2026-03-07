@@ -3,7 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -256,17 +256,16 @@ const BensInvestimentosLayout: React.FC = () => {
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
       <AppLayout>
-        <div className="w-full max-w-full min-w-0 space-y-4">
+        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
             title="Bens e Investimentos"
-            description="Gerencie seu patrimônio, consórcios e financiamentos"
-            icon={<Building2 className="h-5 w-5 text-primary" />}
-          >
-            <VisibilityToggle />
-            <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.bensInvestimentos} />
-
-            {/* Trash Sheet */}
-            <Sheet open={trashSheetOpen} onOpenChange={setTrashSheetOpen}>
+            description="Patrimônio, Open Finance e investimentos"
+            breadcrumb={[{ label: 'RXFin' }, { label: 'Bens e Investimentos' }]}
+            action={
+              <div className="flex items-center gap-2">
+                <VisibilityToggle />
+                <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.bensInvestimentos} />
+                <Sheet open={trashSheetOpen} onOpenChange={setTrashSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" className="relative">
                   <Trash2 className="h-4 w-4" />
@@ -426,8 +425,11 @@ const BensInvestimentosLayout: React.FC = () => {
                 </ScrollArea>
               </SheetContent>
             </Sheet>
-          </PageHeader>
+              </div>
+            }
+          />
 
+          <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
           {patrimonioError && (
             <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
           )}
@@ -925,6 +927,7 @@ const BensInvestimentosLayout: React.FC = () => {
           onOpenChange={setSeguroDialogOpen}
           preSelectedAssetId={seguroAssetId}
         />
+        </div>
       </AppLayout>
     </BensInvestimentosContext.Provider>
   );

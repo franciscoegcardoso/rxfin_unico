@@ -806,12 +806,12 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[140px]">Fonte de Receita</TableHead>
-                <TableHead className="hidden md:table-cell text-center">Projeção</TableHead>
-                <TableHead className="text-center w-[140px] md:w-[150px]">Meta</TableHead>
-                <TableHead className="w-[50px] text-center">Δ Proj.</TableHead>
-                <TableHead className="hidden sm:table-cell text-center">Realizado</TableHead>
-                <TableHead className="hidden sm:table-cell w-[60px] text-center">Δ Meta</TableHead>
+                <TableHead className="text-[10px] min-w-[140px]">Fonte de Receita</TableHead>
+                <TableHead className="text-[10px] hidden md:table-cell text-center">Projeção</TableHead>
+                <TableHead className="text-[10px] text-center w-[140px] md:w-[150px]">Meta</TableHead>
+                <TableHead className="text-[10px] w-[50px] text-center">Δ Proj.</TableHead>
+                <TableHead className="text-[10px] hidden sm:table-cell text-center">Realizado</TableHead>
+                <TableHead className="text-[10px] hidden sm:table-cell w-[60px] text-center">Δ Meta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -823,9 +823,9 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <span className="text-sm">{item.name}</span>
+                      <span className="text-[13px]">{item.name}</span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-center text-muted-foreground">
+                    <TableCell className="hidden md:table-cell text-center text-[13px] font-numeric text-muted-foreground">
                       {formatCurrency(projected)}
                     </TableCell>
                     <TableCell>
@@ -853,7 +853,7 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-center">
                       {actual > 0 ? (
-                        <span className="text-sm font-medium text-income">
+                        <span className="text-[13px] font-numeric font-medium text-income">
                           {formatCurrency(actual)}
                         </span>
                       ) : (
@@ -992,19 +992,19 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[140px] max-w-[180px]">Item de Despesa</TableHead>
-                <TableHead className="text-center w-[50px]">Base</TableHead>
+                <TableHead className="text-[10px] min-w-[140px] max-w-[180px]">Item de Despesa</TableHead>
+                <TableHead className="text-[10px] text-center w-[50px]">Base</TableHead>
                 {Array.from({ length: 6 }).map((_, idx) => (
-                  <TableHead key={idx} className="hidden lg:table-cell text-center text-xs text-muted-foreground w-[45px] whitespace-nowrap">
+                  <TableHead key={idx} className="text-[10px] hidden lg:table-cell text-center text-muted-foreground w-[45px] whitespace-nowrap">
                     M-{6 - idx}
                   </TableHead>
                 ))}
-                <TableHead className="text-center w-[65px] md:w-[75px]">Média</TableHead>
-                <TableHead className="hidden md:table-cell text-center w-[75px]">Projeção</TableHead>
-                <TableHead className="text-center w-[140px] md:w-[150px]">Meta</TableHead>
-                <TableHead className="w-[50px] text-center">Δ Proj.</TableHead>
-                <TableHead className="hidden sm:table-cell text-center w-[75px]">Realizado</TableHead>
-                <TableHead className="hidden sm:table-cell w-[60px] text-center">Δ Meta</TableHead>
+                <TableHead className="text-[10px] text-center w-[65px] md:w-[75px]">Média</TableHead>
+                <TableHead className="text-[10px] hidden md:table-cell text-center w-[75px]">Projeção</TableHead>
+                <TableHead className="text-[10px] text-center w-[140px] md:w-[150px]">Meta</TableHead>
+                <TableHead className="text-[10px] w-[50px] text-center">Δ Proj.</TableHead>
+                <TableHead className="text-[10px] hidden sm:table-cell text-center w-[75px]">Realizado</TableHead>
+                <TableHead className="text-[10px] hidden sm:table-cell w-[60px] text-center">Δ Meta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1033,11 +1033,11 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell" colSpan={6}></TableCell>
-                      <TableCell className="text-center text-muted-foreground">
+                      <TableCell className="text-center text-[13px] font-numeric text-muted-foreground">
                         {formatCurrency(categoryAvg)}
                       </TableCell>
                       <TableCell className="hidden md:table-cell"></TableCell>
-                      <TableCell className="text-center font-semibold">
+                      <TableCell className="text-center text-[13px] font-numeric font-semibold">
                         {formatCurrency(categoryTotal)}
                       </TableCell>
                       <TableCell className="text-center">
@@ -1101,7 +1101,7 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                             />
                           </TableCell>
                           {last6.map((m, idx) => (
-                            <TableCell key={idx} className="hidden lg:table-cell text-center text-sm text-muted-foreground">
+                            <TableCell key={idx} className="hidden lg:table-cell text-center text-[13px] font-numeric text-muted-foreground">
                               {formatCurrency(m.value)}
                             </TableCell>
                           ))}
@@ -1110,10 +1110,10 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                               -
                             </TableCell>
                           ))}
-                          <TableCell className="text-center font-medium">
+                          <TableCell className="text-center text-[13px] font-numeric font-medium">
                             {formatCurrency(historicalAvg)}
                           </TableCell>
-                          <TableCell className="hidden md:table-cell text-center text-muted-foreground">
+                          <TableCell className="hidden md:table-cell text-center text-[13px] font-numeric text-muted-foreground">
                             {formatCurrency(projected)}
                           </TableCell>
                           <TableCell>
@@ -1141,7 +1141,7 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-center">
                             {actual > 0 ? (
-                              <span className="text-sm font-medium text-expense">
+                              <span className="text-[13px] font-numeric font-medium text-expense">
                                 {formatCurrency(actual)}
                               </span>
                             ) : (
@@ -1169,9 +1169,9 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                 <TableCell>Total</TableCell>
                 <TableCell></TableCell>
                 <TableCell className="hidden lg:table-cell" colSpan={6}></TableCell>
-                <TableCell className="text-center">{formatCurrency(historicalTotals.expense)}</TableCell>
-                <TableCell className="hidden md:table-cell text-center">{formatCurrency(projectedExpenseTotal)}</TableCell>
-                <TableCell className="text-center text-expense">{formatCurrency(totalExpenseGoal)}</TableCell>
+                <TableCell className="text-center text-[13px] font-numeric">{formatCurrency(historicalTotals.expense)}</TableCell>
+                <TableCell className="hidden md:table-cell text-center text-[13px] font-numeric">{formatCurrency(projectedExpenseTotal)}</TableCell>
+                <TableCell className="text-center text-[13px] font-numeric text-expense">{formatCurrency(totalExpenseGoal)}</TableCell>
                 <TableCell className="text-center">
                   {totalExpenseGoal > 0 && projectedExpenseTotal > 0 && (
                     <GoalComparisonBadge
@@ -1184,7 +1184,7 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell text-center">
                   {monthlyComparison.hasActuals && monthlyComparison.actualExpense > 0 ? (
-                    <span className="text-sm font-medium text-expense">
+                    <span className="text-[13px] font-numeric font-medium text-expense">
                       {formatCurrency(monthlyComparison.actualExpense)}
                     </span>
                   ) : (

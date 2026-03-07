@@ -3,7 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { Calculator, TrendingUp, TrendingDown, PiggyBank, Target, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,11 +68,23 @@ const PlanejamentoLayout: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <PageHeader
+          title="Planejamento Mensal"
+          description="Gerencie seu orçamento e metas do mês"
+          breadcrumb={[{ label: 'RXFin' }, { label: 'Planejamento' }]}
+          action={
+            <>
+              <VisibilityToggle />
+              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.planejamentoMensal} />
+            </>
+          }
+        />
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         {budgetError && (
-          <Card className="rounded-[14px] border-destructive/50 bg-destructive/5 p-4">
-            <p className="text-sm text-destructive">{budgetError}</p>
-          </Card>
+          <div className="rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-expense-bg))] p-4">
+            <p className="text-sm text-[hsl(var(--color-expense))]">{budgetError}</p>
+          </div>
         )}
         {budgetData != null && (incomeGoal > 0 || expenseGoal > 0 || savingsGoal > 0) && (
           <div className="space-y-4">
@@ -85,7 +97,7 @@ const PlanejamentoLayout: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(incomeGoal)}</p>
-                  <p className="text-lg font-semibold text-green-600">Realizado: {formatCurrency(totalIncome)}</p>
+                  <p className="text-lg font-semibold font-numeric text-green-600">Realizado: {formatCurrency(totalIncome)}</p>
                   <Progress value={incomePct} className="h-2" />
                   {incomePct >= 100 ? <Badge className="bg-green-600">100% atingido</Badge> : <Badge variant="secondary">{(100 - incomePct).toFixed(0)}% faltando</Badge>}
                 </CardContent>
@@ -98,7 +110,7 @@ const PlanejamentoLayout: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(expenseGoal)}</p>
-                  <p className="text-lg font-semibold text-red-600">Gasto: {formatCurrency(totalSpent)}</p>
+                  <p className="text-lg font-semibold font-numeric text-red-600">Gasto: {formatCurrency(totalSpent)}</p>
                   <Progress value={Math.min(100, expensePct)} className={cn('h-2', expensePct > 100 && '[&>div]:bg-red-600')} />
                   {expensePct <= 100 ? <Badge className="bg-green-600">Dentro do orçamento</Badge> : <Badge variant="destructive">Estourou {(expensePct - 100).toFixed(0)}%</Badge>}
                 </CardContent>
@@ -111,7 +123,7 @@ const PlanejamentoLayout: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(savingsGoal)}</p>
-                  <p className={cn('text-lg font-semibold', savingsActual >= 0 ? 'text-green-600' : 'text-red-600')}>Poupado: {formatCurrency(savingsActual)}</p>
+                  <p className={cn('text-lg font-semibold font-numeric', savingsActual >= 0 ? 'text-green-600' : 'text-red-600')}>Poupado: {formatCurrency(savingsActual)}</p>
                   <Progress value={savingsPct} className="h-2" />
                   {savingsActual >= savingsGoal ? <Badge className="bg-green-600">Meta atingida</Badge> : savingsActual >= 0 ? <Badge variant="secondary">{(100 - savingsPct).toFixed(0)}% faltando</Badge> : <Badge variant="destructive">Negativo</Badge>}
                 </CardContent>
@@ -126,11 +138,11 @@ const PlanejamentoLayout: React.FC = () => {
               <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Sobra projetada</p>
-                  <p className="font-semibold">{formatCurrency(sobraProjetada)}</p>
+                  <p className="font-semibold font-numeric">{formatCurrency(sobraProjetada)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Sobra real</p>
-                  <p className={cn('font-semibold', sobraReal >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(sobraReal)}</p>
+                  <p className={cn('font-semibold font-numeric', sobraReal >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(sobraReal)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Status da meta de poupança</p>
@@ -144,24 +156,22 @@ const PlanejamentoLayout: React.FC = () => {
           </div>
         )}
 
-        <PageHeader
-          title="Planejamento Mensal"
-          description="Consolidado mensal de receitas e despesas"
-          icon={<Calculator className="h-5 w-5 text-primary" />}
-        >
-          <VisibilityToggle />
-          <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.planejamentoMensal} />
-        </PageHeader>
-
-        <Tabs value={currentTab || 'visao-mensal'} onValueChange={handleTabChange} className="mt-5">
-          <TabsList>
+        <Tabs value={currentTab || 'visao-mensal'} onValueChange={handleTabChange} className="mt-2">
+          <TabsList className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))] px-4 md:px-8 rounded-none h-auto p-0 gap-0 w-full justify-start">
             {TABS.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--color-brand-700))] data-[state=active]:text-[hsl(var(--color-brand-700))] data-[state=active]:bg-transparent px-4 py-3 text-[13px] font-medium"
+              >
+                {tab.label}
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
 
         <Outlet />
+        </div>
       </div>
     </AppLayout>
   );

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,35 +42,44 @@ const Contas: React.FC = () => {
   const prevMonth = () => setMonth((m) => format(subMonths(new Date(m + '-01'), 1), MONTH_FORMAT));
   const nextMonth = () => setMonth((m) => format(addMonths(new Date(m + '-01'), 1), MONTH_FORMAT));
 
+  const monthSelector = (
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mês anterior">
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <span className="min-w-[160px] text-center font-medium capitalize text-[13px] text-[hsl(var(--color-text-primary))]">{monthLabel}</span>
+      <Button variant="outline" size="sm" onClick={nextMonth} aria-label="Próximo mês">
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => refetch()} aria-label="Atualizar">
+        <RefreshCw className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <AppLayout>
-        <PageHeader title="Contas a Pagar e Receber" />
-        <PageSkeleton />
+        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+          <PageHeader title="Contas a Pagar e Receber" description="Controle seu fluxo de obrigações" breadcrumb={[{ label: 'RXFin' }, { label: 'Controles' }, { label: 'Contas' }]} />
+          <div className="content-zone py-5 md:py-6 flex-1">
+            <PageSkeleton />
+          </div>
+        </div>
       </AppLayout>
     );
   }
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
           title="Contas a Pagar e Receber"
-          actions={
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mês anterior">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="min-w-[160px] text-center font-medium capitalize">{monthLabel}</span>
-              <Button variant="outline" size="sm" onClick={nextMonth} aria-label="Próximo mês">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => refetch()} aria-label="Atualizar">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          }
+          description="Controle seu fluxo de obrigações"
+          breadcrumb={[{ label: 'RXFin' }, { label: 'Controles' }, { label: 'Contas' }]}
+          action={monthSelector}
         />
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
 
         {error && (
           <Card className="bg-card rounded-2xl shadow-sm border border-border p-6 border-destructive/50 bg-destructive/5">
@@ -241,6 +250,7 @@ const Contas: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </AppLayout>
   );

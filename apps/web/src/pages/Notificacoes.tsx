@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ import {
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { EmptyNotificacoes } from '@/design-system/components/empty-states';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 
 const PAGE_SIZE = 20;
@@ -227,27 +226,20 @@ export default function Notificacoes() {
   return (
     <AppLayout>
       <TooltipProvider>
-        <div className="space-y-6">
+        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
             title="Notificações"
-            description="Central de notificações"
-            icon={<Bell className="h-5 w-5 text-primary" />}
-            children={
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-sm">
-                    {unreadCount} não lidas
-                  </Badge>
-                )}
-                {unreadCount > 0 && (
-                  <Button variant="outline" size="sm" onClick={markAllRead}>
-                    <CheckCheck className="h-4 w-4 mr-1" />
-                    Marcar todas como lidas
-                  </Button>
-                )}
-              </div>
+            breadcrumb={[{ label: 'RXFin' }, { label: 'Notificações' }]}
+            action={
+              unreadCount > 0 ? (
+                <Button variant="ghost" size="sm" onClick={markAllRead}>
+                  <CheckCheck className="h-4 w-4 mr-1" />
+                  Marcar todas como lidas
+                </Button>
+              ) : undefined
             }
           />
+          <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
 
           {/* Filtros */}
           {!loading && list.length > 0 && (
@@ -307,17 +299,23 @@ export default function Notificacoes() {
           )}
 
           {!loading && !error && list.length === 0 && (
-            <EmptyNotificacoes />
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <div className="w-12 h-12 rounded-full bg-[hsl(var(--color-surface-sunken))] flex items-center justify-center">
+                <Bell className="w-5 h-5 text-[hsl(var(--color-text-tertiary))]" />
+              </div>
+              <p className="text-[14px] font-medium text-[hsl(var(--color-text-primary))]">Tudo em dia!</p>
+              <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] text-center max-w-[200px]">Nenhuma notificação pendente no momento.</p>
+            </div>
           )}
 
           {!loading && !error && list.length > 0 && filteredList.length === 0 && (
-            <Card className="rounded-[14px] border border-border/80 p-8 text-center">
-              <p className="text-muted-foreground">Nenhuma notificação com este filtro</p>
-            </Card>
+            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-8 text-center">
+              <p className="text-[13px] text-[hsl(var(--color-text-tertiary))]">Nenhuma notificação com este filtro</p>
+            </div>
           )}
 
           {!loading && !error && filteredList.length > 0 && (
-            <div className="space-y-3">
+            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
               {filteredList.map((n) => {
                 const isUnread = n.read_at == null;
                 const Icon = getCategoryIcon(n.category);
@@ -325,93 +323,55 @@ export default function Notificacoes() {
                 const categoryLabel = CATEGORY_LABELS[(n.category || '').toLowerCase()] ?? n.category ?? '—';
 
                 return (
-                  <Card
+                  <div
                     key={n.id}
                     className={cn(
-                      'rounded-[14px] border transition-colors cursor-pointer hover:bg-muted/30',
+                      'flex gap-3 items-start px-4 py-4 border-b border-[hsl(var(--color-border-subtle))] last:border-0 transition-colors cursor-pointer hover:bg-[hsl(var(--color-surface-sunken))]',
                       isUnread
-                        ? 'border-primary/20 bg-primary/5'
-                        : 'border-border/80'
+                        ? 'bg-[hsl(var(--color-brand-50))] dark:bg-[hsl(161_30%_8%)]'
+                        : ''
                     )}
                     onClick={() => isUnread && markRead(n.id)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        {/* Bolinha + ícone */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          {isUnread ? (
-                            <span className="h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden />
-                          ) : (
-                            <span className="w-2 shrink-0" aria-hidden />
-                          )}
-                          <div className={cn(
-                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                            isUnread ? 'bg-primary/10' : 'bg-muted'
-                          )}>
-                            <Icon className={cn(
-                              'h-5 w-5',
-                              isUnread ? 'text-primary' : 'text-muted-foreground'
-                            )} />
-                          </div>
-                        </div>
-
-                        {/* Conteúdo */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p
-                              className={cn(
-                                'text-sm',
-                                isUnread ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'
-                              )}
-                            >
-                              {n.title}
-                            </p>
-                            {isUnread && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                                nova
-                              </span>
-                            )}
-                            <Badge variant={priorityVariant} className="text-xs">
-                              {n.priority || '—'}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {categoryLabel}
-                            </Badge>
-                          </div>
-                          <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
-                            {n.message}
-                          </p>
-                          <div className="mt-2 flex items-center justify-between gap-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="text-xs text-muted-foreground/80">
-                                  {relativeDate(n.created_at)}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{absoluteDate(n.created_at)}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            {n.action_url && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 gap-1 text-primary"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  markRead(n.id);
-                                  navigate(n.action_url!);
-                                }}
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                                Ver detalhes
-                              </Button>
-                            )}
-                          </div>
-                        </div>
+                    {isUnread ? (
+                      <span className="mt-1.5 h-2 w-2 rounded-full shrink-0 bg-[hsl(var(--color-brand-500))]" aria-hidden />
+                    ) : (
+                      <span className="w-2 shrink-0" aria-hidden />
+                    )}
+                    <div className={cn(
+                      'h-8 w-8 rounded-[8px] flex items-center justify-center shrink-0',
+                      isUnread ? 'bg-[hsl(var(--color-brand-500)/0.15)]' : 'bg-[hsl(var(--color-surface-sunken))]'
+                    )}>
+                      <Icon className={cn(
+                        'h-4 w-4',
+                        isUnread ? 'text-[hsl(var(--color-brand-700))]' : 'text-[hsl(var(--color-text-tertiary))]'
+                      )} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[13px] font-semibold text-[hsl(var(--color-text-primary))]">{n.title}</p>
+                        {isUnread && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--color-brand-500)/0.2)] text-[hsl(var(--color-brand-700))] font-medium">nova</span>
+                        )}
+                        <Badge variant={priorityVariant} className="text-xs">{n.priority || '—'}</Badge>
+                        <Badge variant="secondary" className="text-xs">{categoryLabel}</Badge>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <p className="text-[12px] text-[hsl(var(--color-text-secondary))] mt-0.5 leading-relaxed whitespace-pre-wrap">{n.message}</p>
+                      <div className="mt-1 flex items-center justify-between gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-[11px] text-[hsl(var(--color-text-tertiary))]">{relativeDate(n.created_at)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent><p>{absoluteDate(n.created_at)}</p></TooltipContent>
+                        </Tooltip>
+                        {n.action_url && (
+                          <Button variant="ghost" size="sm" className="h-8 gap-1 text-[hsl(var(--color-brand-700))]" onClick={(e) => { e.stopPropagation(); markRead(n.id); navigate(n.action_url!); }}>
+                            <ExternalLink className="h-3.5 w-3.5" /> Ver detalhes
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -419,19 +379,13 @@ export default function Notificacoes() {
 
           {!loading && hasMore && (
             <div className="flex justify-center pt-4">
-              <Button
-                variant="outline"
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="gap-2"
-              >
-                {loadingMore && (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                )}
+              <Button variant="outline" onClick={loadMore} disabled={loadingMore} className="gap-2">
+                {loadingMore && <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />}
                 Carregar mais
               </Button>
             </div>
           )}
+          </div>
         </div>
       </TooltipProvider>
     </AppLayout>
