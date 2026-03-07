@@ -189,7 +189,7 @@ const OPTIMIZATION_TIPS: OptimizationTip[] = [
           
           <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
             <div className="flex items-center gap-2 mb-2">
-              <Badge className="bg-blue-500 text-white">Volume</Badge>
+              <Badge className="bg-blue-500 text-white border-0">Volume</Badge>
               <span className="font-semibold">Claro tv+ Streamings</span>
             </div>
             <ul className="text-xs text-muted-foreground space-y-1">

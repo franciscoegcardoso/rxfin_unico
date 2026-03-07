@@ -592,7 +592,7 @@ const BensInvestimentosLayout: React.FC = () => {
                               <p className="font-bold truncate">{a.name ?? '—'}</p>
                               <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
                               {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
-                              {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-xs">+{a.appreciation_pct}% valorização</Badge>}
+                              {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>}
                               {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm text-green-600">Renda: {formatCurrency(a.rental_value)}/mês</p>}
                               {(a.monthly_cost ?? 0) > 0 && <p className="text-sm text-muted-foreground">Custo: {formatCurrency(a.monthly_cost!)}/mês</p>}
                               {roi != null && <p className="text-xs text-muted-foreground mt-1">ROI: {roi}% a.a.</p>}
@@ -755,7 +755,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card key={`c-${i}`} className="rounded-[14px] border border-border/80 p-4 bg-muted/20">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="font-bold">{c.nome ?? '—'}</p>
-                        <Badge variant={c.contemplado ? 'default' : 'secondary'} className={cn('text-xs', c.contemplado && 'bg-green-600')}>{c.contemplado ? 'Contemplado' : 'Não contemplado'}</Badge>
+                        <Badge variant={c.contemplado ? 'default' : 'secondary'} className={cn('text-xs border-0', c.contemplado && 'bg-green-600 text-white')}>{c.contemplado ? 'Contemplado' : 'Não contemplado'}</Badge>
                       </div>
                       {c.administradora && <p className="text-xs text-muted-foreground mt-1">Administradora: {c.administradora}</p>}
                       <p className="mt-2 font-semibold">Carta: {formatCurrency(c.valor_carta ?? 0)}</p>
@@ -779,7 +779,7 @@ const BensInvestimentosLayout: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-bold">{seg.nome ?? '—'}</p>
                           <Badge variant="secondary" className="text-xs">{seg.tipo ?? '—'}</Badge>
-                          <Badge variant={seg.is_active ? 'default' : 'destructive'} className={cn('text-xs', seg.is_active && 'bg-green-600')}>{seg.is_active ? 'Ativo' : 'VENCIDO'}</Badge>
+                          <Badge variant={seg.is_active ? 'default' : 'destructive'} className={cn('text-xs border-0', seg.is_active && 'bg-green-600 text-white')}>{seg.is_active ? 'Ativo' : 'VENCIDO'}</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">{seg.seguradora}</p>
                         <p className="text-sm mt-1">Prêmio: {formatCurrency(seg.premio_mensal ?? 0)}/mês · Cobertura: {formatCurrency(seg.valor_cobertura ?? 0)}</p>

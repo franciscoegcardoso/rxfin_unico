@@ -13,6 +13,10 @@ const badgeVariants = cva(
         destructive: "bg-destructive/10 text-destructive border-destructive/20",
         outline: "text-foreground border-border",
         success: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/40",
+        /** Verde sólido: fundo verde com texto branco para contraste (ex.: valorização, meta atingida). */
+        successSolid: "border-0 bg-green-600 text-white hover:bg-green-600",
+        /** Azul sólido: fundo azul com texto branco para contraste. */
+        infoSolid: "border-0 bg-blue-600 text-white hover:bg-blue-600",
         warning: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/40",
       },
     },

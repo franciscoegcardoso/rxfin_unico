@@ -72,7 +72,7 @@ const CartaoCredito: React.FC = () => {
     const status = bill.status ?? '';
     const isOverdue = bill.is_overdue === true;
     if (status === 'paid') {
-      return <Badge className="bg-green-600 hover:bg-green-600">Paga</Badge>;
+      return <Badge className="bg-green-600 text-white border-0 hover:bg-green-600">Paga</Badge>;
     }
     if (isOverdue) {
       return <Badge variant="destructive">Vencida</Badge>;

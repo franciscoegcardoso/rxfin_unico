@@ -314,9 +314,9 @@ export const GestaoVeiculos: React.FC = () => {
                             <td className="px-4 py-3 text-muted-foreground">{dateStr}</td>
                             <td className="px-4 py-3">
                               {isFuel ? (
-                                <Badge className="bg-green-600 hover:bg-green-600">Combustível</Badge>
+                                <Badge className="bg-green-600 text-white border-0 hover:bg-green-600">Combustível</Badge>
                               ) : (
-                                <Badge className="bg-blue-600 hover:bg-blue-600">Manutenção</Badge>
+                                <Badge className="bg-blue-600 text-white border-0 hover:bg-blue-600">Manutenção</Badge>
                               )}
                             </td>
                             <td className="px-4 py-3 truncate max-w-[180px]" title={shortName}>{displayName}</td>

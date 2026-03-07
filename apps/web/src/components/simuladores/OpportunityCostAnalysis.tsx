@@ -301,7 +301,7 @@ export const OpportunityCostAnalysis: React.FC<OpportunityCostAnalysisProps> = (
                 {formatMoney(opportunityCost.custoEfetivoConsorcio)}
               </p>
               {opportunityCost.melhorOpcao === 'consorcio' && (
-                <Badge className="mt-2 bg-blue-600">Melhor Opção</Badge>
+                <Badge className="mt-2 bg-blue-600 text-white border-0">Melhor Opção</Badge>
               )}
             </div>
 

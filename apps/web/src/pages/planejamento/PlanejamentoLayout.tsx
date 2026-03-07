@@ -99,7 +99,7 @@ const PlanejamentoLayout: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(incomeGoal)}</p>
                   <p className="text-lg font-semibold font-numeric text-green-600">Realizado: {formatCurrency(totalIncome)}</p>
                   <Progress value={incomePct} className="h-2" />
-                  {incomePct >= 100 ? <Badge className="bg-green-600">100% atingido</Badge> : <Badge variant="secondary">{(100 - incomePct).toFixed(0)}% faltando</Badge>}
+                  {incomePct >= 100 ? <Badge className="bg-green-600 text-white border-0">100% atingido</Badge> : <Badge variant="secondary">{(100 - incomePct).toFixed(0)}% faltando</Badge>}
                 </CardContent>
               </Card>
               <Card className="rounded-[14px] border border-border/80">
@@ -112,7 +112,7 @@ const PlanejamentoLayout: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(expenseGoal)}</p>
                   <p className="text-lg font-semibold font-numeric text-red-600">Gasto: {formatCurrency(totalSpent)}</p>
                   <Progress value={Math.min(100, expensePct)} className={cn('h-2', expensePct > 100 && '[&>div]:bg-red-600')} />
-                  {expensePct <= 100 ? <Badge className="bg-green-600">Dentro do orçamento</Badge> : <Badge variant="destructive">Estourou {(expensePct - 100).toFixed(0)}%</Badge>}
+                  {expensePct <= 100 ? <Badge className="bg-green-600 text-white border-0">Dentro do orçamento</Badge> : <Badge variant="destructive">Estourou {(expensePct - 100).toFixed(0)}%</Badge>}
                 </CardContent>
               </Card>
               <Card className="rounded-[14px] border border-border/80">
@@ -125,7 +125,7 @@ const PlanejamentoLayout: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Meta: {formatCurrency(savingsGoal)}</p>
                   <p className={cn('text-lg font-semibold font-numeric', savingsActual >= 0 ? 'text-green-600' : 'text-red-600')}>Poupado: {formatCurrency(savingsActual)}</p>
                   <Progress value={savingsPct} className="h-2" />
-                  {savingsActual >= savingsGoal ? <Badge className="bg-green-600">Meta atingida</Badge> : savingsActual >= 0 ? <Badge variant="secondary">{(100 - savingsPct).toFixed(0)}% faltando</Badge> : <Badge variant="destructive">Negativo</Badge>}
+                  {savingsActual >= savingsGoal ? <Badge className="bg-green-600 text-white border-0">Meta atingida</Badge> : savingsActual >= 0 ? <Badge variant="secondary">{(100 - savingsPct).toFixed(0)}% faltando</Badge> : <Badge variant="destructive">Negativo</Badge>}
                 </CardContent>
               </Card>
             </div>
