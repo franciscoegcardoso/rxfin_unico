@@ -62,21 +62,14 @@ const MinhaContaContent: React.FC = () => {
     prevTabRef.current = tabValue;
   }, [tabValue, clearAll]);
 
+  // Troca de aba: sempre permitir (limpar dirty e navegar). Evita usuário preso na aba Perfil.
   const handleTabChange = (value: string) => {
-    if (hasChanges) {
-      const confirmed = window.confirm('Você tem alterações não salvas. Deseja descartá-las?');
-      if (!confirmed) return;
-      clearAll();
-    }
+    clearAll();
     setSearchParams({ tab: value }, { replace: true });
   };
 
-  const handleBack = async () => {
-    if (hasChanges) {
-      const confirmed = window.confirm('Você tem alterações não salvas. Deseja descartá-las?');
-      if (!confirmed) return;
-      clearAll();
-    }
+  const handleBack = () => {
+    clearAll();
     setSearchParams({});
   };
 
