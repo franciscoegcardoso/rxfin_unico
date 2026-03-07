@@ -284,58 +284,6 @@ export const GestaoVeiculos: React.FC = () => {
           </section>
         )}
 
-        {/* Histórico de Registros (RPC) */}
-        {vehicleDashboardData?.records && vehicleDashboardData.records.length > 0 && (
-          <section>
-            <h2 className="mb-3 text-lg font-semibold">Histórico de Registros</h2>
-            <Card className="rounded-[14px] border border-border/80 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-sm">
-                  <thead>
-                    <tr className="border-b border-border/80 bg-muted/30">
-                      <th className="px-4 py-3 text-left font-medium">Data</th>
-                      <th className="px-4 py-3 text-left font-medium">Tipo</th>
-                      <th className="px-4 py-3 text-left font-medium">Veículo</th>
-                      <th className="px-4 py-3 text-right font-medium">Custo</th>
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalhes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...vehicleDashboardData.records]
-                      .sort((a: { record_date?: string }, b: { record_date?: string }) => (b.record_date ?? '').localeCompare(a.record_date ?? ''))
-                      .map((rec: { id?: string; vehicle_id?: string; record_date?: string; record_type?: string; odometer?: number | null; fuel_liters?: number | null; fuel_cost?: number; notes?: string }) => {
-                        const vehicle = vehicleDashboardData.vehicles?.find((ve: { id?: string }) => ve.id === rec.vehicle_id);
-                        const shortName = vehicle ? [vehicle.brand, vehicle.model].filter(Boolean).join(' ') : rec.vehicle_id ?? '—';
-                        const displayName = shortName.length > 30 ? shortName.slice(0, 27) + '…' : shortName;
-                        const dateStr = rec.record_date ? format(new Date(rec.record_date), 'dd/MM/yyyy') : '—';
-                        const isFuel = rec.record_type === 'fuel';
-                        return (
-                          <tr key={rec.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
-                            <td className="px-4 py-3 text-muted-foreground">{dateStr}</td>
-                            <td className="px-4 py-3">
-                              {isFuel ? (
-                                <Badge className="bg-green-600 text-white border-0 hover:bg-green-600">Combustível</Badge>
-                              ) : (
-                                <Badge className="bg-blue-600 text-white border-0 hover:bg-blue-600">Manutenção</Badge>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 truncate max-w-[180px]" title={shortName}>{displayName}</td>
-                            <td className="px-4 py-3 text-right font-medium">{formatCurrency(rec.fuel_cost ?? 0)}</td>
-                            <td className="px-4 py-3 text-muted-foreground">
-                              {isFuel && rec.fuel_liters != null && <span>{rec.fuel_liters} L</span>}
-                              {rec.notes && <span className="block truncate max-w-[200px]" title={rec.notes}>{rec.notes}</span>}
-                              {!isFuel && !rec.notes && '—'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </section>
-        )}
-
         {/* Lançar despesa - mobile only (full-width) */}
         <Button 
           onClick={() => setDialogOpen(true)} 
@@ -564,7 +512,7 @@ export const GestaoVeiculos: React.FC = () => {
               </Popover>
             </div>
 
-            {/* Records List */}
+            {/* Tabela de registros (estrutura do antigo Histórico de Registros) */}
             {filteredRecords.length === 0 ? (
               <EmptyState
                 icon={<Car className="h-6 w-6 text-muted-foreground" />}
@@ -573,141 +521,59 @@ export const GestaoVeiculos: React.FC = () => {
                 onAction={() => setDialogOpen(true)}
               />
             ) : (
-              <div className="space-y-2">
-                {filteredRecords.map((record) => (
-                  isMobile ? (
-                    // Mobile Card Layout
-                    <div
-                      key={record.id}
-                      className="p-3 rounded-lg bg-muted/20 border border-border"
-                    >
-                      {/* Header: Icon, Vehicle Name, Type Badge, Amount */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            {getRecordIcon(record.type)}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded inline-block">
-                              {vehicleRecordTypeLabels[record.type]}
-                            </span>
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">{record.vehicleName}</p>
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-bold text-sm text-expense">
-                            R$ {getRecordAmount(record).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                          {record.type === 'fuel' && (
-                            <p className="text-[10px] text-muted-foreground">
-                              R$ {record.pricePerUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/{record.unit === 'liter' ? 'L' : 'm³'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Details */}
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{getRecordDetails(record)}</p>
-
-                      {/* Info Row: Date, Odometer, Driver */}
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground mb-2">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(record.date).toLocaleDateString('pt-BR')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Gauge className="h-3 w-3" />
-                          {record.odometer.toLocaleString('pt-BR')} km
-                        </span>
-                        <span className="flex items-center gap-1 truncate">
-                          <User className="h-3 w-3" />
-                          <span className="truncate max-w-[100px]">{record.driverName}</span>
-                        </span>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex justify-end gap-1 pt-2 border-t border-border/50">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-muted-foreground hover:text-primary"
-                          onClick={() => handleEditRecord(record)}
-                        >
-                          <Pencil className="h-3 w-3 mr-1" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-muted-foreground hover:text-expense"
-                          onClick={() => handleDeleteRecord(record.id)}
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Excluir
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Desktop Layout
-                    <div
-                      key={record.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          {getRecordIcon(record.type)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded shrink-0">
-                              {vehicleRecordTypeLabels[record.type]}
-                            </span>
-                            <p className="text-xs text-muted-foreground truncate">{record.vehicleName}</p>
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">{getRecordDetails(record)}</p>
-                          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                            <span>{new Date(record.date).toLocaleDateString('pt-BR')}</span>
-                            <span>•</span>
-                            <span>{record.odometer.toLocaleString('pt-BR')} km</span>
-                            <span>•</span>
-                            <span className="truncate">{record.driverName}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="text-right">
-                          <p className="font-bold text-sm text-expense">
-                            R$ {getRecordAmount(record).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                          {record.type === 'fuel' && (
-                            <p className="text-[10px] text-muted-foreground">
-                              R$ {record.pricePerUnit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/{record.unit === 'liter' ? 'L' : 'm³'}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                            onClick={() => handleEditRecord(record)}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-expense"
-                            onClick={() => handleDeleteRecord(record.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                ))}
-              </div>
+              <Card className="rounded-[14px] border border-border/80 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-sm">
+                    <thead>
+                      <tr className="border-b border-border/80 bg-muted/30">
+                        <th className="px-4 py-3 text-left font-medium">Data</th>
+                        <th className="px-4 py-3 text-left font-medium">Tipo</th>
+                        <th className="px-4 py-3 text-left font-medium">Veículo</th>
+                        <th className="px-4 py-3 text-right font-medium">Custo</th>
+                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">Detalhes</th>
+                        <th className="px-4 py-3 text-right font-medium text-muted-foreground w-20">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...filteredRecords]
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .map((record) => {
+                          const dateStr = format(new Date(record.date), 'dd/MM/yyyy');
+                          const isFuel = record.type === 'fuel';
+                          const tipoLabel = record.type === 'fuel' ? 'Combustível' : record.type === 'service' ? 'Manutenção' : 'Despesa';
+                          const displayName = record.vehicleName.length > 30 ? record.vehicleName.slice(0, 27) + '…' : record.vehicleName;
+                          return (
+                            <tr key={record.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20">
+                              <td className="px-4 py-3 text-muted-foreground">{dateStr}</td>
+                              <td className="px-4 py-3">
+                                {isFuel ? (
+                                  <Badge className="bg-green-600 text-white border-0 hover:bg-green-600">Combustível</Badge>
+                                ) : (
+                                  <Badge className="bg-blue-600 text-white border-0 hover:bg-blue-600">{tipoLabel}</Badge>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 truncate max-w-[180px]" title={record.vehicleName}>{displayName}</td>
+                              <td className="px-4 py-3 text-right font-medium">{formatCurrency(getRecordAmount(record))}</td>
+                              <td className="px-4 py-3 text-muted-foreground">
+                                <span className="block truncate max-w-[200px]" title={getRecordDetails(record)}>{getRecordDetails(record) || '—'}</span>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEditRecord(record)} aria-label="Editar registro">
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-expense" onClick={() => handleDeleteRecord(record.id)} aria-label="Excluir registro">
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
             )}
           </TabsContent>
 
