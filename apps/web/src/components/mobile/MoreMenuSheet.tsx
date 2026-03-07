@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+} from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMobileMenuSections } from '@/hooks/useNavMenuPages';
@@ -36,7 +37,6 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   const { signOut } = useAuth();
   const { sections, isLoading } = useMobileMenuSections();
 
-  // ESC key closes sidebar (mobile menu)
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onOpenChange(false);
@@ -48,7 +48,6 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   }, [open, onOpenChange]);
 
   const handleNavigate = (path: string, isLocked: boolean, isComingSoon: boolean, label: string, canAccessAsAdmin?: boolean) => {
-    // Admin can navigate through "coming soon" pages
     if (canAccessAsAdmin) {
       onOpenChange(false);
       navigate(path);
@@ -68,27 +67,26 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
     navigate('/login', { replace: true });
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="left"
-        className="w-[min(18rem,85vw)] max-w-full p-0 flex flex-col data-[state=closed]:duration-300 data-[state=open]:duration-300 [&>button]:hidden"
-      >
-        <SheetHeader className="relative border-b px-4 py-3 text-left">
-          <SheetTitle className="text-lg">Menu</SheetTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2 h-8 w-8"
-            onClick={() => onOpenChange(false)}
-            aria-label="Fechar menu"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2">
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="pb-safe max-h-[85vh]">
+        <DrawerHeader className="relative">
+          <DrawerTitle className="text-center">Menu</DrawerTitle>
+          <DrawerClose asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 h-8 w-8"
+              aria-label="Fechar menu"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </DrawerClose>
+        </DrawerHeader>
+        <div className="px-4 pb-6 overflow-y-auto">
           {/* Fale com a Cibelia - top of menu */}
           <button
             onClick={() => {
@@ -169,7 +167,7 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
             </>
           )}
 
-          {/* Logout only - Settings/Perfil is now inside the Configurações group */}
+          {/* Logout */}
           <div className="pt-3 border-t border-border">
             <button
               onClick={handleSignOut}
@@ -180,7 +178,7 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
             </button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DrawerContent>
+    </Drawer>
   );
 };

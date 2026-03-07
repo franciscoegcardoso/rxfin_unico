@@ -2,8 +2,8 @@ import { useLocation, Link } from 'react-router-dom';
 import { Home, Receipt, Calendar, Grid3x3, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { QuickActionsSheet } from '@/components/mobile/QuickActionsSheet';
+import { MoreMenuSheet } from '@/components/mobile/MoreMenuSheet';
 
 const LEFT_TABS = [
   { label: 'Início', icon: Home, path: '/inicio' },
@@ -12,18 +12,6 @@ const LEFT_TABS = [
 
 const RIGHT_TABS = [
   { label: 'Planejamento', icon: Calendar, path: '/planejamento' },
-];
-
-const MORE_ITEMS = [
-  { label: 'Cartão de Crédito', path: '/cartao-credito' },
-  { label: 'Bens e Investimentos', path: '/bens-investimentos' },
-  { label: 'Contas a Pagar/Rec.', path: '/contas' },
-  { label: 'Metas Mensais', path: '/metas-mensais' },
-  { label: 'Fluxo Financeiro', path: '/fluxo-financeiro' },
-  { label: 'Simuladores', path: '/simuladores' },
-  { label: 'Gestão de Veículos', path: '/gestao-veiculos' },
-  { label: 'Sonhos', path: '/sonhos' },
-  { label: 'Minha Conta', path: '/minha-conta' },
 ];
 
 function NavTab({
@@ -124,31 +112,7 @@ export function BottomNavigation() {
       </nav>
 
       <QuickActionsSheet open={quickActionsOpen} onOpenChange={setQuickActionsOpen} />
-
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-2xl pb-safe max-h-[70dvh] bg-[hsl(var(--color-surface-raised))]"
-        >
-          <SheetHeader className="mb-4">
-            <SheetTitle className="text-[11px] font-semibold text-[hsl(var(--color-text-tertiary))] uppercase tracking-widest">
-              Menu Completo
-            </SheetTitle>
-          </SheetHeader>
-          <div className="grid grid-cols-2 gap-2 overflow-y-auto">
-            {MORE_ITEMS.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMoreOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-3 bg-[hsl(var(--color-surface-sunken))] border border-[hsl(var(--color-border-default))] text-[13px] font-medium text-[hsl(var(--color-text-primary))] hover:border-[hsl(var(--color-brand-400))] hover:bg-[hsl(var(--color-brand-50))] hover:text-[hsl(var(--color-brand-700))] dark:hover:bg-sidebar-accent transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
+      <MoreMenuSheet open={moreOpen} onOpenChange={setMoreOpen} />
     </>
   );
 }
