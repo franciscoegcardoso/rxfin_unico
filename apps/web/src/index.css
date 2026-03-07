@@ -327,6 +327,13 @@
   [data-slot="input"], [data-slot="select-trigger"] {
     background-color: hsl(var(--color-surface-raised));
   }
+
+  /* Mobile/tablet: font-size mínimo 16px evita zoom automático no Safari iOS ao focar */
+  @media (max-width: 1023px) {
+    input, textarea, select {
+      font-size: 16px;
+    }
+  }
 }
 
 @layer utilities {

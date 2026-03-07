@@ -1,10 +1,10 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getPageTitle } from "./nav-config";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { ThemedLogo } from "@/components/ui/themed-logo";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -13,15 +13,14 @@ interface MobileShellProps {
 export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const title = getPageTitle(location.pathname);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header contextual: título da rota + Bell */}
-      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between bg-card border-b border-border px-4">
-        <h1 className="text-lg font-semibold text-foreground truncate">
-          {title}
-        </h1>
+      {/* Header fixo: logo RXFin + notificações (não rola com o conteúdo) */}
+      <header className="fixed top-0 left-0 right-0 z-40 flex h-14 shrink-0 items-center justify-between bg-card border-b border-border px-4">
+        <Link to="/inicio" className="flex items-center shrink-0" aria-label="RXFin - Início">
+          <ThemedLogo className="h-8 w-8 object-contain" />
+        </Link>
         <button
           type="button"
           onClick={() => navigate("/notificacoes")}
@@ -32,10 +31,10 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         </button>
       </header>
 
-      {/* Conteúdo: pb-20 para não sobrepor a bottom nav */}
+      {/* Conteúdo: pt-14 para não ficar sob o header fixo; pb para bottom nav */}
       <main
         className={cn(
-          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 pb-20 md:pb-0"
+          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 pt-14 pb-20 md:pb-0"
         )}
         style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
       >
