@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -20,21 +20,32 @@ const POLL_INTERVAL_MS = 60_000;
 export function useNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchList = useCallback(async () => {
-    const { data, error } = await supabase.rpc('get_bell_notifications', {
-      p_limit: BELL_LIMIT,
-    });
-    if (error) throw error;
-    const list = Array.isArray(data) ? data : (data as { items?: Notification[] })?.items ?? [];
-    setNotifications(list as Notification[]);
+    const [pageRes, countRes] = await Promise.all([
+      supabase.rpc('get_notifications_page', { p_limit: BELL_LIMIT, p_page: 1 }),
+      supabase.rpc('get_unread_notification_count'),
+    ]);
+    if (pageRes.error) throw pageRes.error;
+    const raw = Array.isArray(pageRes.data) ? pageRes.data : (pageRes.data as { rows?: Notification[] })?.rows ?? [];
+    const list = (raw as (Notification & { read_at?: string | null })[]).map((r) => ({
+      id: r.id,
+      title: r.title,
+      message: r.message,
+      type: r.type,
+      priority: r.priority,
+      category: r.category ?? null,
+      action_url: r.action_url ?? null,
+      read_at: r.read_at ?? null,
+      created_at: r.created_at,
+    }));
+    setNotifications(list);
+    if (!countRes.error && countRes.data != null) {
+      setUnreadCount(typeof countRes.data === 'number' ? countRes.data : Number(countRes.data) ?? 0);
+    }
   }, []);
-
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => n.read_at == null).length,
-    [notifications]
-  );
 
   const refetch = useCallback(async () => {
     if (!user?.id) return;
@@ -51,6 +62,7 @@ export function useNotifications() {
   useEffect(() => {
     if (!user?.id) {
       setNotifications([]);
+      setUnreadCount(0);
       setLoading(false);
       return;
     }
@@ -71,6 +83,7 @@ export function useNotifications() {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
     );
+    setUnreadCount((c) => Math.max(0, c - 1));
   }, []);
 
   const markAllRead = useCallback(async () => {
@@ -79,6 +92,7 @@ export function useNotifications() {
     setNotifications((prev) =>
       prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() }))
     );
+    setUnreadCount(0);
     await fetchList();
   }, [fetchList]);
 

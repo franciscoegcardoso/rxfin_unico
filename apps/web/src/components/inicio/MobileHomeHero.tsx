@@ -34,7 +34,7 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
 
   return (
     <>
-      <div className="mobile-hero-bg text-foreground -mx-4 -mt-4 px-5 pt-6 pb-8 rounded-b-3xl">
+      <div className="mobile-hero-bg text-primary-foreground -mx-4 -mt-4 px-5 pt-6 pb-8 rounded-b-3xl">
         {/* Top row: avatar + visibility toggle */}
         <div className="flex items-center justify-between mb-4">
           <Avatar className="h-12 w-12 border-2 border-primary-foreground/30">
@@ -60,12 +60,12 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
               <button
                 key={action.slug}
                 onClick={() => navigate(action.path)}
-                className="flex flex-col items-center gap-1.5 group"
+                className="flex flex-col items-center gap-1.5 group text-primary-foreground"
               >
-                <div className="h-11 w-11 rounded-full bg-primary-foreground/15 flex items-center justify-center group-active:bg-primary-foreground/25 transition-colors">
+                <div className="h-11 w-11 rounded-full bg-primary-foreground/15 flex items-center justify-center group-active:bg-primary-foreground/25 transition-colors text-primary-foreground">
                   <action.icon className="h-5 w-5" />
                 </div>
-                <span className="text-[10px] font-medium opacity-80 leading-tight text-center">
+                <span className="text-[10px] font-medium text-primary-foreground/90 leading-tight text-center">
                   {action.label}
                 </span>
               </button>
@@ -75,7 +75,7 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
           {/* Edit button */}
           <button
             onClick={() => setEditOpen(true)}
-            className="absolute -bottom-5 right-0 h-6 w-6 rounded-full bg-primary-foreground/20 flex items-center justify-center active:bg-primary-foreground/30 transition-colors"
+            className="absolute -bottom-5 right-0 h-6 w-6 rounded-full bg-primary-foreground/20 flex items-center justify-center active:bg-primary-foreground/30 transition-colors text-primary-foreground"
             aria-label="Editar atalhos"
           >
             <Pencil className="h-3 w-3" />
