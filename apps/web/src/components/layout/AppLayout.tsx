@@ -58,15 +58,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   if (insideShell) {
+    // Dentro do AppShell (DesktopShell): o main do Shell já tem pt-14 (navbar).
+    // Só precisamos compensar o banner fixo (32px) quando em demo — pt-8.
     return (
       <MobileMenuProvider>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
           <main
             className={`
-              w-full max-w-full overflow-x-hidden flex-1
+              w-full max-w-full overflow-x-hidden flex-1 min-w-0
               px-4 md:px-6 lg:px-8
               pb-4 md:pb-6
-              ${isDemoMode ? 'pt-[88px]' : 'pt-14'}
+              ${isDemoMode ? 'pt-8' : 'pt-0'}
             `}
           >
             {content}

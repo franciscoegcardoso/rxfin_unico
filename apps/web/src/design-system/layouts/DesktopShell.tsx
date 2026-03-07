@@ -15,13 +15,13 @@ interface DesktopShellProps {
 export const DesktopShell: React.FC<DesktopShellProps> = () => {
   const location = useLocation();
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
+    <div className="flex flex-col h-screen overflow-hidden bg-background w-full max-w-full">
       <TopNavbar />
-      <main className="flex-1 overflow-y-auto min-h-0 pt-14">
+      <main className="flex-1 overflow-y-auto min-h-0 min-w-0 w-full max-w-full pt-14">
         <ErrorBoundary>
           <div
             key={location.pathname}
-            className="animate-in fade-in duration-200 ease-out"
+            className="animate-in fade-in duration-200 ease-out w-full max-w-full min-w-0"
           >
             <Outlet />
           </div>
