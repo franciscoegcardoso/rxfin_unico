@@ -11,7 +11,7 @@ import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
 import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 
@@ -24,15 +24,31 @@ const menuItems = [
   { id: 'preferencias', label: 'Preferências', description: 'Tema e notificações', icon: Settings2 },
 ];
 
+const MINHA_CONTA_PATH = '/minha-conta';
+
 const MinhaContaContent: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const currentTab = searchParams.get('tab') || '';
   const isMobile = useIsMobile();
   const { hasChanges, saveAll, clearAll, isSaving } = useAccountPendingChanges();
 
-  // Ao mudar de aba (por URL ou após troca), limpa estado "dirty" de outras abas
-  // para evitar ficar preso sem conseguir navegar (ex.: entrar em ?tab=perfil com
-  // alterações não salvas de outra aba).
+  // Ao entrar na rota /minha-conta (primeira vez ou vindo de outra página), limpa estado dirty
+  // para não travar navegação (ex.: abrir /minha-conta?tab=perfil e não conseguir sair).
+  const prevPathnameRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    const isMinhaConta = pathname === MINHA_CONTA_PATH;
+    const justEnteredMinhaConta =
+      isMinhaConta && (prevPathnameRef.current === null || prevPathnameRef.current !== pathname);
+    if (justEnteredMinhaConta) {
+      clearAll();
+    }
+    prevPathnameRef.current = pathname;
+  }, [location.pathname, clearAll]);
+
+  // Ao mudar de aba (por URL ou após troca), limpa estado "dirty" da aba anterior
+  // para evitar ficar preso sem conseguir navegar.
   const prevTabRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (prevTabRef.current !== null && prevTabRef.current !== currentTab) {

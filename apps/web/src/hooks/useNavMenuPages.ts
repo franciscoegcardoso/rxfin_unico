@@ -76,6 +76,66 @@ const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
 
+/** Estrutura canônica do menu: Meu IR em Planejamento (após Planejamento Anual); Gestão de Veículos primeiro em Controles. */
+function normalizeGroupedSections(
+  sections: NavMenuSection[],
+  effectiveAdmin: boolean
+): NavMenuSection[] {
+  const canonicalMeuIR: NavMenuItem = {
+    path: '/meu-ir',
+    label: 'Meu IR',
+    icon: FileText,
+    accessLevel: 'free',
+    canAccessAsAdmin: effectiveAdmin,
+  };
+  const canonicalGestaoVeiculos: NavMenuItem = {
+    path: '/gestao-veiculos',
+    label: 'Gestão de Veículos',
+    icon: Car,
+    accessLevel: 'free',
+    canAccessAsAdmin: effectiveAdmin,
+  };
+
+  let meuIRItem: NavMenuItem | null = null;
+  let gestaoItem: NavMenuItem | null = null;
+
+  const sectionsWithoutMoved = sections.map((section) => {
+    const items = section.items.filter((item) => {
+      if (item.path === '/meu-ir') {
+        meuIRItem = item;
+        return false;
+      }
+      if (item.path === '/gestao-veiculos') {
+        gestaoItem = item;
+        return false;
+      }
+      return true;
+    });
+    return { ...section, items };
+  });
+
+  return sectionsWithoutMoved.map((section) => {
+    if (section.slug === 'planejamento') {
+      const ir = meuIRItem ?? canonicalMeuIR;
+      const base = section.items;
+      const idx = base.findIndex((i) => i.path === '/planejamento-anual');
+      const insertAt = idx >= 0 ? idx + 1 : base.length;
+      const newItems = [...base];
+      if (!newItems.some((i) => i.path === '/meu-ir')) {
+        newItems.splice(insertAt, 0, ir);
+      }
+      return { ...section, items: newItems };
+    }
+    if (section.slug === 'controles') {
+      const gestao = gestaoItem ?? canonicalGestaoVeiculos;
+      const base = section.items;
+      if (base.some((i) => i.path === '/gestao-veiculos')) return section;
+      return { ...section, items: [gestao, ...base] };
+    }
+    return section;
+  });
+}
+
 function isPageHiddenFromMenu(page: { slug: string; title: string }): boolean {
   if (HIDDEN_PAGE_SLUGS.includes(page.slug)) return true;
   const titleNorm = page.title?.trim() ?? '';
@@ -329,9 +389,11 @@ export function useNavMenuPages(): NavMenuData {
       };
     });
 
+  const normalizedSections = normalizeGroupedSections(groupedSections, effectiveAdmin);
+
   return {
     mainItems,
-    groupedSections,
+    groupedSections: normalizedSections,
     isLoading,
     error: error as Error | null,
   };
