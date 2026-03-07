@@ -42,8 +42,13 @@ function getCacheKey(fipeCode: string): string {
 
 function getCache(key: string): CohortMatrixData | null {
   const data = getCachedValue<CohortMatrixData>(key, CACHE_DURATION);
-  if (data && (!data.cells?.length || data.cells.length < 2)) return null;
-  return data;
+  if (!data) return null;
+  const cells = Array.isArray(data.cells) ? data.cells : [];
+  if (cells.length < 2) return null;
+  const modelYears = Array.isArray(data.modelYears) ? data.modelYears : [];
+  const calendarYears = Array.isArray(data.calendarYears) ? data.calendarYears : [];
+  if (modelYears.length < 2 || calendarYears.length < 2) return null;
+  return { ...data, modelYears, calendarYears, cells, has0km: Boolean(data.has0km) };
 }
 
 function setCache(key: string, data: CohortMatrixData): void {
@@ -165,11 +170,15 @@ export function useCohortMatrix(): UseCohortMatrixReturn {
         throw new Error(fnError?.message || data?.error || 'Erro ao carregar matriz');
       }
 
+      // Garantir arrays válidos para evitar crash no componente
+      const modelYears = Array.isArray(data.modelYears) ? data.modelYears : [];
+      const calendarYears = Array.isArray(data.calendarYears) ? data.calendarYears : [];
+      const cells = Array.isArray(data.cells) ? data.cells : [];
       const result: CohortMatrixData = {
-        modelYears: data.modelYears,
-        calendarYears: data.calendarYears,
-        cells: data.cells,
-        has0km: data.has0km
+        modelYears,
+        calendarYears,
+        cells,
+        has0km: Boolean(data.has0km),
       };
 
       if (mountedRef.current) {

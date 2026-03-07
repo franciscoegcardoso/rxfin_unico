@@ -589,7 +589,7 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
     );
   }
 
-  const { modelYears, calendarYears, cells } = cohort.matrixData;
+  const { modelYears = [], calendarYears = [], cells = [] } = cohort.matrixData ?? {};
 
   // Check if we have valid data - need at least 2 years and some actual price data
   const hasValidData = calendarYears.length >= 2 && modelYears.length >= 2 && cells.length > 0;
