@@ -120,7 +120,7 @@ export const ContaFormDialog: React.FC<ContaFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg mx-4 sm:mx-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg sm:w-full">
         <DialogHeader>
           <DialogTitle>
             {editingConta ? 'Editar Conta' : (

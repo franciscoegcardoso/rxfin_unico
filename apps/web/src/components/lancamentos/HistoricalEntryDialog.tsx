@@ -516,7 +516,7 @@ export const HistoricalEntryDialog: React.FC<HistoricalEntryDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={handleAttemptClose}>
-        <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 gap-0">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[calc(100dvh-2rem)] h-[85vh] flex flex-col p-0 gap-0">
           {/* Header */}
           <div className="p-6 pb-4 border-b shrink-0">
             <DialogHeader>

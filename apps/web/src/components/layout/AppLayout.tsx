@@ -87,13 +87,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <MobileMenuProvider>
     <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
       <TopNavbar />
-      <main 
+      <main
         className={`
-          w-full max-w-full overflow-x-hidden flex-1 
+          w-full max-w-full overflow-x-hidden flex-1
           ${isDemoMode ? 'pt-[88px]' : 'pt-14'}
-          px-4 md:px-6 lg:px-8 
+          px-4 md:px-6 lg:px-8
           pb-6
-          ${isMobile ? 'pb-20' : ''}
+          ${isMobile ? 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]' : ''}
         `}
       >
         {content}

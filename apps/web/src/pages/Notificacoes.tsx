@@ -147,7 +147,12 @@ export default function Notificacoes() {
         return;
       }
       setError(null);
-      const raw = Array.isArray(data) ? data : (data as { rows?: NotificationRow[] })?.rows ?? [];
+      const raw =
+        Array.isArray(data)
+          ? data
+          : (data as { rows?: NotificationRow[] })?.rows ??
+            (data as { data?: NotificationRow[] })?.data ??
+            [];
       const rows = (raw as NotificationRow[]).map((r) => ({
         ...r,
         read_at: r.read_at ?? null,

@@ -289,7 +289,7 @@ export const BulkEntryDialog: React.FC<BulkEntryDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0 gap-0">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[calc(100dvh-2rem)] h-[85vh] flex flex-col p-0 gap-0">
           {/* Month Navigation Header */}
           <div className="flex items-center justify-center px-4 py-3 border-b bg-muted/30 gap-3">
             <Button 

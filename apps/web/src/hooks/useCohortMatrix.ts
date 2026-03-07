@@ -56,6 +56,47 @@ function setCache(key: string, data: CohortMatrixData): void {
   setCachedValue(key, data);
 }
 
+/** Fallback: build cohort matrix only from fipe_price_history (sem Edge Function). */
+async function fetchCohortFromDb(
+  supabaseClient: ReturnType<typeof import('@/integrations/supabase/client').supabase>,
+  fipeCode: string
+): Promise<CohortMatrixData | null> {
+  const { data: rows, error } = await supabaseClient
+    .from('fipe_price_history')
+    .select('model_year, reference_year, reference_month, price')
+    .eq('fipe_code', fipeCode);
+
+  if (error || !rows?.length) return null;
+
+  type Row = { model_year: number; reference_year: number; reference_month: number; price: number };
+  const byKey = new Map<string, Row>();
+  for (const r of rows as Row[]) {
+    const key = `${r.model_year}-${r.reference_year}`;
+    const existing = byKey.get(key);
+    if (!existing) byKey.set(key, r);
+    else if (r.reference_month === 12 && existing.reference_month !== 12) byKey.set(key, r);
+  }
+
+  const cells: CohortCell[] = [];
+  for (const r of byKey.values()) {
+    if (r.model_year === 32000) continue; // 0km row handled separately in Edge; exclude from matrix
+    cells.push({
+      modelYear: r.model_year,
+      calendarYear: r.reference_year,
+      price: Number(r.price),
+      month: r.reference_month - 1,
+    });
+  }
+
+  const modelYears = [...new Set(cells.map((c) => c.modelYear))].filter((y) => y > 2000).sort((a, b) => a - b);
+  const calendarYears = [...new Set(cells.map((c) => c.calendarYear))].sort((a, b) => a - b);
+  const has0km = rows.some((r: Row) => r.model_year === 32000);
+
+  if (modelYears.length < 2 || calendarYears.length < 2 || cells.length < 2) return null;
+
+  return { modelYears, calendarYears, cells, has0km };
+}
+
 export interface UseCohortMatrixReturn {
   matrixData: CohortMatrixData | null;
   loading: boolean;
@@ -161,50 +202,50 @@ export function useCohortMatrix(): UseCohortMatrixReturn {
     setMatrixData(null);
 
     try {
-
       const { data, error: fnError } = await supabase.functions.invoke('fipe-cohort-matrix', {
         body: { fipeCode }
       });
 
-      if (fnError) {
-        throw new Error(fnError.message || 'Erro ao carregar matriz');
+      if (!fnError && data != null) {
+        const hasPayload = Array.isArray((data as { modelYears?: unknown }).modelYears) || Array.isArray((data as { cells?: unknown }).cells);
+        if (hasPayload) {
+          const modelYears = Array.isArray(data.modelYears) ? data.modelYears : [];
+          const calendarYears = Array.isArray(data.calendarYears) ? data.calendarYears : [];
+          const cells = Array.isArray(data.cells) ? data.cells : [];
+          const result: CohortMatrixData = {
+            modelYears,
+            calendarYears,
+            cells,
+            has0km: Boolean(data.has0km),
+          };
+          if (mountedRef.current) {
+            setMatrixData(result);
+            setCache(cacheKey, result);
+            setError(null);
+          }
+          return result;
+        }
       }
 
-      // Resposta vazia (rede/timeout pode retornar data null)
-      if (data == null) {
-        throw new Error('Nenhuma resposta da API. Tente novamente.');
-      }
-
-      // Aceitar resposta com success: true OU com modelYears/calendarYears/cells (fallback para formato alternativo)
-      const hasPayload = Array.isArray((data as { modelYears?: unknown }).modelYears) || Array.isArray((data as { cells?: unknown }).cells);
-      if (!hasPayload && (data as { success?: boolean }).success === false) {
-        throw new Error((data as { error?: string }).error || 'Erro ao carregar matriz');
-      }
-      if (!hasPayload) {
-        throw new Error((data as { error?: string }).error || 'Resposta inválida da API. Tente novamente.');
-      }
-
-      // Garantir arrays válidos para evitar crash no componente
-      const modelYears = Array.isArray(data.modelYears) ? data.modelYears : [];
-      const calendarYears = Array.isArray(data.calendarYears) ? data.calendarYears : [];
-      const cells = Array.isArray(data.cells) ? data.cells : [];
-      const result: CohortMatrixData = {
-        modelYears,
-        calendarYears,
-        cells,
-        has0km: Boolean(data.has0km),
-      };
-
-      if (mountedRef.current) {
-        setMatrixData(result);
-        setCache(cacheKey, result);
+      // Edge Function falhou (non-2xx, timeout ou payload inválido): fallback direto no banco
+      const fromDb = await fetchCohortFromDb(supabase, fipeCode);
+      if (fromDb && mountedRef.current) {
+        setMatrixData(fromDb);
+        setCache(cacheKey, fromDb);
         setError(null);
+        return fromDb;
       }
-      
-      return result; // Return directly for immediate use
+
+      // Sem dados no banco: mensagem amigável
+      const msg = fnError?.message?.includes('non-2xx')
+        ? 'Serviço temporariamente indisponível. Os dados do banco foram consultados; se o erro persistir, tente novamente mais tarde.'
+        : (fnError?.message || (data as { error?: string })?.error || 'Erro ao carregar matriz.');
+      if (mountedRef.current) setError(msg);
+      return null;
     } catch (err) {
       if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar matriz de cohort.');
+        const msg = err instanceof Error ? err.message : 'Erro ao carregar matriz de cohort.';
+        setError(msg);
       }
       return null;
     } finally {

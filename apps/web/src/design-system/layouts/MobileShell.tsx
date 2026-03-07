@@ -31,12 +31,14 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         </button>
       </header>
 
-      {/* Conteúdo: pt-14 para não ficar sob o header fixo; pb para bottom nav */}
+      {/* Conteúdo: pt-14 para não ficar sob o header fixo; pb = altura do menu + safe-area para nada ficar atrás do menu */}
       <main
         className={cn(
-          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 pt-14 pb-20 md:pb-0"
+          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 pt-14 md:pb-0"
         )}
-        style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}
+        style={{
+          paddingBottom: "max(5rem, calc(4rem + env(safe-area-inset-bottom)))",
+        }}
       >
         <ErrorBoundary>
           <div

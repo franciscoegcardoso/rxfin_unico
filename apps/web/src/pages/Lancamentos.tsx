@@ -1072,9 +1072,22 @@ export const Lancamentos: React.FC = () => {
           onOpenChange={setReceiptCaptureOpen}
         />
 
-        {/* Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-          <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md mx-4 sm:mx-auto">
+        {/* Dialog: centralizado em mobile/tablet; onOpenChange garante fechamento em um clique */}
+        <Dialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setDialogStep('select');
+              setLancamentoTipo(null);
+              setEditingId(null);
+              setNewEntrada({ name: '', amount: 0, date: formatDateYMD(new Date()), type: '' });
+              setNewSaida({ name: '', amount: 0, date: formatDateYMD(new Date()), category: '', method: 'credit_card', purchaseItemId: '' });
+              warranty.resetWarranty();
+            }
+          }}
+        >
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md sm:w-full">
             {dialogStep === 'select' ? (
               <>
                 <DialogHeader>

@@ -29,7 +29,12 @@ export function useNotifications() {
       supabase.rpc('get_unread_notification_count'),
     ]);
     if (pageRes.error) throw pageRes.error;
-    const raw = Array.isArray(pageRes.data) ? pageRes.data : (pageRes.data as { rows?: Notification[] })?.rows ?? [];
+    const raw =
+      Array.isArray(pageRes.data)
+        ? pageRes.data
+        : (pageRes.data as { rows?: unknown[] })?.rows ??
+          (pageRes.data as { data?: unknown[] })?.data ??
+          [];
     const list = (raw as (Notification & { read_at?: string | null })[]).map((r) => ({
       id: r.id,
       title: r.title,

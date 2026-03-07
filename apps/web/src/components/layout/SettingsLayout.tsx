@@ -44,7 +44,9 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
     return (
       <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
         <TopNavbar />
-        <main className="w-full max-w-full px-4 py-6 overflow-x-hidden flex-1 pt-16 pb-20">
+        <main
+        className="w-full max-w-full px-4 py-6 overflow-x-hidden flex-1 pt-16 pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] md:pb-6"
+      >
           <BackLink to="/configuracoes-hub" label="Configurações" className="mb-4" />
           <PageTransition>
             {children}
