@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale, BarChart2, ChevronRight } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
@@ -150,6 +150,7 @@ export const Lancamentos: React.FC = () => {
   const [selectedAccountType, setSelectedAccountType] = useState<string>('all');
   const [markAsPaidItem, setMarkAsPaidItem] = useState<LancamentoRealizado | null>(null);
   const [markAsPaidLoading, setMarkAsPaidLoading] = useState(false);
+  const [analiseDialogOpen, setAnaliseDialogOpen] = useState(false);
 
   // Extract unique banks and account types from sourceMap
   const { availableBanks, availableAccountTypes } = useMemo(() => {
@@ -933,101 +934,131 @@ export const Lancamentos: React.FC = () => {
               </Card>
             </div>
 
-            {topCategories.length > 0 && (
-              <Card className="rounded-[14px] border border-border/80">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Top Categorias</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {topCategories.slice(0, 5).map((row) => {
-                    const totalAll = topCategories.reduce((s, i) => s + i.total, 0);
-                    const pct = totalAll > 0 ? (row.total / totalAll) * 100 : (row.pct ?? 0);
-                    const color = getCategoryColor(row.category);
-                    return (
-                      <div key={row.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                        <span className="w-full sm:w-32 shrink-0 text-sm font-medium truncate">{row.category}</span>
-                        <div className="flex-1 w-full h-6 rounded-md bg-muted overflow-hidden min-w-0">
-                          <div className="h-full rounded-md transition-all" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
-                        </div>
-                        <span className="shrink-0 text-sm text-muted-foreground">{formatCurrency(row.total)} ({(row.pct ?? pct).toFixed(1)}%)</span>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            )}
-
-            {byPaymentMethod.length > 0 && (
-              <Card className="rounded-[14px] border border-border/80">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Por Forma de Pagamento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {byPaymentMethod.map((row) => (
-                      <span key={row.method} className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/50 px-3 py-2 min-h-[36px] text-sm">
-                        <span className="font-medium">{PAYMENT_LABELS[row.method] ?? row.method}:</span>
-                        <span>{formatCurrency(row.total)} ({row.count})</span>
-                      </span>
-                    ))}
+            {/* Seção Análise dos lançamentos — abre modal com gráficos */}
+            <Card
+              className="rounded-[14px] border border-border/80 cursor-pointer transition-colors hover:bg-muted/30 hover:border-primary/40"
+              onClick={() => setAnaliseDialogOpen(true)}
+            >
+              <CardContent className="flex flex-row items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                    <BarChart2 className="h-5 w-5 text-primary" />
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Bar chart: Receita vs Despesa */}
-            <Card className="rounded-[14px] border border-border/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Receita vs Despesa</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(142, 71%, 32%)' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(0, 72%, 51%)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
-                      <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                      <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div>
+                    <p className="font-semibold text-foreground">Análise dos lançamentos</p>
+                    <p className="text-sm text-muted-foreground">Top categorias, formas de pagamento, receita vs despesa e despesas por categoria</p>
+                  </div>
                 </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </CardContent>
             </Card>
 
-            {/* Donut: top categorias de despesa */}
-            {topCategories.length > 0 && (
-              <Card className="rounded-[14px] border border-border/80">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Despesas por Categoria</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[200px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={topCategories.slice(0, 6).map((row) => ({ name: row.category, value: row.total }))}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                          nameKey="name"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {topCategories.slice(0, 6).map((row, i) => (
-                            <Cell key={row.category} fill={getCategoryColor(row.category)} />
+            {/* Modal: Análise dos lançamentos (gráficos) */}
+            <Dialog open={analiseDialogOpen} onOpenChange={setAnaliseDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <BarChart2 className="h-5 w-5 text-primary" />
+                    Análise dos lançamentos
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  {topCategories.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Top Categorias</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {topCategories.slice(0, 5).map((row) => {
+                          const totalAll = topCategories.reduce((s, i) => s + i.total, 0);
+                          const pct = totalAll > 0 ? (row.total / totalAll) * 100 : (row.pct ?? 0);
+                          const color = getCategoryColor(row.category);
+                          return (
+                            <div key={row.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <span className="w-full sm:w-32 shrink-0 text-sm font-medium truncate">{row.category}</span>
+                              <div className="flex-1 w-full h-6 rounded-md bg-muted overflow-hidden min-w-0">
+                                <div className="h-full rounded-md transition-all" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                              </div>
+                              <span className="shrink-0 text-sm text-muted-foreground">{formatCurrency(row.total)} ({(row.pct ?? pct).toFixed(1)}%)</span>
+                            </div>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {byPaymentMethod.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Por Forma de Pagamento</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {byPaymentMethod.map((row) => (
+                            <span key={row.method} className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/50 px-3 py-2 min-h-[36px] text-sm">
+                              <span className="font-medium">{PAYMENT_LABELS[row.method] ?? row.method}:</span>
+                              <span>{formatCurrency(row.total)} ({row.count})</span>
+                            </span>
                           ))}
-                        </Pie>
-                        <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card className="rounded-[14px] border border-border/80">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Receita vs Despesa</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[200px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(142, 71%, 32%)' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(0, 72%, 51%)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
+                            <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                            <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {topCategories.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">Despesas por Categoria</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-[200px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={topCategories.slice(0, 6).map((row) => ({ name: row.category, value: row.total }))}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={50}
+                                outerRadius={80}
+                                paddingAngle={2}
+                                dataKey="value"
+                                nameKey="name"
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              >
+                                {topCategories.slice(0, 6).map((row) => (
+                                  <Cell key={row.category} fill={getCategoryColor(row.category)} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 

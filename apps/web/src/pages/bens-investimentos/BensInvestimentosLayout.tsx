@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -57,7 +57,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
-  const validTabs = ['overview', 'imoveis', 'investimentos', 'financiamentos', 'seguros'] as const;
+  const validTabs = ['overview', 'imoveis', 'veiculos', 'investimentos', 'financiamentos', 'seguros'] as const;
   const tabFromUrl = validTabs.includes(pathSegment as any) ? pathSegment : 'overview';
 
   const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
@@ -96,10 +96,15 @@ const BensInvestimentosLayout: React.FC = () => {
   const [trashSheetOpen, setTrashSheetOpen] = useState(false);
   const [auditSheetOpen, setAuditSheetOpen] = useState(false);
 
-  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : 'property';
+  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : currentTab === 'veiculos' ? 'vehicle' : 'property';
   const assets = patrimonioData?.assets ?? [];
   const imoveis = assets.filter((a: { type?: string }) => a.type === 'imovel');
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
+  const veiculosList = useMemo(() => {
+    const fromRpc = assets.filter((a: { type?: string }) => a.type === 'vehicle' || a.type === 'veiculo');
+    if (fromRpc.length > 0) return fromRpc;
+    return config.assets.filter((a: Asset) => a.type === 'vehicle' && !a.isSold).map((a: Asset) => ({ id: a.id, name: a.name, current_value: a.value, purchase_value: a.purchaseValue ?? undefined, appreciation_pct: undefined }));
+  }, [assets, config.assets]);
   const financiamentosList = patrimonioData?.financiamentos ?? [];
   const consorciosList = patrimonioData?.consorcios ?? [];
   const segurosList = patrimonioData?.seguros ?? [];
@@ -501,6 +506,10 @@ const BensInvestimentosLayout: React.FC = () => {
                 <Home className="h-3.5 w-3.5 shrink-0" />
                 <span>Imóveis</span>
               </TabsTrigger>
+              <TabsTrigger ref={currentTab === 'veiculos' ? activeTabRef : undefined} value="veiculos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
+                <Car className="h-3.5 w-3.5 shrink-0" />
+                <span>Veículos</span>
+              </TabsTrigger>
               <TabsTrigger ref={currentTab === 'investimentos' ? activeTabRef : undefined} value="investimentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
                 <TrendingUp className="h-3.5 w-3.5 shrink-0" />
                 <span>Investimentos</span>
@@ -527,6 +536,19 @@ const BensInvestimentosLayout: React.FC = () => {
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {imoveis.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
+                          <li key={i} className="flex justify-between gap-2"><span className="truncate">{a.name ?? '—'}</span><span className="font-medium shrink-0">{formatCurrency(a.current_value ?? 0)}</span></li>
+                        ))}
+                      </ul>
+                    </Card>
+                  )}
+                  {veiculosList.length > 0 && (
+                    <Card className="rounded-[14px] border border-border/80 p-4 h-full">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-semibold flex items-center gap-2"><Car className="h-4 w-4" /> Veículos</h3>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('veiculos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                      </div>
+                      <ul className="space-y-1.5 text-sm">
+                        {veiculosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
                           <li key={i} className="flex justify-between gap-2"><span className="truncate">{a.name ?? '—'}</span><span className="font-medium shrink-0">{formatCurrency(a.current_value ?? 0)}</span></li>
                         ))}
                       </ul>
@@ -570,7 +592,7 @@ const BensInvestimentosLayout: React.FC = () => {
                       <p className="text-sm text-muted-foreground">{segurosList.filter((s: { is_active?: boolean }) => s.is_active).length} ativos · {segurosList.filter((s: { is_active?: boolean }) => !s.is_active).length} vencidos</p>
                     </Card>
                   )}
-                  {imoveis.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && (
+                  {imoveis.length === 0 && veiculosList.length === 0 && investimentosList.length === 0 && financiamentosList.length === 0 && consorciosList.length === 0 && segurosList.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-8 col-span-full">Nenhum dado de patrimônio no momento.</p>
                   )}
                 </div>
@@ -600,6 +622,78 @@ const BensInvestimentosLayout: React.FC = () => {
                           </Card>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentTab === 'veiculos' && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Car className="h-5 w-5 text-primary" />
+                      Meus Veículos
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <Link to="/gestao-veiculos">
+                          <Car className="h-4 w-4" />
+                          Gestão de Veículos
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                      <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                        <Plus className="h-4 w-4" />
+                        Adicionar veículo
+                      </Button>
+                    </div>
+                  </div>
+                  {veiculosList.length === 0 ? (
+                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                      <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <Car className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum veículo cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus veículos para acompanhar valor, custos e depreciação no patrimônio.</p>
+                        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                          <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                            <Plus className="h-4 w-4" />
+                            Adicionar veículo
+                          </Button>
+                          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                            <Link to="/gestao-veiculos">Gestão de Veículos <ChevronRight className="h-3.5 w-3.5" /></Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {veiculosList.map((a: { id?: string; name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number }, i: number) => (
+                        <Card key={a.id ?? i} className="rounded-[14px] border border-border/80 overflow-hidden">
+                          <CardContent className="p-4">
+                            <p className="font-bold truncate">{a.name ?? '—'}</p>
+                            <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
+                            {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
+                            {a.appreciation_pct != null && (
+                              <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>
+                            )}
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary" onClick={() => { const full = config.assets.find((x: Asset) => x.id === (a as { id?: string }).id); if (full) handleEditAsset(full); }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                                Editar
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => (a as { id?: string }).id && handleAddSeguro((a as { id?: string }).id!)}>
+                                <Shield className="h-3.5 w-3.5" />
+                                Seguro
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-8 gap-1" asChild>
+                                <Link to="/gestao-veiculos">Custos <ChevronRight className="h-3 w-3" /></Link>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   )}
                 </div>
