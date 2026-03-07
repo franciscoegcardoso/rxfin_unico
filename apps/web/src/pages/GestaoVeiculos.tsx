@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { BackLink } from '@/components/shared/BackLink';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -325,18 +325,17 @@ export const GestaoVeiculos: React.FC = () => {
           </section>
         )}
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <BackLink to="/bens-investimentos" label="Patrimônio" className="mb-1" />
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-foreground">Gestão de Veículos</h1>
+        <PageHeader
+          icon={Car}
+          title="Gestão de Veículos"
+          subtitle="Veículos cadastrados, combustível e manutenção"
+          actions={
+            <>
               <VisibilityToggle />
               <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.gestaoVeiculos} />
-            </div>
-            <p className="text-muted-foreground">Controle despesas, abastecimentos e serviços</p>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         {/* Lançar despesa - mobile only (full-width) */}
         <Button 

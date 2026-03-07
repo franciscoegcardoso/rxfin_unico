@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Car, Fuel, Wrench, Receipt, Plus, BarChart3 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { BackLink } from '@/components/shared/BackLink';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -128,18 +128,17 @@ const GestaoVeiculosLayout: React.FC = () => {
     <GestaoVeiculosContext.Provider value={contextValue}>
       <AppLayout>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <BackLink to="/bens-investimentos" label="Patrimônio" className="mb-1" />
-              <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold text-foreground">Gestão de Veículos</h1>
+          <PageHeader
+            icon={Car}
+            title="Gestão de Veículos"
+            subtitle="Veículos cadastrados, combustível e manutenção"
+            actions={
+              <>
                 <VisibilityToggle />
                 <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.gestaoVeiculos} />
-              </div>
-              <p className="text-muted-foreground">Controle despesas, abastecimentos e serviços</p>
-            </div>
-          </div>
+              </>
+            }
+          />
 
           {/* Mobile CTA */}
           <Button onClick={() => setDialogOpen(true)} className="w-full md:hidden bg-primary hover:bg-primary/90">

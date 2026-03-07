@@ -3,7 +3,6 @@ import { useUserKV } from '@/hooks/useUserKV';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { BackLink } from '@/components/shared/BackLink';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -203,17 +202,17 @@ export const Sonhos: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
         <PageHeader
+          icon={Target}
           title="Sonhos"
-          description="Acompanhe e personalize suas metas de longo prazo"
-          icon={<Target className="h-5 w-5 text-primary" />}
-          backTo="/planejamento"
-          backLabel="Planejamento"
-        >
-          <VisibilityToggle />
-          <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.sonhos} />
-        </PageHeader>
+          subtitle="Acompanhe e personalize suas metas de longo prazo"
+          actions={
+            <>
+              <VisibilityToggle />
+              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.sonhos} />
+            </>
+          }
+        />
 
         {/* Add Dream Dialog (used by button below timeline) */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, Type, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
@@ -777,78 +777,80 @@ export const Lancamentos: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <PageHeader
+            icon={ReceiptText}
             title="Lançamentos"
-            description="Gerencie suas entradas e saídas"
-            icon={<Receipt className="h-5 w-5 text-primary" />}
-          >
-            {!isManual && <BankSyncButton variant="button" />}
-            <VisibilityToggle />
-          {/* Single Add Button with Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="hero" className="gap-2 min-h-[44px] min-w-[44px] touch-manipulation">
-                <Plus className="h-4 w-4" />
-                Novo
-                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                Tipo de lançamento
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleOpenDialog} className="gap-3 cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Plus className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium">Individual</span>
-                  <span className="text-xs text-muted-foreground">Adicionar um lançamento</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBulkDialogOpen(true)} className="gap-3 cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Layers className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium">Em Massa</span>
-                  <span className="text-xs text-muted-foreground">Múltiplos lançamentos rápidos</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setHistoricalDialogOpen(true)} className="gap-3 cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <History className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium">Histórico</span>
-                  <span className="text-xs text-muted-foreground">Importar dados de meses anteriores</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                Provisionar
-              </DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleOpenContaDialog('pagar')} className="gap-3 cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center">
-                  <TrendingDown className="h-4 w-4 text-expense" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium">Conta a Pagar</span>
-                  <span className="text-xs text-muted-foreground">Provisionar despesa futura</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleOpenContaDialog('receber')} className="gap-3 cursor-pointer">
-                <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center">
-                  <TrendingUp className="h-4 w-4 text-income" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-medium">Conta a Receber</span>
-                  <span className="text-xs text-muted-foreground">Provisionar receita futura</span>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          </PageHeader>
+            subtitle="Gerencie suas entradas e saídas"
+            actions={
+              <>
+                {!isManual && <BankSyncButton variant="button" />}
+                <VisibilityToggle />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="hero" className="gap-2 min-h-[44px] min-w-[44px] touch-manipulation">
+                      <Plus className="h-4 w-4" />
+                      Novo
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Tipo de lançamento
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleOpenDialog} className="gap-3 cursor-pointer">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Plus className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Individual</span>
+                        <span className="text-xs text-muted-foreground">Adicionar um lançamento</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setBulkDialogOpen(true)} className="gap-3 cursor-pointer">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Layers className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Em Massa</span>
+                        <span className="text-xs text-muted-foreground">Múltiplos lançamentos rápidos</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setHistoricalDialogOpen(true)} className="gap-3 cursor-pointer">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <History className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Histórico</span>
+                        <span className="text-xs text-muted-foreground">Importar dados de meses anteriores</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Provisionar
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleOpenContaDialog('pagar')} className="gap-3 cursor-pointer">
+                      <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center">
+                        <TrendingDown className="h-4 w-4 text-expense" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Conta a Pagar</span>
+                        <span className="text-xs text-muted-foreground">Provisionar despesa futura</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleOpenContaDialog('receber')} className="gap-3 cursor-pointer">
+                      <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center">
+                        <TrendingUp className="h-4 w-4 text-income" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">Conta a Receber</span>
+                        <span className="text-xs text-muted-foreground">Provisionar receita futura</span>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            }
+          />
           {isMobile && <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />}
         </div>
 

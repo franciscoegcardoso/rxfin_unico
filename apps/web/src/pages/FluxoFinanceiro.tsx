@@ -14,11 +14,11 @@ import {
   ComposedChart,
 } from 'recharts';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, RefreshCw, BarChart2 } from 'lucide-react';
 import { useDashboardEnhanced } from '@/hooks/useDashboardEnhanced';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -84,7 +84,7 @@ const FluxoFinanceiro: React.FC = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <PageHeader title="Fluxo Financeiro" />
+        <PageHeader icon={BarChart2} title="Fluxo Financeiro" subtitle="Receitas, despesas e saldo do mês" />
         <PageSkeleton />
       </AppLayout>
     );
@@ -94,8 +94,10 @@ const FluxoFinanceiro: React.FC = () => {
     <AppLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={BarChart2}
           title="Fluxo Financeiro"
-          action={
+          subtitle="Receitas, despesas e saldo do mês"
+          actions={
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={prevMonth} aria-label="Mês anterior">
                 <ChevronLeft className="h-4 w-4" />

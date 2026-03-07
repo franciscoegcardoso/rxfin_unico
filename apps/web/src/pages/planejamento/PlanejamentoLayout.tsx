@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calculator, TrendingUp, TrendingDown, PiggyBank, Target, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, PiggyBank, Target, CheckCircle2, AlertTriangle, CalendarCheck } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,10 +70,10 @@ const PlanejamentoLayout: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
+          icon={CalendarCheck}
           title="Planejamento Mensal"
-          description="Gerencie seu orçamento e metas do mês"
-          breadcrumb={[{ label: 'RXFin' }, { label: 'Planejamento' }]}
-          action={
+          subtitle="Gerencie seu orçamento e metas do mês"
+          actions={
             <>
               <VisibilityToggle />
               <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.planejamentoMensal} />

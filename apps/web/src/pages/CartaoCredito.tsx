@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,9 +97,9 @@ const CartaoCredito: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
+          icon={CreditCard}
           title="Cartão de Crédito"
-          description="Faturas, lançamentos e sincronização"
-          breadcrumb={[{ label: 'RXFin' }, { label: 'Cartão de Crédito' }]}
+          subtitle="Faturas, lançamentos e sincronização"
         />
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
 

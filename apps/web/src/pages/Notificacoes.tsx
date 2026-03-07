@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -228,9 +228,10 @@ export default function Notificacoes() {
       <TooltipProvider>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
+            icon={Bell}
             title="Notificações"
-            breadcrumb={[{ label: 'RXFin' }, { label: 'Notificações' }]}
-            action={
+            subtitle="Alertas e notificações do sistema"
+            actions={
               unreadCount > 0 ? (
                 <Button variant="ghost" size="sm" onClick={markAllRead}>
                   <CheckCheck className="h-4 w-4 mr-1" />

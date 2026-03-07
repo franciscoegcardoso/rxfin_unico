@@ -498,20 +498,19 @@ const RegistroCompras: React.FC = () => {
     <AppLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={ShoppingBag}
           title="Registro de Compras"
-          description="Controle sua lista de desejos e acompanhe as aquisições do ano"
-          icon={<ShoppingBag className="h-5 w-5 text-primary" />}
-          backTo="/planejamento"
-          backLabel="Voltar ao Planejamento"
-        >
-          <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.registroCompras} />
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()} className="rounded-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Item
-              </Button>
-            </DialogTrigger>
+          subtitle="Controle sua lista de desejos e acompanhe as aquisições do ano"
+          actions={
+            <>
+              <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.registroCompras} />
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => handleOpenDialog()} className="rounded-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Item
+                  </Button>
+                </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{editingItem ? 'Editar Item' : 'Adicionar Item'}</DialogTitle>
@@ -578,8 +577,10 @@ const RegistroCompras: React.FC = () => {
                 <Button onClick={handleSubmit} disabled={!name.trim()}>{editingItem ? 'Salvar' : 'Adicionar'}</Button>
               </div>
             </DialogContent>
-          </Dialog>
-        </PageHeader>
+              </Dialog>
+            </>
+          }
+        />
 
         {/* Empty state when no items */}
         {!loading && items.length === 0 && (

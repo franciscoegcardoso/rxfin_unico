@@ -17,7 +17,7 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target, RefreshCw, BarChart2 } from 'lucide-react';
 import { useAnnualOverview } from '@/hooks/useAnnualOverview';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,7 @@ const PlanejamentoAnual: React.FC = () => {
   if (isLoading) {
     return (
       <AppLayout>
-        <PageHeader title="Planejamento Anual" />
+        <PageHeader icon={BarChart2} title="Planejamento Anual" subtitle="Visão anual de receitas, despesas e saldo" />
         <PageSkeleton />
       </AppLayout>
     );
@@ -80,7 +80,9 @@ const PlanejamentoAnual: React.FC = () => {
     <AppLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={BarChart2}
           title="Planejamento Anual"
+          subtitle="Visão anual de receitas, despesas e saldo"
           actions={
             <div className="flex items-center gap-2 flex-wrap">
               <Button variant="outline" size="sm" className="min-h-[44px] touch-manipulation" onClick={() => setYear((y) => y - 1)} aria-label="Ano anterior">

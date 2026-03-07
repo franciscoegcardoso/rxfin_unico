@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +61,7 @@ const Contas: React.FC = () => {
     return (
       <AppLayout>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
-          <PageHeader title="Contas a Pagar e Receber" description="Controle seu fluxo de obrigações" breadcrumb={[{ label: 'RXFin' }, { label: 'Controles' }, { label: 'Contas' }]} />
+          <PageHeader icon={Wallet} title="Contas a Pagar e Receber" subtitle="Controle seu fluxo de obrigações" />
           <div className="content-zone py-5 md:py-6 flex-1">
             <PageSkeleton />
           </div>
@@ -74,10 +74,10 @@ const Contas: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
+          icon={Wallet}
           title="Contas a Pagar e Receber"
-          description="Controle seu fluxo de obrigações"
-          breadcrumb={[{ label: 'RXFin' }, { label: 'Controles' }, { label: 'Contas' }]}
-          action={monthSelector}
+          subtitle="Controle seu fluxo de obrigações"
+          actions={monthSelector}
         />
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
 

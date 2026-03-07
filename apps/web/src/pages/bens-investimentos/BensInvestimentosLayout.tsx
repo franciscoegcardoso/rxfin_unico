@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
-import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard } from 'lucide-react';
+import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -258,10 +258,10 @@ const BensInvestimentosLayout: React.FC = () => {
       <AppLayout>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
+            icon={Layers}
             title="Bens e Investimentos"
-            description="Patrimônio, Open Finance e investimentos"
-            breadcrumb={[{ label: 'RXFin' }, { label: 'Bens e Investimentos' }]}
-            action={
+            subtitle="Patrimônio, Open Finance e investimentos"
+            actions={
               <div className="flex items-center gap-2">
                 <VisibilityToggle />
                 <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.bensInvestimentos} />

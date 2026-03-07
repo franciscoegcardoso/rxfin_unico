@@ -1,53 +1,41 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { BackLink } from './BackLink';
+import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
+  icon: LucideIcon;
   title: string;
-  description?: string;
-  children?: React.ReactNode;
-  icon?: React.ReactNode;
+  subtitle?: string;
+  actions?: React.ReactNode;
   className?: string;
-  backTo?: string;
-  backLabel?: string;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({
-  title,
-  description,
-  children,
-  icon,
-  className,
-  backTo,
-  backLabel,
-}) => {
+export function PageHeader({ icon: Icon, title, subtitle, actions, className }: PageHeaderProps) {
   return (
-    <div className={cn("space-y-2", className)}>
-      {backTo && backLabel && (
-        <BackLink to={backTo} label={backLabel} />
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          {icon && (
-            <div className="h-10 w-10 rounded-lg bg-primary/10 dark:bg-primary/15 flex items-center justify-center shrink-0 text-primary">
-              {icon}
-            </div>
-          )}
-          <div className="min-w-0 space-y-0.5">
-            <h1 className="text-2xl font-bold text-foreground tracking-[-0.02em] truncate line-clamp-1">
-              {title}
-            </h1>
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
-          </div>
+    <div className={cn(
+      "flex items-start justify-between",
+      "pt-5 pb-4",
+      "sm:pt-6 sm:pb-5",
+      "lg:pt-8 lg:pb-6",
+      className
+    )}>
+      <div className="flex flex-col min-w-0">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-primary md:h-5 md:w-5 flex-shrink-0" />
+          <h1 className="text-lg font-semibold text-foreground sm:text-xl lg:text-2xl leading-tight truncate">
+            {title}
+          </h1>
         </div>
-        {children && (
-          <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-            {children}
-          </div>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-1 ml-6 md:ml-7 visible">
+            {subtitle}
+          </p>
         )}
       </div>
+      {actions && (
+        <div className="flex items-center gap-2 flex-shrink-0 ml-4 flex-wrap justify-end">
+          {actions}
+        </div>
+      )}
     </div>
   );
-};
+}

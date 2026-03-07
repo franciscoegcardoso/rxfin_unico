@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVisibility } from "@/contexts/VisibilityContext";
@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  Home,
   Target,
   ChevronRight,
   TrendingUp,
@@ -487,8 +488,9 @@ const Inicio: React.FC = () => {
       <AppLayout>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
+            icon={Home}
             title="Início"
-            description={`Visão geral do mês de ${periodLabel}`}
+            subtitle={`Visão geral do mês de ${periodLabel}`}
           />
           <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
             {errorBlock}
@@ -559,8 +561,9 @@ const Inicio: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
+          icon={Home}
           title="Início"
-          description={`Visão geral do mês de ${periodLabel}`}
+          subtitle={`Visão geral do mês de ${periodLabel}`}
         />
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1 w-full max-w-full min-w-0">
           {errorBlock}
