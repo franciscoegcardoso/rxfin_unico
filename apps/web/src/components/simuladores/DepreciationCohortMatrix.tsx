@@ -229,8 +229,7 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
   // Export helpers
   const getExportData = useCallback(() => {
     if (!cohort.matrixData) return null;
-    
-    const { modelYears, calendarYears } = cohort.matrixData;
+    const { modelYears = [], calendarYears = [] } = cohort.matrixData;
     const rows: (string | number)[][] = [];
     
     // Header row
@@ -354,7 +353,7 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
     setExporting('pdf');
     
     try {
-      const { modelYears, calendarYears } = cohort.matrixData!;
+      const { modelYears = [], calendarYears = [] } = cohort.matrixData ?? {};
       
       // Create print-friendly HTML
       const printWindow = window.open('', '_blank');
@@ -439,8 +438,9 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
   // Calculate min/max prices for heatmap
   const { minPrice, maxPrice } = React.useMemo(() => {
     if (!cohort.matrixData) return { minPrice: 0, maxPrice: 0 };
-    
-    const prices = cohort.matrixData.cells.map(c => c.price);
+    const cells = cohort.matrixData.cells ?? [];
+    if (cells.length === 0) return { minPrice: 0, maxPrice: 0 };
+    const prices = cells.map((c: CohortCell) => c.price);
     return {
       minPrice: Math.min(...prices),
       maxPrice: Math.max(...prices),
@@ -450,9 +450,7 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
   // Check for pandemic anomaly
   const hasPandemicAnomaly = React.useMemo(() => {
     if (!cohort.matrixData) return false;
-    
-    const { cells } = cohort.matrixData;
-    
+    const cells = cohort.matrixData.cells ?? [];
     for (const cell of cells) {
       if (isPandemicYear(cell.calendarYear)) {
         const yoyChange = cohort.getYoYChange(cell.modelYear, cell.calendarYear);

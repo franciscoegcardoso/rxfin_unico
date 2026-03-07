@@ -166,8 +166,17 @@ export function useCohortMatrix(): UseCohortMatrixReturn {
         body: { fipeCode }
       });
 
-      if (fnError || !data?.success) {
-        throw new Error(fnError?.message || data?.error || 'Erro ao carregar matriz');
+      if (fnError) {
+        throw new Error(fnError.message || 'Erro ao carregar matriz');
+      }
+
+      // Aceitar resposta com success: true OU com modelYears/calendarYears/cells (fallback para formato alternativo)
+      const hasPayload = data && (Array.isArray((data as { modelYears?: unknown }).modelYears) || Array.isArray((data as { cells?: unknown }).cells));
+      if (!hasPayload && data?.success === false) {
+        throw new Error((data as { error?: string }).error || 'Erro ao carregar matriz');
+      }
+      if (!hasPayload) {
+        throw new Error((data as { error?: string })?.error || 'Resposta inválida da API');
       }
 
       // Garantir arrays válidos para evitar crash no componente

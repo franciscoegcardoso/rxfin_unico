@@ -34,9 +34,9 @@ const FinanceiroLayout: React.FC = () => {
     <SettingsLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={Wallet}
           title="Financeiro"
-          description="Planos, pagamentos e programa de indicações"
-          icon={<Wallet className="h-5 w-5 text-primary" />}
+          subtitle="Planos, pagamentos e programa de indicações"
         />
 
         <Tabs value={currentTab || 'planos'} onValueChange={handleTabChange}>
