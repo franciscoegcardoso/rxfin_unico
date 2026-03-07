@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Bot, History, Settings2, FileText, Shield, ClipboardCheck } from 'lucide-react';
+import { Bot, History, Settings2, FileText, Shield, ClipboardCheck, Calculator } from 'lucide-react';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { MeuIRSection } from '@/components/ir-import/MeuIRSection';
 import { IRImportDialog } from '@/components/ir-import/IRImportDialog';

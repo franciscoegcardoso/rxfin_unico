@@ -29,12 +29,18 @@ const MINHA_CONTA_PATH = '/minha-conta';
 const MinhaContaContent: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const currentTab = searchParams.get('tab') || '';
   const isMobile = useIsMobile();
-  const { hasChanges, saveAll, clearAll, isSaving } = useAccountPendingChanges();
+  const { hasChanges, clearAll } = useAccountPendingChanges();
+
+  // Aba atual: sempre derivada da URL (location.search) para não dessincronizar
+  const currentTab = React.useMemo(
+    () => new URLSearchParams(location.search).get('tab') || '',
+    [location.search]
+  );
+  const tabValue = currentTab || 'visao-geral';
 
   // Ao entrar na rota /minha-conta (primeira vez ou vindo de outra página), limpa estado dirty
-  // para não travar navegação (ex.: abrir /minha-conta?tab=perfil e não conseguir sair).
+  // para não travar navegação.
   const prevPathnameRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     const pathname = location.pathname.replace(/\/+$/, '') || '/';
@@ -47,23 +53,22 @@ const MinhaContaContent: React.FC = () => {
     prevPathnameRef.current = pathname;
   }, [location.pathname, clearAll]);
 
-  // Ao mudar de aba (por URL ou após troca), limpa estado "dirty" da aba anterior
-  // para evitar ficar preso sem conseguir navegar.
+  // Ao mudar de aba pela URL, limpa dirty da aba anterior para não bloquear navegação.
   const prevTabRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (prevTabRef.current !== null && prevTabRef.current !== currentTab) {
+    if (prevTabRef.current !== null && prevTabRef.current !== tabValue) {
       clearAll();
     }
-    prevTabRef.current = currentTab || 'visao-geral';
-  }, [currentTab, clearAll]);
+    prevTabRef.current = tabValue;
+  }, [tabValue, clearAll]);
 
-  const handleTabChange = async (value: string) => {
+  const handleTabChange = (value: string) => {
     if (hasChanges) {
       const confirmed = window.confirm('Você tem alterações não salvas. Deseja descartá-las?');
       if (!confirmed) return;
       clearAll();
     }
-    setSearchParams({ tab: value });
+    setSearchParams({ tab: value }, { replace: true });
   };
 
   const handleBack = async () => {
@@ -75,10 +80,10 @@ const MinhaContaContent: React.FC = () => {
     setSearchParams({});
   };
 
-  const currentMenuItem = menuItems.find(item => item.id === currentTab);
+  const currentMenuItem = menuItems.find(item => item.id === tabValue);
 
   const renderTabContent = () => {
-    switch (currentTab) {
+    switch (tabValue) {
       case 'visao-geral': return <AccountOverviewTab />;
       case 'perfil': return <ProfileTab />;
       case 'workspace': return <WorkspaceTab />;
@@ -89,7 +94,7 @@ const MinhaContaContent: React.FC = () => {
     }
   };
 
-  // Mobile: Show menu list or content with drill-down
+  // Mobile: Show menu list or content with drill-down (drill-down quando há tab na URL)
   if (isMobile) {
     if (currentTab && currentMenuItem) {
       return (
@@ -153,7 +158,7 @@ const MinhaContaContent: React.FC = () => {
           </p>
         </div>
 
-        <Tabs value={currentTab || 'visao-geral'} onValueChange={handleTabChange} className="space-y-6">
+        <Tabs key={tabValue} value={tabValue} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             {menuItems.map((item) => {
               const Icon = item.icon;

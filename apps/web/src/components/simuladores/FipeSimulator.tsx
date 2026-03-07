@@ -16,7 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSimulatorContext } from '@/hooks/useSimulatorContext';
 import { useFipeFavorites } from '@/hooks/useFipeFavorites';
 import { Asset } from '@/types/financial';
-import { BarChart as RechartsBarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart as RechartsBarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { premiumGrid, premiumXAxis, premiumYAxis } from '@/components/charts/premiumChartTheme';
 import { useCohortMatrix } from '@/hooks/useCohortMatrix';
 import { AnimatedChartContainer } from '@/components/charts/AnimatedChartContainer';
@@ -754,8 +754,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
               </AnimatePresence>
             </div>
 
-            {/* Right Column - Results */}
-            <div className="flex flex-col">
+            {/* Right Column - Results (altura alinhada à coluna de seleção à esquerda) */}
+            <div className="flex flex-col min-h-0">
               <AnimatePresence mode="wait">
                 {fipe.loading.price && (
                   <motion.div
@@ -763,7 +763,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex-1"
+                    className="flex-1 min-h-[280px]"
                   >
                     <FipePriceResultSkeleton />
                   </motion.div>
@@ -776,10 +776,10 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="flex-1 flex flex-col"
+                    className="flex-1 flex flex-col min-h-0"
                   >
-                    {/* FIPEResultCard — C5A */}
-                    <div className="p-6 rounded-xl bg-card border border-border flex-1 flex flex-col gap-4">
+                    {/* FIPEResultCard — resumo sem gráfico (histórico em "Histórico FIPE" abaixo) */}
+                    <div className="p-6 rounded-xl bg-card border border-border flex-1 flex flex-col gap-4 min-h-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm text-muted-foreground">Valor FIPE</span>
                         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
@@ -819,53 +819,6 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                           </span>
                         );
                       })()}
-                      {/* Gráfico de linha — histórico de preços */}
-                      {fipeHistory.priceHistory.length > 0 && (
-                        <div className="mt-2 h-[180px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={fipeHistory.priceHistory.map((p) => ({ ...p, valor: p.price }))}
-                              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="fipeResultArea" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                              <XAxis
-                                dataKey="monthLabel"
-                                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
-                                axisLine={{ stroke: 'hsl(var(--border))' }}
-                              />
-                              <YAxis
-                                hide
-                                domain={['auto', 'auto']}
-                              />
-                              <Tooltip
-                                content={({ active, payload }) => {
-                                  if (!active || !payload?.[0]) return null;
-                                  const p = payload[0].payload;
-                                  return (
-                                    <div className="bg-card border border-border rounded-lg p-2 shadow-lg text-xs">
-                                      <p className="text-muted-foreground">{p.monthLabel}</p>
-                                      <p className="font-sans font-semibold tabular-nums tracking-tight text-foreground">{formatCurrency(p.price)}</p>
-                                    </div>
-                                  );
-                                }}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="valor"
-                                stroke="hsl(var(--primary))"
-                                strokeWidth={2}
-                                fill="url(#fipeResultArea)"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      )}
                       <div className="flex items-center justify-center pt-2">
                         <Button
                           variant={fipeFavoritesProps.isFavorited ? "secondary" : "outline"}
