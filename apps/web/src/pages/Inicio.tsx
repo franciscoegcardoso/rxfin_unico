@@ -486,7 +486,7 @@ const Inicio: React.FC = () => {
   if (isMobile) {
     return (
       <AppLayout>
-        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <PageHeader
             icon={Home}
             title="Início"
@@ -559,7 +559,7 @@ const Inicio: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+      <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
         <PageHeader
           icon={Home}
           title="Início"

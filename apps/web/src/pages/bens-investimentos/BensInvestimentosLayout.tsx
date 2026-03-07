@@ -256,7 +256,7 @@ const BensInvestimentosLayout: React.FC = () => {
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
       <AppLayout>
-        <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <PageHeader
             icon={Layers}
             title="Bens e Investimentos"

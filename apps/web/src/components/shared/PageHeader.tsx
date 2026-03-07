@@ -13,9 +13,9 @@ export function PageHeader({ icon: Icon, title, subtitle, actions, className }: 
   return (
     <div className={cn(
       "flex items-start justify-between",
-      "pt-5 pb-4",
+      "pt-6 pb-4",
       "sm:pt-6 sm:pb-5",
-      "lg:pt-8 lg:pb-6",
+      "lg:pt-6 lg:pb-6",
       className
     )}>
       <div className="flex flex-col min-w-0">
