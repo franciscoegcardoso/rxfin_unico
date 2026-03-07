@@ -479,6 +479,9 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
         </CardHeader>
         <CardContent className="py-6">
           <div className="flex flex-col items-center justify-center gap-3">
+            <p className="text-sm text-muted-foreground text-center max-w-sm">
+              {cohort.error}
+            </p>
             <Button 
               variant="outline" 
               size="sm" 

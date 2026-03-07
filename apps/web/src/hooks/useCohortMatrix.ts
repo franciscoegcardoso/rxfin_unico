@@ -170,13 +170,18 @@ export function useCohortMatrix(): UseCohortMatrixReturn {
         throw new Error(fnError.message || 'Erro ao carregar matriz');
       }
 
+      // Resposta vazia (rede/timeout pode retornar data null)
+      if (data == null) {
+        throw new Error('Nenhuma resposta da API. Tente novamente.');
+      }
+
       // Aceitar resposta com success: true OU com modelYears/calendarYears/cells (fallback para formato alternativo)
-      const hasPayload = data && (Array.isArray((data as { modelYears?: unknown }).modelYears) || Array.isArray((data as { cells?: unknown }).cells));
-      if (!hasPayload && data?.success === false) {
+      const hasPayload = Array.isArray((data as { modelYears?: unknown }).modelYears) || Array.isArray((data as { cells?: unknown }).cells);
+      if (!hasPayload && (data as { success?: boolean }).success === false) {
         throw new Error((data as { error?: string }).error || 'Erro ao carregar matriz');
       }
       if (!hasPayload) {
-        throw new Error((data as { error?: string })?.error || 'Resposta inválida da API');
+        throw new Error((data as { error?: string }).error || 'Resposta inválida da API. Tente novamente.');
       }
 
       // Garantir arrays válidos para evitar crash no componente

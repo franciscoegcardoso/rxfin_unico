@@ -65,9 +65,9 @@ export const Presentes: React.FC = () => {
     <AppLayout>
       <div className="space-y-6">
         <PageHeader
+          icon={Gift}
           title="Presentes"
-          description="Planejamento de presentes para o ano"
-          icon={<Gift className="h-5 w-5 text-primary" />}
+          subtitle="Planejamento de presentes para o ano"
         />
 
         {loading && (
