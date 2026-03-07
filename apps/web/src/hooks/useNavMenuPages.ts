@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -100,11 +100,14 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
       title: 'Planejamento', slug: 'planejamento', icon: CalendarRange, items: [
         { path: '/planejamento', label: 'Planejamento Mensal', icon: Calendar, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/planejamento-anual', label: 'Planejamento Anual', icon: CalendarRange, accessLevel: 'free', canAccessAsAdmin: true },
+        { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/planejamento?tab=metas', label: 'Metas Mensais', icon: Target, accessLevel: 'free', canAccessAsAdmin: true },
       ],
     },
     {
       title: 'Controles', slug: 'controles', icon: ClipboardList, items: [
+        { path: '/gestao-veiculos', label: 'Gestão de Veículos', icon: Car, accessLevel: 'free', canAccessAsAdmin: true },
+        { path: '/registro-compras', label: 'Registro de Compras', icon: ShoppingBag, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/recorrentes', label: 'Recorrentes', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
         { path: '/contas', label: 'Contas a pagar/receber', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
       ],
@@ -118,7 +121,6 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
     {
       title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [
         { path: '/minha-conta', label: 'Minha Conta', icon: User, accessLevel: 'free', canAccessAsAdmin: true },
-        { path: '/meu-ir', label: 'Meu IR', icon: FileText, accessLevel: 'free', canAccessAsAdmin: true },
       ],
     },
   ];

@@ -24,10 +24,10 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
 
   const fetchList = useCallback(async () => {
-    const [pageRes, countRes] = await Promise.all([
-      supabase.rpc('get_notifications_page', { p_limit: BELL_LIMIT, p_page: 1 }),
-      supabase.rpc('get_unread_notification_count'),
-    ]);
+    const pageRes = await supabase.rpc('get_notifications_page', {
+      p_limit: BELL_LIMIT,
+      p_page: 1,
+    });
     if (pageRes.error) throw pageRes.error;
     const raw =
       Array.isArray(pageRes.data)
@@ -47,9 +47,9 @@ export function useNotifications() {
       created_at: r.created_at,
     }));
     setNotifications(list);
-    if (!countRes.error && countRes.data != null) {
-      setUnreadCount(typeof countRes.data === 'number' ? countRes.data : Number(countRes.data) ?? 0);
-    }
+    // Contagem de não lidas sempre derivada da lista, para sino e dropdown ficarem alinhados
+    const unread = list.filter((n) => n.read_at == null).length;
+    setUnreadCount(unread);
   }, []);
 
   const refetch = useCallback(async () => {

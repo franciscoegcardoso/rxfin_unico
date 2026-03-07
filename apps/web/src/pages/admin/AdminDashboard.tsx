@@ -57,15 +57,15 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const [
-          usersRes,
-          pagesActiveRes,
-          pagesTotalRes,
-          automationsRes,
-          aiFeedbackRes,
-          pagesListRes,
-          metrics30dRes,
-          chartDataRes,
-        ] = await Promise.all([
+          usersSettled,
+          pagesActiveSettled,
+          pagesTotalSettled,
+          automationsSettled,
+          aiFeedbackSettled,
+          pagesListSettled,
+          metrics30dSettled,
+          chartDataSettled,
+        ] = await Promise.allSettled([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('pages').select('*', { count: 'exact', head: true }).eq('is_active_users', true),
           supabase.from('pages').select('*', { count: 'exact', head: true }),
@@ -76,15 +76,25 @@ export default function AdminDashboard() {
           supabase.rpc('get_admin_dashboard_chart_data'),
         ]);
 
-        const m30 = (metrics30dRes.data as Record<string, number>) ?? {};
+        const usersRes = usersSettled.status === 'fulfilled' ? usersSettled.value : null;
+        const pagesActiveRes = pagesActiveSettled.status === 'fulfilled' ? pagesActiveSettled.value : null;
+        const pagesTotalRes = pagesTotalSettled.status === 'fulfilled' ? pagesTotalSettled.value : null;
+        const automationsRes = automationsSettled.status === 'fulfilled' ? automationsSettled.value : null;
+        const aiFeedbackRes = aiFeedbackSettled.status === 'fulfilled' ? aiFeedbackSettled.value : null;
+        const pagesListRes = pagesListSettled.status === 'fulfilled' ? pagesListSettled.value : null;
+        const metrics30dRes = metrics30dSettled.status === 'fulfilled' ? metrics30dSettled.value : null;
+        const chartDataRes = chartDataSettled.status === 'fulfilled' ? chartDataSettled.value : null;
+
+        const m30Raw = metrics30dRes?.data;
+        const m30 = (Array.isArray(m30Raw) ? m30Raw[0] : m30Raw) as Record<string, number> | undefined ?? {};
 
         setMetrics({
-          totalUsers: usersRes.count ?? 0,
-          activePages: pagesActiveRes.count ?? 0,
-          totalPages: pagesTotalRes.count ?? 0,
+          totalUsers: usersRes?.count ?? 0,
+          activePages: pagesActiveRes?.count ?? 0,
+          totalPages: pagesTotalRes?.count ?? 0,
           crmLeads: 0,
-          automationsActive: automationsRes.count ?? 0,
-          aiFeedbackPending: aiFeedbackRes.count ?? 0,
+          automationsActive: automationsRes?.count ?? 0,
+          aiFeedbackPending: aiFeedbackRes?.count ?? 0,
           activeUsers30d: m30.active_users_30d ?? 0,
           newActiveUsers30d: m30.new_active_users_30d ?? 0,
           paidActiveUsers30d: m30.paid_active_users_30d ?? 0,
@@ -93,10 +103,28 @@ export default function AdminDashboard() {
           churn30d: m30.churn_30d ?? 0,
         });
 
-        setChartData((chartDataRes.data as unknown as ChartData) ?? null);
-        setPages((pagesListRes.data ?? []) as PageSummary[]);
+        const chartRaw = chartDataRes?.data;
+        setChartData((Array.isArray(chartRaw) ? chartRaw[0] : chartRaw) as ChartData ?? null);
+
+        const pagesRaw = pagesListRes?.data;
+        const pagesList = Array.isArray(pagesRaw) ? pagesRaw : [];
+        setPages(pagesList as PageSummary[]);
       } catch (err) {
         console.error('Dashboard metrics error:', err);
+        setMetrics((prev) => prev ?? {
+          totalUsers: 0,
+          activePages: 0,
+          totalPages: 0,
+          crmLeads: 0,
+          automationsActive: 0,
+          aiFeedbackPending: 0,
+          activeUsers30d: 0,
+          newActiveUsers30d: 0,
+          paidActiveUsers30d: 0,
+          newPaidActiveUsers30d: 0,
+          migratedUsers30d: 0,
+          churn30d: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -203,7 +231,9 @@ export default function AdminDashboard() {
   ];
 
   const pagesByGroup = pages.reduce<Record<string, PageSummary[]>>((acc, p) => {
-    const g = p.page_groups?.name || 'Outros';
+    const pg = p.page_groups;
+    const groupName = Array.isArray(pg) ? pg[0]?.name : (pg as { name?: string } | null)?.name;
+    const g = groupName || 'Outros';
     if (!acc[g]) acc[g] = [];
     acc[g].push(p);
     return acc;

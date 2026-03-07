@@ -338,40 +338,44 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col animate-fade-in">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground px-4 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <button onClick={handleClose} className="p-2 hover:bg-primary-foreground/10 rounded-xl transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 md:bg-black/50 animate-fade-in">
+      <div className="bg-background w-full h-full md:max-w-xl md:max-h-[calc(100vh-2rem)] md:h-auto md:min-h-0 md:rounded-xl md:shadow-xl flex flex-col overflow-hidden">
+        {/* Header — fundo verde com texto branco; botão X no canto superior direito */}
+        <div className="bg-gradient-to-br from-primary via-primary to-primary/90 text-white px-4 pt-4 pb-2 shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-lg font-bold text-white">Dividir Conta</h1>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white"
+              aria-label="Fechar"
+            >
               <X className="w-5 h-5" />
             </button>
-            <h1 className="text-lg font-bold">Dividir Conta</h1>
+          </div>
+          {/* Timeline */}
+          <div className="flex items-center gap-0.5 px-1 pb-2 overflow-x-auto">
+            {STEPS.map((step, i) => {
+              const isActive = i === stepIndex;
+              const isPast = i < stepIndex;
+              const isClickable = visitedSteps.has(step) && i <= stepIndex;
+              return (
+                <React.Fragment key={step}>
+                  <button onClick={() => isClickable && navigateToStep(step)} disabled={!isClickable} className={cn('flex flex-col items-center gap-1 min-w-0 transition-all', isClickable && 'cursor-pointer')}>
+                    <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all border-2 text-white', isActive && 'bg-white text-primary border-white scale-110', isPast && !isActive && 'bg-white/80 text-primary border-white/80', !isPast && !isActive && 'bg-transparent text-white/40 border-white/30')}>
+                      {isPast && !isActive ? <Check className="w-3.5 h-3.5" /> : i + 1}
+                    </div>
+                    <span className={cn('text-[10px] leading-tight whitespace-nowrap', isActive ? 'text-white font-semibold' : 'text-white/70')}>{STEP_LABELS[step]}</span>
+                  </button>
+                  {i < STEPS.length - 1 && <div className={cn('flex-1 h-0.5 min-w-3 mt-[-12px]', i < stepIndex ? 'bg-white/70' : 'bg-white/20')} />}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
-        {/* Timeline */}
-        <div className="flex items-center gap-0.5 px-1 pb-2 overflow-x-auto">
-          {STEPS.map((step, i) => {
-            const isActive = i === stepIndex;
-            const isPast = i < stepIndex;
-            const isClickable = visitedSteps.has(step) && i <= stepIndex;
-            return (
-              <React.Fragment key={step}>
-                <button onClick={() => isClickable && navigateToStep(step)} disabled={!isClickable} className={cn('flex flex-col items-center gap-1 min-w-0 transition-all', isClickable && 'cursor-pointer')}>
-                  <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all border-2', isActive && 'bg-primary-foreground text-primary border-primary-foreground scale-110', isPast && !isActive && 'bg-primary-foreground/80 text-primary border-primary-foreground/80', !isPast && !isActive && 'bg-transparent text-primary-foreground/40 border-primary-foreground/30')}>
-                    {isPast && !isActive ? <Check className="w-3.5 h-3.5" /> : i + 1}
-                  </div>
-                  <span className={cn('text-[10px] leading-tight whitespace-nowrap', isActive ? 'text-primary-foreground font-semibold' : 'text-primary-foreground/50')}>{STEP_LABELS[step]}</span>
-                </button>
-                {i < STEPS.length - 1 && <div className={cn('flex-1 h-0.5 min-w-3 mt-[-12px]', i < stepIndex ? 'bg-primary-foreground/70' : 'bg-primary-foreground/20')} />}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
         {/* Step: Items */}
         {currentStep === 'items' && (
           <div className="space-y-4">
@@ -685,18 +689,19 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         )}
       </div>
 
-      {/* Footer Navigation */}
-      {currentStep !== 'results' && (
-        <div className="p-4 border-t border-border bg-card/95 backdrop-blur-xl">
-          <div className="flex gap-3">
-            {stepIndex > 0 && <Button variant="outline" onClick={goBack} className="gap-2"><ChevronLeft className="w-4 h-4" /> Voltar</Button>}
-            <Button onClick={goNext} disabled={!canGoNext()} className="flex-1 gap-2">
-              {currentStep === 'split-config' || (currentStep === 'split-mode' && splitMode === 'equal') ? 'Ver Resultado' : 'Continuar'}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+        {/* Footer Navigation */}
+        {currentStep !== 'results' && (
+          <div className="p-4 border-t border-border bg-card/95 backdrop-blur-xl shrink-0">
+            <div className="flex gap-3">
+              {stepIndex > 0 && <Button variant="outline" onClick={goBack} className="gap-2"><ChevronLeft className="w-4 h-4" /> Voltar</Button>}
+              <Button onClick={goNext} disabled={!canGoNext()} className="flex-1 gap-2 bg-primary text-white hover:bg-primary/90">
+                {currentStep === 'split-config' || (currentStep === 'split-mode' && splitMode === 'equal') ? 'Ver Resultado' : 'Continuar'}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
