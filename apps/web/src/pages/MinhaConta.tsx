@@ -30,6 +30,17 @@ const MinhaContaContent: React.FC = () => {
   const isMobile = useIsMobile();
   const { hasChanges, saveAll, clearAll, isSaving } = useAccountPendingChanges();
 
+  // Ao mudar de aba (por URL ou após troca), limpa estado "dirty" de outras abas
+  // para evitar ficar preso sem conseguir navegar (ex.: entrar em ?tab=perfil com
+  // alterações não salvas de outra aba).
+  const prevTabRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (prevTabRef.current !== null && prevTabRef.current !== currentTab) {
+      clearAll();
+    }
+    prevTabRef.current = currentTab || 'visao-geral';
+  }, [currentTab, clearAll]);
+
   const handleTabChange = async (value: string) => {
     if (hasChanges) {
       const confirmed = window.confirm('Você tem alterações não salvas. Deseja descartá-las?');

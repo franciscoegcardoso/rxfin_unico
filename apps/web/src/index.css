@@ -388,8 +388,8 @@
 
   .content-zone {
     padding: var(--space-4);
-    max-width: 1600px;
-    margin-inline: auto;
+    width: 100%;
+    max-width: 100%;
   }
   @media (min-width: 768px)  { .content-zone { padding: var(--space-6); } }
   @media (min-width: 1025px) { .content-zone { padding: var(--space-8); } }
@@ -453,9 +453,8 @@
   }
 
   .content-zone {
-    max-width: 1600px;
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
+    max-width: 100%;
     padding-left: 1rem;
     padding-right: 1rem;
   }

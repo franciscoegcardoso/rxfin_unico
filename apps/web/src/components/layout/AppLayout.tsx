@@ -65,8 +65,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             className={`
               w-full max-w-full overflow-x-hidden flex-1
               px-4 md:px-6 lg:px-8
-              py-4 md:py-6
-              ${isDemoMode ? 'pt-32 md:pt-28' : ''}
+              pb-4 md:pb-6
+              ${isDemoMode ? 'pt-[88px]' : 'pt-14'}
             `}
           >
             {content}
@@ -88,9 +88,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <main 
         className={`
           w-full max-w-full overflow-x-hidden flex-1 
-          ${isDemoMode ? 'pt-32 md:pt-28' : 'pt-16'}
+          ${isDemoMode ? 'pt-[88px]' : 'pt-14'}
           px-4 md:px-6 lg:px-8 
-          py-6
+          pb-6
           ${isMobile ? 'pb-20' : ''}
         `}
       >

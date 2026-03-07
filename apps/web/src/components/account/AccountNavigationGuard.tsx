@@ -33,14 +33,19 @@ export function AccountNavigationGuard() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasChanges]);
 
-  // Intercept link clicks
+  const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
+
+  // Intercept link clicks (apenas quando o link leva a outra página, não só outra aba/query)
   useEffect(() => {
     if (!hasChanges) return;
     const handler = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest('a');
       if (anchor?.href) {
         const url = new URL(anchor.href);
-        if (url.origin === window.location.origin && url.pathname !== location.pathname) {
+        const sameOrigin = url.origin === window.location.origin;
+        const currentPath = normalizePath(location.pathname);
+        const targetPath = normalizePath(url.pathname);
+        if (sameOrigin && targetPath !== currentPath) {
           e.preventDefault();
           e.stopPropagation();
           setPendingPath(url.pathname + url.search);
