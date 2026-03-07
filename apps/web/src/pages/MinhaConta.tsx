@@ -9,10 +9,11 @@ import { AccountOverviewTab } from '@/components/account/AccountOverviewTab';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
-import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard, UserCog } from 'lucide-react';
 import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
@@ -144,12 +145,11 @@ const MinhaContaContent: React.FC = () => {
   return (
     <SettingsLayout>
       <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-foreground">Minha Conta</h1>
-          <p className="text-xs text-muted-foreground">
-            Gerencie seu perfil, workspace e preferências
-          </p>
-        </div>
+        <PageHeader
+          icon={UserCog}
+          title="Minha Conta"
+          subtitle="Gerencie seu perfil, workspace e preferências"
+        />
 
         <div className="space-y-6">
           <nav

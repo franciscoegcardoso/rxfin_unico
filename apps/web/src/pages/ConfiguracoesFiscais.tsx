@@ -1,5 +1,6 @@
 import React from 'react';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,17 +48,11 @@ const ConfiguracoesFiscais: React.FC = () => {
   return (
     <SettingsLayout>
       <div className="space-y-6">
-
-
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Receipt className="h-8 w-8 text-primary" />
-            Configurações Fiscais
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Configure informações usadas no cálculo de deduções do Imposto de Renda
-          </p>
-        </div>
+        <PageHeader
+          icon={Scale}
+          title="Configurações Fiscais"
+          subtitle="Configure informações usadas no cálculo de deduções do Imposto de Renda"
+        />
 
         {/* Dependents */}
         <Card className="glass-card">

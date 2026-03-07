@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { Settings, TrendingUp, Wallet, Plus, ChevronDown, ChevronUp, Pencil, Trash2, AlertTriangle, Barcode, QrCode, CreditCard, Banknote, Building, User, Users, AlertCircle, Tag } from 'lucide-react';
 import { RegrasCategoriaTab } from '@/components/parametros/RegrasCategoriaTab';
@@ -326,16 +327,11 @@ export const Parametros: React.FC = () => {
   return (
     <SettingsLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">Parâmetros</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Configure suas receitas e despesas</p>
-          </div>
-          <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-            <Settings className="h-5 w-5 text-primary-foreground" />
-          </div>
-        </div>
+        <PageHeader
+          icon={Settings}
+          title="Parâmetros"
+          subtitle="Configure suas receitas e despesas"
+        />
 
         {/* Tabs */}
         <Tabs defaultValue={defaultTab} className="space-y-6">

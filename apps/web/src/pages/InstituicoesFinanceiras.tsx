@@ -9,6 +9,7 @@ import { useFinancial } from '@/contexts/FinancialContext';
 import { financialInstitutions } from '@/data/defaultData';
 import { UserFinancialInstitution } from '@/types/financial';
 import { Building2, CreditCard, Plus, Landmark, Wallet, TrendingUp, Pencil, Database } from 'lucide-react';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useBankingOverview } from '@/hooks/useBankingOverview';
 import { formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -83,35 +84,28 @@ const InstituicoesFinanceiras: React.FC = () => {
   return (
     <SettingsLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">Instituições Financeiras</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Gerencie suas contas e cartões</p>
+        <PageHeader
+          icon={Building2}
+          title="Instituições Financeiras"
+          subtitle="Gerencie suas contas e cartões"
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              {hasChosen && (
+                <>
+                  <FinanceModeToggle mode={mode} onChangeMode={setMode} />
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/dados-financeiros')}>
+                    <Database className="h-4 w-4" />
+                    Dados Financeiros
+                  </Button>
+                  <Button size="sm" className="gap-2" onClick={() => setFlowDialogOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    Adicionar Instituição
+                  </Button>
+                </>
+              )}
             </div>
-            {hasChosen && (
-              <FinanceModeToggle mode={mode} onChangeMode={setMode} />
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {hasChosen && (
-              <>
-                <Button variant="outline" className="gap-2" onClick={() => navigate('/dados-financeiros')}>
-                  <Database className="h-4 w-4" />
-                  Dados Financeiros
-                </Button>
-                <Button className="gap-2" onClick={() => setFlowDialogOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                  Adicionar Instituição
-                </Button>
-              </>
-            )}
-            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-              <Building2 className="h-5 w-5 text-primary-foreground" />
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* Banking overview from RPC (Pluggy / Open Finance) */}
         {!bankingLoading && hasBankingInstitutions && (
