@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
 
 interface DirtyEntry {
   tabId: string;
@@ -20,6 +20,10 @@ const AccountPendingChangesContext = createContext<AccountPendingChangesContextT
 export function AccountPendingChangesProvider({ children }: { children: ReactNode }) {
   const [dirtyEntries, setDirtyEntries] = useState<Map<string, DirtyEntry>>(new Map());
   const [isSaving, setIsSaving] = useState(false);
+  const dirtyEntriesRef = useRef<Map<string, DirtyEntry>>(new Map());
+  useEffect(() => {
+    dirtyEntriesRef.current = dirtyEntries;
+  }, [dirtyEntries]);
 
   const registerDirty = useCallback((tabId: string, saveFn: () => Promise<void>, cancelFn?: () => void) => {
     setDirtyEntries(prev => {
@@ -40,21 +44,23 @@ export function AccountPendingChangesProvider({ children }: { children: ReactNod
   const saveAll = useCallback(async () => {
     setIsSaving(true);
     try {
-      for (const entry of dirtyEntries.values()) {
+      const entries = dirtyEntriesRef.current;
+      for (const entry of entries.values()) {
         await entry.saveFn();
       }
       setDirtyEntries(new Map());
     } finally {
       setIsSaving(false);
     }
-  }, [dirtyEntries]);
+  }, []);
 
   const clearAll = useCallback(() => {
-    for (const entry of dirtyEntries.values()) {
+    const entries = dirtyEntriesRef.current;
+    for (const entry of entries.values()) {
       entry.cancelFn?.();
     }
     setDirtyEntries(new Map());
-  }, [dirtyEntries]);
+  }, []);
 
   return (
     <AccountPendingChangesContext.Provider

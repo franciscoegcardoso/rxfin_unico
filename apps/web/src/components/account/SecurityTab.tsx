@@ -60,6 +60,7 @@ export const SecurityTab: React.FC = () => {
     } else {
       unregisterDirty('security');
     }
+    return () => unregisterDirty('security');
   }, [hasPasswordContent, doSavePassword, doCancelPassword, registerDirty, unregisterDirty]);
 
   const handlePasswordChange = async () => {

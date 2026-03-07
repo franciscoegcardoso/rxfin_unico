@@ -69,6 +69,7 @@ export const WorkspaceTab: React.FC = () => {
     } else {
       unregisterDirty('workspace');
     }
+    return () => unregisterDirty('workspace');
   }, [hasAccountTypeChange, doSaveAccountType, doCancelAccountType, registerDirty, unregisterDirty]);
 
   // Calculate affected records when switching to individual

@@ -169,6 +169,7 @@ export const ProfileTab: React.FC = () => {
     } else {
       unregisterDirty('profile');
     }
+    return () => unregisterDirty('profile');
   }, [isEditing, doSave, doCancel, registerDirty, unregisterDirty]);
 
   const handleSave = () => {

@@ -34,10 +34,12 @@ export function AccountNavigationGuard() {
   }, [hasChanges]);
 
   const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
+  const isMinhaConta = normalizePath(location.pathname) === '/minha-conta';
 
-  // Intercept link clicks (apenas quando o link leva a outra página, não só outra aba/query)
+  // Intercept link clicks apenas quando há alterações E não estamos em Minha Conta.
+  // Em Minha Conta permitimos navegação por link para evitar usuário preso (F5 único jeito).
   useEffect(() => {
-    if (!hasChanges) return;
+    if (!hasChanges || isMinhaConta) return;
     const handler = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest('a');
       if (anchor?.href) {
@@ -55,18 +57,18 @@ export function AccountNavigationGuard() {
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
-  }, [hasChanges, location.pathname]);
+  }, [hasChanges, isMinhaConta, location.pathname]);
 
-  // popstate
+  // popstate (voltar/avançar do browser) — em Minha Conta não bloqueia para não prender o usuário
   useEffect(() => {
-    if (!hasChanges) return;
+    if (!hasChanges || isMinhaConta) return;
     const handler = () => {
       window.history.pushState(null, '', location.pathname + location.search);
       setShowDialog(true);
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
-  }, [hasChanges, location.pathname, location.search]);
+  }, [hasChanges, isMinhaConta, location.pathname, location.search]);
 
   const handleSaveAndLeave = useCallback(async () => {
     try {

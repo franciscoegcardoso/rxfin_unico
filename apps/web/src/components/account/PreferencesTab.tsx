@@ -135,6 +135,7 @@ export const PreferencesTab: React.FC = () => {
     } else {
       unregisterDirty('preferences');
     }
+    return () => unregisterDirty('preferences');
   }, [hasNotifChanges, doSaveNotif, doCancelNotif, registerDirty, unregisterDirty]);
 
   const handleSaveNotif = () => {
