@@ -1,6 +1,5 @@
 import React from 'react';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileTab } from '@/components/account/ProfileTab';
 import { WorkspaceTab } from '@/components/account/WorkspaceTab';
 import { SecurityTab } from '@/components/account/SecurityTab';
@@ -11,9 +10,10 @@ import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
 import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard } from 'lucide-react';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const menuItems = [
   { id: 'visao-geral', label: 'Visão geral', description: 'Resumo da sua conta', icon: LayoutDashboard },
@@ -140,7 +140,7 @@ const MinhaContaContent: React.FC = () => {
     );
   }
 
-  // Desktop: Traditional tabs layout
+  // Desktop: abas como Links (navegação real) para garantir troca perfil ↔ workspace
   return (
     <SettingsLayout>
       <div className="space-y-6">
@@ -151,29 +151,44 @@ const MinhaContaContent: React.FC = () => {
           </p>
         </div>
 
-        <Tabs key={tabValue} value={tabValue} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList>
+        <div className="space-y-6">
+          <nav
+            className="inline-flex w-full items-center h-auto p-0 bg-transparent border-b border-border gap-0"
+            aria-label="Abas Minha Conta"
+          >
             {menuItems.map((item) => {
               const Icon = item.icon;
+              const isActive = tabValue === item.id;
               return (
-                <TabsTrigger 
+                <Link
                   key={item.id}
-                  value={item.id} 
+                  to={`/minha-conta?tab=${item.id}`}
+                  onClick={() => clearAll()}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-normal transition-all duration-150",
+                    "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    "border-b-2 -mb-px rounded-none",
+                    "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    isActive
+                      ? "border-primary text-foreground font-semibold bg-transparent"
+                      : "border-transparent"
+                  )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4" aria-hidden />
                   {item.label}
-                </TabsTrigger>
+                </Link>
               );
             })}
-          </TabsList>
+          </nav>
 
-          <TabsContent value="visao-geral" className="mt-6"><AccountOverviewTab /></TabsContent>
-          <TabsContent value="perfil" className="mt-6"><ProfileTab /></TabsContent>
-          <TabsContent value="workspace" className="mt-6"><WorkspaceTab /></TabsContent>
-          <TabsContent value="seguranca" className="mt-6"><SecurityTab /></TabsContent>
-          <TabsContent value="assinatura" className="mt-6"><SubscriptionTab /></TabsContent>
-          <TabsContent value="preferencias" className="mt-6"><PreferenciasTab /></TabsContent>
-        </Tabs>
+          {tabValue === 'visao-geral' && <div className="mt-6"><AccountOverviewTab /></div>}
+          {tabValue === 'perfil' && <div className="mt-6"><ProfileTab /></div>}
+          {tabValue === 'workspace' && <div className="mt-6"><WorkspaceTab /></div>}
+          {tabValue === 'seguranca' && <div className="mt-6"><SecurityTab /></div>}
+          {tabValue === 'assinatura' && <div className="mt-6"><SubscriptionTab /></div>}
+          {tabValue === 'preferencias' && <div className="mt-6"><PreferenciasTab /></div>}
+          {!menuItems.some(m => m.id === tabValue) && <div className="mt-6"><AccountOverviewTab /></div>}
+        </div>
       </div>
     </SettingsLayout>
   );
