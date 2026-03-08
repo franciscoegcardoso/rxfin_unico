@@ -18,6 +18,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Send, ThumbsUp, ThumbsDown, AlertTriangle, RefreshCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAIOnboarding } from '@/hooks/useAIOnboarding';
 import { useLocation } from 'react-router-dom';
@@ -264,7 +265,24 @@ export function RaioXChat() {
           toast.error('Sessão expirada. Faça login novamente.');
           throw new Error('unauthorized');
         }
-        throw fnError;
+        // Extrai mensagem do body da resposta quando a Edge Function retorna non-2xx
+        let userMessage =
+          'A Cibélia está temporariamente indisponível. Use «Tentar novamente» em alguns instantes.';
+        if (fnError instanceof FunctionsHttpError && fnError.context && typeof (fnError.context as Response).json === 'function') {
+          try {
+            const resBody = await (fnError.context as Response).json();
+            if (typeof resBody?.error === 'string' && resBody.error.trim()) {
+              userMessage = resBody.error;
+            } else if (typeof resBody?.message === 'string' && resBody.message.trim()) {
+              userMessage = resBody.message;
+            }
+          } catch {
+            // mantém userMessage padrão
+          }
+        }
+        setLastFailedMessage(msg);
+        toast.error(userMessage);
+        return;
       }
 
       if (data?.code === 'MISSING_AUTH' || data?.code === 'INVALID_TOKEN') {
