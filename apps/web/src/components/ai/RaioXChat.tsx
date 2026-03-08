@@ -20,6 +20,8 @@ import { Send, ThumbsDown, AlertTriangle, RefreshCcw, Loader2 } from 'lucide-rea
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAIOnboarding } from '@/hooks/useAIOnboarding';
+import { useLocation } from 'react-router-dom';
+import { getPageContext, createClientSessionId, buildAiChatBody } from '@/lib/aiChat';
 import { useAIModel } from '@/hooks/useAIModel';
 import { RaioXResultCard } from './RaioXResultCard';
 import { toast } from 'sonner';
@@ -45,10 +47,13 @@ interface Message {
 
 export function RaioXChat() {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const { shouldStartAIOnboarding } = useAIOnboarding();
   const { model } = useAIModel();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const clientSessionIdRef = useRef<string | null>(null);
 
   // Listen for global open event (from MoreMenuSheet)
   useEffect(() => {
@@ -56,6 +61,13 @@ export function RaioXChat() {
     window.addEventListener('open-cibelia-chat', handler);
     return () => window.removeEventListener('open-cibelia-chat', handler);
   }, []);
+
+  // session_id estável por sessão de chat (UUID no cliente), gerado ao abrir o chat
+  useEffect(() => {
+    if (isOpen && !clientSessionIdRef.current) {
+      clientSessionIdRef.current = createClientSessionId();
+    }
+  }, [isOpen]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -97,14 +109,19 @@ export function RaioXChat() {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const createSession = useCallback(async () => {
-    if (!user?.id || sessionId) return sessionId;
+  const createSession = useCallback(async (): Promise<{ sessionId: string; onboardingCompleted: boolean } | null> => {
+    if (!user?.id) return null;
+    if (sessionId) {
+      return { sessionId, onboardingCompleted: onboardingCompleted ?? false };
+    }
 
     // Check onboarding status (source of truth: get_user_profile_settings / onboarding_state)
     const { data: settings } = await supabase.rpc('get_user_profile_settings');
     const profile = (settings as { profile?: { onboarding_completed?: boolean | null } | null })?.profile;
+    const completed = profile?.onboarding_completed ?? false;
+    setOnboardingCompleted(completed);
 
-    const sessionType = profile?.onboarding_completed ? 'consulta' : 'onboarding';
+    const sessionType = completed ? 'consulta' : 'onboarding';
 
     const { data, error } = await supabase
       .from('ai_chat_sessions')
@@ -151,15 +168,16 @@ export function RaioXChat() {
       console.error('Failed to register onboarding_started:', e);
     }
 
-    return newSessionId;
-  }, [user?.id, sessionId]);
+    return { sessionId: newSessionId, onboardingCompleted: completed };
+  }, [user?.id, sessionId, onboardingCompleted]);
 
   // Send onboarding greeting when chat opens for first time
   useEffect(() => {
     if (isOpen && shouldStartAIOnboarding && messages.length === 0 && user?.id) {
       const greet = async () => {
-        const sid = await createSession();
-        if (!sid) return;
+        const result = await createSession();
+        if (!result) return;
+        const sid = result.sessionId;
 
         const greeting =
           'Olá! Eu sou a Cibelia, sua assistente pessoal dentro do RXFin 💼✨ Estou aqui para te ajudar a entender melhor suas finanças. Para começar, me conta: qual foi o seu maior gasto nos últimos 7 dias?';
@@ -193,8 +211,10 @@ export function RaioXChat() {
 
     setInputValue('');
     setLastFailedMessage(null);
-    const sid = sessionId || (await createSession());
-    if (!sid) return;
+    const result = await createSession();
+    if (!result) return;
+    const sid = result.sessionId;
+    const completed = result.onboardingCompleted;
 
     // Save user message
     const { data: savedUser } = await supabase
@@ -218,11 +238,18 @@ export function RaioXChat() {
       let raioXData: Message['raioXData'] = undefined;
       let tokensFromResponse = 0;
 
+      if (!clientSessionIdRef.current) {
+        clientSessionIdRef.current = createClientSessionId();
+      }
+      const pageContext = getPageContext(pathname, true, completed);
+      const body = buildAiChatBody({
+        messages: conversationHistory,
+        clientSessionId: clientSessionIdRef.current,
+        pageContext,
+      });
+
       const { data, error: fnError } = await supabase.functions.invoke('ai-chat', {
-        body: {
-          messages: conversationHistory,
-          session_id: sid,
-        },
+        body,
       });
 
       if (fnError) {
