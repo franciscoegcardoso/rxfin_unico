@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Calculator, TrendingUp, TrendingDown, PiggyBank, Target, CheckCircle2, AlertTriangle, CalendarCheck } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, PiggyBank, CalendarCheck } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -38,8 +38,6 @@ const PlanejamentoLayout: React.FC = () => {
   const incomePct = incomeGoal > 0 ? Math.min(100, (totalIncome / incomeGoal) * 100) : 0;
   const expensePct = expenseGoal > 0 ? (totalSpent / expenseGoal) * 100 : 0;
   const savingsPct = savingsGoal > 0 ? Math.min(100, (savingsActual / savingsGoal) * 100) : 0;
-  const sobraProjetada = totalIncome - expenseGoal;
-  const sobraReal = totalIncome - totalSpent;
 
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
   const currentTab = VALID_TABS.includes(pathSegment) ? pathSegment : '';
@@ -129,30 +127,6 @@ const PlanejamentoLayout: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
-            <Card className="rounded-[14px] border border-border/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Target className="h-4 w-4 text-primary" /> Resumo visual
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">Sobra projetada</p>
-                  <p className="font-semibold font-numeric">{formatCurrency(sobraProjetada)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Sobra real</p>
-                  <p className={cn('font-semibold font-numeric', sobraReal >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(sobraReal)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Status da meta de poupança</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {savingsActual >= savingsGoal ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <AlertTriangle className="h-4 w-4 text-amber-600" />}
-                    <span className="text-sm font-medium">{savingsActual >= savingsGoal ? 'Meta atingida' : savingsActual >= 0 ? 'Em progresso' : 'Abaixo do esperado'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
 
