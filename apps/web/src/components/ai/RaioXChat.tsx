@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, ThumbsDown, AlertTriangle, RefreshCcw, Loader2 } from 'lucide-react';
+import { Send, ThumbsUp, ThumbsDown, AlertTriangle, RefreshCcw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAIOnboarding } from '@/hooks/useAIOnboarding';
@@ -76,6 +76,8 @@ export function RaioXChat() {
   const [feedbackMessage, setFeedbackMessage] = useState<Message | null>(null);
   const [feedbackComment, setFeedbackComment] = useState('');
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
+  const [feedbackMap, setFeedbackMap] = useState<Map<number, 'helpful' | 'incorrect'>>(new Map());
+  const [feedbackLoading, setFeedbackLoading] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
   const hasRegisteredOnboardingRef = useRef(false);
@@ -404,6 +406,35 @@ export function RaioXChat() {
     });
   };
 
+  const handleFeedback = async (messageIndex: number, rating: 'helpful' | 'incorrect') => {
+    if (feedbackMap.has(messageIndex)) return;
+    if (feedbackLoading.has(messageIndex)) return;
+
+    setFeedbackLoading((prev) => new Set([...prev, messageIndex]));
+
+    try {
+      const phase = getPageContext(pathname, true, onboardingCompleted ?? false).phase;
+      const { error } = await supabase.rpc('save_cibelia_feedback', {
+        p_rating: rating,
+        p_session_id: clientSessionIdRef.current,
+        p_message_index: messageIndex,
+        p_phase: phase,
+      });
+
+      if (!error) {
+        setFeedbackMap((prev) => new Map(prev).set(messageIndex, rating));
+      }
+    } catch (err) {
+      console.warn('[RaioXChat] feedback error:', err);
+    } finally {
+      setFeedbackLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(messageIndex);
+        return next;
+      });
+    }
+  };
+
   return (
     <>
       {/* Floating button — Cibelia avatar (desktop z-50; mobile z-40 acima do bottom-nav) */}
@@ -481,6 +512,50 @@ export function RaioXChat() {
                         onRegisterEvent={registerEvent}
                         onSendMessage={sendMessage}
                       />
+                    </div>
+                  )}
+
+                  {/* Feedback 👍/👎 por mensagem do assistente */}
+                  {msg.role === 'assistant' && (!isLoading || i < messages.length - 1) && (
+                    <div className="flex items-center gap-1 mt-1 justify-end">
+                      {feedbackMap.has(i) ? (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          {feedbackMap.get(i) === 'helpful' ? (
+                            <>
+                              <ThumbsUp className="w-3 h-3 text-green-500" aria-hidden />
+                              Obrigado!
+                            </>
+                          ) : (
+                            <>
+                              <ThumbsDown className="w-3 h-3 text-red-400" aria-hidden />
+                              Anotado
+                            </>
+                          )}
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(i, 'helpful')}
+                            disabled={feedbackLoading.has(i)}
+                            className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-green-500 disabled:opacity-40"
+                            title="Resposta útil"
+                            aria-label="Resposta útil"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFeedback(i, 'incorrect')}
+                            disabled={feedbackLoading.has(i)}
+                            className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-red-400 disabled:opacity-40"
+                            title="Resposta incorreta ou imprecisa"
+                            aria-label="Resposta incorreta ou imprecisa"
+                          >
+                            <ThumbsDown className="w-3.5 h-3.5" aria-hidden />
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
 
