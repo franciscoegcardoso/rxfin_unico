@@ -298,7 +298,15 @@ export function RaioXChat() {
         return;
       }
 
-      assistantContent = data?.content || 'Sem resposta.';
+      const rawContent = (data?.content ?? '').trim();
+      const noResponsePlaceholders = ['Sem retorno', 'Sem resposta', 'Sem resposta.'];
+      const isPlaceholder = !rawContent || noResponsePlaceholders.includes(rawContent);
+      assistantContent = isPlaceholder
+        ? 'Não recebi uma resposta desta vez. Use «Tentar novamente» abaixo para reenviar sua mensagem.'
+        : rawContent;
+      if (isPlaceholder) {
+        setLastFailedMessage(msg);
+      }
       tokensFromResponse = data?.tokens_used || 0;
 
       if (data?.formato_raio_x && data?.dados_raio_x) {
