@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.npm-cache/
 .pnp
 .pnp.js
 
@@ -71,3 +72,5 @@ n8n/.n8n/
 
 .env.test
 .vercel
+
+temp-supabase-ref/
