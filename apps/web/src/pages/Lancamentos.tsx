@@ -1285,12 +1285,6 @@ export const Lancamentos: React.FC = () => {
         ) : (
             <aside className="w-[240px] shrink-0 bg-card border-r border-border p-4 space-y-4">
               <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
-                <div className="mt-1.5">
-                  <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
-                </div>
-              </div>
-              <div>
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
                 <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
                   <SelectTrigger className="mt-1.5 w-full border-border bg-background">
@@ -1414,16 +1408,16 @@ export const Lancamentos: React.FC = () => {
         {/* Tabs - responsivo */}
         <Tabs defaultValue="geral" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6 h-auto min-h-[44px] py-1 gap-1">
-            <TabsTrigger value="geral" className="flex items-center gap-2">
-              <Layers className="h-4 w-4" />
+            <TabsTrigger value="geral" className="flex items-center gap-2 group">
+              <Layers className="h-4 w-4 shrink-0 text-foreground opacity-90 group-data-[state=active]:opacity-100" />
               Geral
             </TabsTrigger>
-            <TabsTrigger value="entradas" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="entradas" className="flex items-center gap-2 group">
+              <TrendingUp className="h-4 w-4 shrink-0 text-income group-data-[state=active]:text-foreground" />
               Entradas
             </TabsTrigger>
-            <TabsTrigger value="saidas" className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4" />
+            <TabsTrigger value="saidas" className="flex items-center gap-2 group">
+              <TrendingDown className="h-4 w-4 shrink-0 text-expense group-data-[state=active]:text-foreground" />
               Saídas
             </TabsTrigger>
           </TabsList>
