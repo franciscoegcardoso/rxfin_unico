@@ -160,12 +160,17 @@ export const useFiscalOrganizer = () => {
 
     try {
       // Save user message
-      await supabase.from('ir_fiscal_chat').insert({
+      const { error: insertError } = await supabase.from('ir_fiscal_chat').insert({
         id: userMessage.id,
         user_id: session.user.id,
         role: 'user',
         content: userMessage.content,
       });
+
+      if (insertError) {
+        console.error('ir_fiscal_chat insert error:', insertError);
+        throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
+      }
 
       // Stream response
       const resp = await fetch(CHAT_URL, {
@@ -182,8 +187,26 @@ export const useFiscalOrganizer = () => {
         }),
       });
 
-      if (!resp.ok || !resp.body) {
-        throw new Error('Failed to start stream');
+      if (!resp.ok) {
+        let message = 'Não foi possível conectar ao assistente. Tente novamente.';
+        try {
+          const body = await resp.json();
+          if (typeof body?.error === 'string' && body.error.trim()) {
+            message = body.error;
+          }
+        } catch {
+          // ignore
+        }
+        if (resp.status === 401) {
+          message = 'Sessão expirada. Faça login novamente.';
+        } else if (resp.status === 429) {
+          message = 'Muitas mensagens. Aguarde um momento.';
+        }
+        throw new Error(message);
+      }
+
+      if (!resp.body) {
+        throw new Error('Resposta do assistente indisponível. Tente novamente.');
       }
 
       const reader = resp.body.getReader();
@@ -247,7 +270,8 @@ export const useFiscalOrganizer = () => {
 
     } catch (error) {
       console.error('Chat error:', error);
-      toast.error('Erro ao enviar mensagem');
+      const message = error instanceof Error ? error.message : 'Erro ao enviar mensagem';
+      toast.error(message);
       // Remove failed messages
       setMessages(prev => prev.filter(m => m.id !== userMessage.id && m.id !== assistantId));
     } finally {

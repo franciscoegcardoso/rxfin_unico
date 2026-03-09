@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,16 +119,22 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
                 message.role === 'user' && "flex justify-end"
               )}>
                 <div className={cn(
-                  "rounded-lg p-3 text-sm whitespace-pre-wrap",
-                  message.role === 'user' 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted"
+                  "rounded-lg p-3 text-sm",
+                  message.role === 'user'
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted prose prose-sm dark:prose-invert max-w-none"
                 )}>
-                  {message.content || (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Pensando...
-                    </div>
+                  {message.role === 'assistant' ? (
+                    message.content ? (
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    ) : (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Pensando...
+                      </div>
+                    )
+                  ) : (
+                    message.content
                   )}
                 </div>
               </div>

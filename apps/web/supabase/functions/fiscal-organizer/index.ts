@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || Deno.env.get("OPENROUTER_KEY") || "";
+const FISCAL_ORGANIZER_MODEL = "deepseek/deepseek-chat-v3-0324";
+
 const FISCAL_ORGANIZER_PROMPT = `Você é o "Fiscal Organizer", um assistente inteligente especializado em Imposto de Renda Pessoa Física (IRPF) brasileiro e organização financeira. Sua missão é ajudar o usuário a capturar, validar e armazenar comprovantes fiscais ao longo do ano para maximizar sua restituição ou minimizar o imposto a pagar de forma legal e segura.
 
 # OBJETIVOS
@@ -43,15 +47,18 @@ serve(async (req) => {
 
   try {
     const { messages, action, comprovante } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+
+    if (!OPENROUTER_API_KEY) {
+      return new Response(JSON.stringify({
+        error: "Assistente fiscal temporariamente indisponível. Contate o suporte se o problema persistir.",
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Different prompts based on action
     let systemPrompt = FISCAL_ORGANIZER_PROMPT;
-    let userMessages = messages || [];
+    let userMessages: Array<{ role: string; content: string }> = messages || [];
 
     if (action === 'analyze_comprovante') {
       systemPrompt = `${FISCAL_ORGANIZER_PROMPT}
@@ -72,32 +79,43 @@ Analise e responda em formato JSON com a estrutura:
 }
 
 Seja específico sobre o que está faltando ou por que não é dedutível.`;
-      
+
       userMessages = [{ role: 'user', content: 'Analise este comprovante fiscal' }];
     }
 
-    console.log(`Processing fiscal-organizer request. Action: ${action || 'chat'}`);
+    const stream = action !== 'analyze_comprovante';
+    console.log(`Processing fiscal-organizer request. Action: ${action || 'chat'} (stream: ${stream})`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(OPENROUTER_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://rxfin.com.br",
+        "X-Title": "RXFin — Fiscal Organizer",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: FISCAL_ORGANIZER_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           ...userMessages,
         ],
-        stream: action !== 'analyze_comprovante',
+        max_tokens: 1024,
+        temperature: 0.3,
+        stream,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
+      console.error("OpenRouter error:", response.status, errorText);
+
+      if (response.status === 401) {
+        return new Response(JSON.stringify({ error: "Chave de API não configurada ou inválida." }), {
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Muitas requisições. Aguarde um momento." }), {
           status: 429,
@@ -110,16 +128,20 @@ Seja específico sobre o que está faltando ou por que não é dedutível.`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
-      throw new Error(`AI gateway error: ${response.status}`);
+
+      return new Response(JSON.stringify({
+        error: "Assistente fiscal temporariamente indisponível. Tente novamente em instantes.",
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // For analysis, return JSON directly
+    // Análise de comprovante: resposta JSON (não streaming)
     if (action === 'analyze_comprovante') {
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || '';
-      
-      // Try to extract JSON from the response
+
       try {
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -131,26 +153,25 @@ Seja específico sobre o que está faltando ou por que não é dedutível.`;
       } catch (e) {
         console.error("Failed to parse AI response as JSON:", e);
       }
-      
-      return new Response(JSON.stringify({ 
+
+      return new Response(JSON.stringify({
         feedback: content,
         isValid: true,
         isDedutivel: false,
-        categoria: 'outros'
+        categoria: 'outros',
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // For chat, return streaming response
+    // Chat: retorna streaming (OpenRouter usa o mesmo formato SSE que o frontend espera)
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
-
   } catch (error) {
     console.error("fiscal-organizer error:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Erro desconhecido" 
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Erro desconhecido",
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

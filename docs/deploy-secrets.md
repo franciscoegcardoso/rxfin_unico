@@ -31,3 +31,5 @@ Para a **Edge Function `ai-chat`** (Cibélia) funcionar, configure no projeto Su
    - **Valor:** sua chave da API [OpenRouter](https://openrouter.ai/keys) (usada para o modelo DeepSeek da Cibélia).
 
 Sem essa chave, a Cibélia retorna "Configuração interna ausente." ou "Serviço de IA indisponível."
+
+A **Edge Function `fiscal-organizer`** (Organizador Fiscal em Meu IR) usa a **mesma chave** `OPENROUTER_API_KEY`; não é necessário configurar outro secret. Sem a chave, o chat em `/meu-ir` exibe "Assistente fiscal temporariamente indisponível".

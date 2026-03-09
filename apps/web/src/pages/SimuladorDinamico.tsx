@@ -22,7 +22,7 @@ const APP_NAME = 'RXFIN';
 // Import existing simulator components
 import SimuladorFipe from './SimuladorFipe';
 import SimuladorFinanciamento from './SimuladorFinanciamento';
-import SimuladorCustoHora from './simuladores/SimuladorCustoHora';
+import SimuladorCustoHora from './SimuladorCustoHora';
 import SimuladorCustoOportunidadeCarro from './SimuladorCustoOportunidadeCarro';
 import SimuladorCarroAB from './SimuladorCarroAB';
 import SimuladorDescontoJusto from './SimuladorDescontoJusto';
