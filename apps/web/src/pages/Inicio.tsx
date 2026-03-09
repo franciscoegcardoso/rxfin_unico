@@ -492,6 +492,16 @@ const Inicio: React.FC = () => {
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <MonthSummaryCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <ExpensesStatusCard />
+          </DemoCardWrapper>
+          <DemoCardWrapper isDemoMode={isDemoMode}>
+            <CreditCardSpendingCard />
+          </DemoCardWrapper>
+
           <InsuranceExpirationAlerts />
           <UpcomingEventsCard />
 
@@ -517,15 +527,6 @@ const Inicio: React.FC = () => {
 
           <FluxoPlaceholderCard />
 
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <MonthSummaryCard />
-          </DemoCardWrapper>
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <ExpensesStatusCard />
-          </DemoCardWrapper>
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <CreditCardSpendingCard />
-          </DemoCardWrapper>
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <BudgetCompositionCard />
           </DemoCardWrapper>

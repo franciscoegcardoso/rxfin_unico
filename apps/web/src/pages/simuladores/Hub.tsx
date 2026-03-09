@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Car,
@@ -19,6 +19,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PublicSimuladoresHeader } from '@/components/simuladores/PublicSimuladoresHeader';
 import { SimuladorCard } from '@/components/simuladores/SimuladorCard';
+import { SIMULATOR_CATEGORIES } from '@/components/simuladores/simulatorCategories';
+import { cn } from '@/lib/utils';
 
 interface SimulatorItem {
   title: string;
@@ -90,8 +92,11 @@ const SIMULATORS: SimulatorItem[] = [
   },
 ];
 
-const PUBLIC_SIMULATORS = SIMULATORS.filter((s) => s.isPublic);
-const LOCKED_SIMULATORS = SIMULATORS.filter((s) => !s.isPublic);
+/** Path prefix to category id: /simuladores/veiculos/... -> veiculos */
+function getCategoryIdFromPath(path: string): string {
+  const match = path.match(/^\/simuladores\/([^/]+)\//);
+  return match ? match[1] : '';
+}
 
 export default function Hub() {
   const { user } = useAuth();
@@ -108,60 +113,32 @@ export default function Hub() {
 
   const isLoggedIn = user !== null;
 
-  // Layout para usuário LOGADO: AppLayout + grid único
-  if (isLoggedIn) {
-    return (
-      <AppLayout>
-        <div className="p-4 sm:p-6 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Simuladores Financeiros
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Ferramentas para decisões financeiras inteligentes
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {SIMULATORS.map((sim) => (
-              <SimuladorCard
-                key={sim.path}
-                title={sim.title}
-                description={sim.description}
-                icon={sim.icon}
-                path={sim.path}
-                isPublic={sim.isPublic}
-                isLoggedIn={true}
-                badge={sim.badge}
-              />
-            ))}
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
+  // Group simulators by category (only categories that have at least one simulator we offer)
+  const categoriesWithSimulators = useMemo(() => {
+    return SIMULATOR_CATEGORIES.map((cat) => ({
+      ...cat,
+      simulators: SIMULATORS.filter((s) => getCategoryIdFromPath(s.path) === cat.id),
+    })).filter((c) => c.simulators.length > 0);
+  }, []);
 
-  // Layout para usuário NÃO LOGADO: header público + hero + seções + CTA
-  return (
-    <div className="min-h-screen bg-background">
-      <PublicSimuladoresHeader />
+  const publicSimulators = SIMULATORS.filter((s) => s.isPublic);
+  const hasPublicSection = publicSimulators.length > 0;
 
-      <main className="w-full max-w-full px-4 py-8 sm:py-12 space-y-10">
-        <div className="text-center space-y-3">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
-            Simuladores Financeiros
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Tome decisões financeiras com mais clareza. Experimente grátis agora.
-          </p>
-        </div>
-
-        {PUBLIC_SIMULATORS.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">
-              Disponível agora, sem cadastro
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-              {PUBLIC_SIMULATORS.map((sim) => (
+  const SectionContent = (
+    <>
+      <div className="space-y-10">
+        {hasPublicSection && !isLoggedIn && (
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Disponível agora, sem cadastro
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Experimente grátis antes de criar sua conta
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+              {publicSimulators.map((sim) => (
                 <SimuladorCard
                   key={sim.path}
                   title={sim.title}
@@ -177,25 +154,86 @@ export default function Hub() {
           </section>
         )}
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground">
-            Acesse todos com cadastro gratuito
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {LOCKED_SIMULATORS.map((sim) => (
-              <SimuladorCard
-                key={sim.path}
-                title={sim.title}
-                description={sim.description}
-                icon={sim.icon}
-                path={sim.path}
-                isPublic={false}
-                isLoggedIn={false}
-                badge={sim.badge}
-              />
-            ))}
+        {categoriesWithSimulators.map((category) => {
+          const { id, title, description, icon: CatIcon, color, simulators } = category;
+          if (simulators.length === 0) return null;
+          return (
+            <section key={id} className="space-y-4">
+              <div
+                className={cn(
+                  'flex items-start gap-3 pb-3 border-b',
+                  color?.headerBorder ?? 'border-border'
+                )}
+              >
+                <div
+                  className={cn(
+                    'h-11 w-11 rounded-xl flex items-center justify-center shrink-0',
+                    color?.iconBg ?? 'bg-primary/10'
+                  )}
+                >
+                  <CatIcon className={cn('h-5 w-5', color?.iconText ?? 'text-primary')} />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {simulators.map((sim) => (
+                  <SimuladorCard
+                    key={sim.path}
+                    title={sim.title}
+                    description={sim.description}
+                    icon={sim.icon}
+                    path={sim.path}
+                    isPublic={sim.isPublic}
+                    isLoggedIn={isLoggedIn}
+                    badge={sim.badge}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </>
+  );
+
+  // Layout para usuário LOGADO: AppLayout + seções por tema
+  if (isLoggedIn) {
+    return (
+      <AppLayout>
+        <div className="p-4 sm:p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Simuladores Financeiros
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Ferramentas agrupadas por tema para decisões com mais clareza
+            </p>
           </div>
-        </section>
+          {SectionContent}
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Layout para usuário NÃO LOGADO: header público + seções por tema + CTA
+  return (
+    <div className="min-h-screen bg-background">
+      <PublicSimuladoresHeader />
+
+      <main className="w-full max-w-full px-4 py-8 sm:py-12 space-y-10">
+        <div className="text-center space-y-3">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            Simuladores Financeiros
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+            Tome decisões financeiras com mais clareza. Navegue por tema e experimente grátis.
+          </p>
+        </div>
+
+        {SectionContent}
 
         <div className="text-center py-8 px-4 border rounded-xl bg-card shadow-sm space-y-3">
           <p className="font-semibold text-lg text-foreground">
