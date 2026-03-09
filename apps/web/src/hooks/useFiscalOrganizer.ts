@@ -173,19 +173,25 @@ export const useFiscalOrganizer = () => {
       }
 
       // Stream response
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      });
+      let resp: Response;
+      try {
+        resp = await fetch(CHAT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: [...messages, userMessage].map(m => ({
+              role: m.role,
+              content: m.content,
+            })),
+          }),
+        });
+      } catch (fetchErr) {
+        console.error('Fiscal organizer fetch error:', fetchErr);
+        throw new Error('Falha de conexão com o assistente. Verifique sua internet e tente novamente.');
+      }
 
       if (!resp.ok) {
         let message = 'Não foi possível conectar ao assistente. Tente novamente.';
@@ -270,7 +276,12 @@ export const useFiscalOrganizer = () => {
 
     } catch (error) {
       console.error('Chat error:', error);
-      const message = error instanceof Error ? error.message : 'Erro ao enviar mensagem';
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : 'Erro ao enviar mensagem. Tente novamente.';
       toast.error(message);
       // Remove failed messages
       setMessages(prev => prev.filter(m => m.id !== userMessage.id && m.id !== assistantId));
