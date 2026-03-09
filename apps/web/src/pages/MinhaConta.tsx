@@ -5,11 +5,10 @@ import { WorkspaceTab } from '@/components/account/WorkspaceTab';
 import { SecurityTab } from '@/components/account/SecurityTab';
 import { SubscriptionTab } from '@/components/account/SubscriptionTab';
 import PreferenciasTab from '@/pages/minha-conta/PreferenciasTab';
-import { AccountOverviewTab } from '@/components/account/AccountOverviewTab';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
-import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, LayoutDashboard, UserCog } from 'lucide-react';
+import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, UserCog } from 'lucide-react';
 import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
-  { id: 'visao-geral', label: 'Visão geral', description: 'Resumo da sua conta', icon: LayoutDashboard },
   { id: 'perfil', label: 'Perfil', description: 'Suas informações pessoais', icon: User },
   { id: 'workspace', label: 'Workspace', description: 'Módulos e pessoas compartilhadas', icon: Briefcase },
   { id: 'seguranca', label: 'Segurança', description: 'Senha e autenticação', icon: Shield },
@@ -38,15 +36,15 @@ const MinhaContaContent: React.FC = () => {
     () => new URLSearchParams(location.search).get('tab') || '',
     [location.search]
   );
-  const tabValue = currentTab || 'visao-geral';
+  const tabValue = currentTab || 'perfil';
 
-  // Garantir que a URL tenha ?tab= ao estar em /minha-conta, para a Visão geral carregar dados automaticamente
+  // Garantir que a URL tenha ?tab= ao estar em /minha-conta
   React.useEffect(() => {
     const pathname = location.pathname.replace(/\/+$/, '') || '/';
     if (pathname !== MINHA_CONTA_PATH) return;
     const tab = new URLSearchParams(location.search).get('tab');
     if (!tab || tab.trim() === '') {
-      setSearchParams({ tab: 'visao-geral' }, { replace: true });
+      setSearchParams({ tab: 'perfil' }, { replace: true });
     }
   }, [location.pathname, location.search, setSearchParams]);
 
@@ -88,13 +86,12 @@ const MinhaContaContent: React.FC = () => {
 
   const renderTabContent = () => {
     switch (tabValue) {
-      case 'visao-geral': return <AccountOverviewTab />;
       case 'perfil': return <ProfileTab />;
       case 'workspace': return <WorkspaceTab />;
       case 'seguranca': return <SecurityTab />;
       case 'assinatura': return <SubscriptionTab />;
       case 'preferencias': return <PreferenciasTab />;
-      default: return <AccountOverviewTab />;
+      default: return <ProfileTab />;
     }
   };
 
@@ -191,13 +188,12 @@ const MinhaContaContent: React.FC = () => {
             })}
           </nav>
 
-          {tabValue === 'visao-geral' && <div className="mt-6"><AccountOverviewTab /></div>}
           {tabValue === 'perfil' && <div className="mt-6"><ProfileTab /></div>}
           {tabValue === 'workspace' && <div className="mt-6"><WorkspaceTab /></div>}
           {tabValue === 'seguranca' && <div className="mt-6"><SecurityTab /></div>}
           {tabValue === 'assinatura' && <div className="mt-6"><SubscriptionTab /></div>}
           {tabValue === 'preferencias' && <div className="mt-6"><PreferenciasTab /></div>}
-          {!menuItems.some(m => m.id === tabValue) && <div className="mt-6"><AccountOverviewTab /></div>}
+          {!menuItems.some(m => m.id === tabValue) && <div className="mt-6"><ProfileTab /></div>}
         </div>
       </div>
     </SettingsLayout>

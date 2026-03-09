@@ -8,7 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
-import { User, Mail, Calendar, Pencil, Save, X, Shield, Loader2, Phone } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { User, Mail, Calendar, Pencil, Save, X, Shield, Loader2, Phone, Trash2 } from 'lucide-react';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,6 +56,7 @@ export const ProfileTab: React.FC = () => {
   const queryClient = useQueryClient();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editData, setEditData] = useState({
     firstName: userProfile.firstName,
     lastName: userProfile.lastName,
@@ -335,6 +346,44 @@ export const ProfileTab: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Excluir minha conta — destaque reduzido, mesma cor da aplicação */}
+        <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
+          <CardContent className="p-0">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-muted-foreground hover:text-foreground border-border"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir minha conta
+            </Button>
+          </CardContent>
+        </Card>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir minha conta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. Todos os seus dados serão removidos permanentemente.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  toast.error('Exclusão de conta deve ser feita pelo suporte.');
+                  setDeleteDialogOpen(false);
+                }}
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

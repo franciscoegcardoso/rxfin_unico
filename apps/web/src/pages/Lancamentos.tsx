@@ -846,7 +846,6 @@ export const Lancamentos: React.FC = () => {
               </>
             }
           />
-          {isMobile && <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />}
         </div>
 
         {!isManual && <PluggySyncStatus accountType="BANK" compact />}
@@ -1403,6 +1402,14 @@ export const Lancamentos: React.FC = () => {
             </aside>
         )}
         <div className={cn(!isMobile && 'min-w-0 overflow-hidden')}>
+
+        {/* Período — acima das guias para facilitar a UX */}
+        <div className="mb-4">
+          <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
+          <div className="mt-1.5">
+            <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+          </div>
+        </div>
 
         {/* Tabs - responsivo */}
         <Tabs defaultValue="geral" className="w-full">

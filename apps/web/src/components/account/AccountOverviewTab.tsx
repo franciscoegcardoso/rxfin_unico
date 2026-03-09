@@ -1,26 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
   User,
   Crown,
   Bell,
   BarChart3,
   Settings2,
-  Trash2,
   Link as LinkIcon,
   FileText,
   Car,
@@ -32,18 +21,10 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useProfileSettings } from '@/hooks/useProfileSettings';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-
 export const AccountOverviewTab: React.FC = () => {
   const { data, isLoading, error } = useProfileSettings();
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const profile = data?.profile;
   const plan = data?.plan;
@@ -181,44 +162,6 @@ export const AccountOverviewTab: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Excluir minha conta */}
-      <Card className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6">
-        <CardContent className="p-0">
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-2"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-            Excluir minha conta
-          </Button>
-        </CardContent>
-      </Card>
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir minha conta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Todos os seus dados serão removidos permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
-                // Placeholder: real implementation would call backend to delete account
-                toast.error('Exclusão de conta deve ser feita pelo suporte.');
-                setDeleteDialogOpen(false);
-              }}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
