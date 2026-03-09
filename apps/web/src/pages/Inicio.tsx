@@ -49,7 +49,6 @@ import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
 import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
-import { QuickActions } from "@/design-system/components/QuickActions";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -495,8 +494,6 @@ const Inicio: React.FC = () => {
 
           <InsuranceExpirationAlerts />
           <UpcomingEventsCard />
-
-          <QuickActions />
 
           <Card className="rounded-xl border border-border bg-card">
             <CardHeader className="pb-2 p-4">

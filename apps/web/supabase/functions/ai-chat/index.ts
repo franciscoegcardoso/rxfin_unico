@@ -7,7 +7,7 @@ import {
   buildFinancialPrompt,
 } from "./prompts.ts";
 
-const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || Deno.env.get("OPENROUTER_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -17,6 +17,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const OPENROUTER_FETCH_TIMEOUT_MS = 55_000; // under 60s Edge Function limit
+
+// ─── Fetch OpenRouter with timeout and retry ───────────────────────────────────
+async function fetchOpenRouter(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = OPENROUTER_FETCH_TIMEOUT_MS
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return res;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
 
 // ─── Phase Detector ───────────────────────────────────────────────────────────
 function detectPhase(
@@ -186,22 +206,57 @@ Deno.serve(async (req: Request) => {
     const maxTokens = phase === 'sales' ? 400 : phase === 'access' ? 450 : phase === 'onboarding' ? 500 : isPro ? 800 : 500;
 
     const startTime = Date.now();
-    let llmResponse: Response;
-    try {
-      llmResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENROUTER_API_KEY}`, 'HTTP-Referer': 'https://rxfin.com.br', 'X-Title': 'RXFin — Cibélia' },
-        body: JSON.stringify({ model: 'deepseek/deepseek-chat-v3-0324', messages: llmMessages, max_tokens: maxTokens, temperature: phase === 'sales' ? 0.5 : 0.3 }),
-      });
-    } catch (fetchErr) {
-      console.error('[ai-chat] Erro de rede:', fetchErr);
-      return new Response(JSON.stringify({ error: 'Serviço de IA indisponível.', code: 'LLM_NETWORK_ERROR' }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
+    const openRouterBody = JSON.stringify({
+      model: 'deepseek/deepseek-chat-v3-0324',
+      messages: llmMessages,
+      max_tokens: maxTokens,
+      temperature: phase === 'sales' ? 0.5 : 0.3,
+    });
+    const openRouterOptions: RequestInit = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://rxfin.com.br',
+        'X-Title': 'RXFin — Cibélia',
+      },
+      body: openRouterBody,
+    };
+
+    let llmResponse: Response | null = null;
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      try {
+        llmResponse = await fetchOpenRouter(openRouterUrl, openRouterOptions);
+        break;
+      } catch (fetchErr: unknown) {
+        if (attempt === 0) {
+          console.warn('[ai-chat] Tentativa 1 falhou, retry em 2s:', fetchErr instanceof Error ? fetchErr.message : fetchErr);
+          await new Promise((r) => setTimeout(r, 2000));
+        } else {
+          const isAbort = fetchErr instanceof Error && fetchErr.name === 'AbortError';
+          console.error('[ai-chat] Erro de rede após retry:', isAbort ? 'timeout' : fetchErr);
+          const retryMsg = isAbort ? 'A resposta da IA demorou demais. Tente novamente.' : 'Serviço de IA indisponível. Tente novamente em instantes.';
+          return new Response(
+            JSON.stringify({ error: retryMsg, code: isAbort ? 'LLM_TIMEOUT' : 'LLM_NETWORK_ERROR' }),
+            { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    if (!llmResponse) {
+      return new Response(
+        JSON.stringify({ error: 'Serviço de IA indisponível. Tente novamente.', code: 'LLM_NETWORK_ERROR' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     if (!llmResponse.ok) {
       const errorText = await llmResponse.text();
       console.error('[ai-chat] OpenRouter erro:', llmResponse.status, errorText);
-      const friendlyMsg = llmResponse.status === 429 ? 'IA sobrecarregada. Tente em segundos.' : 'Erro ao processar. Tente novamente.';
+      let friendlyMsg = 'Erro ao processar. Tente novamente.';
+      if (llmResponse.status === 429) friendlyMsg = 'IA sobrecarregada. Tente em segundos.';
+      else if (llmResponse.status === 401) friendlyMsg = 'Chave de API da IA não configurada ou inválida. Contate o suporte.';
       return new Response(JSON.stringify({ error: friendlyMsg, code: `LLM_ERROR_${llmResponse.status}` }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 

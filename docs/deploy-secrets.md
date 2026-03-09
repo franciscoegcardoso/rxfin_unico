@@ -20,3 +20,14 @@ Configure estes secrets no repositório em **Settings → Secrets and variables 
 
 - **deploy.yml**: usa `N8N_WEBHOOK_URL` para enviar o payload do push (branch, commit, has_migrations, pusher).
 - Outros workflows de deploy/migração podem usar `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID` e `VERCEL_TOKEN` conforme necessário.
+
+## Secrets no Supabase (Edge Functions)
+
+Para a **Edge Function `ai-chat`** (Cibélia) funcionar, configure no projeto Supabase:
+
+1. **Dashboard** → [Supabase](https://supabase.com/dashboard) → projeto (ex.: `kneaniaifzgqibpajyji`) → **Project Settings** → **Edge Functions** → **Secrets**.
+2. Adicione:
+   - **Nome:** `OPENROUTER_API_KEY` (ou `OPENROUTER_KEY`)
+   - **Valor:** sua chave da API [OpenRouter](https://openrouter.ai/keys) (usada para o modelo DeepSeek da Cibélia).
+
+Sem essa chave, a Cibélia retorna "Configuração interna ausente." ou "Serviço de IA indisponível."
