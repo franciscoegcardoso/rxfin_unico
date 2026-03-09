@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.budget-insights]
 verify_jwt = false
+
+[functions.ai-chat]
+verify_jwt = false
