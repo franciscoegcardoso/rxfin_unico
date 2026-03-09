@@ -37,22 +37,23 @@ export function AccountNavigationGuard() {
   const isMinhaConta = normalizePath(location.pathname) === '/minha-conta';
 
   // Intercept link clicks apenas quando há alterações E não estamos em Minha Conta.
-  // Em Minha Conta permitimos navegação por link para evitar usuário preso (F5 único jeito).
+  // Em Minha Conta nunca bloqueamos (nem ao sair) para evitar usuário preso na aba Perfil.
   useEffect(() => {
     if (!hasChanges || isMinhaConta) return;
     const handler = (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest('a');
-      if (anchor?.href) {
-        const url = new URL(anchor.href);
-        const sameOrigin = url.origin === window.location.origin;
-        const currentPath = normalizePath(location.pathname);
-        const targetPath = normalizePath(url.pathname);
-        if (sameOrigin && targetPath !== currentPath) {
-          e.preventDefault();
-          e.stopPropagation();
-          setPendingPath(url.pathname + url.search);
-          setShowDialog(true);
-        }
+      if (!anchor?.href) return;
+      const url = new URL(anchor.href);
+      const sameOrigin = url.origin === window.location.origin;
+      const currentPath = normalizePath(location.pathname);
+      const targetPath = normalizePath(url.pathname);
+      // Nunca bloquear navegação de/para /minha-conta
+      if (currentPath === '/minha-conta' || targetPath === '/minha-conta') return;
+      if (sameOrigin && targetPath !== currentPath) {
+        e.preventDefault();
+        e.stopPropagation();
+        setPendingPath(url.pathname + url.search);
+        setShowDialog(true);
       }
     };
     document.addEventListener('click', handler, true);

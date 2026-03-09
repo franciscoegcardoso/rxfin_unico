@@ -80,9 +80,9 @@ export const BalanceTab: React.FC = () => {
     <div className="space-y-6">
       {/* Summary */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl text-primary-foreground">
-          <p className="text-xs opacity-80 mb-1">Total Gasto</p>
-          <p className="text-2xl font-bold">{formatCurrency(stats.totalSpent)}</p>
+        <div className="bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl">
+          <p className="text-xs text-white mb-1">Total Gasto</p>
+          <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</p>
         </div>
         <div className="bg-muted p-4 rounded-2xl">
           <p className="text-xs text-muted-foreground mb-1">Contatos</p>
