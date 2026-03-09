@@ -219,6 +219,16 @@ const App = () => (
                     <Route path="pacotes-orcamento" element={<PacotesOrcamento />} />
                     <Route path="sonhos" element={<Sonhos />} />
                     <Route path="minha-conta" element={<MinhaConta />} />
+                    {/* Simuladores dentro do shell para navegação funcionar */}
+                    <Route path="simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
+                    <Route path="simuladores/veiculos/simulador-carro-ab" element={<SimuladorCarroAB />} />
+                    <Route path="simuladores/veiculos/simulador-custo-oportunidade-carro" element={<SimuladorCustoOportunidadeCarro />} />
+                    <Route path="simuladores/dividas/renegociacao-dividas" element={<RenegociacaoDividas />} />
+                    <Route path="simuladores/dividas/financiamento-consorcio" element={<SimuladorFinanciamento />} />
+                    <Route path="simuladores/planejamento/simulador-custo-hora" element={<SimuladorCustoHora />} />
+                    <Route path="simuladores/planejamento/simulador-desconto-justo" element={<SimuladorDescontoJusto />} />
+                    <Route path="simuladores/planejamento/econograph" element={<EconoGraph />} />
+                    <Route path="simuladores/:category/:slug" element={<SimuladorDinamico />} />
                   </Route>
                   {/* Redirects from old routes */}
                   <Route path="/configuracoes" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
@@ -239,20 +249,9 @@ const App = () => (
                   <Route path="/historico-pagamentos" element={<ProtectedRoute><HistoricoPagamentos /></ProtectedRoute>} />
                   <Route path="/minhas-indicacoes" element={<Navigate to="/financeiro/minhas-indicacoes" replace />} />
                   <Route path="/regras-categoria" element={<Navigate to="/parametros?tab=regras" replace />} />
-                  {/* Simuladores — Hub público (sem login) + categorias legadas */}
+                  {/* Simuladores — Hub e categorias (rotas com shell estão dentro de AppShell acima) */}
                   <Route path="/simuladores" element={<HubSimuladores />} />
                   <Route path="/simuladores/:category" element={<Simuladores />} />
-                  {/* Rota canônica do Simulador FIPE — única que renderiza o componente */}
-                  <Route path="/simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
-                  <Route path="/simuladores/veiculos/simulador-carro-ab" element={<ProtectedRoute><SimuladorCarroAB /></ProtectedRoute>} />
-                  <Route path="/simuladores/veiculos/simulador-custo-oportunidade-carro" element={<ProtectedRoute><SimuladorCustoOportunidadeCarro /></ProtectedRoute>} />
-                  <Route path="/simuladores/dividas/renegociacao-dividas" element={<ProtectedRoute><RenegociacaoDividas /></ProtectedRoute>} />
-                  <Route path="/simuladores/dividas/financiamento-consorcio" element={<ProtectedRoute><SimuladorFinanciamento /></ProtectedRoute>} />
-                  <Route path="/simuladores/planejamento/simulador-custo-hora" element={<ProtectedRoute><SimuladorCustoHora /></ProtectedRoute>} />
-                  <Route path="/simuladores/planejamento/simulador-desconto-justo" element={<ProtectedRoute><SimuladorDescontoJusto /></ProtectedRoute>} />
-                  <Route path="/simuladores/planejamento/econograph" element={<ProtectedRoute><EconoGraph /></ProtectedRoute>} />
-                  {/* Dynamic simulators */}
-                  <Route path="/simuladores/:category/:slug" element={<SimuladorDinamico />} />
                   {/* URL antiga: apenas redirect — não renderizar componente em /simulador-fipe */}
                   <Route path="/simulador-fipe" element={<Navigate to="/simuladores/veiculos/simulador-fipe" replace />} />
                   <Route path="/simulador-custo-hora" element={<Navigate to="/simuladores/planejamento/simulador-custo-hora" replace />} />

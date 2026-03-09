@@ -41,6 +41,9 @@ export function AccountNavigationGuard() {
   useEffect(() => {
     if (!hasChanges || isMinhaConta) return;
     const handler = (e: MouseEvent) => {
+      // Defensivo: nunca bloquear se a URL atual é /minha-conta (evita closure desatualizada)
+      const currentPathFromWindow = normalizePath(window.location.pathname);
+      if (currentPathFromWindow === '/minha-conta') return;
       const anchor = (e.target as HTMLElement).closest('a');
       if (!anchor?.href) return;
       const url = new URL(anchor.href);
