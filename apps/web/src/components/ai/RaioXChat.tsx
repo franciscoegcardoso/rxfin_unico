@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,11 +41,19 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   reported?: boolean;
+  /** Mensagem local de boas-vindas (não vem do backend, sem feedback 👍/👎) */
+  isWelcome?: boolean;
   raioXData?: {
     formato: 'concentracao' | 'top_ofensor' | 'frequencia' | 'sem_dados';
     dados: any;
   };
 }
+
+const getWelcomeMessage = (firstName: string): Message => ({
+  role: 'assistant',
+  content: `Olá, ${firstName}! 😊\nComo eu posso te ajudar hoje?`,
+  isWelcome: true,
+});
 
 export function RaioXChat() {
   const { user } = useAuth();
@@ -71,6 +80,18 @@ export function RaioXChat() {
   }, [isOpen]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
+
+  // Nome do usuário para a mensagem de boas-vindas (só carrega quando o chat abre)
+  const { data: profile } = useQuery({
+    queryKey: ['profile-name', user?.id, isOpen],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+      return data as { full_name: string | null } | null;
+    },
+    enabled: isOpen && !!user?.id,
+  });
+  const firstName = profile?.full_name?.trim().split(/\s+/)[0] || (user?.user_metadata?.full_name as string)?.trim().split(/\s+/)[0] || 'você';
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [tokenWarning, setTokenWarning] = useState(false);
@@ -111,6 +132,21 @@ export function RaioXChat() {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Ao fechar o chat, reseta mensagens para que ao reabrir apareça de novo a boas-vindas
+  useEffect(() => {
+    if (!isOpen) setMessages([]);
+  }, [isOpen]);
+
+  // Mensagem de boas-vindas local (apenas visual, não enviada ao backend) quando não está em onboarding
+  useEffect(() => {
+    if (!isOpen || shouldStartAIOnboarding) return;
+    if (messages.length === 0 && firstName) {
+      setMessages([getWelcomeMessage(firstName)]);
+    } else if (messages.length === 1 && messages[0].isWelcome && firstName) {
+      setMessages([getWelcomeMessage(firstName)]);
+    }
+  }, [isOpen, shouldStartAIOnboarding, firstName, messages.length]);
 
   const createSession = useCallback(async (): Promise<{ sessionId: string; onboardingCompleted: boolean } | null> => {
     if (!user?.id) return null;
@@ -231,9 +267,10 @@ export function RaioXChat() {
     setIsLoading(true);
 
     try {
-      // Build conversation history (last 10 messages + current)
+      // Histórico para a API: só mensagens reais (exclui boas-vindas local)
+      const apiMessages = messages.filter(m => m.role === 'user' || (m.role === 'assistant' && m.id != null));
       const conversationHistory = [
-        ...messages.slice(-9).map(m => ({ role: m.role, content: m.content })),
+        ...apiMessages.slice(-9).map(m => ({ role: m.role, content: m.content })),
         { role: 'user' as const, content: msg },
       ];
 
@@ -541,8 +578,8 @@ export function RaioXChat() {
                     </div>
                   )}
 
-                  {/* Feedback 👍/👎 por mensagem do assistente */}
-                  {msg.role === 'assistant' && (!isLoading || i < messages.length - 1) && (
+                  {/* Feedback 👍/👎 só em mensagens da IA (não na boas-vindas local) */}
+                  {msg.role === 'assistant' && msg.id != null && !msg.isWelcome && (!isLoading || i < messages.length - 1) && (
                     <div className="flex items-center gap-1 mt-1 justify-end">
                       {feedbackMap.has(i) ? (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
