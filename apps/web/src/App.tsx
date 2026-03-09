@@ -65,9 +65,8 @@ import IndicacoesTab from "./pages/financeiro/IndicacoesTab";
 import Simuladores from "./pages/Simuladores";
 import SimuladorFipe from "./pages/SimuladorFipe";
 import SimuladorFinanciamento from "./pages/SimuladorFinanciamento";
-import SimuladorCustoHora from "./pages/SimuladorCustoHora";
 import HubSimuladores from "./pages/simuladores/Hub";
-import SimuladorCustoHoraPublic from "./pages/simuladores/SimuladorCustoHora";
+import SimuladorCustoHora from "./pages/simuladores/SimuladorCustoHora";
 import SimuladorCustoOportunidadeCarro from "./pages/SimuladorCustoOportunidadeCarro";
 
 import SimuladorCarroAB from "./pages/SimuladorCarroAB";
@@ -256,7 +255,7 @@ const App = () => (
                   <Route path="/simuladores/:category/:slug" element={<SimuladorDinamico />} />
                   {/* URL antiga: apenas redirect — não renderizar componente em /simulador-fipe */}
                   <Route path="/simulador-fipe" element={<Navigate to="/simuladores/veiculos/simulador-fipe" replace />} />
-                  <Route path="/simulador-custo-hora" element={<SimuladorCustoHoraPublic />} />
+                  <Route path="/simulador-custo-hora" element={<SimuladorCustoHora />} />
                   {/* Legacy redirects — outras flat URLs → nested */}
                   <Route path="/simulador-comparativo-carro" element={<Navigate to="/simuladores" replace />} />
                   <Route path="/simulador-carro-ab" element={<Navigate to="/simuladores/veiculos/simulador-carro-ab" replace />} />
