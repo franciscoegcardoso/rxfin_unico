@@ -8,7 +8,7 @@
  * - get_dashboard_enhanced(p_user_id?, p_month?) — summary, credit_cards, top_categories, recent_transactions, user_info
  *
  * Lançamentos:
- * - get_lancamentos_summary(p_user_id?, p_month?) — summary, by_category, by_payment_method, recent, pending
+ * - get_lancamentos_summary(p_user_id?, p_month?) — summary (total_income, total_expense), top_categories, by_payment_method (used by Análise modal)
  *
  * Planejamento:
  * - get_budget_vs_actual(p_user_id?, p_month?) — income, expenses, savings, credit_cards (planned vs actual)

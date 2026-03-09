@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
-/** Item from get_lancamentos_summary recent/pending */
+/** Item from get_lancamentos_summary recent/pending (optional use) */
 export interface LancamentoSummaryItem {
   id: string;
   nome: string;
@@ -13,24 +13,31 @@ export interface LancamentoSummaryItem {
   categoria?: string;
 }
 
-/** Response shape from get_lancamentos_summary RPC */
+/**
+ * Response shape from get_lancamentos_summary RPC.
+ * UI uses: summary (total_income, total_expense), top_categories, by_payment_method.
+ * paid/pending/overdue are returned by RPC but no longer used in the Lancamentos page.
+ */
 export interface LancamentosSummaryData {
   month?: string;
   summary?: {
     total_income: number;
     total_expense: number;
-    balance: number;
+    balance?: number;
     count?: number;
     count_income?: number;
     count_expense?: number;
   };
-  paid?: { count: number; total: number };
-  pending?: { count: number; total: number };
-  overdue?: { count: number; total: number };
   by_category?: Array<{ category: string; total: number; count: number }>;
   top_categories?: Array<{ category: string; total: number; count?: number; pct?: number }>;
   by_payment_method?: Array<{ method: string; total: number; count: number }>;
   recent?: LancamentoSummaryItem[];
+  /** @deprecated No longer used in UI (header removed) */
+  paid?: { count: number; total: number };
+  /** @deprecated No longer used in UI (header removed) */
+  pending?: { count: number; total: number };
+  /** @deprecated No longer used in UI (header removed) */
+  overdue?: { count: number; total: number };
 }
 
 /**

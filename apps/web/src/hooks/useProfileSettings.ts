@@ -61,5 +61,6 @@ export function useProfileSettings() {
       return (data as ProfileSettingsData) ?? null;
     },
     enabled: !!user?.id,
+    refetchOnMount: 'always',
   });
 }

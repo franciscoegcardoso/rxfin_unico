@@ -40,6 +40,16 @@ const MinhaContaContent: React.FC = () => {
   );
   const tabValue = currentTab || 'visao-geral';
 
+  // Garantir que a URL tenha ?tab= ao estar em /minha-conta, para a Visão geral carregar dados automaticamente
+  React.useEffect(() => {
+    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    if (pathname !== MINHA_CONTA_PATH) return;
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (!tab || tab.trim() === '') {
+      setSearchParams({ tab: 'visao-geral' }, { replace: true });
+    }
+  }, [location.pathname, location.search, setSearchParams]);
+
   // Ao entrar na rota /minha-conta (primeira vez ou vindo de outra página), limpa estado dirty
   // para não travar navegação.
   const prevPathnameRef = React.useRef<string | null>(null);

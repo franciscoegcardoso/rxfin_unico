@@ -129,17 +129,11 @@ export const Lancamentos: React.FC = () => {
   const summaryTotals = rpcSummary?.summary ?? (rpcSummary as Record<string, unknown>);
   const totalIncome = (summaryTotals?.total_income as number) ?? 0;
   const totalExpense = (summaryTotals?.total_expense as number) ?? 0;
-  const balance = (summaryTotals?.balance as number) ?? 0;
-  const paid = (rpcSummary as { paid?: { count?: number; total?: number } })?.paid ?? { count: 0, total: 0 };
-  const pending = (rpcSummary as { pending?: { count?: number; total?: number } })?.pending ?? { count: 0, total: 0 };
-  const overdue = (rpcSummary as { overdue?: { count?: number; total?: number } })?.overdue ?? { count: 0, total: 0 };
   const topCategories = ((rpcSummary as { top_categories?: Array<{ category: string; total: number; count?: number; pct?: number }> })?.top_categories ?? rpcSummary?.by_category ?? []) as Array<{ category: string; total: number; count?: number; pct?: number }>;
   const byPaymentMethod = (rpcSummary?.by_payment_method ?? []) as Array<{ method: string; total: number; count: number }>;
   const PAYMENT_LABELS: Record<string, string> = { pix: 'PIX', cartao_credito: 'Cartão de Crédito', debito_auto: 'Débito Automático', boleto: 'Boleto', transferencia: 'Transferência' };
   const CATEGORY_COLORS: Record<string, string> = { 'Contas da Casa': '#3b82f6', 'Alimentação': '#22c55e', 'Saúde': '#ef4444', 'Lazer': '#a855f7', 'Transporte': '#f59e0b', 'Pessoal': '#ec4899', 'Investimentos': '#14b8a6' };
   const getCategoryColor = (c: string) => CATEGORY_COLORS[c] ?? 'var(--primary)';
-  const countIncome = (summaryTotals?.count_income as number) ?? 0;
-  const countExpense = (summaryTotals?.count_expense as number) ?? 0;
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -857,83 +851,9 @@ export const Lancamentos: React.FC = () => {
 
         {!isManual && <PluggySyncStatus accountType="BANK" compact />}
 
-        {/* Resumo do mês (RPC) — cards + top categorias + forma de pagamento */}
+        {/* Resumo do mês (RPC) — análise dos lançamentos */}
         {rpcSummary != null && (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Card className="min-w-0 rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-income/10">
-                    <ArrowUpCircle className="h-5 w-5 text-income" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Receitas</p>
-                    <p className="text-lg font-semibold text-income">{formatCurrency(totalIncome)}</p>
-                    <p className="text-xs text-muted-foreground">{countIncome} itens</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="min-w-0 rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-expense/10">
-                    <ArrowDownCircle className="h-5 w-5 text-expense" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Despesas</p>
-                    <p className="text-lg font-semibold text-expense">{formatCurrency(totalExpense)}</p>
-                    <p className="text-xs text-muted-foreground">{countExpense} itens</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="min-w-0 rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${balance >= 0 ? 'bg-income/10' : 'bg-expense/10'}`}>
-                    <Scale className={`h-5 w-5 ${balance >= 0 ? 'text-income' : 'text-expense'}`} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Saldo</p>
-                    <p className={`text-lg font-semibold ${balance >= 0 ? 'text-income' : 'text-expense'}`}>{formatCurrency(balance)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="min-w-0 rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <CheckCircle2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagos</p>
-                    <p className="text-lg font-semibold text-foreground">{paid.count ?? 0}</p>
-                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(paid.total ?? 0)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="min-w-0 rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/10">
-                    <Clock className="h-5 w-5 text-warning" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Pendentes</p>
-                    <p className="text-lg font-semibold text-foreground">{pending.count ?? 0}</p>
-                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(pending.total ?? 0)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="min-w-0 rounded-xl border border-border bg-card">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Atrasados</p>
-                    <p className="text-lg font-semibold text-foreground">{overdue.count ?? 0}</p>
-                    <p className="text-sm text-muted-foreground tabular-nums">{formatCurrency(overdue.total ?? 0)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Seção Análise dos lançamentos — abre modal com gráficos */}
             <Card
               className="rounded-[14px] border border-border/80 cursor-pointer transition-colors hover:bg-muted/30 hover:border-primary/40"
