@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { ThemedLogo } from '@/components/ui/themed-logo';
+import { CibeliaAuthWidget } from '@/components/auth/CibeliaAuthWidget';
 
 const emailSchema = z.string().email('Email inválido');
 
@@ -52,6 +53,7 @@ const ResetPassword: React.FC = () => {
   if (isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <CibeliaAuthWidget />
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 pb-8 text-center">
             <div className="flex justify-center mb-4">
@@ -87,6 +89,7 @@ const ResetPassword: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+      <CibeliaAuthWidget />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { ThemedLogo } from '@/components/ui/themed-logo';
 import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
+import { CibeliaAuthWidget } from '@/components/auth/CibeliaAuthWidget';
 
 const emailSchema = z.string().email('Email inválido');
 const passwordSchema = z.string().min(6, 'Senha deve ter no mínimo 6 caracteres');
@@ -96,6 +97,7 @@ const Login: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <RXFinLoadingSpinner size={56} />
+        <CibeliaAuthWidget />
       </div>
     );
   }
@@ -222,6 +224,7 @@ const Login: React.FC = () => {
         open={showForgotPassword} 
         onOpenChange={setShowForgotPassword} 
       />
+      <CibeliaAuthWidget />
     </div>
   );
 };

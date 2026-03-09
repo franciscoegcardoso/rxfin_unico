@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { ThemedLogo } from '@/components/ui/themed-logo';
 import { InternationalPhoneInput, Country } from '@/components/ui/international-phone-input';
 import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
+import { CibeliaAuthWidget } from '@/components/auth/CibeliaAuthWidget';
 
 const emailSchema = z.string().email('Email inválido');
 const passwordSchema = z.string()
@@ -219,6 +220,7 @@ const Signup: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <RXFinLoadingSpinner size={56} />
+        <CibeliaAuthWidget />
       </div>
     );
   }
@@ -276,6 +278,7 @@ const Signup: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        <CibeliaAuthWidget />
       </div>
     );
   }
@@ -514,6 +517,7 @@ const Signup: React.FC = () => {
         open={showForgotPassword} 
         onOpenChange={setShowForgotPassword} 
       />
+      <CibeliaAuthWidget />
     </div>
   );
 };
