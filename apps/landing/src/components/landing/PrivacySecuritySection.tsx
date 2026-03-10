@@ -31,7 +31,7 @@ const cardVariant = {
 };
 
 export const PrivacySecuritySection: React.FC = () => (
-  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background dark:bg-background">
+  <section id="seguranca" className="py-20 px-4 sm:px-6 lg:px-8 bg-background dark:bg-background">
     <div className="max-w-5xl mx-auto">
       <motion.div
         className="text-center mb-14"

@@ -158,6 +158,11 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <img src={logoRxFin} alt="RXFin" className="h-8" />
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="#simuladores" className="text-sm text-white/70 hover:text-white transition-colors">Simuladores</a>
+              <a href="#sistema" className="text-sm text-white/70 hover:text-white transition-colors">Sistema</a>
+              <a href="#seguranca" className="text-sm text-white/70 hover:text-white transition-colors">Segurança</a>
+            </nav>
             <div className="flex items-center gap-2">
               <a href={`${APP_URL}/login`} onClick={() => trackCTAClick('header_login', `${APP_URL}/login`)}>
                 <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10">
