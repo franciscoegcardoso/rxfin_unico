@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { TopNavbar } from './TopNavbar';
+import { AppSidebar } from './AppSidebar';
 import { PageTransition } from './PageTransition';
+import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MobileBottomNav } from '@/components/mobile/MobileBottomNav';
 import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
@@ -56,16 +57,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   const content = (
-    <>
-      <DemoDataBanner />
-      <ErrorBoundary key={location.pathname} fallback={errorFallback}>
-        <div className="w-full max-w-full">
-          <PageTransition>
-            {children}
-          </PageTransition>
-        </div>
-      </ErrorBoundary>
-    </>
+    <ErrorBoundary key={location.pathname} fallback={errorFallback}>
+      <div className="w-full max-w-full">
+        <PageTransition>
+          {children}
+        </PageTransition>
+      </div>
+    </ErrorBoundary>
   );
 
   if (insideShell) {
@@ -96,32 +94,32 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <MobileMenuProvider>
-    <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
-      <TopNavbar />
-      <main
-        className={`
-          w-full max-w-full overflow-x-hidden flex-1
-          ${isDemoMode ? 'pt-[88px]' : 'pt-14'}
-          px-4 md:px-6 lg:px-8
-          pb-6
-          ${isMobile ? 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]' : ''}
-        `}
-      >
-        {content}
-      </main>
-      {!isMobile && (
-        <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
-          <SecureConnectionBadge />
-        </footer>
-      )}
-      {isMobile && <MobileBottomNav />}
-
-      <PhoneCompletionDialog
-        open={showPhoneDialog}
-        onComplete={() => setPhoneCompleted(true)}
-        currentEmail={currentEmail}
-      />
-    </div>
+      <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-row">
+        <AppSidebar />
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <DemoDataBanner />
+          <main
+            className={cn(
+              'w-full max-w-full overflow-x-hidden flex-1',
+              'px-4 md:px-6 lg:px-8 pb-6',
+              isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
+            )}
+          >
+            {content}
+          </main>
+          {!isMobile && (
+            <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
+              <SecureConnectionBadge />
+            </footer>
+          )}
+          {isMobile && <MobileBottomNav />}
+          <PhoneCompletionDialog
+            open={showPhoneDialog}
+            onComplete={() => setPhoneCompleted(true)}
+            currentEmail={currentEmail}
+          />
+        </div>
+      </div>
     </MobileMenuProvider>
   );
 };
