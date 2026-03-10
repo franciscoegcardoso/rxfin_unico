@@ -1,18 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Check, Mail, Star } from 'lucide-react';
+import { ArrowRight, Sparkles, Star } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { PhoneInput } from '@/components/shared/PhoneInput';
 import { SecurityBullets } from './SecurityBullets';
-import { supabase } from '@/integrations/supabase/client';
-import { trackWaitlistClick, trackMicroCtaClick } from '@/lib/tracking';
-import { trackEvent } from '@/lib/tracking';
-import { toast } from 'sonner';
+import { trackMicroCtaClick } from '@/lib/tracking';
 
 export type FeatureItem = {
   id: string;
@@ -151,10 +145,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href="https://app.rxfin.com.br/signup"
-              onClick={() => trackWaitlistClick('header')}
-            >
+            <a href="https://app.rxfin.com.br/signup">
               <Button
                 size="lg"
                 className="gradient-primary text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 group px-8 h-12 text-base font-semibold"
@@ -216,9 +207,29 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           ))}
         </div>
 
-        {/* Bloco D — Segurança */}
+        {/* Bloco D — CTA final */}
         <SecurityBullets />
 
+        <motion.div
+          className="mt-12 text-center"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4 }}
+        >
+          <a href="https://app.rxfin.com.br/signup">
+            <Button
+              size="lg"
+              className="gradient-primary text-white shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 group px-8 h-12 text-base font-semibold"
+            >
+              Entrar na lista de acesso antecipado
+              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </a>
+          <p className="mt-3 text-[11px] text-muted-foreground/70">
+            Sem spam • Sem cartão • Você sai quando quiser
+          </p>
+        </motion.div>
 
       </div>
     </section>
