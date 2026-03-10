@@ -57,9 +57,16 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
     (!data.greeting && !data.data?.length && !data.nextSteps?.length && !data.cta && data.analysis === undefined)
   ) {
     return (
-      <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-        {data.analysis || content}
-      </p>
+      <div className="flex flex-col gap-1 w-full min-w-0">
+        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+          {data.analysis || content}
+        </p>
+        {import.meta.env.DEV && data._fallback && (
+          <span className="text-[10px] text-orange-500 opacity-60 select-none" aria-hidden>
+            [fallback mode]
+          </span>
+        )}
+      </div>
     );
   }
 
@@ -86,7 +93,7 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
       {data.data && data.data.length > 0 && (
         <div
           className={cn(
-            'rounded-xl border p-3 flex flex-col gap-1.5',
+            'rounded-xl border p-3 flex flex-col gap-1.5 min-w-0 overflow-hidden',
             'bg-muted/50 border-border'
           )}
         >
@@ -120,16 +127,16 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
       )}
 
       {data.nextSteps && data.nextSteps.length > 0 && (
-        <div className="rounded-xl border p-3 flex flex-col gap-1.5 bg-muted/50 border-border">
+        <div className="rounded-xl border p-3 flex flex-col gap-1.5 bg-muted/50 border-border min-w-0 overflow-hidden">
           {data.nextSteps.map((step, i) => {
             const Icon = getIcon(step.icon);
             return (
-              <div
-                key={i}
-                className="flex items-center gap-2 text-sm text-muted-foreground bg-background rounded-lg px-2.5 py-2 border border-border"
-              >
+            <div
+              key={i}
+              className="flex items-center gap-2 text-sm text-muted-foreground bg-background rounded-lg px-2.5 py-2 border border-border min-w-0"
+            >
                 <Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                <span>{step.text}</span>
+                <span className="break-words min-w-0">{step.text}</span>
               </div>
             );
           })}
