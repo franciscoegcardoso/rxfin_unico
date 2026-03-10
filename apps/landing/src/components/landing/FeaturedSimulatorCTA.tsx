@@ -12,7 +12,7 @@ interface FeaturedSimulatorCTAProps {
 }
 
 export const FeaturedSimulatorCTA: React.FC<FeaturedSimulatorCTAProps> = ({ onOpenLeadGate }) => (
-  <section className="py-12 px-4 sm:px-6 lg:px-8 bg-background">
+  <section className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
     <motion.div
       className="max-w-7xl mx-auto rounded-2xl border border-[hsl(161,40%,70%)] bg-[hsl(161,79%,25%)] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 cursor-pointer"
       initial={{ opacity: 0, y: 16 }}

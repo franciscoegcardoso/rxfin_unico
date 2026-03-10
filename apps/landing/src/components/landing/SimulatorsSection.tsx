@@ -103,7 +103,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                             </Badge>
                           ) : (
                             <Badge variant="secondary" className="bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30 text-xs">
-                              Em Breve
+                              🔜 Em breve
                             </Badge>
                           )}
                         </div>
@@ -139,7 +139,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          Os simuladores são gratuitos e fazem parte do ecossistema RXFin.
+          Novos simuladores são liberados mensalmente. Cadastre-se para ser notificado.
         </motion.p>
       </div>
     </section>

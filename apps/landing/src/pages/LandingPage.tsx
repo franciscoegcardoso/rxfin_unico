@@ -205,7 +205,10 @@ const LandingPage: React.FC = () => {
       {/* Manifesto resumido */}
       <ManifestoSection />
 
-      {/* 8. Autoridade */}
+      {/* 9. Privacidade e Segurança */}
+      <PrivacySecuritySection />
+
+      {/* 10. Autoridade */}
       <AuthoritySection />
 
       {/* Footer */}

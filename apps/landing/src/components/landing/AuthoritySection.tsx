@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import franciscoPhoto from '@/assets/francisco-cardoso.png';
 
 export const AuthoritySection: React.FC = () => (
-  <section className="py-16 px-4 sm:px-6 lg:px-8 bg-secondary/30">
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-secondary/30">
     <div className="max-w-3xl mx-auto">
       <motion.div
         className="text-center"

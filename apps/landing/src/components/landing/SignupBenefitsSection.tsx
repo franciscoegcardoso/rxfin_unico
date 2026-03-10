@@ -26,7 +26,7 @@ const listItem = {
 };
 
 export const SignupBenefitsSection: React.FC = () => (
-  <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]">
+  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]">
     <div className="max-w-7xl mx-auto">
       <motion.div
         className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 p-8 sm:p-10 lg:p-12 text-center shadow-xl"
