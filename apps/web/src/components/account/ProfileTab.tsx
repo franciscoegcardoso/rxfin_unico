@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,6 +112,10 @@ export const ProfileTab: React.FC = () => {
       toast.error('Erro ao atualizar perfil');
     },
   });
+  const updateProfileMutationRef = useRef(updateProfileMutation);
+  useLayoutEffect(() => {
+    updateProfileMutationRef.current = updateProfileMutation;
+  }, [updateProfileMutation]);
 
   const userMetadata = user?.user_metadata || {};
   const appMetadata = user?.app_metadata || {};
@@ -161,23 +165,27 @@ export const ProfileTab: React.FC = () => {
       birthDate: editData.birthDate,
     });
     await new Promise<void>((resolve, reject) => {
-      updateProfileMutation.mutate({
+      updateProfileMutationRef.current.mutate({
         full_name: newFullName,
         email: editData.email.trim() || null,
         phone: editData.phone.trim() || null,
         birth_date: editData.birthDate || null,
       }, { onSuccess: () => resolve(), onError: (err) => reject(err) });
     });
-  }, [editData, updateUserProfile, updateProfileMutation]);
+  }, [editData, updateUserProfile]);
 
   const doCancel = useCallback(() => {
     setIsEditing(false);
   }, []);
 
+  const isEditingRef = useRef(false);
+
   useEffect(() => {
     if (isEditing) {
+      isEditingRef.current = true;
       registerDirty('profile', doSave, doCancel);
-    } else {
+    } else if (isEditingRef.current) {
+      isEditingRef.current = false;
       unregisterDirty('profile');
     }
     return () => unregisterDirty('profile');
