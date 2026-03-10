@@ -42,8 +42,8 @@ interface SimulatorsSectionProps {
 
 export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulatorClick, onOpenLeadGate }) => {
   return (
-    <section id="simuladores" className="py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <section id="simuladores" className="py-10 px-4 sm:px-6 lg:px-8 w-full">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto w-full">
         <motion.div
           className="text-center mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -65,7 +65,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                 <span>{cat.emoji}</span> {cat.label}
               </h3>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                 {items.map((sim, i) => (
                   <motion.div
                     key={sim.id}
@@ -89,9 +89,9 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                         }
                       }}
                     >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                      <CardContent className="p-5 min-h-[140px] flex flex-col">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
                             sim.available ? 'bg-primary/15' : 'bg-primary/[0.08] group-hover:bg-primary/10'
                           }`}>
                             <sim.icon className={`h-5 w-5 ${sim.available ? 'text-primary' : 'text-primary/60 group-hover:text-primary'} transition-colors`} />
@@ -106,10 +106,10 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                             </Badge>
                           )}
                         </div>
-                        <h4 className="font-semibold mb-1 group-hover:text-primary transition-colors text-sm leading-tight">
+                        <h4 className="font-semibold mb-2 group-hover:text-primary transition-colors text-sm sm:text-base leading-tight flex-1">
                           {sim.title}
                         </h4>
-                        <p className="text-xs text-muted-foreground mb-2 leading-snug">{sim.description}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-snug">{sim.description}</p>
                         <div className="flex items-center text-xs text-muted-foreground group-hover:text-primary transition-colors">
                           <Info className="h-3 w-3 mr-1" />
                           Saiba mais
