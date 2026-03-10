@@ -94,3 +94,6 @@ lighthouse-report.json
 bun.lockb
 next-env.d.ts
 *.bak
+
+# Guia de segredos — contém nomes de variáveis sensíveis
+docs/guides/deploy-secrets.md
