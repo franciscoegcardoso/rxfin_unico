@@ -10,6 +10,7 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "turbo run build",
     "dev:web": "turbo run dev --filter=web",
     "dev:landing": "turbo run dev --filter=landing",
     "dev:mobile": "cd apps/mobile && npx expo start",
