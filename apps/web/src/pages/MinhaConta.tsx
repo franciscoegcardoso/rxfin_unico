@@ -156,6 +156,7 @@ const MinhaContaContent: React.FC = () => {
           icon={UserCog}
           title="Minha Conta"
           subtitle="Gerencie seu perfil, workspace e preferências"
+          showBackButton={false}
         />
 
         <div className="space-y-6">

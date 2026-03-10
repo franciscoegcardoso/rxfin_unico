@@ -57,6 +57,7 @@ const PlanejamentoLayout: React.FC = () => {
           icon={CalendarCheck}
           title="Planejamento Mensal"
           subtitle="Gerencie seu orçamento e metas do mês"
+          showBackButton={false}
           actions={
             <>
               <VisibilityToggle />

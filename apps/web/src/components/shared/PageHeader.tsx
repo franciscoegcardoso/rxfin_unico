@@ -17,7 +17,7 @@ export function PageHeader({ icon: Icon, title, subtitle, actions, className, sh
   const navigate = useNavigate();
 
   const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
+    if (typeof window !== "undefined" && (window.history.state?.idx ?? 0) > 0) {
       navigate(-1);
     } else {
       navigate("/inicio");

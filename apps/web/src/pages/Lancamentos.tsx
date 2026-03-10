@@ -775,6 +775,7 @@ export const Lancamentos: React.FC = () => {
             icon={ReceiptText}
             title="Lançamentos"
             subtitle="Gerencie suas entradas e saídas"
+            showBackButton={false}
             actions={
               <>
                 {!isManual && <BankSyncButton variant="button" />}

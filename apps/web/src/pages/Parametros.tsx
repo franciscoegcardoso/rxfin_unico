@@ -331,6 +331,7 @@ export const Parametros: React.FC = () => {
           icon={Settings}
           title="Parâmetros"
           subtitle="Configure suas receitas e despesas"
+          showBackButton={false}
         />
 
         {/* Tabs */}

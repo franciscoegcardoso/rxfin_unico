@@ -57,7 +57,7 @@ export const DeleteAllDialog: React.FC<DeleteAllDialogProps> = ({
             <div className="space-y-3">
               <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3 space-y-2">
                 <p className="text-sm font-medium text-destructive">
-                  ⚠️ Ação irreversível
+                  Ação irreversível
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Todos os <strong>{totalCount}</strong> registros serão excluídos permanentemente:

@@ -266,6 +266,7 @@ const BensInvestimentosLayout: React.FC = () => {
             icon={Layers}
             title="Bens e Investimentos"
             subtitle="Patrimônio, Open Finance e investimentos"
+            showBackButton={false}
             actions={
               <div className="flex items-center gap-2">
                 <VisibilityToggle />

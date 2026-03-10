@@ -60,6 +60,7 @@ export const ConfiguracoesHub: React.FC = () => {
         <PageHeader
           title="Configurações"
           description="Personalize sua experiência no app"
+          showBackButton={false}
           icon={<Settings className="h-5 w-5 text-primary-foreground" />}
         />
 
