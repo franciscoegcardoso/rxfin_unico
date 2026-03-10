@@ -31,7 +31,7 @@ const cardVariant = {
 };
 
 export const PrivacySecuritySection: React.FC = () => (
-  <section id="seguranca" className="py-14 px-4 sm:px-6 lg:px-8 bg-background dark:bg-background">
+  <section id="seguranca" className="py-14 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]">
     <div className="max-w-5xl mx-auto">
       <motion.div
         className="text-center mb-14"
@@ -40,16 +40,16 @@ export const PrivacySecuritySection: React.FC = () => (
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <Badge className="mb-5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15 text-xs px-3 py-1 font-medium">
+        <Badge className="mb-5 bg-white/20 text-white border-white/30 hover:bg-white/25 text-xs px-3 py-1 font-medium">
           <Sparkles className="h-3 w-3 mr-1.5" />
           Infraestrutura de Classe Mundial
         </Badge>
 
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-3">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight mb-3">
           Privacidade e Segurança{' '}
-          <span className="text-primary underline decoration-primary/30 underline-offset-4">de Ponta</span>
+          <span className="text-white underline decoration-white/40 underline-offset-4">de Ponta</span>
         </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base">
+        <p className="text-white/75 max-w-2xl mx-auto text-sm sm:text-base">
           Seus dados financeiros merecem o mais alto nível de proteção. Conheça a infraestrutura por trás do RXFin.
         </p>
       </motion.div>
@@ -58,20 +58,20 @@ export const PrivacySecuritySection: React.FC = () => (
         {blocks.map((block, i) => (
           <motion.div
             key={block.title}
-            className="relative rounded-2xl border border-border/60 bg-card p-7 hover:border-primary/30 hover:shadow-md transition-all duration-300 group"
+            className="relative rounded-2xl border border-[hsl(161,40%,70%)]/50 bg-[hsl(161,40%,88%)] p-7 hover:border-white/40 hover:shadow-lg transition-all duration-300 group"
             custom={i}
             variants={cardVariant}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
           >
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-              <block.icon className="h-6 w-6 text-primary" />
+            <div className="w-12 h-12 rounded-xl bg-[hsl(161,79%,25%)]/20 flex items-center justify-center mb-5 group-hover:bg-[hsl(161,79%,25%)]/30 transition-colors">
+              <block.icon className="h-6 w-6 text-[hsl(161,79%,25%)]" />
             </div>
-            <h3 className="text-base font-semibold text-foreground mb-3 tracking-tight">
+            <h3 className="text-base font-semibold text-[hsl(161,40%,12%)] mb-3 tracking-tight">
               {block.title}
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-[hsl(161,30%,25%)] leading-relaxed">
               {block.text}
             </p>
           </motion.div>
