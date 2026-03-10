@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { TopNavbar } from './TopNavbar';
+import { AppSidebar } from './AppSidebar';
 import { PageTransition } from './PageTransition';
 import { MobileBottomNav } from '@/components/mobile/MobileBottomNav';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -39,13 +39,13 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
     );
   }
 
-  // Mobile: fora do shell (acesso direto) → layout completo com TopNavbar e bottom nav
+  // Mobile: fora do shell (acesso direto) → layout completo com AppSidebar e bottom nav
   if (isMobile) {
     return (
       <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
-        <TopNavbar />
+        <AppSidebar />
         <main
-        className="w-full max-w-full px-4 py-6 overflow-x-hidden flex-1 pt-16 pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] md:pb-6"
+        className="w-full max-w-full px-4 py-6 overflow-x-hidden flex-1 pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] md:pb-6"
       >
           <BackLink to="/configuracoes-hub" label="Configurações" className="mb-4" />
           <PageTransition>
@@ -103,11 +103,11 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
     );
   }
 
-  // Desktop: fora do shell → layout completo com TopNavbar
+  // Desktop: fora do shell → layout completo com AppSidebar
   return (
-    <div className="min-h-screen bg-background">
-      <TopNavbar />
-      <div className="flex pt-14">
+    <div className="min-h-screen bg-background flex flex-row">
+      <AppSidebar />
+      <div className="flex flex-1">
         <aside className="w-56 border-r bg-muted/30 min-h-[calc(100vh-3.5rem)] p-4 shrink-0 flex flex-col">
           <div className="mb-3 px-3">
             <h2 className="text-sm font-semibold text-foreground">Configurações</h2>
