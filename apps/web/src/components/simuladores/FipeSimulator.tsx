@@ -626,10 +626,11 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
             Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 p-6 pt-0">
+        <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            {/* Left Column — VehicleSearch (mesma largura que a direita) */}
-            <div className="space-y-4 flex flex-col min-w-0 lg:min-h-[380px]">
+            {/* Left box — mesma altura e alinhamento que a caixa da direita */}
+            <div className="flex flex-col min-w-0 min-h-0 rounded-xl border border-border bg-card p-6 flex-1">
+              <div className="space-y-4 flex flex-col flex-1">
               {/* Vehicle Type */}
               <div className="space-y-2">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de Veículo</span>
@@ -768,10 +769,11 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                   </motion.div>
                 )}
               </AnimatePresence>
+              </div>
             </div>
 
-            {/* Right Column - Results (mesma largura que a esquerda) */}
-            <div className="flex flex-col min-h-0 min-w-0 lg:min-h-[380px]">
+            {/* Right box — mesma altura e alinhamento que a caixa da esquerda */}
+            <div className="flex flex-col min-h-0 min-w-0 flex-1">
               <AnimatePresence mode="wait">
                 {fipe.loading.price && (
                   <motion.div
@@ -794,8 +796,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex-1 flex flex-col min-h-0"
                   >
-                    {/* FIPEResultCard — layout alinhado ao modelo: Valor FIPE, preço, nome, mês, variação, tag, Favoritar, Código/Combustível */}
-                    <div className="relative p-6 rounded-xl bg-card border border-border flex-1 flex flex-col min-h-0">
+                    {/* FIPEResultCard — caixa alinhada à esquerda (mesmo border, padding, altura) */}
+                    <div className="relative p-6 rounded-xl bg-card border border-border flex-1 flex flex-col min-h-0 min-w-0">
                       {/* Indicador "Consulta realizada" no canto superior direito */}
                       <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/15 text-primary text-xs font-medium">
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
