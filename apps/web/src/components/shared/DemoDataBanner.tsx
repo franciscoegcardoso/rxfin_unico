@@ -22,7 +22,7 @@ export const DemoDataBanner: React.FC = () => {
   if (minimized) {
     return (
       <div
-        className="fixed top-14 left-0 right-0 z-40 w-full h-8 bg-destructive/90 backdrop-blur-sm flex items-center justify-center cursor-pointer gap-2 text-destructive-foreground text-xs font-medium px-4 md:px-6 lg:px-8"
+        className="fixed top-14 left-0 right-0 z-40 w-full h-8 bg-destructive/90 backdrop-blur-sm flex items-center justify-center cursor-pointer gap-2 text-white text-xs font-medium px-4 md:px-6 lg:px-8"
         onClick={() => setMinimized(false)}
       >
         <AlertTriangle className="h-3 w-3" />
@@ -65,7 +65,7 @@ export const DemoDataBanner: React.FC = () => {
           </Button>
           <button
             onClick={() => setMinimized(true)}
-            className="p-1 rounded hover:bg-destructive-foreground/20 transition-colors"
+            className="p-1 rounded hover:bg-white/20 transition-colors"
             aria-label="Minimizar banner"
           >
             <ChevronUp className="h-4 w-4" />
