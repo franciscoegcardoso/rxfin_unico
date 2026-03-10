@@ -101,8 +101,11 @@ export function RaioXChat() {
   const [feedbackMap, setFeedbackMap] = useState<Map<number, 'helpful' | 'incorrect'>>(new Map());
   const [feedbackLoading, setFeedbackLoading] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
   const hasRegisteredOnboardingRef = useRef(false);
+  /** No mobile: padding-bottom aplicado ao Sheet quando o teclado virtual está aberto, para manter o campo de digitação visível. */
+  const [keyboardPaddingBottom, setKeyboardPaddingBottom] = useState(0);
 
   // Auto-open for onboarding
   useEffect(() => {
@@ -135,8 +138,27 @@ export function RaioXChat() {
 
   // Ao fechar o chat, reseta mensagens para que ao reabrir apareça de novo a boas-vindas
   useEffect(() => {
-    if (!isOpen) setMessages([]);
+    if (!isOpen) {
+      setMessages([]);
+      setKeyboardPaddingBottom(0);
+    }
   }, [isOpen]);
+
+  // Mobile: manter campo de digitação visível quando o teclado virtual abre (visualViewport)
+  useEffect(() => {
+    if (!isOpen || !isMobile || typeof window === 'undefined' || !window.visualViewport) return;
+    const updatePadding = () => {
+      const heightDiff = window.innerHeight - window.visualViewport.height;
+      setKeyboardPaddingBottom(heightDiff > 80 ? heightDiff : 0);
+    };
+    updatePadding();
+    window.visualViewport.addEventListener('resize', updatePadding);
+    window.visualViewport.addEventListener('scroll', updatePadding);
+    return () => {
+      window.visualViewport.removeEventListener('resize', updatePadding);
+      window.visualViewport.removeEventListener('scroll', updatePadding);
+    };
+  }, [isOpen, isMobile]);
 
   // Mensagem de boas-vindas local (apenas visual, não enviada ao backend) quando não está em onboarding
   useEffect(() => {
@@ -522,7 +544,10 @@ export function RaioXChat() {
 
       {/* Chat Panel */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent className="w-full sm:max-w-md flex flex-col p-0">
+        <SheetContent
+          className="w-full sm:max-w-md flex flex-col p-0"
+          style={isMobile ? { paddingBottom: keyboardPaddingBottom } : undefined}
+        >
           <SheetHeader className="p-4 border-b flex-row items-center gap-3">
             <div className="h-10 w-10 rounded-full overflow-hidden border border-border shrink-0" style={{ backgroundColor: '#0e7051' }}>
               <img src={cibeliaAvatar} alt="Cibelia" className="h-full w-full object-cover" />
@@ -667,13 +692,21 @@ export function RaioXChat() {
             </div>
           )}
 
-          {/* Input */}
-          <div className="p-4 border-t flex gap-2">
+          {/* Input — no mobile: área fixa no rodapé; padding dinâmico (keyboardPaddingBottom) mantém o campo visível quando o teclado abre */}
+          <div className="p-4 border-t flex gap-2 bg-background shrink-0">
             <Input
+              ref={inputRef}
               placeholder="Pergunte sobre suas finanças..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+              onFocus={() => {
+                if (isMobile && inputRef.current) {
+                  requestAnimationFrame(() => {
+                    inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  });
+                }
+              }}
               disabled={isLoading}
             />
             <Button size="icon" onClick={() => sendMessage()} disabled={isLoading || !inputValue.trim()} aria-label="Enviar mensagem">
