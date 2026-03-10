@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -79,49 +80,11 @@ export const FiscalProgressDashboard: React.FC<FiscalProgressDashboardProps> = (
 
   return (
     <div className="space-y-4">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/20">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Potencial de Dedução</p>
-                <p className="text-lg font-bold text-green-600">{formatCurrency(totalDedutivel)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Comprovantes {anoAtual}</p>
-                <p className="text-lg font-bold">{totalComprovantes}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-orange-500/20">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-500/10">
-                <AlertCircle className="h-5 w-5 text-orange-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Não Dedutíveis</p>
-                <p className="text-lg font-bold text-orange-600">{formatCurrency(totalNaoDedutivel)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Summary Cards — padrão bens-investimentos */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <HeaderMetricCard label="Potencial de Dedução" value={formatCurrency(totalDedutivel)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} />
+        <HeaderMetricCard label={`Comprovantes ${anoAtual}`} value={String(totalComprovantes)} variant="blue" icon={<FileText className="h-4 w-4" />} />
+        <HeaderMetricCard label="Não Dedutíveis" value={formatCurrency(totalNaoDedutivel)} variant="amber" icon={<AlertCircle className="h-4 w-4" />} />
       </div>
 
       {/* Categories Progress */}

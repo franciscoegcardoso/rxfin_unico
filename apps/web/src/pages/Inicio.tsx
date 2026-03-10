@@ -13,6 +13,7 @@ import { useOnboardingCheckpoint } from "@/hooks/useOnboardingCheckpoint";
 import { supabase } from "@/integrations/supabase/client";
 import { VisibilityToggle } from "@/components/ui/visibility-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HeaderMetricCard } from "@/components/shared/HeaderMetricCard";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -628,83 +629,38 @@ const Inicio: React.FC = () => {
           </div>
 
         {monthSummary && (
-          <div className="kpi-grid" data-tour="metrics-cards">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" data-tour="metrics-cards">
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Receitas</span>
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-income)/0.1)]">
-                    <TrendingUp className="h-4 w-4 text-[hsl(var(--color-income))]" aria-hidden />
-                  </div>
-                </div>
-                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-income))] truncate">
-                  {isHidden ? "••••••" : (
-                    <>
-                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
-                      {(monthSummary.total_income ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </>
-                  )}
-                </p>
-              </div>
+              <HeaderMetricCard
+                label="Receitas"
+                value={isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
+                variant="positive"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Despesas</span>
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-expense)/0.1)]">
-                    <TrendingDown className="h-4 w-4 text-[hsl(var(--color-expense))]" aria-hidden />
-                  </div>
-                </div>
-                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-expense))] truncate">
-                  {isHidden ? "••••••" : (
-                    <>
-                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
-                      {(monthSummary.total_expense ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </>
-                  )}
-                </p>
-              </div>
+              <HeaderMetricCard
+                label="Despesas"
+                value={isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
+                variant="negative"
+                icon={<TrendingDown className="h-4 w-4" />}
+              />
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Saldo</span>
-                  <div
-                    className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px]",
-                      (monthSummary.balance ?? 0) >= 0 ? "bg-[hsl(var(--color-income)/0.1)]" : "bg-[hsl(var(--color-expense)/0.1)]"
-                    )}
-                  >
-                    <Wallet className={cn("h-4 w-4", (monthSummary.balance ?? 0) >= 0 ? "text-[hsl(var(--color-income))]" : "text-[hsl(var(--color-expense))]")} aria-hidden />
-                  </div>
-                </div>
-                <p
-                  className={cn(
-                    "font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] truncate",
-                    (monthSummary.balance ?? 0) >= 0 ? "text-[hsl(var(--color-income))]" : "text-[hsl(var(--color-expense))]"
-                  )}
-                >
-                  {isHidden ? "••••••" : (
-                    <>
-                      <span className="font-sans text-[13px] font-medium opacity-50 mr-[2px] align-[2px]">R$</span>
-                      {(monthSummary.balance ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </>
-                  )}
-                </p>
-              </div>
+              <HeaderMetricCard
+                label="Saldo"
+                value={isHidden ? "••••••" : formatCurrency(monthSummary.balance ?? 0)}
+                variant={(monthSummary.balance ?? 0) >= 0 ? "positive" : "negative"}
+                icon={<Wallet className="h-4 w-4" />}
+              />
             </DemoCardWrapper>
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="min-w-0 rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] p-4 transition-shadow hover:shadow-[var(--shadow-md)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.07em] text-[hsl(var(--color-text-tertiary))]">Lançamentos</span>
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-[hsl(var(--color-info)/0.1)]">
-                    <Receipt className="h-4 w-4 text-[hsl(var(--color-info))]" aria-hidden />
-                  </div>
-                </div>
-                <p className="font-numeric text-[22px] font-semibold tracking-[-0.02em] leading-[1.1] text-[hsl(var(--color-text-primary))] truncate">
-                  {monthSummary.count_total ?? "—"}
-                </p>
-              </div>
+              <HeaderMetricCard
+                label="Lançamentos"
+                value={String(monthSummary.count_total ?? "—")}
+                variant="blue"
+                icon={<Receipt className="h-4 w-4" />}
+              />
             </DemoCardWrapper>
           </div>
         )}

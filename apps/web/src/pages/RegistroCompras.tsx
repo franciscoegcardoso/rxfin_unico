@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -597,47 +598,11 @@ const RegistroCompras: React.FC = () => {
           </Card>
         )}
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-amber-100 text-amber-600">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Desejados</p>
-                  <p className="text-2xl font-bold">{pendingItems.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10 text-primary">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Comprados</p>
-                  <p className="text-2xl font-bold">{purchasedItems.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-green-100 text-green-600">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Gasto</p>
-                  <p className="text-2xl font-bold">{formatCurrency(getTotalPurchased())}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Summary Cards — padrão bens-investimentos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <HeaderMetricCard label="Desejados" value={String(pendingItems.length)} variant="amber" icon={<Clock className="h-4 w-4" />} />
+          <HeaderMetricCard label="Comprados" value={String(purchasedItems.length)} variant="blue" icon={<CheckCircle2 className="h-4 w-4" />} />
+          <HeaderMetricCard label="Total Gasto" value={formatCurrency(getTotalPurchased())} variant="positive" icon={<DollarSign className="h-4 w-4" />} />
         </div>
 
         {/* Content Tabs */}

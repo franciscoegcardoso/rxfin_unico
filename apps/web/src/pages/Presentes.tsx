@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Gift, CalendarRange, Wallet, Clock, Heart, Egg, Star, TreePine, Cake } from 'lucide-react';
 import { useGiftsPlanner } from '@/hooks/useGiftsPlanner';
@@ -84,74 +85,27 @@ export const Presentes: React.FC = () => {
 
         {!loading && !error && data && (
           <>
-            {/* A) Cards de resumo - 4 colunas */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Gift className="h-5 w-5 text-primary" />
+            {/* A) Cards de resumo - 4 colunas (padrão bens-investimentos) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <Card className="rounded-[14px] border border-border/80 bg-card shadow-sm">
+                <CardContent className="flex items-center gap-2 p-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 [&>svg]:h-4 [&>svg]:w-4 text-primary">
+                    <Gift className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Próximo evento
-                    </p>
-                    <p className="font-semibold truncate">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground truncate">Próximo evento</p>
+                    <p className="text-sm font-semibold text-foreground truncate tabular-nums">
                       {nextEvent?.name ?? '—'}
                       {nextEvent?.day != null && nextEvent?.month != null && (
-                        <span className="text-muted-foreground font-normal">
-                          {' '}
-                          em {formatNextEventDate(nextEvent.day, nextEvent.month)}
-                        </span>
+                        <span className="text-muted-foreground font-normal"> em {formatNextEventDate(nextEvent.day, nextEvent.month)}</span>
                       )}
                     </p>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <CalendarRange className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Total planejado
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {formatCurrency(summary.total_planned ?? 0)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-                    <Wallet className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Total gasto
-                    </p>
-                    <p className="text-lg font-semibold text-green-600">
-                      {formatCurrency(summary.total_spent ?? 0)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                    <Clock className="h-5 w-5 text-amber-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Pendentes
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {summary.total_pending ?? 0} presente{(summary.total_pending ?? 0) !== 1 ? 's' : ''} pendente{(summary.total_pending ?? 0) !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <HeaderMetricCard label="Total planejado" value={formatCurrency(summary.total_planned ?? 0)} variant="blue" icon={<CalendarRange className="h-4 w-4" />} />
+              <HeaderMetricCard label="Total gasto" value={formatCurrency(summary.total_spent ?? 0)} variant="positive" icon={<Wallet className="h-4 w-4" />} />
+              <HeaderMetricCard label="Pendentes" value={`${summary.total_pending ?? 0} presente(s)`} variant="amber" icon={<Clock className="h-4 w-4" />} />
             </div>
 
             {/* B) Timeline de eventos */}

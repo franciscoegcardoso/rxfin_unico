@@ -15,6 +15,7 @@ import { usePluggyInvestments } from '@/hooks/usePluggyInvestments';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Progress } from '@/components/ui/progress';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Input } from '@/components/ui/input';
@@ -328,68 +329,11 @@ export const Sonhos: React.FC = () => {
                 </Card>
               )}
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <Card className="bg-accent/50">
-                  <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Target className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base sm:text-xl font-bold text-foreground">{config.dreams.length}</p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Sonhos cadastrados</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className={cn(
-                  hasInconsistency ? "bg-expense/10 border-expense/30" : "bg-income-light/50"
-                )}>
-                  <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                    <div className={cn(
-                      "h-10 w-10 shrink-0 rounded-lg flex items-center justify-center",
-                      hasInconsistency ? "bg-expense/20" : "bg-income/20"
-                    )}>
-                      <TrendingUp className={cn("h-5 w-5", hasInconsistency ? "text-expense" : "text-income")} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className={cn(
-                        "text-base sm:text-xl font-bold truncate",
-                        hasInconsistency ? "text-expense" : "text-foreground"
-                      )}>
-                        {formatCurrency(totalAcumulado)}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Total acumulado</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-primary/10 border-primary/30">
-                  <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/20 flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base sm:text-xl font-bold text-primary truncate">
-                        {formatCurrency(totalPatrimonio)}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Bens e Invest.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-warning/10">
-                  <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-warning/20 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-warning" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-base sm:text-xl font-bold text-foreground truncate">
-                        {formatCurrency(config.dreams.reduce((acc, g) => acc + g.targetAmount, 0))}
-                      </p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Meta total</p>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <HeaderMetricCard label="Sonhos cadastrados" value={String(config.dreams.length)} variant="blue" icon={<Target className="h-4 w-4" />} />
+                <HeaderMetricCard label="Total acumulado" value={formatCurrency(totalAcumulado)} variant={hasInconsistency ? 'negative' : 'neutral'} icon={<TrendingUp className="h-4 w-4" />} />
+                <HeaderMetricCard label="Bens e Invest." value={formatCurrency(totalPatrimonio)} variant="blue" icon={<Building2 className="h-4 w-4" />} />
+                <HeaderMetricCard label="Meta total" value={formatCurrency(config.dreams.reduce((acc, g) => acc + g.targetAmount, 0))} variant="amber" icon={<Calendar className="h-4 w-4" />} />
               </div>
             </>
           );

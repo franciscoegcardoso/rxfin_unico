@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -117,59 +118,11 @@ const CartaoCredito: React.FC = () => {
 
         {!loading && !error && (
           <>
-            {/* A) Cards de resumo — 1 col mobile, 3 em desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Total faturas
-                    </p>
-                    <p className="text-lg font-semibold tabular-nums">{formatCurrency(totalBills)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Total pago
-                    </p>
-                    <p className="text-lg font-semibold text-green-600 tabular-nums">{formatCurrency(totalPaid)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
-                      pending > 0 ? 'bg-amber-500/10' : 'bg-green-500/10'
-                    )}
-                  >
-                    <Clock className={cn('h-5 w-5', pending > 0 ? 'text-amber-600' : 'text-green-600')} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Pendente
-                    </p>
-                    <p
-                      className={cn(
-                        'text-lg font-semibold tabular-nums whitespace-nowrap',
-                        pending > 0 ? 'text-amber-600' : 'text-green-600'
-                      )}
-                    >
-                      {formatCurrency(pending)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* A) Cards de resumo — padrão bens-investimentos */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />
+              <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} />
+              <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} />
             </div>
 
             {/* B) Faturas do mês */}

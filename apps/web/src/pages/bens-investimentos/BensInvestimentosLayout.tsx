@@ -44,6 +44,7 @@ import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { EmptyInvestimentos } from '@/design-system/components/empty-states';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
 const BensInvestimentosLayout: React.FC = () => {
@@ -441,50 +442,30 @@ const BensInvestimentosLayout: React.FC = () => {
           )}
           {netWorth != null && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-2 p-3">
-                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                    <Building2 className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Total Ativos</p>
-                    <p className="text-sm font-semibold text-green-600 truncate tabular-nums">{formatCurrency(netWorth.total_assets)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-2 p-3">
-                  <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <Car className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Veículos</p>
-                    <p className="text-sm font-semibold truncate tabular-nums">{formatCurrency(netWorth.total_vehicles)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-2 p-3">
-                  <div className="h-8 w-8 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
-                    <MinusCircle className="h-4 w-4 text-red-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Dívidas</p>
-                    <p className="text-sm font-semibold text-red-600 truncate tabular-nums">{formatCurrency(netWorth.total_debt)}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="rounded-[14px] border border-border/80">
-                <CardContent className="flex items-center gap-2 p-3">
-                  <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Patrimônio Líquido</p>
-                    <p className="text-sm font-semibold text-green-600 truncate tabular-nums">{formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <HeaderMetricCard
+                label="Total Ativos"
+                value={formatCurrency(netWorth.total_assets)}
+                variant="positive"
+                icon={<Building2 className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Veículos"
+                value={formatCurrency(netWorth.total_vehicles)}
+                variant="blue"
+                icon={<Car className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Dívidas"
+                value={formatCurrency(netWorth.total_debt)}
+                variant="negative"
+                icon={<MinusCircle className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Patrimônio Líquido"
+                value={formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}
+                variant="positive"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
             </div>
           )}
 

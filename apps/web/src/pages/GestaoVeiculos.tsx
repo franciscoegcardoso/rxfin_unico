@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Button } from '@/components/ui/button';
 import { Plus, Car, Fuel, Wrench, Receipt, Trash2, Filter, Pencil, BarChart3, X, Calendar, Gauge, User, TrendingUp, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -224,55 +225,12 @@ export const GestaoVeiculos: React.FC = () => {
           onAddRecord={() => setDialogOpen(true)}
         />
 
-        {/* Summary Cards - Compact */}
+        {/* Summary Cards — padrão bens-investimentos */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-expense/5 border border-expense/20">
-            <div className="h-8 w-8 rounded-lg bg-expense/10 flex items-center justify-center shrink-0">
-              <Car className="h-4 w-4 text-expense" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-              <p className="text-sm font-bold text-expense truncate">
-                {formatCompactCurrency(totalGeral)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/5 border border-warning/20">
-            <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-              <Receipt className="h-4 w-4 text-warning" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Despesas</p>
-              <p className="text-sm font-bold text-foreground truncate">
-                {formatCompactCurrency(totalExpenses)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Fuel className="h-4 w-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Combustível</p>
-              <p className="text-sm font-bold text-foreground truncate">
-                {formatCompactCurrency(totalFuel)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-              <Wrench className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Serviços</p>
-              <p className="text-sm font-bold text-foreground truncate">
-                {formatCompactCurrency(totalServices)}
-              </p>
-            </div>
-          </div>
+          <HeaderMetricCard label="Total" value={formatCompactCurrency(totalGeral)} variant="negative" icon={<Car className="h-4 w-4" />} />
+          <HeaderMetricCard label="Despesas" value={formatCompactCurrency(totalExpenses)} variant="amber" icon={<Receipt className="h-4 w-4" />} />
+          <HeaderMetricCard label="Combustível" value={formatCompactCurrency(totalFuel)} variant="blue" icon={<Fuel className="h-4 w-4" />} />
+          <HeaderMetricCard label="Serviços" value={formatCompactCurrency(totalServices)} variant="neutral" icon={<Wrench className="h-4 w-4" />} />
         </div>
 
         {/* Tabs for Records and Reports */}

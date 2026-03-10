@@ -15,6 +15,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target, RefreshCw, BarChart2 } from 'lucide-react';
@@ -103,42 +104,10 @@ const PlanejamentoAnual: React.FC = () => {
           <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetch()} />
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="rounded-xl border border-border bg-card p-6">
-            <CardHeader className="p-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingUp className="h-4 w-4 text-income" />
-                Total receitas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <p className="text-xl font-semibold text-income">{formatCurrency(totalIncome)}</p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl border border-border bg-card p-6">
-            <CardHeader className="p-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <TrendingDown className="h-4 w-4 text-expense" />
-                Total despesas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <p className="text-xl font-semibold text-expense">{formatCurrency(totalExpense)}</p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl border border-border bg-card p-6">
-            <CardHeader className="p-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                <Target className="h-4 w-4" />
-                Saldo do ano
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <p className={cn('text-xl font-semibold', totalBalance >= 0 ? 'text-income' : 'text-expense')}>
-                {formatCurrency(totalBalance)}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <HeaderMetricCard label="Total receitas" value={formatCurrency(totalIncome)} variant="positive" icon={<TrendingUp className="h-4 w-4" />} />
+          <HeaderMetricCard label="Total despesas" value={formatCurrency(totalExpense)} variant="negative" icon={<TrendingDown className="h-4 w-4" />} />
+          <HeaderMetricCard label="Saldo do ano" value={formatCurrency(totalBalance)} variant={totalBalance >= 0 ? 'positive' : 'negative'} icon={<Target className="h-4 w-4" />} />
         </div>
 
         <Card className="rounded-xl border border-border bg-card p-6">
