@@ -2,7 +2,7 @@
 
 Plataforma completa de finanças pessoais: controle de receitas, despesas, cartões de crédito, financiamentos, consórcios, simulador FIPE, metas orçamentárias, Open Finance (Pluggy) e muito mais.
 
-🔗 **Produção:** [https://rxfin.lovable.app](https://rxfin.lovable.app)
+🔗 **Produção:** [https://app.rxfin.com.br](https://app.rxfin.com.br)
 
 ---
 
@@ -27,7 +27,7 @@ Plataforma completa de finanças pessoais: controle de receitas, despesas, cart�
 ```
 ├── public/                        # Assets estáticos servidos diretamente
 │   ├── images/                    # Imagens públicas (logos, ícones)
-│   └── lovable-uploads/           # Uploads via Lovable
+│   └── uploads/                   # Uploads de usuário
 │
 ├── src/
 │   ├── assets/                    # Assets importados via ES6 modules
@@ -120,8 +120,7 @@ Plataforma completa de finanças pessoais: controle de receitas, despesas, cart�
 │   ├── legal/                     # Documentação legal
 │   └── depreciation-engine-v6.3.md # Motor de depreciação (versão atual)
 │
-└── .lovable/
-    └── plan.md                    # Plano de implementação atual
+└── docs/                          # Documentação e planos
 ```
 
 ---
@@ -334,21 +333,17 @@ npx cap run android  # Requer Android Studio
 
 ```typescript
 const config: CapacitorConfig = {
-  appId: 'app.lovable.7b0a0a5442bb44a3b4036a99e5f75d58',
+  appId: 'br.com.rxfin.app',
   appName: 'rxfin',
   webDir: 'dist',
-  server: {
-    // Para dev com hot-reload, apontar para o preview:
-    // url: 'https://7b0a0a54-42bb-44a3-b403-6a99e5f75d58.lovableproject.com?forceHideBadge=true',
-    // cleartext: true
-  }
+  server: { /* url para dev se necessário */ }
 };
 ```
 
 ### Considerações para Migração
 
 #### OAuth / Deep Linking
-- O Supabase Auth usa redirect URLs — no Capacitor, configurar **custom URL scheme** (`app.lovable.rxfin://`)
+- O Supabase Auth usa redirect URLs — no Capacitor, configurar **custom URL scheme** (ex.: `br.com.rxfin.app://`)
 - Registrar o scheme no `capacitor.config.ts` e no Supabase Dashboard (Authentication → URL Configuration)
 - Usar `@capacitor/app` para capturar deep links
 

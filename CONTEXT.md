@@ -20,8 +20,8 @@ Plataforma brasileira de finanças pessoais com foco em:
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
 │   Frontend Web   │     │   App Mobile      │     │  Simuladores │
-│   (Lovable)      │     │   (Expo/RN)       │     │  (Públicos)  │
-│   rxfin_supabase │     │   apps/mobile/    │     │  (Lovable)   │
+│   apps/web/     │     │   (Expo/RN)       │     │  (Públicos)  │
+│   (Vite/React)  │     │   apps/mobile/    │     │              │
 └────────┬─────────┘     └────────┬──────────┘     └──────┬───────┘
          │                        │                        │
          └────────────┬───────────┴────────────────────────┘
@@ -50,7 +50,7 @@ Plataforma brasileira de finanças pessoais com foco em:
 
 | Camada | Tecnologia |
 |--------|-----------|
-| Frontend Web | React + TypeScript (gerenciado pelo Lovable) |
+| Frontend Web | React + TypeScript (Vite, monorepo) |
 | App Mobile | React Native + Expo |
 | Backend | Supabase Edge Functions (Deno/TypeScript) |
 | Banco de Dados | PostgreSQL 17 (Supabase) |

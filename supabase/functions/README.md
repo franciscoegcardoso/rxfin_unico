@@ -26,7 +26,4 @@ functions/
 
 ## Importante
 
-⚠️ O Lovable também deploya Edge Functions via `rxfin_supabase`.
-Quando editar funções aqui, verifique se não há conflito com o Lovable.
-
-**Regra:** Edge Functions novas → criar aqui. Edge Functions existentes → verificar se o Lovable usa antes de editar.
+Edge Functions são versionadas e deployadas a partir deste repositório (GitHub Actions em push para `develop`/`main`).

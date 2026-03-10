@@ -44,7 +44,7 @@ Os CTAs usam `VITE_APP_URL`:
 
 ## Conteúdo da landing (rxfinlp)
 
-Para usar o conteúdo completo da landing Lovable (rxfinlp-main), copie os arquivos de `landing/rxfinlp-main/` para esta pasta, mantendo a estrutura:
+Para usar o conteúdo completo da landing (rxfinlp-main), copie os arquivos de `landing/rxfinlp-main/` para esta pasta, mantendo a estrutura:
 
 - `src/components/landing/` – componentes da landing
 - `src/pages/` – páginas

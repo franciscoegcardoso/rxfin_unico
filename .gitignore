@@ -10,6 +10,7 @@ _logs/
 
 # Build outputs
 dist/
+dist-ssr/
 build/
 .next/
 .expo/
@@ -31,10 +32,15 @@ web-build/
 apps/web-next/.env.local
 
 # IDE
-.vscode/settings.json
+.vscode/
 .idea/
+*.suo
+.ntvs
+*.njsproj
+*.sln
 *.swp
 *.swo
+*.sw?
 *~
 
 # Temp / test
@@ -48,6 +54,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Testing
 coverage/
@@ -78,3 +85,4 @@ n8n/.n8n/
 .vercel
 
 temp-supabase-ref/
+_ref_supabase_data_link/

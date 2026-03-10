@@ -1,0 +1,20 @@
+# Normaliza todos os arquivos para LF
+* text=auto eol=lf
+
+# Arquivos que devem ser binários (sem conversão)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+
+# Windows batch files usam CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
