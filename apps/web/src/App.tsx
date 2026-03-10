@@ -63,7 +63,7 @@ import HistoricoPagamentos from "./pages/HistoricoPagamentos";
 import IndicacoesTab from "./pages/financeiro/IndicacoesTab";
 
 import Simuladores from "./pages/Simuladores";
-import SimuladorFipe from "./pages/simuladores/SimuladorFipe";
+import SimuladorFipe from "./pages/SimuladorFipe";
 import SimuladorFinanciamento from "./pages/SimuladorFinanciamento";
 import SimuladorCustoHora from "./pages/SimuladorCustoHora";
 import HubSimuladores from "./pages/simuladores/Hub";
