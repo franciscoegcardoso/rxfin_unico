@@ -60,7 +60,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
   // Desktop: dentro do shell → só sidebar Config + conteúdo (sem TopNavbar; sidebar app já existe)
   if (insideShell) {
     return (
-      <div className="flex flex-1 min-h-0 w-full">
+      <div className="flex flex-1 min-h-0 w-full min-h-[calc(100vh-3.5rem)]">
         {/* Settings Sidebar */}
         <aside className="w-56 border-r bg-muted/30 min-h-full p-4 shrink-0 flex flex-col">
           <div className="mb-3 px-3">
@@ -91,8 +91,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6 overflow-auto min-w-0">
+        {/* Main Content — altura mínima para área de scroll preencher a tela */}
+        <main className="flex-1 p-6 overflow-auto min-w-0 min-h-[calc(100vh-3.5rem)]">
           <div className="w-full max-w-full min-w-0">
             <PageTransition>
               {children}

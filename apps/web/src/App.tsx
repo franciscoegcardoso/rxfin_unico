@@ -96,8 +96,8 @@ import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import VerificarEmail from "./pages/VerificarEmail";
-// Admin routes — lazy loaded so non-admin users never download admin code
-const Admin = lazy(() => import('./pages/admin/Admin'));
+import Admin from "./pages/admin/Admin";
+// Admin routes — lazy loaded so non-admin users never download admin code (Admin is static so /admin redirects immediately)
 const AdminUsuarios = lazy(() => import('./pages/admin/AdminUsuarios'));
 const AdminPlanos = lazy(() => import('./pages/admin/AdminPlanos'));
 const AdminPaginas = lazy(() => import('./pages/admin/AdminPaginas'));
@@ -284,7 +284,7 @@ const App = () => (
                   <Route path="/meu-ir" element={<ProtectedRoute><MeuIR /></ProtectedRoute>} />
                   {/* Perfil route now redirected above */}
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
-                  <Route path="/admin" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" message="Carregando painel admin..." />}><Admin /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin" element={<AdminSecureLayout><Admin /></AdminSecureLayout>} />
                   <Route path="/admin/dashboard" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDashboard /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/estrategico" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><Estrategico /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/usuarios" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminUsuarios /></Suspense></AdminSecureLayout>} />
