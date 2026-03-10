@@ -34,6 +34,9 @@ apps/web-next/.env.local
 # IDE
 .vscode/
 .idea/
+
+# Claude Code CLI (dados sensíveis — nunca versionar)
+.claude/
 *.suo
 .ntvs
 *.njsproj
