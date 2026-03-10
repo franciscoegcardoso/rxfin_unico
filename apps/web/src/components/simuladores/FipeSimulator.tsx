@@ -628,8 +628,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         </CardHeader>
         <CardContent className="space-y-6 p-6 pt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-            {/* Left Column — VehicleSearch */}
-            <div className="space-y-4 flex flex-col">
+            {/* Left Column — VehicleSearch (mesma largura que a direita) */}
+            <div className="space-y-4 flex flex-col min-w-0 lg:min-h-[380px]">
               {/* Vehicle Type */}
               <div className="space-y-2">
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de Veículo</span>
@@ -663,7 +663,15 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
               {/* Marca */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">MARCA</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">MARCA *</span>
+                  {fipe.selectedBrand && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      Marca selecionada
+                    </span>
+                  )}
+                </div>
                 {fipe.loading.brands ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -683,7 +691,15 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
               {/* Modelo */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">MODELO</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">MODELO *</span>
+                  {fipe.selectedModel && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      Modelo selecionado
+                    </span>
+                  )}
+                </div>
                 {fipe.loading.models ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -702,9 +718,17 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                 )}
               </div>
 
-              {/* Ano */}
+              {/* Ano/Modelo */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">ANO</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">ANO/MODELO *</span>
+                  {fipe.selectedYear && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      Ano selecionado
+                    </span>
+                  )}
+                </div>
                 {fipe.loading.years ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -723,21 +747,13 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                 )}
               </div>
 
-              {/* Botão Consultar — CTA principal em destaque */}
-              <Button
-                type="button"
-                disabled={!fipe.selectedBrand || !fipe.selectedModel || !fipe.selectedYear || fipe.loading.price}
-                className="min-h-[52px] w-full bg-primary text-primary-foreground font-sans font-bold rounded-xl hover:bg-primary/90 text-base"
-              >
-                {fipe.loading.price ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Consultando...
-                  </>
-                ) : (
-                  'Consultar'
-                )}
-              </Button>
+              {/* Consulta automática ao selecionar marca, modelo e ano — sem botão Consultar */}
+              {fipe.loading.price && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  Consultando valor FIPE...
+                </div>
+              )}
 
               <AnimatePresence>
                 {fipe.error && (
@@ -754,8 +770,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
               </AnimatePresence>
             </div>
 
-            {/* Right Column - Results (altura alinhada à coluna de seleção à esquerda) */}
-            <div className="flex flex-col min-h-0">
+            {/* Right Column - Results (mesma largura que a esquerda) */}
+            <div className="flex flex-col min-h-0 min-w-0 lg:min-h-[380px]">
               <AnimatePresence mode="wait">
                 {fipe.loading.price && (
                   <motion.div
@@ -836,9 +852,13 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-4 mt-auto border-t border-border">
-                        <p>Código: {fipe.price.CodigoFipe}</p>
-                        <p className="text-right">Combustível: {fipe.price.Combustivel}</p>
+                      <div className="pt-4 mt-auto border-t border-border space-y-2">
+                        <p className="text-xs text-muted-foreground font-medium">Detalhes do veículo</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          <p><span className="font-medium text-foreground">Código FIPE:</span> {fipe.price.CodigoFipe}</p>
+                          <p><span className="font-medium text-foreground">Ano/Modelo:</span> {fipe.price.AnoModelo === 32000 ? '0 km' : fipe.price.AnoModelo}</p>
+                          <p><span className="font-medium text-foreground">Combustível:</span> {fipe.price.Combustivel}</p>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
