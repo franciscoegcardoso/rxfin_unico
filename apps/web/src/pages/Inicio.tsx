@@ -618,6 +618,44 @@ const Inicio: React.FC = () => {
             )}
           </motion.div>
 
+          {/* Cards Receitas, Despesas, Saldo e Lançamentos — logo abaixo da saudação (desktop) */}
+          {monthSummary && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" data-tour="metrics-cards">
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <HeaderMetricCard
+                  label="Receitas"
+                  value={isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
+                  variant="positive"
+                  icon={<TrendingUp className="h-4 w-4" />}
+                />
+              </DemoCardWrapper>
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <HeaderMetricCard
+                  label="Despesas"
+                  value={isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
+                  variant="negative"
+                  icon={<TrendingDown className="h-4 w-4" />}
+                />
+              </DemoCardWrapper>
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <HeaderMetricCard
+                  label="Saldo"
+                  value={isHidden ? "••••••" : formatCurrency(monthSummary.balance ?? 0)}
+                  variant={(monthSummary.balance ?? 0) >= 0 ? "positive" : "negative"}
+                  icon={<Wallet className="h-4 w-4" />}
+                />
+              </DemoCardWrapper>
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <HeaderMetricCard
+                  label="Lançamentos"
+                  value={String(monthSummary.count_total ?? "—")}
+                  variant="blue"
+                  icon={<Receipt className="h-4 w-4" />}
+                />
+              </DemoCardWrapper>
+            </div>
+          )}
+
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
@@ -627,43 +665,6 @@ const Inicio: React.FC = () => {
             <UpcomingEventsCard />
             <PackagesSummaryCard />
           </div>
-
-        {monthSummary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" data-tour="metrics-cards">
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <HeaderMetricCard
-                label="Receitas"
-                value={isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
-                variant="positive"
-                icon={<TrendingUp className="h-4 w-4" />}
-              />
-            </DemoCardWrapper>
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <HeaderMetricCard
-                label="Despesas"
-                value={isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
-                variant="negative"
-                icon={<TrendingDown className="h-4 w-4" />}
-              />
-            </DemoCardWrapper>
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <HeaderMetricCard
-                label="Saldo"
-                value={isHidden ? "••••••" : formatCurrency(monthSummary.balance ?? 0)}
-                variant={(monthSummary.balance ?? 0) >= 0 ? "positive" : "negative"}
-                icon={<Wallet className="h-4 w-4" />}
-              />
-            </DemoCardWrapper>
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <HeaderMetricCard
-                label="Lançamentos"
-                value={String(monthSummary.count_total ?? "—")}
-                variant="blue"
-                icon={<Receipt className="h-4 w-4" />}
-              />
-            </DemoCardWrapper>
-          </div>
-        )}
 
         {/* Evolução e Cartão lado a lado no desktop para reduzir espaços vazios */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
