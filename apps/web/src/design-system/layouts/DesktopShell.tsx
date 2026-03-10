@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
-import { ShellContext } from "@/design-system/layouts/ShellContext";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 
 interface DesktopShellProps {
   userName: string;
@@ -37,19 +37,22 @@ const shellErrorFallback = (retry: () => void) => (
 );
 
 /**
- * DesktopShell — wrapper de rotas autenticadas no desktop.
- * Não renderiza navbar/sidebar própria: o AppLayout (pai) já inclui AppSidebar.
- * Apenas fornece ShellContext (insideShell=true) e ErrorBoundary para o Outlet.
+ * DesktopShell — shell das rotas autenticadas no desktop (>= md).
+ * Renderiza AppSidebar à esquerda + Outlet à direita em flex-row.
+ * insideShell=true é fornecido pelo AppShell pai.
  */
 export const DesktopShell: React.FC<DesktopShellProps> = () => {
   const location = useLocation();
   return (
-    <ShellContext.Provider value={{ insideShell: true }}>
-      <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
-        <div className="animate-in fade-in duration-200 ease-out w-full max-w-full min-w-0">
-          <Outlet />
-        </div>
-      </ErrorBoundary>
-    </ShellContext.Provider>
+    <div className="flex flex-row flex-1 w-full h-full overflow-hidden">
+      <AppSidebar />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
+          <div className="animate-in fade-in duration-200 ease-out w-full h-full overflow-y-auto">
+            <Outlet />
+          </div>
+        </ErrorBoundary>
+      </div>
+    </div>
   );
 };

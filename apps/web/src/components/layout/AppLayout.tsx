@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AppSidebar } from './AppSidebar';
 import { PageTransition } from './PageTransition';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -94,31 +93,28 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <MobileMenuProvider>
-      <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-row">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <DemoDataBanner />
-          <main
-            className={cn(
-              'w-full max-w-full overflow-x-hidden flex-1',
-              'px-4 md:px-6 lg:px-8 pb-6',
-              isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
-            )}
-          >
-            {content}
-          </main>
-          {!isMobile && (
-            <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
-              <SecureConnectionBadge />
-            </footer>
+      <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
+        <DemoDataBanner />
+        <main
+          className={cn(
+            'w-full max-w-full overflow-x-hidden flex-1',
+            'px-4 md:px-6 lg:px-8 pb-6',
+            isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
           )}
-          {isMobile && <MobileBottomNav />}
-          <PhoneCompletionDialog
-            open={showPhoneDialog}
-            onComplete={() => setPhoneCompleted(true)}
-            currentEmail={currentEmail}
-          />
-        </div>
+        >
+          {content}
+        </main>
+        {!isMobile && (
+          <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
+            <SecureConnectionBadge />
+          </footer>
+        )}
+        {isMobile && <MobileBottomNav />}
+        <PhoneCompletionDialog
+          open={showPhoneDialog}
+          onComplete={() => setPhoneCompleted(true)}
+          currentEmail={currentEmail}
+        />
       </div>
     </MobileMenuProvider>
   );
