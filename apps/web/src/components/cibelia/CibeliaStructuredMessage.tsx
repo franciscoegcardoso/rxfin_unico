@@ -97,6 +97,12 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
             'bg-muted/50 border-border'
           )}
         >
+          <div className="flex items-center gap-1.5 mb-1">
+            <BarChart2 className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Resumo do período
+            </span>
+          </div>
           {data.data.map((item, i) => (
             <div
               key={i}
@@ -121,13 +127,19 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
 
       {data.analysis && (
         <div className="flex gap-2 items-start text-sm text-muted-foreground">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+          <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
           <p className="leading-relaxed">{data.analysis}</p>
         </div>
       )}
 
       {data.nextSteps && data.nextSteps.length > 0 && (
         <div className="rounded-xl border p-3 flex flex-col gap-1.5 bg-muted/50 border-border min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-1">
+            <CheckCircle2 className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Próximos passos
+            </span>
+          </div>
           {data.nextSteps.map((step, i) => {
             const Icon = getIcon(step.icon);
             return (
@@ -145,7 +157,7 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
 
       {data.cta && (
         <div className="flex gap-2 items-start text-sm text-primary rounded-xl border p-3 bg-primary/5 border-primary/20">
-          <Sparkles className="h-4 w-4 mt-0.5 shrink-0" aria-hidden />
+          <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden />
           <p className="leading-relaxed font-medium">{data.cta}</p>
         </div>
       )}
