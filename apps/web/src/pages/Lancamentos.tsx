@@ -765,7 +765,7 @@ export const Lancamentos: React.FC = () => {
   return (
     <>
     <AppLayout>
-      <div className="space-y-6">
+      <div className="content-zone py-5 md:py-6 space-y-6">
         {/* Outdated Connection Banner */}
         {!isManual && <OutdatedConnectionBanner />}
 
