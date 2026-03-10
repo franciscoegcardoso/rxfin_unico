@@ -1,3 +1,4 @@
+import React from "react";
 import { LucideIcon, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -43,8 +44,6 @@ export function PageHeader({
     }
   };
 
-  const isIconComponent = typeof iconProp === "function";
-
   return (
     <div className={cn(
       "flex flex-col gap-3",
@@ -69,15 +68,13 @@ export function PageHeader({
             </Button>
           )}
           {iconProp != null && (
-            isIconComponent ? (
+            React.isValidElement(iconProp) ? (
+              iconProp
+            ) : (
               (() => {
                 const Icon = iconProp as LucideIcon;
                 return <Icon className="h-4 w-4 text-primary md:h-5 md:w-5 flex-shrink-0" aria-hidden />;
               })()
-            ) : (
-              <div className="h-4 w-4 text-primary md:h-5 md:w-5 flex-shrink-0 [&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-5 md:[&>svg]:w-5" aria-hidden>
-                {iconProp}
-              </div>
             )
           )}
           <h1 className="text-lg font-semibold text-foreground sm:text-xl lg:text-2xl leading-tight break-words md:truncate">
