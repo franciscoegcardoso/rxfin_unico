@@ -238,12 +238,14 @@ export function useNavMenuPages(): NavMenuData {
       
       if (pagesError) throw pagesError;
       
-      // Transformar dados para incluir informações do grupo inline
+      // Path canônico do Simulador FIPE dentro da árvore autenticada (AppShell) para o dropdown não cair no layout público
+      const SIMULADOR_FIPE_PATH = '/simuladores/veiculos/simulador-fipe';
+      const normalizedPath = (p: string) => (p && p.startsWith('/') ? p : `/${p || ''}`.replace(/\/+/g, '/'));
       const transformedPages: NavPage[] = (pages || []).map((page: any) => ({
         id: page.id,
         slug: page.slug,
         title: page.title,
-        path: page.path,
+        path: page.slug === 'simulador-fipe' ? SIMULADOR_FIPE_PATH : normalizedPath(page.path),
         icon: page.icon,
         access_level: page.access_level,
         is_active_users: page.is_active_users,

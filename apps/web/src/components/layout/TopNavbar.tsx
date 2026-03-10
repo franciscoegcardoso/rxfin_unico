@@ -78,8 +78,11 @@ export const TopNavbar: React.FC = () => {
     }
   };
 
+  // Garantir path absoluto para cair na árvore autenticada (AppShell), não no layout público
+  const toPath = (path: string) => (path && path.startsWith('/') ? path : `/${path || ''}`);
+
   const renderDropdownItem = (item: NavMenuItem) => {
-    const isActive = location.pathname === item.path;
+    const isActive = location.pathname === toPath(item.path);
     const isVisuallyDisabled = item.isLocked || item.isComingSoon;
     const canNavigate = item.canAccessAsAdmin || !isVisuallyDisabled;
 
@@ -88,7 +91,7 @@ export const TopNavbar: React.FC = () => {
       return (
         <Link
           key={item.path}
-          to={item.path}
+          to={toPath(item.path)}
           className={cn(
             "flex items-center gap-2",
             isActive && "text-primary",
@@ -167,17 +170,18 @@ export const TopNavbar: React.FC = () => {
         <nav className="hidden lg:flex items-center gap-1 flex-1 ml-6">
           {/* Itens principais (Início, Bens, IR) */}
           {displayMainItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const path = toPath(item.path);
+            const isActive = location.pathname === path;
             const isVisuallyDisabled = item.isLocked || item.isComingSoon;
             const canNavigate = item.canAccessAsAdmin || !isVisuallyDisabled;
-            const tourId = item.path === '/bens-investimentos' ? 'nav-patrimonio' : undefined;
+            const tourId = path === '/bens-investimentos' ? 'nav-patrimonio' : undefined;
             
             // Admin can navigate but sees visual indicator
             if (canNavigate) {
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  to={path}
                   data-tour={tourId}
                   className={cn(
                     "relative flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-all",
