@@ -1,4 +1,5 @@
 import React from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -23,7 +24,8 @@ interface OnboardingStep {
   description: string;
   status: 'done' | 'partial' | 'pending';
   path: string;
-  icon: React.ReactNode;
+  /** Elemento React (ex: <Wallet />) ou componente Lucide — nunca passar como objeto no JSX */
+  icon: React.ReactNode | LucideIcon;
 }
 
 interface OnboardingStepsDialogProps {
@@ -70,7 +72,14 @@ const OnboardingStepCard: React.FC<{
       </div>
       <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center gap-2">
-          <span className="shrink-0">{step.icon}</span>
+          <span className="shrink-0">
+            {React.isValidElement(step.icon)
+              ? step.icon
+              : (() => {
+                  const Icon = step.icon as LucideIcon;
+                  return <Icon className="h-4 w-4" aria-hidden />;
+                })()}
+          </span>
           <span className={cn(
             "font-medium text-sm",
             step.status === 'done' && "text-income"
