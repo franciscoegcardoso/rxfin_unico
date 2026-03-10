@@ -22,48 +22,11 @@ interface FeaturesSectionProps {
   onFeatureClick: (featureId: string) => void;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
   pillars,
   complementary,
   onFeatureClick,
 }) => {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [phoneValid, setPhoneValid] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const scrollToWaitlist = () => {
-    document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleWaitlistSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = email.trim();
-    if (!EMAIL_REGEX.test(trimmed)) {
-      toast.error('Digite um email válido');
-      return;
-    }
-    setLoading(true);
-    try {
-      await (supabase.from('leads') as any).upsert(
-        { email: trimmed, phone: phone.trim() || null, source: 'waitlist_final', user_agent: navigator.userAgent },
-        { onConflict: 'email' }
-      );
-      trackWaitlistClick('final');
-      trackEvent('lead_captured', { source: 'waitlist_final' });
-      toast.success('Você está na lista! 🎉');
-      setEmail('');
-      setPhone('');
-      setPhoneValid(false);
-    } catch {
-      toast.error('Erro ao salvar. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleMicroCta = (featureId: string) => {
     trackMicroCtaClick(featureId);
     onFeatureClick(featureId);
