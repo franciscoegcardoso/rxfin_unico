@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { MobileMenuProvider } from "@/contexts/MobileMenuContext";
 import { ShellContext } from "./ShellContext";
 import { MobileShell } from "./MobileShell";
 import { DesktopShell } from "./DesktopShell";
@@ -20,16 +21,18 @@ export const AppShell: React.FC = () => {
 
   return (
     <ShellContext.Provider value={{ insideShell: true }}>
-      {/* Mobile: visível apenas < md */}
-      <div className="md:hidden min-h-screen">
-        <MobileShell>
-          <Outlet />
-        </MobileShell>
-      </div>
-      {/* Desktop: visível apenas >= md */}
-      <div className="hidden md:flex h-screen overflow-hidden bg-background">
-        <DesktopShell userName={userName} userEmail={userEmail} />
-      </div>
+      <MobileMenuProvider>
+        {/* Mobile: visível apenas < md */}
+        <div className="md:hidden min-h-screen">
+          <MobileShell>
+            <Outlet />
+          </MobileShell>
+        </div>
+        {/* Desktop: visível apenas >= md */}
+        <div className="hidden md:flex h-screen overflow-hidden bg-background">
+          <DesktopShell userName={userName} userEmail={userEmail} />
+        </div>
+      </MobileMenuProvider>
     </ShellContext.Provider>
   );
 };

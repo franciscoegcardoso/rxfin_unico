@@ -4,7 +4,6 @@ import { PageTransition } from './PageTransition';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { MobileBottomNav } from '@/components/mobile/MobileBottomNav';
-import { MobileMenuProvider } from '@/contexts/MobileMenuContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
@@ -69,7 +68,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     // Dentro do AppShell (DesktopShell): o main do Shell já tem pt-14 (navbar).
     // Só precisamos compensar o banner fixo (32px) quando em demo — pt-8.
     return (
-      <MobileMenuProvider>
+      <>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
           <main
             className={`
@@ -87,12 +86,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           onComplete={() => setPhoneCompleted(true)}
           currentEmail={currentEmail}
         />
-      </MobileMenuProvider>
+      </>
     );
   }
 
   return (
-    <MobileMenuProvider>
+    <>
       <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
         <DemoDataBanner />
         <main
@@ -116,6 +115,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           currentEmail={currentEmail}
         />
       </div>
-    </MobileMenuProvider>
+    </>
   );
 };
