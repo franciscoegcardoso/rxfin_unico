@@ -121,6 +121,7 @@ const AdminArchitecturePage = lazy(() => import('./pages/admin/AdminArchitecture
 const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
 const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
 import { RaioXChat } from "./components/ai/RaioXChat";
+import { CanonicalLink } from "@/components/seo/CanonicalLink";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import BemVindo from "./pages/BemVindo";
@@ -167,6 +168,7 @@ const App = () => (
                     <Sonner />
                     <GlobalSyncIndicator />
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <CanonicalLink />
                   <TrackingProvider>
                   <MagicLinkHandler>
                     <GuidedTour />
