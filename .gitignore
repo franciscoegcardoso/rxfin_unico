@@ -97,3 +97,18 @@ next-env.d.ts
 
 # Guia de segredos — contém nomes de variáveis sensíveis
 docs/guides/deploy-secrets.md
+
+# Turborepo / Monorepo
+.turbo/
+apps/web/.turbo/
+apps/landing/.turbo/
+
+# Expo / Mobile
+apps/mobile/.expo/
+apps/mobile/dist/
+
+# Relatórios e artefatos de CI
+coverage/
+*.lcov
+playwright-report/
+test-results/

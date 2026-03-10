@@ -157,3 +157,39 @@ perf: otimização de performance
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_PROJECT_ID` (prod)
 - `SUPABASE_STAGING_PROJECT_ID` (staging)
+
+## Status de Governança do Repositório
+
+**Auditoria de estrutura concluída em março/2026** (commits `90310da` → `1411a9a` → `6e83b54` → fase 4).
+
+### Estrutura pós-auditoria
+
+```
+rxfin_unico/
+├── .cursor/rules/        ← Regras Cursor AI (padrão 0.43+)
+├── .github/
+│   ├── CODEOWNERS        ← Responsáveis por área
+│   ├── ISSUE_TEMPLATE/
+│   ├── pull_request_template.md
+│   └── workflows/        ← 4 workflows CI/CD
+├── apps/
+│   ├── web/              ← App principal (Vite + React + Supabase)
+│   ├── landing/          ← Landing page (Vite + React)
+│   └── mobile/           ← App mobile (Expo, embrionário)
+├── docs/
+│   ├── adr/              ← Decisões de arquitetura
+│   ├── archive/          ← Outputs de sprints antigos
+│   ├── audits/           ← Audits e verificações
+│   └── guides/           ← Guias operacionais
+├── n8n/workflows/        ← Backup workflows n8n Cloud
+├── packages/shared/      ← Tipos TypeScript compartilhados
+├── scripts/              ← Scripts utilitários
+├── supabase/             ← 3 Edge Functions ativas no CI/CD
+└── apps/web/supabase/    ← Conjunto completo (⚠️ ver nota abaixo)
+```
+
+### Decisão arquitetural pendente
+
+`apps/web/supabase/` contém o conjunto **completo** de Edge Functions (dezenas) e o histórico completo de migrations. `supabase/` na raiz contém apenas 3 functions e é o que o CI/CD deploya hoje.
+
+**Ação futura necessária:** consolidar tudo em `supabase/` na raiz, atualizar os workflows `.github/workflows/deploy-functions-*.yml`, e então remover `apps/web/supabase/`.

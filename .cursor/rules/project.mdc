@@ -1,3 +1,8 @@
+---
+description: Regras do projeto RXFin para o Cursor AI
+alwaysApply: true
+---
+
 # RXFin — Contexto do Projeto
 
 ## Stack
@@ -13,7 +18,7 @@
 - Staging: rxfin-staging
 
 ## Estrutura do Monorepo
-- apps/web — app React/Vite (Lovable-synced)
+- apps/web — app React/Vite
 - apps/mobile — React Native/Expo
 - supabase/functions/ — Edge Functions (Deno)
 - n8n/workflows/ — workflows exportados

@@ -1,0 +1,28 @@
+# CODEOWNERS — responsáveis por revisão de cada área do repositório
+# Formato: <padrão> <@usuário ou @org/time>
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Dono padrão de todo o repositório
+*                                   @franciscoegcardoso
+
+# App principal (web)
+apps/web/                           @franciscoegcardoso
+
+# Landing page
+apps/landing/                       @franciscoegcardoso
+
+# App mobile
+apps/mobile/                        @franciscoegcardoso
+
+# Edge Functions e banco de dados
+supabase/                           @franciscoegcardoso
+apps/web/supabase/                  @franciscoegcardoso
+
+# CI/CD e infraestrutura
+.github/                            @franciscoegcardoso
+
+# Automações n8n
+n8n/                                @franciscoegcardoso
+
+# Documentação
+docs/                               @franciscoegcardoso
