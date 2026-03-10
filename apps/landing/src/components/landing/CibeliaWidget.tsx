@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, X, Send } from 'lucide-react';
+import { X, Send } from 'lucide-react';
+import cibeliaImg from '@/assets/cibelia.png';
 import {
   Tooltip,
   TooltipContent,
@@ -180,7 +181,7 @@ export const CibeliaWidget: React.FC = () => {
               {isOpen ? (
                 <X className="h-6 w-6" />
               ) : (
-                <Sparkles className="h-6 w-6" />
+                <img src={cibeliaImg} alt="Cibélia" className="h-8 w-8 rounded-full object-cover" />
               )}
               {/* Badge pulsante: só antes da primeira abertura */}
               {!hasBeenOpened && (

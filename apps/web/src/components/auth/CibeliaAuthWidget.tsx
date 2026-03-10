@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Sparkles, X, Send } from 'lucide-react';
+import { X, Send } from 'lucide-react';
+import cibeliaImg from '@/assets/cibelia.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
@@ -118,8 +119,8 @@ export const CibeliaAuthWidget: React.FC = () => {
         >
           <div className="flex-shrink-0 flex items-center justify-between gap-2 p-3 bg-primary text-primary-foreground rounded-t-2xl">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                <Sparkles className="h-4 w-4 text-white" />
+              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
+                <img src={cibeliaImg} alt="Cibélia" className="h-full w-full object-cover" />
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-[13px] leading-tight">Cibélia</p>
@@ -207,7 +208,7 @@ export const CibeliaAuthWidget: React.FC = () => {
         {isOpen ? (
           <X className="h-5 w-5" />
         ) : (
-          <Sparkles className="h-5 w-5" />
+          <img src={cibeliaImg} alt="Cibélia" className="h-8 w-8 rounded-full object-cover" />
         )}
         {!hasBeenOpened && (
           <span

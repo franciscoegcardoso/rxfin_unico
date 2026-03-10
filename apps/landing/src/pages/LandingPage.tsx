@@ -16,7 +16,6 @@ import { FeaturePreviewDialog } from '@/components/landing/FeaturePreviewDialog'
 import { featureContentMap } from '@/components/landing/featureSlideContents';
 import { ExitIntentPopup } from '@/components/landing/ExitIntentPopup';
 import { LeadGateDialog } from '@/components/landing/LeadGateDialog';
-import { WhatsAppButton } from '@/components/landing/WhatsAppButton';
 import { CibeliaWidget } from '@/components/landing/CibeliaWidget';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProofBar } from '@/components/landing/SocialProofBar';
@@ -150,7 +149,6 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-background">
       <ExitIntentPopup />
       <CibeliaWidget />
-      <WhatsAppButton />
       <LeadGateDialog open={leadGateOpen} onOpenChange={setLeadGateOpen} simulatorName={pendingSimName} onContinue={handleLeadGateContinue} />
       <FeaturePreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} content={getPreviewContent()} />
 
