@@ -5,14 +5,17 @@ import { MobileMenuProvider } from "@/contexts/MobileMenuContext";
 import { ShellContext } from "./ShellContext";
 import { MobileShell } from "./MobileShell";
 import { DesktopShell } from "./DesktopShell";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
  * App shell: rotas autenticadas.
+ * Renderização condicional (useIsMobile) garante um único <Outlet /> montado por vez,
+ * evitando duplo Outlet (mobile + desktop com display:none) que congela o RouterContext.
  * < md: MobileShell (bottom nav), >= md: DesktopShell (sidebar).
- * Rotas públicas ficam fora deste wrapper.
  */
 export const AppShell: React.FC = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const userName =
     (user?.user_metadata?.full_name as string) ||
     user?.email?.split("@")[0] ||
@@ -22,16 +25,17 @@ export const AppShell: React.FC = () => {
   return (
     <ShellContext.Provider value={{ insideShell: true }}>
       <MobileMenuProvider>
-        {/* Mobile: visível apenas < md */}
-        <div className="md:hidden min-h-screen">
-          <MobileShell>
-            <Outlet />
-          </MobileShell>
-        </div>
-        {/* Desktop: visível apenas >= md */}
-        <div className="hidden md:flex h-screen overflow-hidden bg-background">
-          <DesktopShell userName={userName} userEmail={userEmail} />
-        </div>
+        {isMobile ? (
+          <div className="min-h-screen">
+            <MobileShell>
+              <Outlet />
+            </MobileShell>
+          </div>
+        ) : (
+          <div className="flex h-screen overflow-hidden bg-background">
+            <DesktopShell userName={userName} userEmail={userEmail} />
+          </div>
+        )}
       </MobileMenuProvider>
     </ShellContext.Provider>
   );
