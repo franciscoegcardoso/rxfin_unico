@@ -44,7 +44,7 @@ export const DemoDataBanner: React.FC = () => {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <p className="text-sm font-medium truncate">
-            <span className="hidden sm:inline">⚠️ Estes são dados fictícios para você conhecer a ferramenta. </span>
+            <span className="hidden sm:inline">Estes são dados fictícios para você conhecer a ferramenta. </span>
             <span className="sm:hidden">Dados fictícios — </span>
             <span className="font-normal opacity-90 hidden md:inline">
               Complete o Raio-X para ver seus dados reais.

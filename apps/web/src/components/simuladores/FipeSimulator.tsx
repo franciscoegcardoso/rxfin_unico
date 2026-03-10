@@ -615,24 +615,24 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         </Card>
       )}
 
-      {/* Main Simulator — VehicleSearch + FIPEResultCard (C5A) */}
-      <Card className="bg-card border border-border rounded-xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <Car className="h-5 w-5 text-primary" />
+      {/* Main Simulator — layout conforme modelo: esquerda (seleção) + direita (resultado) */}
+      <Card className="bg-card border border-border rounded-xl shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-foreground text-lg sm:text-xl">
+            <Car className="h-5 w-5 text-primary shrink-0" />
             Dados do veículo na FIPE
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais
+          <CardDescription className="text-muted-foreground text-sm">
+            Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 p-6">
+        <CardContent className="space-y-6 p-6 pt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
             {/* Left Column — VehicleSearch */}
             <div className="space-y-4 flex flex-col">
               {/* Vehicle Type */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de veículo</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Tipo de Veículo</span>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { value: 'carros' as VehicleType, label: 'Carros', icon: Car },
@@ -663,7 +663,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
               {/* Marca */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Marca</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">MARCA</span>
                 {fipe.loading.brands ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -683,7 +683,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
               {/* Modelo */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Modelo</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">MODELO</span>
                 {fipe.loading.models ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -704,7 +704,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
               {/* Ano */}
               <div className="space-y-2">
-                <span className="text-xs text-muted-foreground uppercase tracking-wider">Ano</span>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">ANO</span>
                 {fipe.loading.years ? (
                   <Skeleton className="h-12 rounded-xl bg-muted animate-pulse" />
                 ) : (
@@ -723,11 +723,11 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                 )}
               </div>
 
-              {/* Botão Consultar */}
+              {/* Botão Consultar — CTA principal em destaque */}
               <Button
                 type="button"
                 disabled={!fipe.selectedBrand || !fipe.selectedModel || !fipe.selectedYear || fipe.loading.price}
-                className="min-h-[52px] w-full bg-primary text-primary-foreground font-sans font-bold rounded-xl hover:bg-primary/90"
+                className="min-h-[52px] w-full bg-primary text-primary-foreground font-sans font-bold rounded-xl hover:bg-primary/90 text-base"
               >
                 {fipe.loading.price ? (
                   <>
@@ -778,60 +778,65 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="flex-1 flex flex-col min-h-0"
                   >
-                    {/* FIPEResultCard — resumo sem gráfico (histórico em "Histórico FIPE" abaixo) */}
-                    <div className="p-6 rounded-xl bg-card border border-border flex-1 flex flex-col gap-4 min-h-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-muted-foreground">Valor FIPE</span>
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Consulta realizada
+                    {/* FIPEResultCard — layout alinhado ao modelo: Valor FIPE, preço, nome, mês, variação, tag, Favoritar, Código/Combustível */}
+                    <div className="relative p-6 rounded-xl bg-card border border-border flex-1 flex flex-col min-h-0">
+                      {/* Indicador "Consulta realizada" no canto superior direito */}
+                      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-primary/15 text-primary text-xs font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        Consulta realizada
+                      </div>
+
+                      <div className="flex flex-col gap-3 pr-32">
+                        <p className="text-sm text-muted-foreground font-medium">Valor FIPE</p>
+                        <p className="font-syne font-extrabold text-3xl sm:text-4xl text-foreground leading-tight">
+                          {fipe.price.Valor}
+                        </p>
+                        <p className="font-syne font-bold text-lg sm:text-xl text-foreground">
+                          {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Mês de referência: {fipe.price.MesReferencia}</p>
+                        {/* Variação mensal (últimos 2 pontos do histórico) — mantida conforme solicitado */}
+                        {(() => {
+                          const hist = fipeHistory.priceHistory;
+                          if (hist.length >= 2) {
+                            const prev = hist[hist.length - 2].price;
+                            const last = hist[hist.length - 1].price;
+                            const pct = prev > 0 ? ((last - prev) / prev) * 100 : 0;
+                            const positive = pct >= 0;
+                            return (
+                              <div className={cn("flex items-center gap-1.5 text-sm font-medium", positive ? "text-income" : "text-expense")}>
+                                {positive ? <TrendingUp className="h-4 w-4 shrink-0" /> : <TrendingDown className="h-4 w-4 shrink-0" />}
+                                <span>{positive ? '+' : ''}{pct.toFixed(2)}% variação mensal</span>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        {/* Tag categoria (ex.: Sedan Médio) */}
+                        {(() => {
+                          const mdlName = fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || '';
+                          const category = inferVehicleCategory(mdlName, fipe.vehicleType);
+                          return (
+                            <span className="inline-flex w-fit bg-primary/10 text-primary text-xs font-medium rounded-full px-2.5 py-1 capitalize">
+                              {category.replace(/_/g, ' ')}
+                            </span>
+                          );
+                        })()}
+                        <div className="flex items-center pt-1">
+                          <Button
+                            variant={fipeFavoritesProps.isFavorited ? "secondary" : "outline"}
+                            size="sm"
+                            onClick={fipeFavoritesProps.onAddFavorite}
+                            disabled={fipeFavoritesProps.isFavorited}
+                            className="gap-1.5 border-border bg-card text-foreground hover:bg-accent"
+                          >
+                            <Star className={cn("h-4 w-4 shrink-0", fipeFavoritesProps.isFavorited && "fill-primary text-primary")} />
+                            {fipeFavoritesProps.isFavorited ? 'Favoritado' : 'Favoritar'}
+                          </Button>
                         </div>
                       </div>
-                      <p className="font-syne font-extrabold text-4xl text-foreground">{fipe.price.Valor}</p>
-                      <p className="font-syne font-bold text-xl text-foreground">
-                        {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Mês de referência: {fipe.price.MesReferencia}</p>
-                      {/* Variação mensal (últimos 2 pontos do histórico) */}
-                      {(() => {
-                        const hist = fipeHistory.priceHistory;
-                        if (hist.length >= 2) {
-                          const prev = hist[hist.length - 2].price;
-                          const last = hist[hist.length - 1].price;
-                          const pct = prev > 0 ? ((last - prev) / prev) * 100 : 0;
-                          const positive = pct >= 0;
-                          return (
-                            <div className={cn("flex items-center gap-1.5 text-sm font-medium", positive ? "text-income" : "text-expense")}>
-                              {positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                              <span>{positive ? '+' : ''}{pct.toFixed(2)}% variação mensal</span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      {/* Badge categoria */}
-                      {(() => {
-                        const mdlName = fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome || '';
-                        const category = inferVehicleCategory(mdlName, fipe.vehicleType);
-                        return (
-                          <span className="inline-flex w-fit bg-primary/10 text-primary text-xs rounded-full px-2 py-1 capitalize">
-                            {category.replace(/_/g, ' ')}
-                          </span>
-                        );
-                      })()}
-                      <div className="flex items-center justify-center pt-2">
-                        <Button
-                          variant={fipeFavoritesProps.isFavorited ? "secondary" : "outline"}
-                          size="sm"
-                          onClick={fipeFavoritesProps.onAddFavorite}
-                          disabled={fipeFavoritesProps.isFavorited}
-                          className="gap-1.5 border-border bg-card text-foreground hover:bg-accent"
-                        >
-                          <Star className={cn("h-4 w-4", fipeFavoritesProps.isFavorited && "fill-primary text-primary")} />
-                          {fipeFavoritesProps.isFavorited ? 'Favoritado' : 'Favoritar'}
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-2 border-t border-border">
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground pt-4 mt-auto border-t border-border">
                         <p>Código: {fipe.price.CodigoFipe}</p>
                         <p className="text-right">Combustível: {fipe.price.Combustivel}</p>
                       </div>
