@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Lock, Server } from 'lucide-react';
+import { ShieldCheck, Lock, Server, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) =>
           initial="hidden"
           animate="show"
         >
+          <motion.div variants={fadeUp} className="flex justify-center mb-6">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+              <Zap className="h-3 w-3 animate-pulse" />
+              Beta aberto · Simuladores 100% gratuitos
+            </span>
+          </motion.div>
           <motion.h1
             variants={fadeUp}
             className="text-2xl sm:text-4xl lg:text-[3.25rem] font-bold text-foreground leading-[1.15] tracking-tight"
@@ -87,7 +93,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) =>
             variants={fadeUp}
             className="text-base sm:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            Simuladores financeiros gratuitos que ajudam você a escolher melhor, planejar e reduzir custos — com método e dados reais.
+            Simuladores financeiros gratuitos + sistema completo com Open Finance. Conecte seus bancos, simule decisões e entenda seu dinheiro de verdade.
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-3">
