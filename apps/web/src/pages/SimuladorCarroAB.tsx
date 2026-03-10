@@ -267,6 +267,7 @@ const SimuladorCarroAB: React.FC = () => {
 
   // Simulation parameters state - persisted via useUserKV
   const { value: savedParams, setValue: persistParams } = useUserKV<SimulationDefaults>('car-simulator-params', SYSTEM_DEFAULTS);
+  const isSyncingFromKV = useRef(false);
   const [simulationParams, setSimulationParams] = useState<SimulationDefaults>(
     () => ({ ...SYSTEM_DEFAULTS, ...savedParams })
   );
@@ -274,12 +275,17 @@ const SimuladorCarroAB: React.FC = () => {
   // Sync from KV on load
   useEffect(() => {
     if (savedParams) {
+      isSyncingFromKV.current = true;
       setSimulationParams(prev => ({ ...SYSTEM_DEFAULTS, ...savedParams }));
     }
   }, [savedParams]);
 
   // Persist simulation params to KV when they change
   useEffect(() => {
+    if (isSyncingFromKV.current) {
+      isSyncingFromKV.current = false;
+      return;
+    }
     persistParams(simulationParams);
   }, [simulationParams, persistParams]);
 
