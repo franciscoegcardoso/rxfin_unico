@@ -26,6 +26,7 @@ import { useLocation } from 'react-router-dom';
 import { getPageContext, createClientSessionId, buildAiChatBody } from '@/lib/aiChat';
 import { useAIModel } from '@/hooks/useAIModel';
 import { RaioXResultCard } from './RaioXResultCard';
+import { CibeliaStructuredMessage } from '@/components/cibelia/CibeliaStructuredMessage';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -43,6 +44,10 @@ interface Message {
   reported?: boolean;
   /** Mensagem local de boas-vindas (não vem do backend, sem feedback 👍/👎) */
   isWelcome?: boolean;
+  /** Fase retornada pela Edge Function ai-chat (financial | sales | access | onboarding) */
+  phase?: string;
+  /** true = content é JSON estruturado (fase financial) */
+  structured?: boolean;
   raioXData?: {
     formato: 'concentracao' | 'top_ofensor' | 'frequencia' | 'sem_dados';
     dados: any;
@@ -390,6 +395,8 @@ export function RaioXChat() {
         id: savedAssistant?.id,
         role: 'assistant',
         content: assistantContent,
+        phase: data?.phase,
+        structured: data?.structured ?? false,
         raioXData,
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -586,7 +593,11 @@ export function RaioXChat() {
                         : 'bg-muted text-foreground'
                     )}
                   >
-                    {msg.content}
+                    {msg.role === 'assistant' && msg.phase === 'financial' && msg.structured ? (
+                      <CibeliaStructuredMessage content={msg.content} structured={msg.structured} />
+                    ) : (
+                      <span className="whitespace-pre-wrap">{msg.content}</span>
+                    )}
                   </div>
 
                   {/* Raio-X result card */}
