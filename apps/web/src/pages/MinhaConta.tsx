@@ -30,6 +30,10 @@ const MinhaContaContent: React.FC = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { hasChanges, clearAll } = useAccountPendingChanges();
+  const clearAllRef = React.useRef(clearAll);
+  React.useLayoutEffect(() => {
+    clearAllRef.current = clearAll;
+  }, [clearAll]);
 
   // Aba atual: sempre derivada da URL (location.search) para não dessincronizar
   const currentTab = React.useMemo(
@@ -46,7 +50,7 @@ const MinhaContaContent: React.FC = () => {
     if (!tab || tab.trim() === '') {
       setSearchParams({ tab: 'perfil' }, { replace: true });
     }
-  }, [location.pathname, location.search, setSearchParams]);
+  }, [location.pathname, setSearchParams]);
 
   // Ao entrar na rota /minha-conta (primeira vez ou vindo de outra página), limpa estado dirty
   // para não travar navegação.
@@ -57,19 +61,19 @@ const MinhaContaContent: React.FC = () => {
     const justEnteredMinhaConta =
       isMinhaConta && (prevPathnameRef.current === null || prevPathnameRef.current !== pathname);
     if (justEnteredMinhaConta) {
-      clearAll();
+      clearAllRef.current();
     }
     prevPathnameRef.current = pathname;
-  }, [location.pathname, clearAll]);
+  }, [location.pathname]);
 
   // Ao mudar de aba pela URL, limpa dirty da aba anterior para não bloquear navegação.
   const prevTabRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (prevTabRef.current !== null && prevTabRef.current !== tabValue) {
-      clearAll();
+      clearAllRef.current();
     }
     prevTabRef.current = tabValue;
-  }, [tabValue, clearAll]);
+  }, [tabValue]);
 
   // Troca de aba: sempre permitir (limpar dirty e navegar). Evita usuário preso na aba Perfil.
   const handleTabChange = (value: string) => {
