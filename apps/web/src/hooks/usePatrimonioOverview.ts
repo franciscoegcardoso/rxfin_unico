@@ -61,8 +61,18 @@ export function usePatrimonioOverview() {
         setData(null);
         return null;
       }
-      setData((result as PatrimonioOverviewData) ?? null);
-      return result as PatrimonioOverviewData;
+      const raw = (result as PatrimonioOverviewData) ?? null;
+      if (raw?.net_worth && typeof raw.net_worth === 'object') {
+        const nw = raw.net_worth as Record<string, unknown>;
+        raw.net_worth = {
+          total_assets: Number(nw.total_assets) || 0,
+          total_vehicles: Number(nw.total_vehicles) || 0,
+          total_debt: Number(nw.total_debt) || 0,
+          total_goals_saved: Number(nw.total_goals_saved) || 0,
+        };
+      }
+      setData(raw);
+      return raw as PatrimonioOverviewData;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);

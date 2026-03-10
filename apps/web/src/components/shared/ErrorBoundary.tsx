@@ -5,30 +5,39 @@ import { AlertTriangle, RefreshCw, Bug } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
+  /** Static fallback UI or function that receives retry (remounts children) */
+  fallback?: ReactNode | ((retry: () => void) => ReactNode);
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  /** Incremented on error and on retry so children remount and avoid rethrowing */
+  childKey: number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    childKey: 0,
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    this.setState((prev) => ({ childKey: prev.childKey + 1 }));
   }
 
   private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState((prev) => ({
+      hasError: false,
+      error: null,
+      childKey: prev.childKey + 1,
+    }));
   };
 
   private handleReport = () => {
@@ -43,7 +52,8 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError && this.state.error) {
       if (this.props.fallback) {
-        return this.props.fallback;
+        const fallback = this.props.fallback;
+        return typeof fallback === 'function' ? fallback(this.handleRetry) : fallback;
       }
       return (
         <div className="min-h-[40vh] flex items-center justify-center p-6">
@@ -72,6 +82,10 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return (
+      <React.Fragment key={this.state.childKey}>
+        {this.props.children}
+      </React.Fragment>
+    );
   }
 }

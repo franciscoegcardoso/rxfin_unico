@@ -444,25 +444,29 @@ const BensInvestimentosLayout: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
               <HeaderMetricCard
                 label="Total Ativos"
-                value={formatCurrency(netWorth.total_assets)}
+                value={formatCurrency(Number(netWorth?.total_assets) || 0)}
                 variant="positive"
                 icon={<Building2 className="h-4 w-4" />}
               />
               <HeaderMetricCard
                 label="Veículos"
-                value={formatCurrency(netWorth.total_vehicles)}
+                value={formatCurrency(Number(netWorth?.total_vehicles) || 0)}
                 variant="blue"
                 icon={<Car className="h-4 w-4" />}
               />
               <HeaderMetricCard
                 label="Dívidas"
-                value={formatCurrency(netWorth.total_debt)}
+                value={formatCurrency(Number(netWorth?.total_debt) || 0)}
                 variant="negative"
                 icon={<MinusCircle className="h-4 w-4" />}
               />
               <HeaderMetricCard
                 label="Patrimônio Líquido"
-                value={formatCurrency(netWorth.total_assets + netWorth.total_vehicles - netWorth.total_debt)}
+                value={formatCurrency(
+                  (Number(netWorth?.total_assets) || 0) +
+                    (Number(netWorth?.total_vehicles) || 0) -
+                    (Number(netWorth?.total_debt) || 0)
+                )}
                 variant="positive"
                 icon={<TrendingUp className="h-4 w-4" />}
               />
