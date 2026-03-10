@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { TopNavbar } from './TopNavbar';
 import { PageTransition } from './PageTransition';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -18,6 +19,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const location = useLocation();
   const isMobile = useIsMobile();
   const { insideShell } = useShell();
   const { isDemoMode } = useDemoMode();
@@ -56,7 +58,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const content = (
     <>
       <DemoDataBanner />
-      <ErrorBoundary fallback={errorFallback}>
+      <ErrorBoundary key={location.pathname} fallback={errorFallback}>
         <div className="w-full max-w-full">
           <PageTransition>
             {children}

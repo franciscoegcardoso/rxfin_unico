@@ -33,11 +33,8 @@ export const DesktopShell: React.FC<DesktopShellProps> = () => {
     <div className="flex flex-col h-screen overflow-hidden bg-background w-full max-w-full">
       <TopNavbar />
       <main className="flex-1 overflow-y-auto min-h-0 min-w-0 w-full max-w-full pt-14">
-        <ErrorBoundary fallback={shellErrorFallback}>
-          <div
-            key={location.pathname}
-            className="animate-in fade-in duration-200 ease-out w-full max-w-full min-w-0"
-          >
+        <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
+          <div className="animate-in fade-in duration-200 ease-out w-full max-w-full min-w-0">
             <Outlet />
           </div>
         </ErrorBoundary>

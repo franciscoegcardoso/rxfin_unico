@@ -55,11 +55,8 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
           paddingBottom: "max(5rem, calc(4rem + env(safe-area-inset-bottom)))",
         }}
       >
-        <ErrorBoundary fallback={shellErrorFallback}>
-          <div
-            key={location.pathname}
-            className="animate-in fade-in duration-200 ease-out"
-          >
+        <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
+          <div className="animate-in fade-in duration-200 ease-out">
             {children}
           </div>
         </ErrorBoundary>
