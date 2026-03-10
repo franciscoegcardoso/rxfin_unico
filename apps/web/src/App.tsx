@@ -231,24 +231,34 @@ const App = () => (
                     <Route path="simuladores/planejamento/simulador-desconto-justo" element={<SimuladorDescontoJusto />} />
                     <Route path="simuladores/planejamento/econograph" element={<EconoGraph />} />
                     <Route path="simuladores/:category/:slug" element={<SimuladorDinamico />} />
+                    {/* Rotas migradas — dentro do AppShell (sidebar/bottom nav) */}
+                    <Route path="configuracoes-hub" element={<ConfiguracoesHub />} />
+                    <Route path="configuracoes-fiscais" element={<ConfiguracoesFiscais />} />
+                    <Route path="instituicoes-financeiras" element={<InstituicoesFinanceiras />} />
+                    <Route path="instituicoes" element={<InstituicoesFinanceiras />} />
+                    <Route path="dados-financeiros" element={<DadosFinanceiros />} />
+                    <Route path="dados" element={<DadosFinanceiros />} />
+                    <Route path="financeiro" element={<FinanceiroLayout />}>
+                      <Route index element={<Navigate to="planos" replace />} />
+                      <Route path="planos" element={<PlanosTab />} />
+                      <Route path="pagamentos" element={<PagamentosTab />} />
+                      <Route path="minhas-indicacoes" element={<IndicacoesTab />} />
+                    </Route>
+                    <Route path="historico-pagamentos" element={<HistoricoPagamentos />} />
+                    <Route path="gestao-veiculos" element={<GestaoVeiculos />} />
+                    <Route path="alertas" element={<Alertas />} />
+                    <Route path="recorrentes" element={<Recorrentes />} />
+                    <Route path="notificacoes" element={<Notificacoes />} />
+                    <Route path="lixeira" element={<Lixeira />} />
+                    <Route path="seguros" element={<Seguros />} />
+                    <Route path="presentes" element={<Presentes />} />
+                    <Route path="rx-split" element={<RXSplit />} />
+                    <Route path="dividir-conta" element={<DividirConta />} />
+                    <Route path="meu-ir" element={<MeuIR />} />
                   </Route>
                   {/* Redirects from old routes */}
                   <Route path="/configuracoes" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
                   <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
-                  <Route path="/configuracoes-hub" element={<ProtectedRoute><ConfiguracoesHub /></ProtectedRoute>} />
-                  <Route path="/configuracoes-fiscais" element={<ProtectedRoute><ConfiguracoesFiscais /></ProtectedRoute>} />
-                  <Route path="/instituicoes-financeiras" element={<ProtectedRoute><InstituicoesFinanceiras /></ProtectedRoute>} />
-                  <Route path="/instituicoes" element={<ProtectedRoute><InstituicoesFinanceiras /></ProtectedRoute>} />
-                  <Route path="/dados-financeiros" element={<ProtectedRoute><DadosFinanceiros /></ProtectedRoute>} />
-                  <Route path="/dados" element={<ProtectedRoute><DadosFinanceiros /></ProtectedRoute>} />
-                  <Route path="/financeiro" element={<ProtectedRoute><FinanceiroLayout /></ProtectedRoute>}>
-                    <Route index element={<Navigate to="planos" replace />} />
-                    <Route path="planos" element={<PlanosTab />} />
-                    <Route path="pagamentos" element={<PagamentosTab />} />
-                    <Route path="minhas-indicacoes" element={<IndicacoesTab />} />
-                  </Route>
-                  {/* Redirects from old standalone routes */}
-                  <Route path="/historico-pagamentos" element={<ProtectedRoute><HistoricoPagamentos /></ProtectedRoute>} />
                   <Route path="/minhas-indicacoes" element={<Navigate to="/financeiro/minhas-indicacoes" replace />} />
                   <Route path="/regras-categoria" element={<Navigate to="/parametros?tab=regras" replace />} />
                   {/* Simuladores — Hub e categorias (rotas com shell estão dentro de AppShell acima) */}
@@ -271,18 +281,7 @@ const App = () => (
                    <Route path="/renegociacao-dividas/portabilidade" element={<ProtectedRoute><PortabilidadeCredito /></ProtectedRoute>} />
                    <Route path="/renegociacao-dividas/consolidacao" element={<ProtectedRoute><ConsolidacaoDividas /></ProtectedRoute>} />
                   <Route path="/balanco-patrimonial" element={<Navigate to="/bens-investimentos/consolidado" replace />} />
-                  <Route path="/gestao-veiculos" element={<ProtectedRoute><GestaoVeiculos /></ProtectedRoute>} />
-                  <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
-                  <Route path="/recorrentes" element={<ProtectedRoute><Recorrentes /></ProtectedRoute>} />
-                  <Route path="/notificacoes" element={<ProtectedRoute><Notificacoes /></ProtectedRoute>} />
-                  <Route path="/lixeira" element={<ProtectedRoute><Lixeira /></ProtectedRoute>} />
-                  <Route path="/seguros" element={<ProtectedRoute><Seguros /></ProtectedRoute>} />
-                  <Route path="/presentes" element={<ProtectedRoute><Presentes /></ProtectedRoute>} />
-                  <Route path="/rx-split" element={<ProtectedRoute><RXSplit /></ProtectedRoute>} />
                   <Route path="/rxsplit" element={<Navigate to="/rx-split" replace />} />
-                  <Route path="/dividir-conta" element={<ProtectedRoute><DividirConta /></ProtectedRoute>} />
-                  <Route path="/meu-ir" element={<ProtectedRoute><MeuIR /></ProtectedRoute>} />
-                  {/* Perfil route now redirected above */}
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Admin /></AdminSecureLayout>} />
                   <Route path="/admin/dashboard" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDashboard /></Suspense></AdminSecureLayout>} />
