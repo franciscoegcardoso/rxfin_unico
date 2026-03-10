@@ -79,7 +79,7 @@ export const useContasPagarReceber = () => {
         tipo: row.tipo as ContaTipo,
         nome: row.nome,
         valor: Number(row.valor),
-        dataVencimento: row.data_vencimento,
+        dataVencimento: row.data_vencimento ?? '',
         dataPagamento: row.data_pagamento || undefined,
         categoria: row.categoria,
         formaPagamento: row.forma_pagamento as PaymentMethod | undefined,

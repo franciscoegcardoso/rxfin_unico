@@ -121,8 +121,8 @@ export const Lancamentos: React.FC = () => {
   const { bills } = useCreditCardBills();
   const { getReconciliation, billPaymentIds } = useBillPaymentReconciliation(lancamentos, bills);
   const pendingPurchases = getItemsByStatus('pending');
-  const enabledIncomes = config.incomeItems.filter(i => i.enabled);
-  const enabledExpenses = config.expenseItems.filter(i => i.enabled);
+  const enabledIncomes = (config?.incomeItems ?? []).filter(i => i.enabled);
+  const enabledExpenses = (config?.expenseItems ?? []).filter(i => i.enabled);
 
 
   const { data: rpcSummary, refetch: refetchSummary } = useLancamentosSummary(selectedMonth);
@@ -265,8 +265,8 @@ export const Lancamentos: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Contas filtered
-  const contasPagar = useMemo(() => contas.filter(c => c.tipo === 'pagar' && !c.dataPagamento && c.dataVencimento.startsWith(selectedMonth)), [contas, selectedMonth]);
-  const contasReceber = useMemo(() => contas.filter(c => c.tipo === 'receber' && !c.dataPagamento && c.dataVencimento.startsWith(selectedMonth)), [contas, selectedMonth]);
+  const contasPagar = useMemo(() => contas.filter(c => c.tipo === 'pagar' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
+  const contasReceber = useMemo(() => contas.filter(c => c.tipo === 'receber' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
   const recorrrentes = useMemo(() => rawContas.filter(c => c.recorrente === true), [rawContas]);
 
   // Sync credit card accounts with financial institutions
@@ -277,7 +277,7 @@ export const Lancamentos: React.FC = () => {
       // Limpar contas órfãs vinculadas a instituições que não existem mais
       for (const conta of rawContas) {
         if (conta.vinculoCartaoId) {
-          const exists = config.financialInstitutions.some(fi => fi.id === conta.vinculoCartaoId);
+          const exists = (config?.financialInstitutions ?? []).some(fi => fi.id === conta.vinculoCartaoId);
           if (!exists) {
             await deleteConta(conta.id);
           }
@@ -285,7 +285,7 @@ export const Lancamentos: React.FC = () => {
       }
       
       // Sincronizar novos cartões
-      const creditCardInstitutions = config.financialInstitutions.filter(fi => fi.hasCreditCard && fi.creditCardDueDay);
+      const creditCardInstitutions = (config?.financialInstitutions ?? []).filter(fi => fi.hasCreditCard && fi.creditCardDueDay);
       for (const fi of creditCardInstitutions) {
         const existingConta = getContaByVinculoCartao(fi.id);
         if (!existingConta) {
@@ -300,7 +300,7 @@ export const Lancamentos: React.FC = () => {
       }
     };
     syncCreditCardContas();
-  }, [config.financialInstitutions, user, loadingContas]);
+  }, [config?.financialInstitutions, user, loadingContas]);
 
   const handleOpenContaDialog = (tipo: ContaTipo) => { setDefaultTipoCobrancaConta(undefined); setContaDialogTipo(tipo); setEditingConta(null); setContaDialogOpen(true); };
   const handleEditConta = (conta: Conta) => { setDefaultTipoCobrancaConta(undefined); setEditingConta(conta); setContaDialogTipo(conta.tipo); setContaDialogOpen(true); };
@@ -716,7 +716,7 @@ export const Lancamentos: React.FC = () => {
   };
 
   const handleHistoricalEntriesAdded = async (entries: { itemId: string; name: string; value: number; type: 'income' | 'expense'; category?: string; month: string }[]) => {
-    const expenseById = new Map(config.expenseItems.map(i => [i.id, i]));
+    const expenseById = new Map((config?.expenseItems ?? []).map(i => [i.id, i]));
 
     const lancamentosToSave = entries.map(entry => {
       const expense = entry.type === 'expense' ? expenseById.get(entry.itemId) : undefined;
