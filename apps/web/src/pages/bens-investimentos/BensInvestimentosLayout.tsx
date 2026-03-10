@@ -42,7 +42,6 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { assetIcons, formatCurrencyBase, type AssetDependencies } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
-import { EmptyInvestimentos } from '@/design-system/components/empty-states';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
@@ -586,8 +585,30 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'imoveis' && (
                 <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Home className="h-5 w-5 text-primary" />
+                      Meus Imóveis
+                    </h2>
+                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                      <Plus className="h-4 w-4" />
+                      Adicionar imóvel
+                    </Button>
+                  </div>
                   {imoveis.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum imóvel cadastrado.</p>
+                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                      <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <Home className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum imóvel cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus imóveis para acompanhar valor, valorização e aluguel no patrimônio.</p>
+                        <Button size="sm" className="gap-1.5 mt-4" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                          <Plus className="h-4 w-4" />
+                          Adicionar imóvel
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {imoveis.map((a: { name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; is_rental?: boolean; rental_value?: number; monthly_cost?: number }, i: number) => {
@@ -687,10 +708,32 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'investimentos' && (
                 <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                      Meus Investimentos
+                    </h2>
+                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                      <Plus className="h-4 w-4" />
+                      Adicionar investimento
+                    </Button>
+                  </div>
                   {patrimonioError ? (
                     <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
                   ) : investimentosList.length === 0 ? (
-                    <EmptyInvestimentos />
+                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                      <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <TrendingUp className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum investimento cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Adicione seus investimentos para acompanhar a rentabilidade no patrimônio.</p>
+                        <Button size="sm" className="gap-1.5 mt-4" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                          <Plus className="h-4 w-4" />
+                          Adicionar investimento
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ) : (
                     (() => {
                       const totalReturn = investimentosList.reduce((sum: number, a: { current_value?: number; purchase_value?: number }) => {
@@ -822,6 +865,36 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'financiamentos' && (
                 <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Landmark className="h-5 w-5 text-primary" />
+                      Meus Financiamentos
+                    </h2>
+                    <Button size="sm" className="gap-1.5" asChild>
+                      <Link to="/credito">
+                        <Plus className="h-4 w-4" />
+                        Adicionar financiamento ou consórcio
+                      </Link>
+                    </Button>
+                  </div>
+                  {financiamentosList.length === 0 && consorciosList.length === 0 ? (
+                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                      <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <Landmark className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum financiamento ou consórcio</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre financiamentos e consórcios para acompanhar parcelas e saldo devedor no patrimônio.</p>
+                        <Button size="sm" className="gap-1.5 mt-4" asChild>
+                          <Link to="/credito">
+                            <Plus className="h-4 w-4" />
+                            Adicionar financiamento ou consórcio
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <>
                   {financiamentosList.map((fin: { nome?: string; instituicao?: string; saldo_devedor?: number; valor_parcela?: number; parcelas_pagas?: number; prazo_total?: number; progress_pct?: number; taxa_juros?: number }, i: number) => (
                     <Card key={i} className="rounded-[14px] border border-border/80 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -849,16 +922,37 @@ const BensInvestimentosLayout: React.FC = () => {
                       <p className="text-xs text-muted-foreground">{c.parcelas_pagas ?? 0} de {c.prazo_total ?? 0} · {c.grupo != null && c.cota != null && `Grupo ${c.grupo} Cota ${c.cota}`}</p>
                     </Card>
                   ))}
-                  {financiamentosList.length === 0 && consorciosList.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum financiamento ou consórcio.</p>
+                    </>
                   )}
                 </div>
               )}
 
               {currentTab === 'seguros' && (
                 <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-primary" />
+                      Meus Seguros
+                    </h2>
+                    <Button size="sm" className="gap-1.5" onClick={() => { setSeguroAssetId(undefined); setSeguroDialogOpen(true); }}>
+                      <Plus className="h-4 w-4" />
+                      Adicionar seguro
+                    </Button>
+                  </div>
                   {segurosList.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-8">Nenhum seguro cadastrado.</p>
+                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                      <CardContent className="flex flex-col items-center justify-center text-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                          <Shield className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="font-medium text-foreground">Nenhum seguro cadastrado</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus seguros para acompanhar prêmios, cobertura e vigência no patrimônio.</p>
+                        <Button size="sm" className="gap-1.5 mt-4" onClick={() => { setSeguroAssetId(undefined); setSeguroDialogOpen(true); }}>
+                          <Plus className="h-4 w-4" />
+                          Adicionar seguro
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ) : (
                     segurosList.map((seg: { nome?: string; tipo?: string; seguradora?: string; premio_mensal?: number; valor_cobertura?: number; franquia?: number; data_inicio?: string; data_fim?: string; is_active?: boolean }, i: number) => (
                       <Card key={i} className={cn('rounded-[14px] border p-4', !seg.is_active && 'border-destructive/30 bg-destructive/5')}>
