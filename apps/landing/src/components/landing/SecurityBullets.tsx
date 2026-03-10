@@ -11,7 +11,7 @@ const bullets = [
 
 export const SecurityBullets: React.FC = () => (
   <motion.div
-    className="mt-14"
+    className="mt-8"
     initial={{ opacity: 0, y: 16 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}

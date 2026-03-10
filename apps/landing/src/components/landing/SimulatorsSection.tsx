@@ -43,10 +43,10 @@ interface SimulatorsSectionProps {
 
 export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulatorClick, onOpenLeadGate }) => {
   return (
-    <section id="simuladores" className="py-20 px-4 sm:px-6 lg:px-8">
+    <section id="simuladores" className="py-14 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -62,7 +62,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
         {categories.map((cat) => {
           const items = simulators.filter((s) => s.category === cat.key);
           return (
-            <div key={cat.key} className="mb-10 last:mb-0">
+            <div key={cat.key} className="mb-6 last:mb-0">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
                 <span>{cat.emoji}</span> {cat.label}
               </h3>

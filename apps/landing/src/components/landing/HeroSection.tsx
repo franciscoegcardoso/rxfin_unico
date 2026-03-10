@@ -23,7 +23,7 @@ const fadeUp = {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) => {
   return (
-    <section className="relative pt-28 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+    <section className="relative pt-20 pb-10 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[hsl(161,30%,96%)] via-[hsl(161,20%,97%)] to-background dark:from-[hsl(161,20%,8%)] dark:via-[hsl(161,15%,6%)] dark:to-background" />
       <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-primary/6 rounded-full blur-[100px]" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-primary/4 rounded-full blur-[80px]" />
