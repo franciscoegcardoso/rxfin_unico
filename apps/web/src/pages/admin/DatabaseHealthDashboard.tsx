@@ -42,29 +42,47 @@ interface BlockingRow {
 const POOL_WARN_PCT = 70;
 const POOL_CRITICAL_PCT = 90;
 
+const MIGRATION_HINT = 'As funções de monitoramento ainda não existem no banco. Execute a migração no Supabase (SQL Editor ou `supabase db push`): supabase/migrations/20260226100000_database_health_dashboard.sql';
+
+function isFunctionNotFoundError(message: string): boolean {
+  return /could not find the function|function.*not found|schema cache/i.test(message);
+}
+
 export default function DatabaseHealthDashboard() {
   const [poolHealth, setPoolHealth] = useState<PoolHealth | null>(null);
   const [blocking, setBlocking] = useState<BlockingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [poolError, setPoolError] = useState<string | null>(null);
+  const [blockingError, setBlockingError] = useState<string | null>(null);
   const [thresholdSeconds, setThresholdSeconds] = useState(5);
 
   const fetchHealth = async () => {
     setLoading(true);
-    setError(null);
+    setPoolError(null);
+    setBlockingError(null);
     try {
       const [poolRes, blockingRes] = await Promise.all([
         supabase.rpc('get_connection_pool_health'),
         supabase.rpc('get_long_blocking_activity', { p_threshold_seconds: thresholdSeconds }),
       ]);
 
-      if (poolRes.error) throw new Error(poolRes.error.message);
-      if (blockingRes.error) throw new Error(blockingRes.error.message);
+      if (poolRes.error) {
+        setPoolHealth(null);
+        setPoolError(poolRes.error.message);
+      } else {
+        setPoolHealth(poolRes.data as PoolHealth);
+      }
 
-      setPoolHealth(poolRes.data as PoolHealth);
-      setBlocking((blockingRes.data as BlockingRow[]) ?? []);
+      if (blockingRes.error) {
+        setBlocking([]);
+        setBlockingError(blockingRes.error.message);
+      } else {
+        setBlocking((blockingRes.data as BlockingRow[]) ?? []);
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar dados');
+      const msg = e instanceof Error ? e.message : 'Erro ao carregar dados';
+      setPoolError(msg);
+      setBlockingError(msg);
       setPoolHealth(null);
       setBlocking([]);
     } finally {
@@ -122,17 +140,6 @@ export default function DatabaseHealthDashboard() {
         </label>
       </div>
 
-      {error && (
-        <Card className="border-destructive bg-destructive/5">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5 shrink-0" />
-              <span>{error}</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Pool de conexões */}
       <Card>
         <CardHeader>
@@ -145,8 +152,20 @@ export default function DatabaseHealthDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading && !poolHealth ? (
+          {loading && !poolHealth && !poolError ? (
             <Skeleton className="h-24 w-full" />
+          ) : poolError ? (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-destructive text-sm">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <span>{poolError}</span>
+              </div>
+              {isFunctionNotFoundError(poolError) && (
+                <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                  {MIGRATION_HINT}
+                </p>
+              )}
+            </div>
           ) : poolHealth ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-4">
@@ -197,8 +216,20 @@ export default function DatabaseHealthDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading && blocking.length === 0 && !error ? (
+          {loading && blocking.length === 0 && !blockingError ? (
             <Skeleton className="h-32 w-full" />
+          ) : blockingError ? (
+            <div className="space-y-2">
+              <div className="flex items-start gap-2 text-destructive text-sm">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <span>{blockingError}</span>
+              </div>
+              {isFunctionNotFoundError(blockingError) && (
+                <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                  {MIGRATION_HINT}
+                </p>
+              )}
+            </div>
           ) : blocking.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Activity className="h-10 w-10 mb-2 opacity-50" />
