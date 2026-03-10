@@ -29,7 +29,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
-    this.setState((prev) => ({ childKey: prev.childKey + 1 }));
+    // Não chamar setState aqui — getDerivedStateFromError já atualizou o estado.
+    // childKey é incrementado apenas no retry (handleRetry).
   }
 
   private handleRetry = () => {
