@@ -86,3 +86,11 @@ n8n/.n8n/
 
 temp-supabase-ref/
 _ref_supabase_data_link/
+
+# Artefatos gerados automaticamente — não versionar
+_update-notifier-last-checked
+lighthouse-report.json
+.sync-log
+bun.lockb
+next-env.d.ts
+*.bak

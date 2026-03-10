@@ -1,5 +1,0 @@
-2026-02-28T10:31:37Z | 83229acad10f3e2a4676e646a3d5249ee16a71bc | Added budget-insights config
-
-Configured budget-insights function to disable JWT verification (verify_jwt = false) in supabase/config.toml to resolve 401 JWT errors for budget insights.
-
-X-Lovable-Edit-ID: edt-bc03899d-f9f1-4849-b273-5105b7ccff8b
