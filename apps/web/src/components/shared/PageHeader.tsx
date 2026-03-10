@@ -3,6 +3,7 @@ import { LucideIcon, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PageHeaderProps {
   icon?: LucideIcon | React.ReactNode;
@@ -12,7 +13,7 @@ interface PageHeaderProps {
   description?: string;
   actions?: React.ReactNode;
   className?: string;
-  /** Mostra botão Voltar (default: true). Use false em páginas raiz como /inicio. */
+  /** Mostra botão Voltar apenas em mobile (default: true). Em desktop o botão nunca é exibido. */
   showBackButton?: boolean;
   /** Se definido, o botão Voltar navega para este path em vez de history -1 ou /inicio. */
   backTo?: string;
@@ -32,7 +33,9 @@ export function PageHeader({
   backLabel,
 }: PageHeaderProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const subtitleText = subtitle ?? description;
+  const showBack = showBackButton && isMobile;
 
   const handleBack = () => {
     if (backTo != null && backTo !== "") {
@@ -55,7 +58,7 @@ export function PageHeader({
     )}>
       <div className="flex flex-col min-w-0 flex-1">
         <div className="flex items-center gap-2 min-w-0">
-          {showBackButton && (
+          {showBack && (
             <Button
               type="button"
               variant="ghost"
