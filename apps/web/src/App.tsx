@@ -265,7 +265,7 @@ const App = () => (
                   <Route path="/simulador-financiamento" element={<Navigate to="/simuladores/dividas/financiamento-consorcio" replace />} />
                   <Route path="/simulador-desconto-justo" element={<Navigate to="/simuladores/planejamento/simulador-desconto-justo" replace />} />
                   <Route path="/econograph" element={<Navigate to="/simuladores/planejamento/econograph" replace />} />
-                  <Route path="/renegociacao-dividas" element={<ProtectedRoute><RenegociacaoDividas /></ProtectedRoute>} />
+                  <Route path="/renegociacao-dividas" element={<Navigate to="/simuladores/dividas/renegociacao-dividas" replace />} />
                    <Route path="/renegociacao-dividas/quitacao-desconto" element={<ProtectedRoute><QuitacaoDesconto /></ProtectedRoute>} />
                    <Route path="/renegociacao-dividas/parcelamento" element={<ProtectedRoute><ParcelamentoDivida /></ProtectedRoute>} />
                    <Route path="/renegociacao-dividas/portabilidade" element={<ProtectedRoute><PortabilidadeCredito /></ProtectedRoute>} />
