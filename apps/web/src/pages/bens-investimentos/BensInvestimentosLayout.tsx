@@ -709,9 +709,15 @@ const BensInvestimentosLayout: React.FC = () => {
                       const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
                       return (
                         <>
-                          <p className={cn('font-sans font-bold tracking-tight leading-none tabular-nums text-[40px] md:text-[48px]', totalReturn >= 0 ? 'text-income' : 'text-expense')}>
-                            {formatCurrency(totalReturn)} rentabilidade total
-                          </p>
+                          {/* Resumo rentabilidade — estilo enterprise: label discreto + valor legível */}
+                          <div className="rounded-xl border border-border bg-card px-4 py-3 sm:px-5 sm:py-4">
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                              Rentabilidade total
+                            </p>
+                            <p className={cn('mt-0.5 font-semibold tabular-nums text-lg sm:text-xl', totalReturn >= 0 ? 'text-income' : 'text-expense')}>
+                              {formatCurrency(totalReturn)}
+                            </p>
+                          </div>
                           {/* Mobile: donut no topo + lista de InvestmentCard */}
                           <div className="flex flex-col gap-6 md:hidden">
                             <div className="h-[240px] w-full rounded-xl border border-border bg-card p-4">
