@@ -179,9 +179,7 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
       ],
     },
     {
-      title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [
-        { path: '/minha-conta', label: 'Minha Conta', icon: User, accessLevel: 'free', canAccessAsAdmin: true },
-      ],
+      title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [], // CTA único → /minha-conta (guias)
     },
   ];
 
@@ -351,10 +349,22 @@ export function useNavMenuPages(): NavMenuData {
       groupsMap.get(groupSlug)!.pages.push(page);
     });
   
-  // Converter para array de seções ordenadas (deduplicar por path dentro de cada grupo)
+  // Converter para array de seções ordenadas (deduplicar por path dentro de cada grupo).
+  // "Configurações" é tratado como CTA único (sem sub-itens): leva direto às guias em /minha-conta.
+  const CONFIGURACOES_GROUP_SLUG = 'configuracoes';
   const groupedSections: NavMenuSection[] = Array.from(groupsMap.values())
     .sort((a, b) => (a.order_index ?? 99) - (b.order_index ?? 99))
     .map(group => {
+      if (group.slug === CONFIGURACOES_GROUP_SLUG) {
+        return {
+          title: group.name,
+          slug: group.slug,
+          icon: getIconComponent(group.icon),
+          items: [], // CTA único: sem dropdown; sidebar renderiza como link para /minha-conta
+          hasLockedItems: false,
+          hasComingSoonItems: false,
+        };
+      }
       const seenInGroup = new Set<string>();
       const items = group.pages
         .sort((a, b) => (a.order_in_group ?? 99) - (b.order_in_group ?? 99))

@@ -178,6 +178,52 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     const isOpen = openSections.has(section.slug);
     const isGroupActive = section.items.some((i) => location.pathname === toPath(i.path));
 
+    // Configurações: CTA único (sem sub-itens) → link direto para as guias em /minha-conta
+    const isConfiguracoesCta = section.slug === 'configuracoes' && section.items.length === 0;
+    const configuracoesPath = '/minha-conta';
+    const isConfiguracoesActive = isConfiguracoesCta && (location.pathname === configuracoesPath || location.pathname.startsWith(configuracoesPath + '/'));
+
+    if (isConfiguracoesCta) {
+      if (collapsed) {
+        return (
+          <div key={section.slug} className="py-0.5">
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={configuracoesPath}
+                    className={cn(
+                      'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
+                      isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                    )}
+                  >
+                    {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="text-xs">{section.title}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        );
+      }
+      return (
+        <div key={section.slug} className="py-0.5">
+          <Link
+            to={configuracoesPath}
+            className={cn(
+              'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
+              isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+            )}
+          >
+            {section.icon && (
+              <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
+            )}
+            <span className="flex-1 truncate text-left">{section.title}</span>
+          </Link>
+        </div>
+      );
+    }
+
     if (collapsed) {
       return (
         <div key={section.slug} className="py-0.5">
