@@ -180,8 +180,8 @@ async function processPdfWithAI(pdfBase64: string): Promise<IRData> {
     throw new Error('O arquivo PDF está vazio ou corrompido. Por favor, selecione outro arquivo.');
   }
 
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  if (!LOVABLE_API_KEY) {
+  const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || Deno.env.get('OPENROUTER_KEY') || '';
+  if (!OPENROUTER_API_KEY) {
     throw new Error('Serviço de processamento de PDF não configurado. Entre em contato com o suporte.');
   }
 
@@ -198,14 +198,14 @@ Se o documento NÃO for uma declaração de Imposto de Renda, retorne exatamente
 
 IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
 
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.0-flash-exp',
       messages: [
         { role: 'system', content: systemPrompt },
         { 

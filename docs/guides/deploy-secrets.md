@@ -23,13 +23,24 @@ Configure estes secrets no repositório em **Settings → Secrets and variables 
 
 ## Secrets no Supabase (Edge Functions)
 
-Para a **Edge Function `ai-chat`** (Cibélia) funcionar, configure no projeto Supabase:
+Stack de IA: **OpenRouter** (Claude, Gemini, DeepSeek, etc.). Todas as Edge Functions de IA usam a mesma chave.
 
-1. **Dashboard** → [Supabase](https://supabase.com/dashboard) → projeto (ex.: `kneaniaifzgqibpajyji`) → **Project Settings** → **Edge Functions** → **Secrets**.
+1. **Dashboard** → [Supabase](https://supabase.com/dashboard) → projeto → **Project Settings** → **Edge Functions** → **Secrets**.
 2. Adicione:
    - **Nome:** `OPENROUTER_API_KEY` (ou `OPENROUTER_KEY`)
-   - **Valor:** sua chave da API [OpenRouter](https://openrouter.ai/keys) (usada para o modelo DeepSeek da Cibélia).
+   - **Valor:** sua chave da API [OpenRouter](https://openrouter.ai/keys).
 
-Sem essa chave, a Cibélia retorna "Configuração interna ausente." ou "Serviço de IA indisponível."
+Funções que usam OpenRouter: `ai-chat` (Cibélia), `fiscal-organizer`, `parse-receipt`, `parse-credit-card-statement`, `parse-income-document`, `categorize-transactions`, `budget-insights`, `ir-analysis`, `ir-link-suggestions`, `ir-investment-type-suggestions`, `process-ir-import`, `vehicle-insights`, `property-insights`, `car-comparison-verdict`. Sem a chave, as features de IA retornam erro de configuração.
 
-A **Edge Function `fiscal-organizer`** (Organizador Fiscal em Meu IR) usa a **mesma chave** `OPENROUTER_API_KEY`; não é necessário configurar outro secret. Sem a chave, o chat em `/meu-ir` exibe "Assistente fiscal temporariamente indisponível".
+### Auth email hook (n8n)
+
+Para o envio de e-mails de autenticação (confirmação, recuperação de senha, magic link, etc.) via **n8n**:
+
+- **Nome:** `N8N_AUTH_EMAIL_WEBHOOK_URL`  
+  **Valor:** URL do webhook do n8n que recebe `{ to, subject, html, email_action_type, confirmationUrl }` e envia o e-mail (ex.: via Resend/SendGrid).
+
+- **Nome (opcional):** `AUTH_HOOK_SECRET`  
+  **Valor:** segredo compartilhado; se definido, a Edge Function exige o header `x-auth-hook-secret` ou `Authorization: Bearer <valor>`.
+
+- **Nome (opcional):** `SITE_URL`  
+  **Valor:** URL base do app (ex.: `https://app.rxfin.com.br`), usada em redirects (ex.: `verify-email-otp`).

@@ -499,7 +499,7 @@ export function EmailSettingsCard() {
                         <p className="text-sm font-medium">Headers enviados:</p>
                         <ul className="text-sm text-muted-foreground space-y-1">
                           <li><code className="bg-muted px-1 rounded">Authorization: Bearer [N8N_WEBHOOK_SECRET]</code></li>
-                          <li><code className="bg-muted px-1 rounded">X-Webhook-Source: lovable-rxfin</code></li>
+                          <li><code className="bg-muted px-1 rounded">X-Webhook-Source: rxfin</code></li>
                           <li><code className="bg-muted px-1 rounded">X-Email-Type: [tipo do email]</code></li>
                         </ul>
                       </div>

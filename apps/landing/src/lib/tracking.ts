@@ -10,13 +10,11 @@ declare global {
   }
 }
 
-/** Returns true if running inside Lovable preview iframe or a known bot */
+/** Returns true if running inside a preview iframe or local dev (skip tracking) */
 const isPreviewOrBot = (): boolean => {
   const host = window.location.hostname;
-  // Lovable preview domains
-  if (host.includes('preview') && host.includes('lovable.app')) return true;
-  // Localhost dev
   if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host.includes('preview')) return true;
   return false;
 };
 

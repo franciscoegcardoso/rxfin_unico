@@ -135,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Extract token and validate explicitly (required for Lovable Cloud with verify_jwt=false)
+    // Extract token and validate explicitly (required when verify_jwt=false)
     const token = authHeader.replace("Bearer ", "");
 
     // Create client with user's auth to validate the request

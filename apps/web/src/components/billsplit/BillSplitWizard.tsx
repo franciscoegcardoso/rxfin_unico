@@ -184,17 +184,34 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         r.onerror = reject;
         r.readAsDataURL(file);
       });
-      const { data, error } = await supabase.functions.invoke('parse-receipt', { body: { imageBase64: base64 } });
-      if (error) throw new Error(error.message || 'Erro ao processar');
-      if (data?.items?.length > 0) {
-        const parsed: BillItem[] = data.items.map((item: any, i: number) => {
-          const q = Number(item.qty) || 1;
-          const u = Number(item.unitPrice) || 0;
-          return { id: Date.now() + i, description: String(item.description || ''), qty: q.toString(), unitPrice: u.toFixed(2), totalPrice: (q * u).toFixed(2), lastEdited: ['qty', 'unitPrice'] as ('qty' | 'unitPrice')[], autoCalculated: !!item.autoCalculated };
+      const { data, error } = await supabase.functions.invoke('parse-receipt', {
+        body: { imageBase64: base64, mode: 'bill' },
+      });
+      if (error) {
+        throw new Error((data as any)?.error || error.message || 'Erro ao processar.');
+      }
+      if (!data?.success) {
+        setScanError((data as any)?.error || 'Nenhum item encontrado. Tente outra foto.');
+        return;
+      }
+      const itemsPayload = (data as { items?: Array<{ description?: string; qty?: number; unitPrice?: number }> })?.items;
+      if (itemsPayload?.length > 0) {
+        const parsed: BillItem[] = itemsPayload.map((item: any, i: number) => {
+          const q = Number(item.qty) ?? 1;
+          const u = Number(item.unitPrice) ?? 0;
+          return {
+            id: Date.now() + i,
+            description: String(item.description || '').trim() || 'Item',
+            qty: q.toString(),
+            unitPrice: u.toFixed(2),
+            totalPrice: (q * u).toFixed(2),
+            lastEdited: ['qty', 'unitPrice'] as ('qty' | 'unitPrice')[],
+            autoCalculated: true,
+          };
         });
         setItems(parsed);
       } else {
-        setScanError('Nenhum item encontrado. Tente outra foto.');
+        setScanError((data as any)?.error || 'Nenhum item encontrado. Tente outra foto.');
       }
     } catch (err: any) {
       setScanError(err?.message || 'Erro ao processar a imagem.');

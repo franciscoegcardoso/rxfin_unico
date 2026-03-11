@@ -6,7 +6,7 @@ await ammonia.init();
 /**
  * Centralized Email Gateway for n8n Integration
  * 
- * This Edge Function acts as a secure gateway between the Lovable app and n8n workflows.
+ * This Edge Function acts as a secure gateway between the app and n8n workflows.
  * All email types (verification, campaigns, invitations, password reset) are routed through
  * a single n8n webhook, which handles the actual email delivery logic.
  * 
@@ -157,7 +157,7 @@ async function sendToN8N(
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${webhookSecret}`,
-          'X-Webhook-Source': 'lovable-rxfin',
+          'X-Webhook-Source': 'rxfin',
           'X-Email-Type': payload.type,
         },
         body: JSON.stringify(payload),

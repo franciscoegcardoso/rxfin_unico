@@ -62,65 +62,12 @@ export async function signIn(email: string, password: string): Promise<SignInRes
 export async function signInWithOAuth(provider: OAuthProvider): Promise<OAuthResult> {
   const redirectUrl = `${window.location.origin}/auth/callback`;
 
-  const isLovableDomain =
-    window.location.hostname.includes('lovable.app') ||
-    window.location.hostname.includes('lovableproject.com');
-
-  if (isLovableDomain) {
-    return signInWithOAuthPopup(provider, redirectUrl);
-  }
-
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: redirectUrl },
   });
 
   return { error: error as Error | null };
-}
-
-async function signInWithOAuthPopup(
-  provider: OAuthProvider,
-  redirectUrl: string,
-): Promise<OAuthResult> {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
-  });
-
-  if (error) return { error: error as Error };
-
-  if (data?.url) {
-    const oauthUrl = new URL(data.url);
-    const allowedHosts = [
-      'accounts.google.com',
-      'www.facebook.com',
-      'kneaniaifzgqibpajyji.supabase.co',
-    ];
-
-    if (!allowedHosts.some((host) => oauthUrl.hostname.includes(host))) {
-      return { error: new Error('URL de OAuth inválida') };
-    }
-
-    const popup = window.open(data.url, 'oauth-popup', 'width=500,height=600,scrollbars=yes');
-
-    if (!popup || popup.closed) {
-      return { error: new Error('Popup bloqueado pelo navegador') };
-    }
-
-    const pollTimer = setInterval(async () => {
-      if (popup.closed) {
-        clearInterval(pollTimer);
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session) {
-          window.location.reload();
-        }
-      }
-    }, 500);
-  }
-
-  return { error: null };
 }
 
 // ─── Sign Out ────────────────────────────────────────────

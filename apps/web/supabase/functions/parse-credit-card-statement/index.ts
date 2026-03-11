@@ -52,9 +52,9 @@ serve(async (req) => {
 
     console.log(`Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`);
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY') || Deno.env.get('OPENROUTER_KEY') || '';
+    if (!OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_API_KEY not configured');
     }
 
     let transactions: Transaction[] = [];
@@ -65,7 +65,7 @@ serve(async (req) => {
     if (isTextBased) {
       // For CSV/TXT files, read as text and use AI to extract
       const text = await file.text();
-      transactions = await extractTransactionsFromText(text, LOVABLE_API_KEY);
+      transactions = await extractTransactionsFromText(text, OPENROUTER_API_KEY);
     } else {
       // For PDF, Excel, and image files, use AI with vision
       const arrayBuffer = await file.arrayBuffer();
@@ -81,12 +81,12 @@ serve(async (req) => {
       base64 = btoa(base64);
       
       const mimeType = file.type || 'application/octet-stream';
-      transactions = await extractTransactionsWithVision(base64, mimeType, LOVABLE_API_KEY);
+      transactions = await extractTransactionsWithVision(base64, mimeType, OPENROUTER_API_KEY);
     }
 
     // Now categorize all transactions
     if (transactions.length > 0) {
-      transactions = await categorizeTransactions(transactions, LOVABLE_API_KEY);
+      transactions = await categorizeTransactions(transactions, OPENROUTER_API_KEY);
     }
 
     console.log(`Extracted and categorized ${transactions.length} transactions`);
@@ -110,14 +110,14 @@ serve(async (req) => {
 });
 
 async function extractTransactionsFromText(text: string, apiKey: string): Promise<Transaction[]> {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.0-flash-exp',
       messages: [
         {
           role: 'system',
@@ -190,14 +190,14 @@ ${text.substring(0, 25000)}`
 }
 
 async function extractTransactionsWithVision(base64: string, mimeType: string, apiKey: string): Promise<Transaction[]> {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.0-flash-exp',
       messages: [
         {
           role: 'user',
@@ -278,14 +278,14 @@ async function categorizeTransactions(transactions: Transaction[], apiKey: strin
   ).join('\n');
 
   try {
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.0-flash-exp',
         messages: [
           {
             role: 'system',

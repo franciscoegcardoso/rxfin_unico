@@ -147,7 +147,7 @@ const handler = async (req: Request): Promise<Response> => {
       type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${SUPABASE_URL.replace('.supabase.co', '.lovable.app')}/onboarding`,
+        redirectTo: `${Deno.env.get('SITE_URL') || 'https://app.rxfin.com.br'}/onboarding`,
       }
     });
 
