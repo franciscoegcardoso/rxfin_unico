@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.vercel-deployments]
 verify_jwt = true
+
+[functions.process-ir-import]
+verify_jwt = false
