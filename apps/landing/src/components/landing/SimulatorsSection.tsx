@@ -51,7 +51,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
       ref={sectionRef}
       className={`py-10 px-4 sm:px-6 lg:px-8 w-full transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
     >
-      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto w-full">
+      <div className="max-w-[1200px] mx-auto w-full">
         <motion.div
           className="text-center mb-6"
           initial={{ opacity: 0, y: 20 }}

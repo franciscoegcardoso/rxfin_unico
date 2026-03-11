@@ -414,7 +414,7 @@ export const aiMentorContent: FeaturePreviewContent = {
     {
       type: 'intro',
       title: 'IA que encontra vazamentos e sugere ajustes',
-      content: 'Identifique gastos invisíveis e padrões — e receba recomendações simples para sobrar mais no fim do mês.'
+      content: 'Identifique gastos invisíveis e receba recomendações práticas.'
     },
     {
       type: 'feature',
@@ -438,7 +438,7 @@ export const openFinanceContent: FeaturePreviewContent = {
     {
       type: 'intro',
       title: 'Conecte bancos e cartões com segurança',
-      content: 'Integração para reduzir digitação e manter tudo sincronizado automaticamente.'
+      content: '+300 bancos e fintechs conectados via Open Finance.'
     },
     {
       type: 'feature',

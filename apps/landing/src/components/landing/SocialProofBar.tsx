@@ -80,7 +80,7 @@ export const SocialProofBar: React.FC = () => {
   return (
     <div
       ref={sectionRef}
-      className="bg-[hsl(161,79%,25%)] py-6 sm:py-8 px-4 sm:px-6 lg:px-8 border-b border-white/10"
+      className="bg-[#0d2b20] py-6 sm:py-8 px-4 sm:px-6 lg:px-8 border-b border-white/10"
     >
       <div className="max-w-5xl mx-auto">
         {/* Desktop e tablet: linha horizontal com separadores */}

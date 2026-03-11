@@ -23,7 +23,7 @@ import { SimulatorsSection } from '@/components/landing/SimulatorsSection';
 import { TimelineSection } from '@/components/landing/TimelineSection';
 import { FeaturesSection, FeatureItem } from '@/components/landing/FeaturesSection';
 import { SignupBenefitsSection } from '@/components/landing/SignupBenefitsSection';
-import { AuthoritySection } from '@/components/landing/AuthoritySection';
+import DemoFlow from '@/components/landing/DemoFlow';
 import { PrivacySecuritySection } from '@/components/landing/PrivacySecuritySection';
 import { TrustBadges } from '@/components/landing/TrustBadges';
 import logoRxFin from '@/assets/Logo_RXFin-10.png';
@@ -35,7 +35,7 @@ const pillars: FeatureItem[] = [
     id: 'cashflow',
     icon: BarChart3,
     title: 'Seu caixa projetado (sem planilhas)',
-    description: 'Veja entradas e saídas futuras automaticamente e descubra com antecedência quando vai sobrar ou faltar.',
+    description: 'Veja entradas e saídas futuras. Saiba antes quando vai sobrar ou faltar.',
     cta: 'Ver um exemplo de projeção',
   },
   {
@@ -49,7 +49,7 @@ const pillars: FeatureItem[] = [
     id: 'ai',
     icon: Brain,
     title: 'IA que encontra vazamentos e sugere ajustes práticos',
-    description: 'Identifique gastos invisíveis e padrões — e receba recomendações simples para sobrar mais no fim do mês.',
+    description: 'Identifique gastos invisíveis e receba recomendações práticas.',
     cta: 'Quero recomendações',
   },
 ];
@@ -59,21 +59,21 @@ const complementary: FeatureItem[] = [
     id: 'freedom',
     icon: Clock,
     title: 'Independência financeira em cenários reais',
-    description: 'Simule futuro com seus ativos e investimentos em cenários conservador/realista/otimista.',
+    description: 'Simule seu patrimônio em 3 cenários: conservador, realista e otimista.',
     cta: 'Ver cenários',
   },
   {
     id: 'connection',
     icon: Plug,
     title: 'Conecte bancos e cartões com segurança',
-    description: 'Integração para reduzir digitação e manter tudo sincronizado automaticamente.',
+    description: '+300 bancos e fintechs conectados via Open Finance.',
     cta: 'Ver bancos compatíveis',
   },
   {
     id: 'tax',
     icon: FileText,
     title: 'Imposto de Renda organizado o ano inteiro',
-    description: 'Centralize rendas e despesas dedutíveis e chegue no IR com relatórios prontos (sem caça a comprovantes).',
+    description: 'IR organizado o ano inteiro, sem caça a comprovantes.',
     cta: 'Ver o que fica registrado',
   },
 ];
@@ -195,11 +195,9 @@ const LandingPage: React.FC = () => {
       {/* 6. Ao se cadastrar você pode */}
       <SignupBenefitsSection />
 
-      {/* 9. Privacidade e Segurança */}
+      <DemoFlow />
+      {/* 9. Privacidade e Segurança (inclui bloco do fundador) */}
       <PrivacySecuritySection />
-
-      {/* 10. Autoridade */}
-      <AuthoritySection />
 
       {/* Footer */}
       <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,12%)] dark:bg-[hsl(161,60%,5%)] text-white">

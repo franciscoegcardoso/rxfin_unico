@@ -104,7 +104,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           </h2>
 
           <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base mb-8 leading-relaxed">
-            Conecte seus bancos e cartões — o RXFin organiza tudo automaticamente e te diz exatamente o que fazer.
+            Conecte seus bancos. O RXFin cuida do resto.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

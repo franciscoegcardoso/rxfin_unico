@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Lock, Server, Zap } from 'lucide-react';
+import DashboardMockup from '@/components/landing/DashboardMockup';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -151,14 +152,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) =>
           animate="show"
           className="flex-1 min-w-0 flex justify-center mt-10 lg:mt-0"
         >
-          <div
-            className="hero-mockup w-full max-w-md lg:max-w-lg xl:max-w-xl -rotate-[2deg] rounded-lg shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15),0_12px_24px_-8px_rgba(0,0,0,0.08)]"
-          >
-            <img
-              src="/mockup-dashboard.png"
-              alt="Dashboard RXFin"
-              className="w-full h-auto rounded-lg object-contain block"
-            />
+          <div className="relative w-full">
+            <div className="absolute -inset-10 rounded-full bg-primary/15 blur-3xl opacity-50 pointer-events-none" />
+            <div className="relative -rotate-[1.5deg] drop-shadow-2xl">
+              <DashboardMockup />
+            </div>
           </div>
         </motion.div>
       </div>

@@ -22,7 +22,7 @@ export const SignupBenefitsSection: React.FC = () => {
   return (
     <section
       ref={sectionRef}
-      className={`py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)] transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      className={`py-20 px-4 sm:px-6 lg:px-8 bg-[#0d2b20] transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
     >
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-10 tracking-tight text-white">
@@ -33,7 +33,7 @@ export const SignupBenefitsSection: React.FC = () => {
           {benefits.map((txt, i) => (
             <div
               key={i}
-              className="flex items-start gap-3 text-left p-4 rounded-xl bg-white/10 border border-white/20"
+              className="flex items-start gap-3 text-left p-4 rounded-xl bg-white/5 border border-white/10"
             >
               <CheckCircle2 className="h-5 w-5 text-white shrink-0 mt-0.5" />
               <span className="text-sm sm:text-base text-white/90">{txt}</span>
