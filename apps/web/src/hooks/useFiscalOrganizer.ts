@@ -143,7 +143,8 @@ export const useFiscalOrganizer = () => {
 
   // Send chat message with streaming
   const sendMessage = async (content: string) => {
-    if (!session?.access_token || !content.trim()) return;
+    const token = session?.access_token;
+    if (typeof token !== 'string' || !token.trim() || !content.trim()) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -172,14 +173,15 @@ export const useFiscalOrganizer = () => {
         throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
       }
 
-      // Stream response
+      // Stream response (header values must be valid ByteStrings)
       let resp: Response;
       try {
+        const authHeader = `Bearer ${token.trim()}`;
         resp = await fetch(CHAT_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': authHeader,
           },
           body: JSON.stringify({
             messages: [...messages, userMessage].map(m => ({
