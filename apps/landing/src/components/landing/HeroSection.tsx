@@ -44,14 +44,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) =>
           </motion.div>
           <motion.h1
             variants={fadeUp}
-            className="text-2xl sm:text-4xl lg:text-[3.25rem] font-bold text-foreground leading-[1.15] tracking-tight"
+            className="font-bold text-foreground leading-[1.15] tracking-tight text-[1.8rem] sm:text-4xl lg:text-[3.25rem]"
           >
-            <span className="block sm:inline">Decida melhor.</span>{' '}
-            <span className="block sm:inline">Evite erros caros.</span>
+            <span className="block sm:inline-block sm:text-[1.7rem] lg:text-[2.45rem]">
+              <span className="sm:inline">Decida melhor.</span>{' '}
+              <span className="sm:inline">Evite erros caros.</span>
+            </span>
           </motion.h1>
 
           <motion.div variants={fadeUp} className="mt-1 sm:mt-2 lg:mt-3 mb-5">
-            <span className="relative inline-block text-2xl sm:text-4xl lg:text-[3.25rem] font-bold text-primary leading-[1.15] tracking-tight pb-2 sm:pb-3">
+            <span className="relative inline-block text-[1.8rem] sm:text-4xl lg:text-[3.25rem] font-bold text-primary leading-[1.15] tracking-tight pb-2 sm:pb-3">
               Simule antes de decidir.
               <motion.svg
                 className="absolute left-0 w-full"
