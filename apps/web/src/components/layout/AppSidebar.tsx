@@ -55,7 +55,10 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
 
   useEffect(() => {
     groupedSections.forEach((section) => {
-      const hasActive = section.items.some((item) => location.pathname === item.path);
+      const hasActive = section.items.some((item) => {
+        const path = toPath(item.path);
+        return location.pathname === path || (path !== '/' && location.pathname.startsWith(path + '/'));
+      });
       if (hasActive) {
         setOpenSections((prev) => new Set(prev).add(section.slug));
       }
