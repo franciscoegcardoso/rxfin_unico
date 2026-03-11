@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { BrandSearchSelect } from '@/components/ui/brand-search-select';
-import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, TrendingUp, BarChart3, Sparkles, DollarSign, RefreshCw, Star } from 'lucide-react';
+import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, TrendingUp, BarChart3, Sparkles, DollarSign, RefreshCw, Star, FileDown } from 'lucide-react';
 import { useFipe, VehicleType, formatFipeYearName, formatFipeAnoModelo } from '@/hooks/useFipe';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
@@ -47,6 +47,16 @@ import {
   DepreciationCurveResult,
   AgePricePoint
 } from '@/utils/depreciationRegression';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
+import {
+  FipePdfReportContent,
+  type FipePdfReportData,
+  type OwnershipExportItem,
+} from './FipePdfReportContent';
+import { exportFipeReportToPdf } from './fipePdfExport';
+import type { FipeOwnershipExportData } from './FipeOwnershipCostCard';
 
 // ============================================================================
 // HELPER: Check if device is tablet or larger (not strictly mobile)
@@ -210,6 +220,13 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
   
   // Track if auto-fill was triggered to avoid duplicate calls
   const autoFillTriggeredRef = useRef<string | null>(null);
+
+  // Exportação PDF: dados de custo (preenchidos por FipeOwnershipCostCard) e refs do relatório
+  const ownershipExportDataRef = useRef<FipeOwnershipExportData | null>(null);
+  const pdfSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const pdfContainerRef = useRef<HTMLDivElement | null>(null);
+  const [pdfReportData, setPdfReportData] = useState<FipePdfReportData | null>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
 
   // Calcula a idade do veículo selecionado
   const vehicleAge = useMemo(() => {
@@ -508,6 +525,129 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
     return null;
   };
 
+  // Monta dados do relatório para exportação PDF
+  const buildPdfReportData = useCallback((): FipePdfReportData | null => {
+    if (!fipe.price || fipe.priceValue <= 0) return null;
+    const hist = fipeHistory.priceHistory;
+    const firstPrice = hist.length > 0 ? hist[0].price : fipe.priceValue;
+    const lastPrice = hist.length > 0 ? hist[hist.length - 1].price : fipe.priceValue;
+    const totalPct = firstPrice > 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
+    const monthsCount = hist.length;
+    const annualizedRate =
+      monthsCount > 1 ? (totalPct / (monthsCount - 1)) * 12 : totalPct;
+    const ownership = ownershipExportDataRef.current;
+    const cohort = cohortMatrix.matrixData;
+    const modelName = fipe.models.find((m) => String(m.codigo) === fipe.selectedModel)?.nome ?? '';
+    const brandName = fipe.brands.find((b) => b.codigo === fipe.selectedBrand)?.nome ?? '';
+    const category = inferVehicleCategory(modelName, fipe.vehicleType).replace(/_/g, ' ');
+    let monthlyVariation: number | undefined;
+    if (hist.length >= 2) {
+      const prev = hist[hist.length - 2].price;
+      const last = hist[hist.length - 1].price;
+      monthlyVariation = prev > 0 ? ((last - prev) / prev) * 100 : undefined;
+    }
+    const historyChartData = hist.map((p) => ({
+      date: p.date.toISOString(),
+      monthLabel: p.monthLabel,
+      price: p.price,
+    }));
+    const historyPeriodLabel =
+      hist.length >= 2
+        ? `${hist[0].monthLabel} - ${hist[hist.length - 1].monthLabel}`
+        : undefined;
+    return {
+      analysisDate: format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+      fipeValue: fipe.price.Valor,
+      vehicleName: `${brandName} ${modelName}`,
+      referenceMonth: fipe.price.MesReferencia,
+      monthlyVariation,
+      category,
+      codigoFipe: fipe.price.CodigoFipe,
+      anoModelo: fipe.price.AnoModelo === 32000 ? '0 km' : String(fipe.price.AnoModelo),
+      combustivel: fipe.price.Combustivel,
+      ownershipTotalMonthly: ownership?.totalMonthly ?? 0,
+      ownershipTotalAnnual: ownership?.totalAnnual ?? 0,
+      ownershipItems: (ownership?.costItems ?? []).map(
+        (i): OwnershipExportItem => ({
+          key: i.key,
+          label: i.label,
+          monthlyValue: i.monthlyValue,
+          annualValue: i.annualValue,
+        })
+      ),
+      opportunityCostNote: ownership?.opportunityCostNote,
+      historyValor0km: firstPrice,
+      historyValorAtual: lastPrice,
+      historyTotalDepreciacaoPct: totalPct,
+      historyPctDepreciacao: annualizedRate,
+      historyChartData,
+      historyPeriodLabel,
+      cohortModelYears: cohort?.modelYears ?? [],
+      cohortCalendarYears: cohort?.calendarYears ?? [],
+      cohortCells: (cohort?.cells ?? []).map((c) => ({
+        modelYear: c.modelYear,
+        calendarYear: c.calendarYear,
+        price: c.price,
+      })),
+      cohortModelName: modelName || undefined,
+      cohortFipeCode: fipe.price.CodigoFipe,
+      yearPrices: yearPrices.map((yp) => ({
+        year: yp.year,
+        yearLabel: yp.yearLabel,
+        displayYear: yp.displayYear,
+        price: yp.price,
+      })),
+      selectedYear: fipe.selectedYear ?? undefined,
+      zeroKmData: zeroKmPriceData.map((d) => ({
+        modelYear: d.modelYear,
+        price: d.price,
+        variation: d.variation,
+      })),
+    };
+  }, [
+    fipe.price,
+    fipe.priceValue,
+    fipe.selectedBrand,
+    fipe.selectedModel,
+    fipe.selectedYear,
+    fipe.models,
+    fipe.brands,
+    fipe.vehicleType,
+    fipeHistory.priceHistory,
+    cohortMatrix.matrixData,
+    yearPrices,
+    zeroKmPriceData,
+  ]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!fipe.price || fipe.priceValue <= 0) {
+      toast.error('Consulte um veículo na FIPE antes de exportar o PDF.');
+      return;
+    }
+    const data = buildPdfReportData();
+    if (!data) return;
+    setPdfExporting(true);
+    setPdfReportData(data);
+    // Aguarda o relatório ser montado e os gráficos pintarem antes de capturar
+    setTimeout(() => {
+      exportFipeReportToPdf({
+        sectionRefs: pdfSectionRefs,
+        fileName: `analise-fipe-${data.vehicleName.replace(/\s+/g, '-').slice(0, 40)}-${format(new Date(), 'yyyy-MM-dd')}.pdf`,
+      })
+        .then(() => {
+          toast.success('PDF gerado com sucesso.');
+        })
+        .catch((err) => {
+          console.error('FipePdfExport:', err);
+          toast.error('Erro ao gerar o PDF. Tente novamente.');
+        })
+        .finally(() => {
+          setPdfReportData(null);
+          setPdfExporting(false);
+        });
+    }, 1600);
+  }, [fipe.price, fipe.priceValue, buildPdfReportData]);
+
   return (
     <div className="space-y-6">
       {/* Quick Select from Registered Vehicles & Favorites */}
@@ -618,13 +758,33 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
       {/* Main Simulator — layout conforme modelo: esquerda (seleção) + direita (resultado) */}
       <Card className="bg-card border border-border rounded-xl shadow-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-foreground text-lg sm:text-xl">
-            <Car className="h-5 w-5 text-primary shrink-0" />
-            Dados do veículo na FIPE
-          </CardTitle>
-          <CardDescription className="text-muted-foreground text-sm">
-            Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-foreground text-lg sm:text-xl">
+                <Car className="h-5 w-5 text-primary shrink-0" />
+                Dados do veículo na FIPE
+              </CardTitle>
+              <CardDescription className="text-muted-foreground text-sm">
+                Consulte o valor de veículos na tabela FIPE e simule diferentes percentuais.
+              </CardDescription>
+            </div>
+            {fipe.price && !fipe.loading.price && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPdf}
+                disabled={pdfExporting}
+                className="gap-2 shrink-0"
+              >
+                {pdfExporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="h-4 w-4" />
+                )}
+                Exportar PDF
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-6 pt-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
@@ -937,6 +1097,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                   depreciationMonthly={depMonthly}
                   yearLabel={fipe.years.find(y => y.codigo === fipe.selectedYear)?.nome || ''}
                   theftRisk={theftRiskData}
+                  onExportData={(data) => { ownershipExportDataRef.current = data; }}
                 />
               </CardContent>
             </Card>
@@ -1277,6 +1438,21 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
             </Card>
           </AnimatedChartContainer>
         </MobileSectionDrawer>
+      )}
+
+      {/* Container oculto para renderizar o relatório PDF (captura por html-to-image) */}
+      {pdfReportData && (
+        <div
+          ref={pdfContainerRef}
+          className="fixed left-0 top-0 z-[9999] overflow-auto"
+          style={{ left: -9999, width: 800, visibility: 'hidden', pointerEvents: 'none' }}
+          aria-hidden
+        >
+          <FipePdfReportContent
+            data={pdfReportData}
+            sectionRefs={pdfSectionRefs}
+          />
+        </div>
       )}
 
       {/* Favorite Swap Dialog */}

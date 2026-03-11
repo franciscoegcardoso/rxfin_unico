@@ -63,6 +63,7 @@
     "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
     "jsdom": "^28.0.0",
+    "jspdf": "^4.2.0",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "posthog-js": "^1.351.1",

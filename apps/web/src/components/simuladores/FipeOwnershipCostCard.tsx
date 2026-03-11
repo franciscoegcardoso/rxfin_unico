@@ -106,6 +106,13 @@ const MAX_CURRENCY_DIGITS = 11;
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
+export interface FipeOwnershipExportData {
+  totalMonthly: number;
+  totalAnnual: number;
+  costItems: Array<{ key: string; label: string; monthlyValue: number; annualValue: number }>;
+  opportunityCostNote: string;
+}
+
 interface FipeOwnershipCostCardProps {
   fipeValue: number;
   modelName: string;
@@ -119,6 +126,8 @@ interface FipeOwnershipCostCardProps {
     adjustment: number;
     reason: string;
   };
+  /** Chamado quando os dados de custo estão disponíveis (para exportação em PDF). */
+  onExportData?: (data: FipeOwnershipExportData) => void;
 }
 
 interface CostItem {
@@ -164,6 +173,7 @@ export const FipeOwnershipCostCard: React.FC<FipeOwnershipCostCardProps> = ({
   depreciationMonthly,
   yearLabel = '',
   theftRisk,
+  onExportData,
 }) => {
   const isMobile = useIsMobile();
   
@@ -846,6 +856,16 @@ export const FipeOwnershipCostCard: React.FC<FipeOwnershipCostCardProps> = ({
   
   // Nota sobre custo de oportunidade
   const opportunityCostNote = `O "Custo de Oportunidade" representa o rendimento que você deixa de ganhar por ter capital imobilizado no veículo. Calculado como Valor FIPE × 85% do CDI (${(CDI_ANNUAL_RATE * 100).toFixed(2)}% a.a.), benchmark realista para renda fixa líquida (CDB/LCI/LCA) com garantia do FGC.`;
+
+  // Expor dados para exportação PDF (relatório FIPE)
+  useEffect(() => {
+    onExportData?.({
+      totalMonthly: totals.monthly,
+      totalAnnual: totals.annual,
+      costItems: chartCostItems,
+      opportunityCostNote,
+    });
+  }, [onExportData, totals.monthly, totals.annual, chartCostItems, opportunityCostNote]);
 
   const [showParametersDialog, setShowParametersDialog] = useState(false);
 
