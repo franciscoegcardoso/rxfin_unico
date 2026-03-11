@@ -883,7 +883,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         </CardContent>
       </Card>
 
-      {/* Quanto custa ter esse carro? - Ownership Cost */}
+      {/* Quanto custa ter esse carro? - Ownership Cost (layout análogo à seção Histórico FIPE) */}
       {fipe.price && !fipe.loading.price && fipe.priceValue > 0 && (() => {
         const depRate = depreciationEngineV2.result?.metadata.annualRatePhaseA ?? depreciationData.curveResult?.annualRate ?? (() => {
           if (vehicleAge <= 1) return 0.15;
@@ -912,16 +912,34 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
             badge={<Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20">Custos</Badge>}
             isTabletOrMobile={isTabletOrMobile}
           >
-            <FipeOwnershipCostCard
-              fipeValue={fipe.priceValue}
-              modelName={selectedModelName}
-              brandName={fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome}
-              vehicleAge={vehicleAge}
-              vehicleType={fipe.vehicleType}
-              depreciationMonthly={depMonthly}
-              yearLabel={fipe.years.find(y => y.codigo === fipe.selectedYear)?.nome || ''}
-              theftRisk={theftRiskData}
-            />
+            <Card className="border border-border rounded-xl bg-card shadow-sm">
+              <CardHeader className="pb-2 px-3 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2 flex-wrap">
+                      <Calculator className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                      <span className="hidden sm:inline">Quanto custa ter esse carro?</span>
+                      <span className="sm:hidden">Quanto custa ter esse carro?</span>
+                    </CardTitle>
+                    <CardDescription className="text-[10px] sm:text-xs mt-1">
+                      Distribuição de custos mensais e anuais, custo de oportunidade e personalização de parâmetros.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6 pt-0">
+                <FipeOwnershipCostCard
+                  fipeValue={fipe.priceValue}
+                  modelName={selectedModelName}
+                  brandName={fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome}
+                  vehicleAge={vehicleAge}
+                  vehicleType={fipe.vehicleType}
+                  depreciationMonthly={depMonthly}
+                  yearLabel={fipe.years.find(y => y.codigo === fipe.selectedYear)?.nome || ''}
+                  theftRisk={theftRiskData}
+                />
+              </CardContent>
+            </Card>
           </MobileSectionDrawer>
         );
       })()}
