@@ -261,7 +261,7 @@ const BensInvestimentosLayout: React.FC = () => {
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
       <AppLayout>
-        <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
+        <div className="content-zone flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))] py-5 md:py-6 space-y-5 flex-1">
           <PageHeader
             icon={Layers}
             title="Bens e Investimentos"
@@ -435,7 +435,6 @@ const BensInvestimentosLayout: React.FC = () => {
             }
           />
 
-          <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
           {patrimonioError && (
             <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
           )}
@@ -974,7 +973,6 @@ const BensInvestimentosLayout: React.FC = () => {
 
             </div>
           </Tabs>
-        </div>
 
         {/* Confirmation Dialog for Asset Deletion */}
         <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => {
@@ -1107,7 +1105,7 @@ const BensInvestimentosLayout: React.FC = () => {
           onOpenChange={setSeguroDialogOpen}
           preSelectedAssetId={seguroAssetId}
         />
-        </div>
+      </div>
       </AppLayout>
     </BensInvestimentosContext.Provider>
   );

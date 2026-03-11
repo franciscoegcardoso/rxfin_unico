@@ -69,15 +69,15 @@ const PlanejamentoAnual: React.FC = () => {
 
   if (isLoading) {
     return (
-      <>
+      <div className="content-zone py-5 md:py-6 space-y-5">
         <PageHeader icon={BarChart2} title="Planejamento Anual" subtitle="Visão anual de receitas, despesas e saldo" />
         <PageSkeleton />
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="content-zone py-5 md:py-6 space-y-6">
         <PageHeader
           icon={BarChart2}
           title="Planejamento Anual"

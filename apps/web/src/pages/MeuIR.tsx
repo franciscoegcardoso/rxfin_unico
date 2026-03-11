@@ -37,6 +37,7 @@ const MeuIR: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
           icon={FileText}
           title="Meu IR"
@@ -56,7 +57,6 @@ const MeuIR: React.FC = () => {
             </>
           }
         />
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <Tabs defaultValue="organizer" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-auto p-0 bg-transparent gap-0">
             <TabsTrigger 

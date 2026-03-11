@@ -61,8 +61,8 @@ const Contas: React.FC = () => {
     return (
       <AppLayout>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
-          <PageHeader icon={Wallet} title="Contas a Pagar e Receber" subtitle="Controle seu fluxo de obrigações" />
           <div className="content-zone py-5 md:py-6 flex-1">
+            <PageHeader icon={Wallet} title="Contas a Pagar e Receber" subtitle="Controle seu fluxo de obrigações" />
             <PageSkeleton />
           </div>
         </div>
@@ -73,14 +73,13 @@ const Contas: React.FC = () => {
   return (
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
           icon={Wallet}
           title="Contas a Pagar e Receber"
           subtitle="Controle seu fluxo de obrigações"
           actions={monthSelector}
         />
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
-
         {error && (
           <Card className="bg-card rounded-2xl shadow-sm border border-border p-6 border-destructive/50 bg-destructive/5">
             <p className="text-sm text-destructive mb-3">{String(error)}</p>

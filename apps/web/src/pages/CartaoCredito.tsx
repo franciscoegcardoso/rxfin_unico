@@ -95,13 +95,12 @@ const CartaoCredito: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
           icon={CreditCard}
           title="Cartão de Crédito"
           subtitle="Faturas, lançamentos e sincronização"
         />
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
-
         {loading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -241,7 +240,7 @@ const CartaoCredito: React.FC = () => {
 
         <CartaoCreditoSection />
         </div>
-      </div>
+        </div>
   );
 };
 

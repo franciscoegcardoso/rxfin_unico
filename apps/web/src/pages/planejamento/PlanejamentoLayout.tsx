@@ -53,6 +53,7 @@ const PlanejamentoLayout: React.FC = () => {
   return (
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
           icon={CalendarCheck}
           title="Planejamento Mensal"
@@ -65,7 +66,6 @@ const PlanejamentoLayout: React.FC = () => {
             </>
           }
         />
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         {budgetError && (
           <div className="rounded-[var(--radius)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-expense-bg))] p-4">
             <p className="text-sm text-[hsl(var(--color-expense))]">{budgetError}</p>
