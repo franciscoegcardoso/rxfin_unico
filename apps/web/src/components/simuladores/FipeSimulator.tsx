@@ -223,7 +223,6 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
 
   // Exportação PDF: dados de custo (preenchidos por FipeOwnershipCostCard) e refs do relatório
   const ownershipExportDataRef = useRef<FipeOwnershipExportData | null>(null);
-  const pdfSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pdfContainerRef = useRef<HTMLDivElement | null>(null);
   const [pdfReportData, setPdfReportData] = useState<FipePdfReportData | null>(null);
   const [pdfExporting, setPdfExporting] = useState(false);
@@ -631,7 +630,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
     // Aguarda o relatório ser montado e os gráficos pintarem antes de capturar
     setTimeout(() => {
       exportFipeReportToPdf({
-        sectionRefs: pdfSectionRefs,
+        containerRef: pdfContainerRef,
         fileName: `analise-fipe-${data.vehicleName.replace(/\s+/g, '-').slice(0, 40)}-${format(new Date(), 'yyyy-MM-dd')}.pdf`,
       })
         .then(() => {
@@ -1440,18 +1439,19 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         </MobileSectionDrawer>
       )}
 
-      {/* Container oculto para renderizar o relatório PDF (captura por html-to-image) */}
+      {/* Container do relatório para PDF: no viewport com opacity 0 para ser pintado (evita PDF em branco), uma página A4 */}
       {pdfReportData && (
         <div
-          ref={pdfContainerRef}
-          className="fixed left-0 top-0 z-[9999] overflow-auto"
-          style={{ left: -9999, width: 800, visibility: 'hidden', pointerEvents: 'none' }}
+          className="fixed left-0 top-0 z-[9999] overflow-hidden pointer-events-none"
+          style={{
+            width: 794,
+            minHeight: 1123,
+            opacity: 0,
+            visibility: 'visible',
+          }}
           aria-hidden
         >
-          <FipePdfReportContent
-            data={pdfReportData}
-            sectionRefs={pdfSectionRefs}
-          />
+          <FipePdfReportContent ref={pdfContainerRef} data={pdfReportData} />
         </div>
       )}
 
