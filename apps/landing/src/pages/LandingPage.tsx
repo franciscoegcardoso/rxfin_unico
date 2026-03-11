@@ -19,7 +19,6 @@ import { LeadGateDialog } from '@/components/landing/LeadGateDialog';
 import { CibeliaWidget } from '@/components/landing/CibeliaWidget';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProofBar } from '@/components/landing/SocialProofBar';
-import { FeaturedSimulatorCTA } from '@/components/landing/FeaturedSimulatorCTA';
 import { SimulatorsSection } from '@/components/landing/SimulatorsSection';
 import { TimelineSection } from '@/components/landing/TimelineSection';
 import { FeaturesSection, FeatureItem } from '@/components/landing/FeaturesSection';
@@ -183,10 +182,7 @@ const LandingPage: React.FC = () => {
       {/* 1.1 Social Proof */}
       <SocialProofBar />
 
-      {/* 2. CTA Novidade — Simulador em destaque */}
-      <FeaturedSimulatorCTA onOpenLeadGate={openLeadGate} />
-
-      {/* 3. Simuladores */}
+      {/* 2. Simuladores */}
       <SimulatorsSection onSimulatorClick={handleSimulatorClick} onOpenLeadGate={openLeadGate} />
 
       {/* 4. Um Sistema que Funciona */}

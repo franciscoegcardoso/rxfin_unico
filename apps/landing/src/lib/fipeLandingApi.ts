@@ -30,6 +30,8 @@ function setCached<T>(key: string, data: T): void {
   }
 }
 
+export type VehicleType = 'carros' | 'motos' | 'caminhoes';
+
 export interface FipeBrand {
   codigo: string;
   nome: string;
@@ -81,39 +83,45 @@ async function fetchFipeProxy<T>(path: string): Promise<T | null> {
   }
 }
 
-export async function fetchFipeBrands(): Promise<FipeBrand[]> {
-  const cached = getCached<FipeBrand[]>(CACHE_KEY_BRANDS, CACHE_TTL_BRANDS_MS);
+export async function fetchFipeBrands(vehicleType: VehicleType = 'carros'): Promise<FipeBrand[]> {
+  const cacheKey = `${CACHE_KEY_BRANDS}-${vehicleType}`;
+  const cached = getCached<FipeBrand[]>(cacheKey, CACHE_TTL_BRANDS_MS);
   if (cached && cached.length > 0) return cached;
-  const data = await fetchFipeProxy<FipeBrand[]>('/carros/marcas');
+  const data = await fetchFipeProxy<FipeBrand[]>(`/${vehicleType}/marcas`);
   const result = Array.isArray(data) ? data : [];
-  if (result.length > 0) setCached(CACHE_KEY_BRANDS, result);
+  if (result.length > 0) setCached(cacheKey, result);
   return result;
 }
 
-export async function fetchFipeModels(brandCode: string): Promise<FipeModel[]> {
+export async function fetchFipeModels(vehicleType: VehicleType, brandCode: string): Promise<FipeModel[]> {
   const data = await fetchFipeProxy<{ modelos: FipeModel[] }>(
-    `/carros/marcas/${brandCode}/modelos`
+    `/${vehicleType}/marcas/${brandCode}/modelos`
   );
   return data?.modelos ?? [];
 }
 
-export async function fetchFipeYears(brandCode: string, modelCode: string): Promise<FipeYear[]> {
+export async function fetchFipeYears(
+  vehicleType: VehicleType,
+  brandCode: string,
+  modelCode: string
+): Promise<FipeYear[]> {
   const data = await fetchFipeProxy<FipeYear[]>(
-    `/carros/marcas/${brandCode}/modelos/${modelCode}/anos`
+    `/${vehicleType}/marcas/${brandCode}/modelos/${modelCode}/anos`
   );
   return Array.isArray(data) ? data : [];
 }
 
 export async function fetchFipePrice(
+  vehicleType: VehicleType,
   brandCode: string,
   modelCode: string,
   yearCode: string
 ): Promise<FipePrice | null> {
-  const cacheKey = `${CACHE_KEY_PRICE}-${brandCode}-${modelCode}-${yearCode}`;
+  const cacheKey = `${CACHE_KEY_PRICE}-${vehicleType}-${brandCode}-${modelCode}-${yearCode}`;
   const cached = getCached<FipePrice>(cacheKey, CACHE_TTL_PRICE_MS);
   if (cached) return cached;
   const data = await fetchFipeProxy<FipePrice>(
-    `/carros/marcas/${brandCode}/modelos/${modelCode}/anos/${yearCode}`
+    `/${vehicleType}/marcas/${brandCode}/modelos/${modelCode}/anos/${yearCode}`
   );
   if (data) setCached(cacheKey, data);
   return data ?? null;

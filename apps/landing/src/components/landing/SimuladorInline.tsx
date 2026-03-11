@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, TrendingDown, Shield, FileText, Fuel, Wrench } from 'lucide-react';
+import { ArrowRight, Loader2, TrendingDown, Shield, FileText, Fuel, Wrench, Car, Bike, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { trackCTAClick } from '@/lib/tracking';
 import {
@@ -9,6 +9,7 @@ import {
   fetchFipeYears,
   fetchFipePrice,
   fetchFipeHistory,
+  type VehicleType,
   type FipeBrand,
   type FipeModel,
   type FipeYear,
@@ -16,6 +17,14 @@ import {
   type HistoryPoint,
 } from '@/lib/fipeLandingApi';
 import { LandingBrandSelect } from './LandingBrandSelect';
+import { LandingSearchableSelect } from './LandingSearchableSelect';
+import { cn } from '@/lib/utils';
+
+const VEHICLE_TYPES: { value: VehicleType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: 'carros', label: 'Carros', icon: Car },
+  { value: 'motos', label: 'Motos', icon: Bike },
+  { value: 'caminhoes', label: 'Caminhões', icon: Truck },
+];
 
 const APP_URL = 'https://app.rxfin.com.br';
 const FIPE_ANALYSIS_URL = `${APP_URL}/simuladores/veiculos/simulador-fipe`;
@@ -232,7 +241,7 @@ export const SimuladorInline: React.FC = () => {
     if (!selectedBrand || !selectedModel || !selectedYear) return;
     let cancelled = false;
     setLoadingPrice(true);
-    fetchFipePrice(selectedBrand, selectedModel, selectedYear)
+    fetchFipePrice(vehicleType, selectedBrand, selectedModel, selectedYear)
       .then((p) => {
         if (cancelled || !p) return p;
         setPrice(p);
@@ -244,7 +253,7 @@ export const SimuladorInline: React.FC = () => {
       .catch(() => { if (!cancelled) setPrice(null); })
       .finally(() => { if (!cancelled) setLoadingPrice(false); });
     return () => { cancelled = true; };
-  }, [selectedBrand, selectedModel, selectedYear]);
+  }, [vehicleType, selectedBrand, selectedModel, selectedYear]);
 
   const priceValue = useMemo(
     () => (price ? parseFipeValor(price.Valor) : 0),
@@ -278,7 +287,7 @@ export const SimuladorInline: React.FC = () => {
           <div>
             <h3 className="text-xl font-semibold text-foreground">Prévia do Simulador FIPE</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Escolha marca, modelo e ano. Veja o valor FIPE, a depreciação e o custo mensal estimado.
+              Escolha tipo, marca, modelo e ano. Veja o valor FIPE, a depreciação e o custo mensal estimado.
             </p>
           </div>
           <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">
@@ -286,35 +295,57 @@ export const SimuladorInline: React.FC = () => {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-foreground">Marca</span>
-            <LandingBrandSelect
-              value={selectedBrand}
-              onValueChange={setSelectedBrand}
-              fipeBrands={brands}
-              loading={loadingBrands}
-              disabled={loadingBrands}
-              placeholder="Selecione a marca"
-              searchPlaceholder="Buscar marca..."
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-foreground">Modelo</span>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              disabled={loadingModels || !selectedBrand}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="">{loadingModels ? 'Carregando…' : 'Selecione o modelo'}</option>
-              {models.map((m) => (
-                <option key={m.codigo} value={String(m.codigo)}>{m.nome}</option>
+        <div className="space-y-4">
+          <div>
+            <span className="block text-sm font-medium text-foreground mb-2">Tipo de veículo</span>
+            <div className="flex flex-wrap gap-2">
+              {VEHICLE_TYPES.map(({ value: vt, label, icon: Icon }) => (
+                <button
+                  key={vt}
+                  type="button"
+                  onClick={() => setVehicleType(vt)}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                    vehicleType === vt
+                      ? 'border-primary bg-primary/15 text-primary'
+                      : 'border-input bg-background text-muted-foreground hover:bg-muted/50'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
               ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-foreground">Ano</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-foreground">Marca</span>
+              <LandingBrandSelect
+                value={selectedBrand}
+                onValueChange={setSelectedBrand}
+                fipeBrands={brands}
+                loading={loadingBrands}
+                disabled={loadingBrands}
+                placeholder="Selecione a marca"
+                searchPlaceholder="Buscar marca..."
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-foreground">Modelo</span>
+              <LandingSearchableSelect
+                value={selectedModel}
+                onValueChange={setSelectedModel}
+                options={models.map((m) => ({ value: String(m.codigo), label: m.nome }))}
+                disabled={!selectedBrand || loadingModels}
+                loading={loadingModels}
+                placeholder="Selecione o modelo"
+                searchPlaceholder="Buscar modelo..."
+                emptyMessage="Nenhum modelo encontrado."
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-foreground">Ano</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
@@ -387,6 +418,7 @@ export const SimuladorInline: React.FC = () => {
             Ver análise completa
             <ArrowRight className="h-4 w-4" />
           </a>
+        </div>
         </div>
       </div>
     </motion.div>

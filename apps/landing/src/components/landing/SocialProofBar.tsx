@@ -80,7 +80,7 @@ export const SocialProofBar: React.FC = () => {
   return (
     <div
       ref={sectionRef}
-      className="border-y border-border bg-background py-6 sm:py-8 px-4 sm:px-6 lg:px-8"
+      className="bg-[hsl(161,79%,25%)] py-6 sm:py-8 px-4 sm:px-6 lg:px-8 border-b border-white/10"
     >
       <div className="max-w-5xl mx-auto">
         {/* Desktop e tablet: linha horizontal com separadores */}
@@ -95,7 +95,7 @@ export const SocialProofBar: React.FC = () => {
                 className="flex flex-col items-center gap-1 text-center flex-1"
               />
               {i < stats.length - 1 && (
-                <div className="w-px h-10 bg-border shrink-0" />
+                <div className="w-px h-10 bg-white/20 shrink-0" />
               )}
             </React.Fragment>
           ))}
@@ -122,10 +122,10 @@ export const SocialProofBar: React.FC = () => {
             variants={cardVariants}
             custom={4}
           >
-            <span className="text-3xl font-bold text-primary tracking-tight leading-none">
+            <span className="text-3xl font-bold text-white tracking-tight leading-none">
               {stats[4].value}
             </span>
-            <span className="text-xs text-muted-foreground leading-snug whitespace-pre-line mt-0.5">
+            <span className="text-xs text-white/90 leading-snug whitespace-pre-line mt-0.5">
               {stats[4].label}
             </span>
           </motion.div>
@@ -163,10 +163,10 @@ function StatCard({ stat, index, inView, variants, className }: StatCardProps) {
       variants={variants}
       custom={index}
     >
-      <span className="text-3xl lg:text-4xl font-bold text-primary tracking-tight leading-none">
+      <span className="text-3xl lg:text-4xl font-bold text-white tracking-tight leading-none">
         {displayValue}
       </span>
-      <span className="text-xs text-muted-foreground leading-snug whitespace-pre-line mt-1 sm:mt-0.5">
+      <span className="text-xs text-white/90 leading-snug whitespace-pre-line mt-1 sm:mt-0.5">
         {stat.label}
       </span>
     </motion.div>
