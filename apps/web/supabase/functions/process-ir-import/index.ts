@@ -424,7 +424,7 @@ serve(async (req) => {
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     console.error('Process IR Import error:', err.message, err.stack);
-    const errorMessage = err.message || 'Erro inesperado ao processar a declaração.';
+    const errorMessage = (err.message && String(err.message).trim()) || 'Erro inesperado ao processar a declaração. Tente novamente ou use o arquivo XML/DEC do programa IRPF.';
 
     const validationErrorKeywords = [
       'não parece ser uma declaração',
@@ -434,6 +434,8 @@ serve(async (req) => {
       'Não foi possível ler',
       'corrompido',
       'inválido',
+      'não informado',
+      'Unsupported file type',
     ];
     const isValidationError = validationErrorKeywords.some((keyword) =>
       errorMessage.toLowerCase().includes(keyword.toLowerCase())
