@@ -17,7 +17,7 @@ const ADMIN_TABS = [
   { id: 'legal', label: 'Termos', icon: Scale },
   { id: 'notificacoes', label: 'Notificações', icon: Bell },
   { id: 'deploy', label: 'Deploy', icon: Rocket },
-  { id: 'health', label: 'Health Check', icon: HeartPulse },
+  { id: 'database-health', label: 'Saúde do Banco', icon: HeartPulse },
 ] as const;
 
 const VALID_TABS: string[] = ADMIN_TABS.map(t => t.id);

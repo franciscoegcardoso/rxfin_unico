@@ -106,7 +106,6 @@ const AdminTermos = lazy(() => import('./pages/admin/AdminTermos'));
 const AdminNotificacoes = lazy(() => import('./pages/admin/AdminNotificacoes'));
 const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
 const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
-const AdminHealthCheck = lazy(() => import('./pages/admin/AdminHealthCheck'));
 const DatabaseHealthDashboard = lazy(() => import('./pages/admin/DatabaseHealthDashboard'));
 const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
 const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
@@ -294,7 +293,7 @@ const App = () => (
                   <Route path="/admin/notificacoes" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminNotificacoes /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/deploy" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminDeploy /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
-                  <Route path="/admin/health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminHealthCheck /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/health" element={<Navigate to="/admin/database-health" replace />} />
                   <Route path="/admin/database-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><DatabaseHealthDashboard /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />

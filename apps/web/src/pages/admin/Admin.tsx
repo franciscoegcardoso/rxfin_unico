@@ -19,7 +19,7 @@ export default function Admin() {
       notificacoes: '/admin/notificacoes',
       deploy: '/admin/deploy',
       rollbacks: '/admin/rollbacks',
-      health: '/admin/health',
+      health: '/admin/database-health',
       architecture: '/admin/architecture',
     };
     const target = tabRouteMap[tabParam] || '/admin/usuarios';

@@ -25,6 +25,11 @@ interface PoolHealth {
   collected_at: string;
 }
 
+const ACTIVE_STATES = ['active'];
+function isActiveState(state: string): boolean {
+  return ACTIVE_STATES.includes(state?.toLowerCase());
+}
+
 interface BlockingRow {
   blocked_pid: number;
   blocking_pid: number;
@@ -203,6 +208,62 @@ export default function DatabaseHealthDashboard() {
           ) : null}
         </CardContent>
       </Card>
+
+      {/* Conexões ativas vs inativas */}
+      {poolHealth?.by_state && Object.keys(poolHealth.by_state).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Conexões por estado
+            </CardTitle>
+            <CardDescription>
+              Ativas = executando query; inativas = ociosas (idle) ou em transação sem executar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-lg border bg-green-500/5 border-green-500/20 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Conexões ativas</p>
+                <p className="text-2xl font-bold tabular-nums text-green-700 dark:text-green-400">
+                  {Object.entries(poolHealth.by_state)
+                    .filter(([state]) => isActiveState(state))
+                    .reduce((sum, [, count]) => sum + count, 0)}
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {Object.entries(poolHealth.by_state)
+                    .filter(([state]) => isActiveState(state))
+                    .map(([state, count]) => (
+                      <li key={state}>
+                        <span className="font-medium text-foreground">{state || 'null'}</span>: {count}
+                      </li>
+                    ))}
+                  {Object.entries(poolHealth.by_state).filter(([s]) => isActiveState(s)).length === 0 && (
+                    <li>Nenhuma conexão em execução no momento.</li>
+                  )}
+                </ul>
+              </div>
+              <div className="rounded-lg border bg-muted/30 border-border p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Conexões inativas</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  {Object.entries(poolHealth.by_state)
+                    .filter(([state]) => !isActiveState(state))
+                    .reduce((sum, [, count]) => sum + count, 0)}
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                  {Object.entries(poolHealth.by_state)
+                    .filter(([state]) => !isActiveState(state))
+                    .map(([state, count]) => (
+                      <li key={state}>
+                        <span className="font-medium text-foreground">{state || 'null'}</span>: {count}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bloqueios longos */}
       <Card>

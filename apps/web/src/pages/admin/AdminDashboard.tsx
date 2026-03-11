@@ -227,7 +227,7 @@ export default function AdminDashboard() {
     { label: 'Automações', href: '/admin/crm/automations', icon: Zap },
     { label: 'Páginas', href: '/admin/paginas', icon: FileText },
     { label: 'Métricas IA', href: '/admin/ai-metrics', icon: Brain },
-    { label: 'Health Check', href: '/admin/health', icon: Activity },
+    { label: 'Saúde do Banco', href: '/admin/database-health', icon: Activity },
   ];
 
   const pagesByGroup = pages.reduce<Record<string, PageSummary[]>>((acc, p) => {

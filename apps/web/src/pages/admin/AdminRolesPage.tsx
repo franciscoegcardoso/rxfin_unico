@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -30,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FileText, AlertTriangle } from 'lucide-react';
+import { FileText, AlertTriangle, Search, ArrowUpDown, ArrowUp, ArrowDown, UserCog } from 'lucide-react';
 import { useAdminRoles, type AdminUser, type AdminRole, type RoleChangeEntry } from '@/hooks/useAdminRoles';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -80,6 +89,65 @@ export default function AdminRolesPage() {
   const [reason, setReason] = useState('');
   const [confirmPromotionOpen, setConfirmPromotionOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  type SortField = 'name' | 'email' | 'role' | 'created_at' | 'last_change';
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const filteredAndSortedAdmins = useMemo(() => {
+    let list = admins;
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (a) =>
+          (a.full_name ?? '').toLowerCase().includes(q) ||
+          a.email.toLowerCase().includes(q) ||
+          ROLE_LABELS[a.role].toLowerCase().includes(q)
+      );
+    }
+    list = [...list].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'name':
+          cmp = (a.full_name || a.email).localeCompare(b.full_name || b.email);
+          break;
+        case 'email':
+          cmp = a.email.localeCompare(b.email);
+          break;
+        case 'role': {
+          const order: AdminRole[] = ['user', 'admin', 'super_admin', 'owner'];
+          cmp = order.indexOf(a.role) - order.indexOf(b.role);
+          break;
+        }
+        case 'created_at':
+          cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'last_change': {
+          const at = a.last_change ? new Date(a.last_change.changed_at).getTime() : 0;
+          const bt = b.last_change ? new Date(b.last_change.changed_at).getTime() : 0;
+          cmp = at - bt;
+          break;
+        }
+        default:
+          break;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [admins, searchQuery, sortField, sortDir]);
+
+  const cycleSort = (field: SortField) => {
+    if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />;
+    return sortDir === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />;
+  };
 
   const openAlter = (target: AdminUser) => {
     setAlterTarget(target);
@@ -163,59 +231,141 @@ export default function AdminRolesPage() {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
+      {!loading && admins.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Buscar por nome, e-mail ou role..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 max-w-sm mb-4"
+          />
+        </div>
+      )}
+
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 w-full" />
+        <div className="space-y-2">
+          <Skeleton className="h-11 w-full" />
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {admins.map((admin) => {
-            const isSelf = user?.id === admin.id;
-            const canAlter = isOwner && !isSelf;
-
-            return (
-              <Card key={admin.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                        {getInitials(admin.full_name, admin.email)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{admin.full_name || admin.email}</p>
-                        <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 hover:text-foreground"
+                      onClick={() => cycleSort('name')}
+                    >
+                      Usuário
+                      <SortIcon field="name" />
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 hover:text-foreground"
+                      onClick={() => cycleSort('role')}
+                    >
+                      Role
+                      <SortIcon field="role" />
+                    </button>
+                  </TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 hover:text-foreground"
+                      onClick={() => cycleSort('created_at')}
+                    >
+                      Cadastro
+                      <SortIcon field="created_at" />
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 hover:text-foreground"
+                      onClick={() => cycleSort('last_change')}
+                    >
+                      Última alteração
+                      <SortIcon field="last_change" />
+                    </button>
+                  </TableHead>
+                  {isOwner && <TableHead className="w-[120px] text-right">Ações</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedAdmins.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={isOwner ? 6 : 5} className="text-center text-muted-foreground py-8">
+                      {searchQuery.trim() ? 'Nenhum usuário encontrado para a busca.' : 'Nenhum usuário admin cadastrado.'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAndSortedAdmins.map((admin) => {
+                    const isSelf = user?.id === admin.id;
+                    const canAlter = isOwner && !isSelf;
+                    return (
+                      <TableRow key={admin.id} className={isSelf ? 'bg-primary/5' : ''}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                              {getInitials(admin.full_name, admin.email)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{admin.full_name || admin.email}</p>
+                              <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Badge className={cn('text-xs', ROLE_BADGE_CLASS[admin.role])}>
                             {ROLE_ICONS[admin.role]} {ROLE_LABELS[admin.role]}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
                           <Badge variant={admin.is_active ? 'default' : 'secondary'} className="text-xs">
                             {admin.is_active ? 'Ativo' : 'Inativo'}
                           </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Cadastro: {format(new Date(admin.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-                        </p>
-                        {admin.last_change && (
-                          <p className="text-xs text-muted-foreground">
-                            Role alterado de {admin.last_change.old_role} → {admin.last_change.new_role} em{' '}
-                            {format(new Date(admin.last_change.changed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </p>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                          {format(new Date(admin.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs max-w-[180px]">
+                          {admin.last_change ? (
+                            <span title={`${admin.last_change.old_role} → ${admin.last_change.new_role}`}>
+                              {format(new Date(admin.last_change.changed_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </TableCell>
+                        {isOwner && (
+                          <TableCell className="text-right">
+                            {canAlter ? (
+                              <Button variant="outline" size="sm" onClick={() => openAlter(admin)} className="gap-1.5">
+                                <UserCog className="h-3.5 w-3.5" />
+                                Alterar
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Você</span>
+                            )}
+                          </TableCell>
                         )}
-                      </div>
-                    </div>
-                    {canAlter && (
-                      <Button variant="outline" size="sm" onClick={() => openAlter(admin)}>
-                        Alterar Role
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
       {/* Modal Alterar Role */}
