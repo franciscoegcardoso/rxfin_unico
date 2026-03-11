@@ -173,32 +173,33 @@ export const useFiscalOrganizer = () => {
         throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
       }
 
-      // Stream response: usar Headers para garantir ByteStrings (evita erro no Request)
-      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim() : '';
+      // Stream response: URL e token sanitizados para evitar ByteString inválido no Request
+      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim().replace(/[\s\r\n]/g, '') : '';
       const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/fiscal-organizer` : '';
-      const tokenStr = String(token ?? '').trim();
+      // Remove caracteres de controle que quebram header (ByteString)
+      const tokenStr = String(token ?? '').trim().replace(/[\x00-\x1F\x7F\r\n]/g, '');
       if (!url || !tokenStr) {
         throw new Error('Configuração de sessão inválida. Faça login novamente.');
       }
-      const authValue = `Bearer ${tokenStr}`;
-      const headers = new Headers();
-      headers.set('Content-Type', 'application/json');
-      headers.set('Authorization', authValue);
+      const bodyStr = JSON.stringify({
+        messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
+      });
+      if (typeof bodyStr !== 'string') {
+        throw new Error('Erro ao preparar a mensagem. Tente novamente.');
+      }
 
       let resp: Response;
       try {
-        resp = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            messages: [...messages, userMessage].map(m => ({
-              role: m.role,
-              content: m.content,
-            })),
-          }),
-        });
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        headers.set('Authorization', `Bearer ${tokenStr}`);
+        resp = await fetch(url, { method: 'POST', headers, body: bodyStr });
       } catch (fetchErr) {
+        const isByteString = fetchErr instanceof TypeError && /ByteString|header/i.test(String(fetchErr.message));
         console.error('Fiscal organizer fetch error:', fetchErr);
+        if (isByteString) {
+          throw new Error('Sessão inválida. Faça logout e login novamente para usar o assistente.');
+        }
         throw new Error('Falha de conexão com o assistente. Verifique sua internet e tente novamente.');
       }
 
