@@ -182,27 +182,23 @@ export const useFiscalOrganizer = () => {
       }
 
       const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim().replace(/[\s\r\n]/g, '') : '';
-      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/fiscal-organizer` : '';
-      if (!url) {
-        throw new Error('Configuração inválida. Recarregue a página.');
-      }
-
+      const url = (baseUrl || 'https://kneaniaifzgqibpajyji.supabase.co').replace(/\/$/, '') + '/functions/v1/fiscal-organizer';
       const bodyStr = JSON.stringify({
         messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
       });
 
       let resp: Response;
       try {
-        // Valores 100% string (evita ByteString inválido em qualquer ambiente/minifier)
-        const contentType = 'application/json';
-        const authorization = 'Bearer '.concat(tokenStr);
-        resp = await fetch(String(url), {
+        // Headers como array de pares [key, value] (HeadersInit) — evita bug ByteString em alguns runtimes
+        const authHeaderValue = 'Bearer ' + tokenStr;
+        const headersInit: [string, string][] = [
+          ['Content-Type', 'application/json'],
+          ['Authorization', authHeaderValue],
+        ];
+        resp = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': contentType,
-            'Authorization': authorization,
-          },
-          body: String(bodyStr),
+          headers: headersInit,
+          body: bodyStr,
         });
       } catch (fetchErr) {
         const isByteString = fetchErr instanceof TypeError && /ByteString|header/i.test(String(fetchErr.message));
