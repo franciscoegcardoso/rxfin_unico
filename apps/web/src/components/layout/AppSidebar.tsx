@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
   ChevronRight,
@@ -86,12 +86,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
   const toPath = (path: string): string =>
     path && path.startsWith('/') ? path : `/${path}`;
 
-  const handleItemClick = (item: NavMenuItem, e: React.MouseEvent) => {
+  const handleItemClick = (item: NavMenuItem, e: React.MouseEvent, path: string) => {
     if (item.canAccessAsAdmin) return;
     if (item.isComingSoon || item.isLocked) {
       e.preventDefault();
+      e.stopPropagation();
       showComingSoonToast({ featureName: item.label });
+      return;
     }
+    e.preventDefault();
+    navigate(path);
   };
 
   const renderItem = (item: NavMenuItem, indent = false) => {
@@ -141,13 +145,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               {canNavigate ? (
-                <Link to={path} className={cn(baseClass, 'justify-center px-2')}>
+                <a
+                  href={path}
+                  className={cn(baseClass, 'justify-center px-2')}
+                  onClick={(e) => handleItemClick(item, e, path)}
+                  aria-current={isActive ? 'page' : undefined}
+                >
                   {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
-                </Link>
+                </a>
               ) : (
                 <button
                   type="button"
-                  onClick={(e) => handleItemClick(item, e)}
+                  onClick={(e) => handleItemClick(item, e, path)}
                   className={cn(baseClass, 'justify-center px-2 w-full')}
                 >
                   {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
@@ -165,11 +174,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     return (
       <div key={item.path}>
         {canNavigate ? (
-          <Link to={path} className={baseClass} onClick={(e) => handleItemClick(item, e)}>
+          <a
+            href={path}
+            className={baseClass}
+            onClick={(e) => handleItemClick(item, e, path)}
+            aria-current={isActive ? 'page' : undefined}
+          >
             {inner}
-          </Link>
+          </a>
         ) : (
-          <button type="button" onClick={(e) => handleItemClick(item, e)} className={cn(baseClass, 'w-full text-left')}>
+          <button type="button" onClick={(e) => handleItemClick(item, e, path)} className={cn(baseClass, 'w-full text-left')}>
             {inner}
           </button>
         )}
@@ -187,21 +201,24 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     const isConfiguracoesActive = isConfiguracoesCta && (location.pathname === configuracoesPath || location.pathname.startsWith(configuracoesPath + '/'));
 
     if (isConfiguracoesCta) {
+      const configClass = cn(
+        'flex w-full items-center rounded-md text-sm font-medium transition-all duration-150',
+        isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+      );
       if (collapsed) {
         return (
           <div key={section.slug} className="py-0.5">
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link
-                    to={configuracoesPath}
-                    className={cn(
-                      'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
-                      isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-                    )}
+                  <a
+                    href={configuracoesPath}
+                    className={cn(configClass, 'justify-center px-2 py-2')}
+                    onClick={(e) => { e.preventDefault(); navigate(configuracoesPath); }}
+                    aria-current={isConfiguracoesActive ? 'page' : undefined}
                   >
                     {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
-                  </Link>
+                  </a>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="text-xs">{section.title}</TooltipContent>
               </Tooltip>
@@ -211,18 +228,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       }
       return (
         <div key={section.slug} className="py-0.5">
-          <Link
-            to={configuracoesPath}
-            className={cn(
-              'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
-              isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
-            )}
+          <a
+            href={configuracoesPath}
+            className={cn(configClass, 'gap-2.5 px-3 py-2')}
+            onClick={(e) => { e.preventDefault(); navigate(configuracoesPath); }}
+            aria-current={isConfiguracoesActive ? 'page' : undefined}
           >
             {section.icon && (
               <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
             )}
             <span className="flex-1 truncate text-left">{section.title}</span>
-          </Link>
+          </a>
         </div>
       );
     }
@@ -300,15 +316,23 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         collapsed ? 'justify-center flex-col gap-1 pt-2' : 'justify-between',
       )}>
         {!collapsed && (
-          <Link to="/" className="flex items-center gap-2 min-w-0">
+          <a
+            href="/"
+            className="flex items-center gap-2 min-w-0"
+            onClick={(e) => { e.preventDefault(); navigate('/'); }}
+          >
             <img src={currentLogo} alt="RXFin" className="h-7 w-7 object-contain shrink-0" />
             <span className="font-semibold text-sm text-foreground truncate">RXFin</span>
-          </Link>
+          </a>
         )}
         {collapsed && (
-          <Link to="/" className="flex items-center justify-center">
+          <a
+            href="/"
+            className="flex items-center justify-center"
+            onClick={(e) => { e.preventDefault(); navigate('/'); }}
+          >
             <img src={currentLogo} alt="RXFin" className="h-7 w-7 object-contain" />
-          </Link>
+          </a>
         )}
         <button
           type="button"
@@ -336,34 +360,38 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link
-                      to="/admin"
+                    <a
+                      href="/admin"
                       className={cn(
                         'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
                         isAdminActive
                           ? 'bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                       )}
+                      onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
+                      aria-current={isAdminActive ? 'page' : undefined}
                     >
                       <ShieldCheck className="h-4 w-4 shrink-0" />
-                    </Link>
+                    </a>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="text-xs">Admin</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <Link
-                to="/admin"
+              <a
+                href="/admin"
                 className={cn(
                   'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all',
                   isAdminActive
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
                 )}
+                onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
+                aria-current={isAdminActive ? 'page' : undefined}
               >
                 <ShieldCheck className="h-4 w-4 shrink-0" />
                 <span>Admin</span>
-              </Link>
+              </a>
             )}
           </>
         )}
