@@ -284,30 +284,39 @@ serve(async (req) => {
   }
 
   try {
-    // Get auth token
+    // Get auth header (validar JWT via client com header — compatível com Edge)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
+    if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
+        JSON.stringify({ error: 'Sessão inválida. Faça login novamente.' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Verify user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+    // Cliente com anon key + header do usuário para validar JWT (getUser sem args usa o header)
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
     if (authError || !user) {
+      console.error('process-ir-import auth failed:', authError?.message ?? 'no user');
       return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
+        JSON.stringify({
+          error: authError?.message?.toLowerCase().includes('jwt')
+            ? 'Sessão expirada ou inválida. Faça login novamente.'
+            : 'Não foi possível validar sua sessão. Faça login novamente.',
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Cliente com service role para DB e storage
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     let fileContent: string;
     let fileType: string;
