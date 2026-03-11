@@ -34,14 +34,14 @@ function AdminContent() {
   const normalizedTab = tabSegment === 'simuladores' ? 'paginas' : tabSegment;
   const currentTab = VALID_TABS.includes(normalizedTab) ? normalizedTab : '';
 
-  // Redirect index to first tab
+  // Redirect index to first tab (navigate estável no RR v6; replace: true = 1 replaceState apenas)
   useEffect(() => {
     if (!currentTab && (location.pathname === '/admin' || location.pathname === '/admin/')) {
       navigate('/admin/usuarios', { replace: true });
     }
-  }, [currentTab, location.pathname, navigate]);
+  }, [currentTab, location.pathname]);
 
-  // Backward compat: redirect ?tab= and ?subtab= query params
+  // Backward compat: redirect ?tab= and ?subtab= query params (deps só location.search)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -56,7 +56,7 @@ function AdminContent() {
         }
       }
     }
-  }, [location.search, navigate]);
+  }, [location.search]);
 
   const handleTabChange = (value: string) => {
     if (hasChanges) {

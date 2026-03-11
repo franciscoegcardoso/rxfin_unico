@@ -28,14 +28,14 @@ const PlanejamentoLayout: React.FC = () => {
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
   const currentTab = VALID_TABS.includes(pathSegment) ? pathSegment : '';
 
-  // Redirect index to first tab
+  // Redirect index to first tab (navigate estável no RR v6; replace: true = 1 replaceState apenas)
   useEffect(() => {
     if (!currentTab && (location.pathname === '/planejamento' || location.pathname === '/planejamento/')) {
       navigate('/planejamento/visao-mensal', { replace: true });
     }
-  }, [currentTab, location.pathname, navigate]);
+  }, [currentTab, location.pathname]);
 
-  // Backward compat: redirect ?tab= query params
+  // Backward compat: redirect ?tab= query params (deps só location.search para evitar reexecuções)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
@@ -44,7 +44,7 @@ const PlanejamentoLayout: React.FC = () => {
     } else if (tabParam && VALID_TABS.includes(tabParam)) {
       navigate(`/planejamento/${tabParam}`, { replace: true });
     }
-  }, [location.search, navigate]);
+  }, [location.search]);
 
   const handleTabChange = (value: string) => {
     navigate(`/planejamento/${value}`);

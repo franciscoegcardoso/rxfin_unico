@@ -73,7 +73,7 @@ export const SecurityTab: React.FC = () => {
   const handleSignOut = async () => {
     await signOut();
     toast.success('Logout realizado com sucesso!');
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (

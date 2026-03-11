@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -48,6 +48,7 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { useVehicleDashboard } from '@/hooks/useVehicleDashboard';
 
 export const GestaoVeiculos: React.FC = () => {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { config, vehicleRecords, addVehicleRecord, updateVehicleRecord, removeVehicleRecord } = useFinancial();
   const { data: vehicleDashboardData, error: vehicleDashboardError } = useVehicleDashboard();
@@ -68,17 +69,23 @@ export const GestaoVeiculos: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
 
-  // Handle URL action parameter to open dialog automatically
+  // Handle URL action parameter to open dialog automatically (run once per "action=novo-registro"; replace: true evita pushState duplicado)
+  const handledActionRef = React.useRef(false);
   useEffect(() => {
-    const action = searchParams.get('action');
-    if (action === 'novo-registro') {
+    const params = new URLSearchParams(location.search);
+    const action = params.get('action');
+    if (action === 'novo-registro' && !handledActionRef.current) {
+      handledActionRef.current = true;
       setDialogOpen(true);
       setEditRecord(null);
-      // Clear the URL parameter after handling
-      searchParams.delete('action');
-      setSearchParams(searchParams, { replace: true });
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('action');
+        return next;
+      }, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+    if (action !== 'novo-registro') handledActionRef.current = false;
+  }, [location.search, setSearchParams]);
 
   const handleEditVehicle = (vehicle: Asset) => {
     setEditingAsset(vehicle);

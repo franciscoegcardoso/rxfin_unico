@@ -51,14 +51,14 @@ const GestaoVeiculosLayout: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
 
-  // Redirect index
+  // Redirect index (navigate estável no RR v6; replace: true = 1 replaceState apenas)
   useEffect(() => {
     if (!currentTab && (location.pathname === '/gestao-veiculos' || location.pathname === '/gestao-veiculos/')) {
       navigate('/gestao-veiculos/registros', { replace: true });
     }
-  }, [currentTab, location.pathname, navigate]);
+  }, [currentTab, location.pathname]);
 
-  // Handle URL action parameter
+  // Handle URL action parameter (deps só location.search para evitar reexecuções)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('action') === 'novo-registro') {
@@ -66,7 +66,7 @@ const GestaoVeiculosLayout: React.FC = () => {
       setEditRecord(null);
       navigate(location.pathname, { replace: true });
     }
-  }, [location.search, navigate, location.pathname]);
+  }, [location.search, location.pathname]);
 
   const handleTabChange = (value: string) => {
     navigate(`/gestao-veiculos/${value}`);

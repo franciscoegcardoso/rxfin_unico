@@ -54,13 +54,14 @@ const BensInvestimentosLayout: React.FC = () => {
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || 'consolidado';
   const currentTab: BensTab = VALID_TABS.includes(pathSegment as BensTab) ? (pathSegment as BensTab) : 'consolidado';
 
-  // Backward compatibility: redirect ?tab= query params to path-based URLs
+  // Backward compatibility: redirect ?tab= query params to path-based URLs (deps só location.search)
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
     if (tabParam && VALID_TABS.includes(tabParam as BensTab)) {
       navigate(`/bens-investimentos/${tabParam}`, { replace: true });
     }
-  }, [searchParams, navigate]);
+  }, [location.search]);
 
   // Listen for navigate-tab custom events (backward compat with sub-components)
   useEffect(() => {
@@ -73,7 +74,7 @@ const BensInvestimentosLayout: React.FC = () => {
     };
     window.addEventListener('navigate-tab', handler);
     return () => window.removeEventListener('navigate-tab', handler);
-  }, [navigate]);
+  }, []);
 
   const formatCurrency = useCallback((value: number) => isHidden ? '••••••' : formatCurrencyBase(value), [isHidden]);
 
