@@ -48,6 +48,7 @@ apps/web-next/.env.local
 
 # Temp / test
 .tmp-webhook-body.json
+mcp-deploy-args.json
 
 # OS
 .DS_Store
