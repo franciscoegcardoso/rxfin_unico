@@ -179,6 +179,7 @@ function DepreciationChart({ points }: { points: HistoryPoint[] }) {
 }
 
 export const SimuladorInline: React.FC = () => {
+  const [vehicleType, setVehicleType] = useState<VehicleType>('carros');
   const [brands, setBrands] = useState<FipeBrand[]>([]);
   const [models, setModels] = useState<FipeModel[]>([]);
   const [years, setYears] = useState<FipeYear[]>([]);
@@ -193,13 +194,20 @@ export const SimuladorInline: React.FC = () => {
   const [loadingPrice, setLoadingPrice] = useState(false);
 
   useEffect(() => {
+    setSelectedBrand('');
+    setSelectedModel('');
+    setSelectedYear('');
+    setModels([]);
+    setYears([]);
+    setPrice(null);
+    setHistory([]);
     let cancelled = false;
     setLoadingBrands(true);
-    fetchFipeBrands()
+    fetchFipeBrands(vehicleType)
       .then((data) => { if (!cancelled) setBrands(data); })
       .finally(() => { if (!cancelled) setLoadingBrands(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [vehicleType]);
 
   useEffect(() => {
     setSelectedModel('');
@@ -213,11 +221,11 @@ export const SimuladorInline: React.FC = () => {
     }
     let cancelled = false;
     setLoadingModels(true);
-    fetchFipeModels(selectedBrand)
+    fetchFipeModels(vehicleType, selectedBrand)
       .then((data) => { if (!cancelled) setModels(data); })
       .finally(() => { if (!cancelled) setLoadingModels(false); });
     return () => { cancelled = true; };
-  }, [selectedBrand]);
+  }, [vehicleType, selectedBrand]);
 
   useEffect(() => {
     setSelectedYear('');
@@ -229,11 +237,11 @@ export const SimuladorInline: React.FC = () => {
     }
     let cancelled = false;
     setLoadingYears(true);
-    fetchFipeYears(selectedBrand, selectedModel)
+    fetchFipeYears(vehicleType, selectedBrand, selectedModel)
       .then((data) => { if (!cancelled) setYears(data); })
       .finally(() => { if (!cancelled) setLoadingYears(false); });
     return () => { cancelled = true; };
-  }, [selectedBrand, selectedModel]);
+  }, [vehicleType, selectedBrand, selectedModel]);
 
   useEffect(() => {
     setPrice(null);
