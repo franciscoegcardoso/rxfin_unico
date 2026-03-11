@@ -80,27 +80,45 @@ export const useIRImport = () => {
         reader.readAsDataURL(file);
       });
 
-      // Call edge function
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/process-ir-import`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            fileContent,
-            fileType,
-            fileName: file.name,
-          }),
-        }
-      );
+      // Chamada à edge function: Headers API evita ByteString inválido; resposta tratada com fallback
+      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim() : '';
+      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/process-ir-import` : '';
+      const tokenStr = String(session?.access_token ?? '').trim();
+      if (!url || !tokenStr) {
+        toast.error('Sessão inválida. Faça login novamente.');
+        return null;
+      }
+      const headers = new Headers();
+      headers.set('Content-Type', 'application/json');
+      headers.set('Authorization', `Bearer ${tokenStr}`);
 
-      const result = await response.json();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          fileContent,
+          fileType,
+          fileName: file.name,
+        }),
+      });
+
+      let result: { error?: string | { message?: string }; message?: string; data?: unknown; savedId?: string; fileName?: string; filePath?: string };
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          response.status >= 500
+            ? 'Serviço temporariamente indisponível. Tente novamente em instantes.'
+            : 'Resposta inválida do servidor. Tente novamente.'
+        );
+      }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erro ao processar arquivo');
+        const errorMsg =
+          typeof result?.error === 'string'
+            ? result.error
+            : (result?.error as { message?: string })?.message ?? 'Erro ao processar arquivo';
+        throw new Error(errorMsg);
       }
 
       toast.success(result.message || 'Importação concluída!');

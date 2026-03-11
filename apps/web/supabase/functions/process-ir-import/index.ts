@@ -225,15 +225,11 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
   if (!response.ok) {
     const errorText = await response.text();
     console.error('AI API error:', response.status, errorText);
-    
-    if (response.status === 429) {
-      throw new Error('Serviço temporariamente indisponível. Tente novamente em alguns instantes.');
-    }
-    if (response.status === 402) {
-      throw new Error('Limite de processamento atingido. Entre em contato com o suporte.');
-    }
-    
-    throw new Error('Não foi possível processar o PDF. Tente usar o formato XML exportado do programa IRPF.');
+    let userMessage = 'Não foi possível processar o PDF. Tente usar o formato XML (.dec) exportado do programa IRPF.';
+    if (response.status === 429) userMessage = 'Serviço temporariamente indisponível. Tente novamente em alguns instantes.';
+    else if (response.status === 402) userMessage = 'Limite de processamento atingido. Entre em contato com o suporte.';
+    else if (response.status === 400) userMessage = 'O PDF não pôde ser analisado. Use o arquivo XML ou DEC do programa IRPF.';
+    throw new Error(userMessage);
   }
 
   const aiResult = await response.json();
@@ -313,11 +309,24 @@ serve(async (req) => {
       );
     }
 
-    const { fileContent, fileType, fileName } = await req.json();
-    
+    let fileContent: string;
+    let fileType: string;
+    let fileName: string;
+    try {
+      const body = await req.json();
+      fileContent = body?.fileContent;
+      fileType = body?.fileType;
+      fileName = body?.fileName ?? 'arquivo';
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Requisição inválida. Envie o arquivo novamente.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!fileContent || !fileType) {
       return new Response(
-        JSON.stringify({ error: 'File content and type are required' }),
+        JSON.stringify({ error: 'Arquivo ou tipo não informado. Selecione um arquivo XML, DEC ou PDF.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -327,8 +336,18 @@ serve(async (req) => {
     let irData: IRData;
 
     if (fileType === 'xml') {
-      // Decode base64 XML content
-      const xmlContent = atob(fileContent);
+      let xmlContent: string;
+      try {
+        xmlContent = atob(fileContent);
+      } catch {
+        return new Response(
+          JSON.stringify({
+            error:
+              'O conteúdo do arquivo está corrompido ou em formato inválido. Tente exportar novamente o arquivo .dec ou .xml do programa IRPF.',
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       irData = parseXmlDeclaracao(xmlContent);
     } else if (fileType === 'pdf') {
       irData = await processPdfWithAI(fileContent);
@@ -379,9 +398,11 @@ serve(async (req) => {
       .single();
 
     if (dbError) {
-      console.error('Database error:', dbError);
+      console.error('Database error:', dbError.message, dbError.code);
       return new Response(
-        JSON.stringify({ error: 'Failed to save import data' }),
+        JSON.stringify({
+          error: 'Não foi possível salvar os dados da declaração. Tente novamente ou entre em contato com o suporte.',
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -401,26 +422,29 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Process IR Import error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
-    // Validation errors should return 400, not 500
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error('Process IR Import error:', err.message, err.stack);
+    const errorMessage = err.message || 'Erro inesperado ao processar a declaração.';
+
     const validationErrorKeywords = [
       'não parece ser uma declaração',
       'Arquivo vazio',
       'não está no formato',
       'Não foi possível extrair',
       'Não foi possível ler',
-      'corrompido'
+      'corrompido',
+      'inválido',
     ];
-    
-    const isValidationError = validationErrorKeywords.some(keyword => 
+    const isValidationError = validationErrorKeywords.some((keyword) =>
       errorMessage.toLowerCase().includes(keyword.toLowerCase())
     );
-    
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: isValidationError ? 400 : 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        status: isValidationError ? 400 : 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
     );
   }
 });
