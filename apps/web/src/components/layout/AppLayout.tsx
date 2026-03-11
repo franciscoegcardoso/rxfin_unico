@@ -65,17 +65,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   if (insideShell) {
-    // Dentro do AppShell (DesktopShell): o main do Shell já tem pt-14 (navbar).
-    // Só precisamos compensar o banner fixo (32px) quando em demo — pt-8.
+    // Dentro do AppShell: banner de dados fictícios no topo da área de conteúdo (inline), deslocando o conteúdo para baixo pela altura exata do banner.
     return (
       <>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
+          {isDemoMode && <DemoDataBanner inline />}
           <main
             className={`
               w-full max-w-full overflow-x-hidden flex-1 min-w-0
               px-4 md:px-6 lg:px-8
               pb-4 md:pb-6
-              ${isDemoMode ? 'pt-8' : 'pt-0'}
+              pt-0
             `}
           >
             {content}

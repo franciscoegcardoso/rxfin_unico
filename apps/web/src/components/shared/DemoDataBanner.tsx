@@ -6,7 +6,18 @@ import { openCibeliaChat } from '@/components/ai/RaioXChat';
 
 const SESSION_KEY = 'demo-banner-minimized';
 
-export const DemoDataBanner: React.FC = () => {
+/** Altura fixa do banner minimizado (px) — usada para compensar o conteúdo quando inline. */
+export const DEMO_BANNER_MINIMIZED_HEIGHT_PX = 32;
+
+/** Altura mínima do banner expandido (px) — para reservar espaço quando inline. */
+export const DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX = 48;
+
+interface DemoDataBannerProps {
+  /** Quando true, banner fica no fluxo do documento no topo da área de conteúdo (não fixed). O conteúdo é deslocado para baixo exatamente pela altura do banner. */
+  inline?: boolean;
+}
+
+export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }) => {
   const { isDemoMode, isLoading } = useDemoMode();
   // Padrão: minimizada para não sobrepor o conteúdo; só expande se o usuário já tiver clicado para expandir
   const [minimized, setMinimized] = useState(() => {
@@ -19,10 +30,14 @@ export const DemoDataBanner: React.FC = () => {
 
   if (isLoading || !isDemoMode) return null;
 
+  const basePlacement = inline
+    ? 'relative z-40 w-full shrink-0'
+    : 'fixed top-14 left-0 right-0 z-40 w-full';
+
   if (minimized) {
     return (
       <div
-        className="fixed top-14 left-0 right-0 z-40 w-full h-8 bg-destructive/90 backdrop-blur-sm flex items-center justify-center cursor-pointer gap-2 text-white text-xs font-medium px-4 md:px-6 lg:px-8"
+        className={`${basePlacement} h-8 bg-destructive/90 backdrop-blur-sm flex items-center justify-center cursor-pointer gap-2 text-white text-xs font-medium px-4 md:px-6 lg:px-8`}
         onClick={() => setMinimized(false)}
       >
         <AlertTriangle className="h-3 w-3" />
@@ -39,7 +54,7 @@ export const DemoDataBanner: React.FC = () => {
   }
 
   return (
-    <div className="fixed top-14 left-0 right-0 z-40 w-full bg-destructive text-destructive-foreground">
+    <div className={`${basePlacement} min-h-[48px] bg-destructive text-destructive-foreground`}>
       <div className="max-w-[1800px] mx-auto px-4 py-1.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <AlertTriangle className="h-4 w-4 shrink-0" />
