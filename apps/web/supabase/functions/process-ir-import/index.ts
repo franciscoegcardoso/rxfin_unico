@@ -198,37 +198,59 @@ Se o documento NÃO for uma declaração de Imposto de Renda, retorne exatamente
 
 IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
 
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.0-flash-exp',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { 
-          role: 'user', 
-          content: [
-            { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
-            { 
-              type: 'image_url', 
-              image_url: { url: `data:application/pdf;base64,${pdfBase64}` }
-            }
-          ]
-        }
-      ],
-    }),
-  });
+  const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
+
+  async function callOpenRouter(content: unknown[]): Promise<Response> {
+    return fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.0-flash-exp',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content },
+        ],
+      }),
+    });
+  }
+
+  // 1) Tentar formato "file" (recomendado pelo OpenRouter para PDF)
+  let userContent: unknown[] = [
+    { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
+    { type: 'file', file: { filename: 'declaracao-ir.pdf', fileData: dataUrl } },
+  ];
+  let response = await callOpenRouter(userContent);
+
+  // 2) Se 400 (formato rejeitado), fallback para image_url (alguns modelos aceitam PDF como "imagem")
+  if (response.status === 400) {
+    console.log('OpenRouter rejeitou tipo file, tentando image_url...');
+    userContent = [
+      { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
+      { type: 'image_url', image_url: { url: dataUrl } },
+    ];
+    response = await callOpenRouter(userContent);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error('AI API error:', response.status, errorText);
-    let userMessage = 'Não foi possível processar o PDF. Tente usar o formato XML (.dec) exportado do programa IRPF.';
+    let userMessage = 'Não foi possível processar o PDF. Use o arquivo XML ou .dec exportado pelo programa IRPF da Receita Federal.';
     if (response.status === 429) userMessage = 'Serviço temporariamente indisponível. Tente novamente em alguns instantes.';
     else if (response.status === 402) userMessage = 'Limite de processamento atingido. Entre em contato com o suporte.';
-    else if (response.status === 400) userMessage = 'O PDF não pôde ser analisado. Use o arquivo XML ou DEC do programa IRPF.';
+    else if (response.status === 400) {
+      try {
+        const errJson = JSON.parse(errorText);
+        const detail = (errJson as { error?: { message?: string }; message?: string }).error?.message ?? (errJson as { message?: string }).message;
+        if (typeof detail === 'string' && detail.length > 0 && detail.length < 200) {
+          userMessage = `PDF não aceito: ${detail}. Use o arquivo XML ou .dec do programa IRPF.`;
+        }
+      } catch {
+        userMessage = 'O PDF não pôde ser analisado. Use o arquivo XML ou .dec exportado pelo programa IRPF.';
+      }
+    }
     throw new Error(userMessage);
   }
 
