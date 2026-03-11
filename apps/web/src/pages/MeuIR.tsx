@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -37,8 +36,7 @@ const MeuIR: React.FC = () => {
   } = useFiscalOrganizer();
 
   return (
-    <AppLayout>
-      <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
+    <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
         <PageHeader
           icon={FileText}
           title="Meu IR"
@@ -151,8 +149,7 @@ const MeuIR: React.FC = () => {
           </TabsContent>
         </Tabs>
         </div>
-      </div>
-    </AppLayout>
+    </div>
   );
 };
 

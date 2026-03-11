@@ -1,6 +1,5 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
@@ -95,8 +94,7 @@ const CartaoCredito: React.FC = () => {
   };
 
   return (
-    <AppLayout>
-      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+    <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <PageHeader
           icon={CreditCard}
           title="Cartão de Crédito"
@@ -244,7 +242,6 @@ const CartaoCredito: React.FC = () => {
         <CartaoCreditoSection />
         </div>
       </div>
-    </AppLayout>
   );
 };
 
