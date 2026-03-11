@@ -34,7 +34,7 @@ const trackToDb = (eventType: string, eventName: string, metadata?: Record<strin
     event_data: { event_name: eventName, ...metadata },
     page: window.location.pathname,
     session_id: getSessionId(),
-  }).then(() => {});
+  }).then(() => {}).catch(() => {});
 };
 
 const trackPageViewToDb = () => {
@@ -44,7 +44,7 @@ const trackPageViewToDb = () => {
     referrer: document.referrer || null,
     user_agent: navigator.userAgent,
     session_id: getSessionId(),
-  }).then(() => {});
+  }).then(() => {}).catch(() => {});
 };
 
 const ga = (...args: unknown[]) => {

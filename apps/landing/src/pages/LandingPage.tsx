@@ -93,7 +93,8 @@ const LandingPage: React.FC = () => {
       .single()
       .then(({ data }: any) => {
         if (data) leadGateEnabled.current = data.setting_value === true || data.setting_value === 'true';
-      });
+      })
+      .catch(() => { /* fallback: leadGateEnabled permanece default */ });
   }, []);
 
   useEffect(() => {

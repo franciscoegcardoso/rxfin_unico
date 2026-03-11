@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, Sparkles } from 'lucide-react';
 import cibeliaImg from '@/assets/cibelia.png';
 import {
   Tooltip,

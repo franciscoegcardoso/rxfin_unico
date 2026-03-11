@@ -37,7 +37,8 @@ export const ExitIntentPopup: React.FC = () => {
       .single()
       .then(({ data }: any) => {
         if (data) setEnabled(data.setting_value === true || data.setting_value === 'true');
-      });
+      })
+      .catch(() => { /* fallback: enabled permanece false */ });
   }, []);
 
   useEffect(() => {
