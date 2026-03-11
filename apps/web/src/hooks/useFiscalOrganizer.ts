@@ -173,27 +173,37 @@ export const useFiscalOrganizer = () => {
         throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
       }
 
-      // Stream response: URL e token sanitizados para evitar ByteString inválido no Request
-      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim().replace(/[\s\r\n]/g, '') : '';
-      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/fiscal-organizer` : '';
-      // Remove caracteres de controle que quebram header (ByteString)
-      const tokenStr = String(token ?? '').trim().replace(/[\x00-\x1F\x7F\r\n]/g, '');
-      if (!url || !tokenStr) {
+      // Token fresco do Supabase (evita proxy/getter que quebra ByteString em alguns ambientes)
+      const { data: { session: freshSession } } = await supabase.auth.getSession();
+      const rawToken = freshSession?.access_token ?? token ?? '';
+      const tokenStr = String(rawToken).trim().replace(/[\x00-\x1F\x7F\r\n]/g, '').replace(/[^\x20-\x7E]/g, '');
+      if (!tokenStr) {
         throw new Error('Configuração de sessão inválida. Faça login novamente.');
       }
+
+      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim().replace(/[\s\r\n]/g, '') : '';
+      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/fiscal-organizer` : '';
+      if (!url) {
+        throw new Error('Configuração inválida. Recarregue a página.');
+      }
+
       const bodyStr = JSON.stringify({
         messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
       });
-      if (typeof bodyStr !== 'string') {
-        throw new Error('Erro ao preparar a mensagem. Tente novamente.');
-      }
 
       let resp: Response;
       try {
-        const headers = new Headers();
-        headers.set('Content-Type', 'application/json');
-        headers.set('Authorization', `Bearer ${tokenStr}`);
-        resp = await fetch(url, { method: 'POST', headers, body: bodyStr });
+        // Valores 100% string (evita ByteString inválido em qualquer ambiente/minifier)
+        const contentType = 'application/json';
+        const authorization = 'Bearer '.concat(tokenStr);
+        resp = await fetch(String(url), {
+          method: 'POST',
+          headers: {
+            'Content-Type': contentType,
+            'Authorization': authorization,
+          },
+          body: String(bodyStr),
+        });
       } catch (fetchErr) {
         const isByteString = fetchErr instanceof TypeError && /ByteString|header/i.test(String(fetchErr.message));
         console.error('Fiscal organizer fetch error:', fetchErr);
