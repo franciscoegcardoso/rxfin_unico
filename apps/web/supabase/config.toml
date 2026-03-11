@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.fiscal-organizer]
 verify_jwt = false
+
+[functions.vercel-deployments]
+verify_jwt = true

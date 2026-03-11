@@ -742,6 +742,7 @@ export function PagesTab() {
                               </Badge>
                             </div>
                           </TableHead>
+                          <TableHead className="w-[120px]" />
                         </TableRow>
                         <SortableContext
                           items={groupedPages.ungrouped.map(p => p.id)}

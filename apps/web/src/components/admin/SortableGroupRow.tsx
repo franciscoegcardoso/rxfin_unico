@@ -64,7 +64,7 @@ export function SortableGroupRow({
         ${isDragging ? 'shadow-lg' : ''}
       `}
     >
-      <TableCell colSpan={5}>
+      <TableCell colSpan={5} className="align-middle">
         <div className="flex items-center gap-3 py-1">
           <button
             {...attributes}
@@ -106,6 +106,10 @@ export function SortableGroupRow({
               <span className="text-xs text-muted-foreground">[{group.icon}]</span>
             )}
           </div>
+        </div>
+      </TableCell>
+      <TableCell className="w-[120px] text-right align-middle">
+        <div className="flex items-center justify-end gap-0">
           <Button
             variant="ghost"
             size="icon"

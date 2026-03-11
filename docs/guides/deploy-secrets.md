@@ -44,3 +44,18 @@ Para o envio de e-mails de autenticação (confirmação, recuperação de senha
 
 - **Nome (opcional):** `SITE_URL`  
   **Valor:** URL base do app (ex.: `https://app.rxfin.com.br`), usada em redirects (ex.: `verify-email-otp`).
+
+### Deploys Vercel (página Admin → Deploy)
+
+Para a página **Admin → Deploy** exibir os últimos deploys da Vercel:
+
+- **Nome:** `VERCEL_TOKEN` (ou `VERCEL_API_TOKEN`)  
+  **Valor:** token da API Vercel (mesmo usado no GitHub Actions; em [Vercel → Settings → Tokens](https://vercel.com/account/tokens)).
+
+- **Nome (opcional):** `VERCEL_PROJECT_ID`  
+  **Valor:** ID ou nome do projeto na Vercel para filtrar os deploys (útil em monorepos com vários projetos).
+
+- **Nome (opcional):** `VERCEL_TEAM_ID`  
+  **Valor:** ID do time na Vercel, se o projeto estiver sob um time.
+
+Função que usa esses secrets: `vercel-deployments`.

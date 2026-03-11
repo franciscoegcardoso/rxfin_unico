@@ -19,7 +19,9 @@ import {
   AlertTriangle, XCircle, RefreshCw, Search, Eye,
   Users, TrendingUp, UserCheck, ShieldAlert, Percent, DollarSign,
   Filter, ChevronDown, X, ArrowUpDown, CalendarIcon, Zap,
+  Target, Heart, RotateCcw, LayoutGrid,
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, subDays, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -48,6 +50,39 @@ const COLUMNS = [
 
 const COLUMN_LABEL: Record<string, string> = {};
 for (const c of COLUMNS) COLUMN_LABEL[c.status] = c.label;
+
+/* ── Tab views (best practices: acquisition funnel, lifecycle, churn reversal) ── */
+type TabId = 'funnel' | 'lifecycle' | 'churn' | 'all';
+const TAB_VIEWS: { id: TabId; label: string; description: string; statuses: readonly string[]; icon: typeof Target }[] = [
+  {
+    id: 'funnel',
+    label: 'Funil de aquisição',
+    description: 'Lead → Trial → Onboarding → Ativo. Acompanhe a conversão desde o primeiro contato até a ativação.',
+    statuses: ['lead', 'trial', 'onboarding', 'ativo'],
+    icon: Target,
+  },
+  {
+    id: 'lifecycle',
+    label: 'Ciclo de vida',
+    description: 'Usuários ativos, migrados, power users, em risco e churned. Visão do estágio de cada cliente.',
+    statuses: ['ativo', 'migrado', 'power_user', 'risco', 'churned'],
+    icon: Heart,
+  },
+  {
+    id: 'churn',
+    label: 'Reversão de churn',
+    description: 'Risco → Churned → Reconquista. Foque em recuperar e reativar clientes em risco ou já perdidos.',
+    statuses: ['risco', 'churned', 'reconquistado'],
+    icon: RotateCcw,
+  },
+  {
+    id: 'all',
+    label: 'Kanban completo',
+    description: 'Todas as colunas em uma única visão.',
+    statuses: COLUMNS.map(c => c.status),
+    icon: LayoutGrid,
+  },
+];
 
 type SortKey = 'score' | 'created_at' | 'last_login_at' | 'total_balance';
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
@@ -103,7 +138,14 @@ export default function AdminCRM() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [columnSort, setColumnSort] = useState<Record<string, SortKey>>({});
+  const [activeTab, setActiveTab] = useState<TabId>('funnel');
   const { toast } = useToast();
+
+  const activeTabConfig = useMemo(() => TAB_VIEWS.find(t => t.id === activeTab) ?? TAB_VIEWS[0], [activeTab]);
+  const columnsForTab = useMemo(
+    () => COLUMNS.filter(c => activeTabConfig.statuses.includes(c.status)),
+    [activeTabConfig.statuses]
+  );
 
   // Filters
   const [filterPlans, setFilterPlans] = useState<string[]>([]);
@@ -379,33 +421,73 @@ export default function AdminCRM() {
           </CollapsibleContent>
         </Collapsible>
 
-        {/* ── Kanban ── */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-3 min-w-max">
-              {COLUMNS.map(col => (
-                <KanbanColumn
-                  key={col.status}
-                  column={col}
-                  items={grouped[col.status] ?? []}
-                  loading={loading}
-                  isOver={overColumnId === col.status}
-                  activeId={activeId}
-                  onOpenDetail={openDetail}
-                  sortKey={columnSort[col.status] ?? 'score'}
-                  onSortChange={k => setColumnSort(prev => ({ ...prev, [col.status]: k }))}
-                />
-              ))}
-            </div>
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {activeUser ? (
-              <div className="w-[264px] rotate-2 scale-105">
-                <UserCardContent user={activeUser} columnColor="hsl(var(--primary))" isDragOverlay />
+        {/* ── Tabs: Funil / Ciclo de vida / Reversão churn / Completo ── */}
+        <Tabs value={activeTab} onValueChange={v => setActiveTab(v as TabId)} className="w-full">
+          <div className="flex flex-col gap-2">
+            <TabsList className="w-full max-w-2xl h-auto flex-wrap gap-1 bg-muted/50 p-1 rounded-lg">
+              {TAB_VIEWS.map(tab => {
+                const Icon = tab.icon;
+                const count = tab.statuses.reduce((acc, s) => acc + (grouped[s]?.length ?? 0), 0);
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="gap-1.5 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md px-3 py-2"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{tab.label}</span>
+                    <Badge variant="secondary" className="text-2xs h-5 px-1.5">{count}</Badge>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            <p className="text-xs text-muted-foreground max-w-2xl">
+              {activeTabConfig.description}
+            </p>
+            {(activeTab === 'funnel' || activeTab === 'lifecycle' || activeTab === 'churn') && (
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                <span className="text-muted-foreground">Resumo:</span>
+                {activeTabConfig.statuses.map((s, i) => (
+                  <span key={s} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-muted-foreground/60">→</span>}
+                    <Badge variant="outline" className="font-mono text-2xs">
+                      {COLUMN_LABEL[s]} {(grouped[s] ?? []).length}
+                    </Badge>
+                  </span>
+                ))}
               </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            )}
+          </div>
+
+          <div className="mt-4">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+              <div className="overflow-x-auto pb-4">
+                <div className="flex gap-3 min-w-max">
+                  {columnsForTab.map(col => (
+                    <KanbanColumn
+                      key={col.status}
+                      column={col}
+                      items={grouped[col.status] ?? []}
+                      loading={loading}
+                      isOver={overColumnId === col.status}
+                      activeId={activeId}
+                      onOpenDetail={openDetail}
+                      sortKey={columnSort[col.status] ?? 'score'}
+                      onSortChange={k => setColumnSort(prev => ({ ...prev, [col.status]: k }))}
+                    />
+                  ))}
+                </div>
+              </div>
+              <DragOverlay dropAnimation={null}>
+                {activeUser ? (
+                  <div className="w-[264px] rotate-2 scale-105">
+                    <UserCardContent user={activeUser} columnColor="hsl(var(--primary))" isDragOverlay />
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        </Tabs>
       </div>
 
       <CrmUserDetailSheet user={selectedUser} open={sheetOpen} onOpenChange={setSheetOpen} onStatusChange={handleStatusChange} onTagsChange={handleTagsChange} />
