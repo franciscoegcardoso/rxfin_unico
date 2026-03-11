@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useInView } from '@/hooks/useInView';
 import { ArrowRight, Search, Scale, Target, BarChart3, HandCoins, Clock, Percent, LineChart, Info, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { trackCTAClick, trackFeaturePreview } from '@/lib/tracking';
+import { SimuladorInline } from '@/components/landing/SimuladorInline';
 
 const APP_URL = 'https://app.rxfin.com.br';
 
@@ -42,8 +44,13 @@ interface SimulatorsSectionProps {
 }
 
 export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulatorClick, onOpenLeadGate }) => {
+  const [sectionRef, isInView] = useInView(0.08);
   return (
-    <section id="simuladores" className="py-10 px-4 sm:px-6 lg:px-8 w-full">
+    <section
+      id="simuladores"
+      ref={sectionRef}
+      className={`py-10 px-4 sm:px-6 lg:px-8 w-full transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+    >
       <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto w-full">
         <motion.div
           className="text-center mb-6"
@@ -58,6 +65,8 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
             Ferramentas práticas para tomar decisões melhores com seus dados reais.
           </p>
         </motion.div>
+
+        <SimuladorInline />
 
         {categories.map((cat) => {
           const items = simulators.filter((s) => s.category === cat.key);

@@ -27,7 +27,6 @@ import { SignupBenefitsSection } from '@/components/landing/SignupBenefitsSectio
 import { AuthoritySection } from '@/components/landing/AuthoritySection';
 import { PrivacySecuritySection } from '@/components/landing/PrivacySecuritySection';
 import { TrustBadges } from '@/components/landing/TrustBadges';
-import { ManifestoSection } from '@/components/landing/ManifestoSection';
 import logoRxFin from '@/assets/Logo_RXFin-10.png';
 
 const APP_URL = 'https://app.rxfin.com.br';
@@ -198,10 +197,6 @@ const LandingPage: React.FC = () => {
 
       {/* 6. Ao se cadastrar você pode */}
       <SignupBenefitsSection />
-
-
-      {/* Manifesto resumido */}
-      <ManifestoSection />
 
       {/* 9. Privacidade e Segurança */}
       <PrivacySecuritySection />

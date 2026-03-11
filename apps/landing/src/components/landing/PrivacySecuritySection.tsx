@@ -1,40 +1,52 @@
 import React from 'react';
-import { Lock, Cloud, ShieldCheck, Sparkles } from 'lucide-react';
+import { Shield, Cloud, Lock, CheckCircle, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import { useInView } from '@/hooks/useInView';
 
-const blocks = [
+const badges = [
   {
-    icon: Lock,
-    title: 'Criptografia de ponta a ponta',
-    text: 'Todas as informações trafegam por conexões seguras (SSL/TLS), garantindo que seus dados financeiros estejam sempre criptografados — do momento em que você digita até o armazenamento final.',
+    icon: Shield,
+    title: 'Criptografia SSL/TLS',
+    subtitle: 'Ponta a ponta em todas as conexões',
   },
   {
     icon: Cloud,
-    title: 'Infraestrutura usada por grandes bancos',
-    text: 'Seus dados são armazenados na AWS (Amazon Web Services), a mesma infraestrutura utilizada por instituições financeiras globais. Escalabilidade, estabilidade e segurança no mais alto padrão.',
+    title: 'Infraestrutura AWS',
+    subtitle: 'Mesma nuvem dos grandes bancos',
   },
   {
-    icon: ShieldCheck,
-    title: 'Dados isolados e protegidos',
-    text: 'Com a tecnologia Supabase, cada usuário possui dados isolados, protegidos por múltiplas camadas de segurança, controle de acesso e backups automáticos.',
+    icon: Lock,
+    title: 'Dados Isolados',
+    subtitle: 'Cada usuário, ambiente separado',
+  },
+  {
+    icon: CheckCircle,
+    title: 'LGPD Compliant',
+    subtitle: 'Privacidade como premissa',
   },
 ];
 
-const cardVariant = {
-  hidden: { opacity: 0, y: 20 },
+const itemVariant = {
+  hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.15, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const },
+    transition: { delay: i * 0.08, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
-export const PrivacySecuritySection: React.FC = () => (
-  <section id="seguranca" className="py-14 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]">
+export const PrivacySecuritySection: React.FC = () => {
+  const [sectionRef, isInView] = useInView(0.08);
+  return (
+  <section
+    id="seguranca"
+    ref={sectionRef}
+    className={`py-14 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)] transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+  >
     <div className="max-w-5xl mx-auto">
       <motion.div
-        className="text-center mb-14"
+        className="text-center mb-10"
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -54,29 +66,26 @@ export const PrivacySecuritySection: React.FC = () => (
         </p>
       </motion.div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {blocks.map((block, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {badges.map((item, i) => (
           <motion.div
-            key={block.title}
-            className="relative rounded-2xl border border-[hsl(161,40%,70%)]/50 bg-[hsl(161,40%,88%)] p-7 hover:border-white/40 hover:shadow-lg transition-all duration-300 group"
+            key={item.title}
             custom={i}
-            variants={cardVariant}
+            variants={itemVariant}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
+            className="rounded-xl border border-white/20 bg-white/10 p-5 text-center hover:bg-white/15 transition-colors duration-300"
           >
-            <div className="w-12 h-12 rounded-xl bg-[hsl(161,79%,25%)]/20 flex items-center justify-center mb-5 group-hover:bg-[hsl(161,79%,25%)]/30 transition-colors">
-              <block.icon className="h-6 w-6 text-[hsl(161,79%,25%)]" />
+            <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center mx-auto mb-3">
+              <item.icon className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-base font-semibold text-[hsl(161,40%,12%)] mb-3 tracking-tight">
-              {block.title}
-            </h3>
-            <p className="text-sm text-[hsl(161,30%,25%)] leading-relaxed">
-              {block.text}
-            </p>
+            <h3 className="text-sm font-semibold text-white mb-1">{item.title}</h3>
+            <p className="text-xs text-white/70 leading-snug">{item.subtitle}</p>
           </motion.div>
         ))}
       </div>
     </div>
   </section>
-);
+  );
+};

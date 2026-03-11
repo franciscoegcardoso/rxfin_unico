@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackCTAClick } from '@/lib/tracking';
+import { useInView } from '@/hooks/useInView';
 
 const APP_URL = 'https://app.rxfin.com.br';
 
@@ -15,69 +16,53 @@ const benefits = [
   'Evoluir para o sistema completo em breve',
 ];
 
-const listContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
-};
+export const SignupBenefitsSection: React.FC = () => {
+  const [sectionRef, isInView] = useInView(0.08);
 
-const listItem = {
-  hidden: { opacity: 0, x: -16 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as const } },
-};
-
-export const SignupBenefitsSection: React.FC = () => (
-  <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]">
-    <div className="max-w-7xl mx-auto">
-      <motion.div
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 p-8 sm:p-10 lg:p-12 text-center shadow-xl"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-      >
-        <h2 className="text-xl sm:text-2xl font-bold mb-8 tracking-tight text-[hsl(161,40%,12%)]">
+  return (
+    <section
+      ref={sectionRef}
+      className={`py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)] transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+    >
+      <div className="max-w-7xl mx-auto text-center">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-10 tracking-tight text-white">
           Ao se cadastrar você pode:
         </h2>
 
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 mb-8 max-w-lg mx-auto sm:max-w-xl"
-          variants={listContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-        >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-10">
           {benefits.map((txt, i) => (
-            <motion.div
+            <div
               key={i}
-              className="flex items-center gap-2.5 group"
-              variants={listItem}
+              className="flex items-start gap-3 text-left p-4 rounded-xl bg-white/10 border border-white/20"
             >
-              <CheckCircle2 className="h-4 w-4 text-[hsl(161,79%,25%)] shrink-0 group-hover:scale-110 transition-all duration-200" />
-              <span className="text-sm text-[hsl(161,30%,20%)] text-left group-hover:text-[hsl(161,40%,12%)] transition-colors duration-200">{txt}</span>
-            </motion.div>
+              <CheckCircle2 className="h-5 w-5 text-white shrink-0 mt-0.5" />
+              <span className="text-sm sm:text-base text-white/90">{txt}</span>
+            </div>
           ))}
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5, duration: 0.4 }}
+        <p className="text-white/80 text-sm mb-6">
+          🔥 847 pessoas já na lista de acesso antecipado
+        </p>
+
+        <a
+          href={`${APP_URL}/signup`}
+          onClick={() => trackCTAClick('signup_benefits_criar_conta', `${APP_URL}/signup`)}
+          className="inline-block"
         >
-          <a href={`${APP_URL}/signup`} onClick={() => trackCTAClick('signup_benefits_criar_conta', `${APP_URL}/signup`)}>
-            <Button
-              size="lg"
-              className="bg-[hsl(161,79%,25%)] text-white hover:bg-[hsl(161,79%,20%)] shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-300 font-semibold group"
-            >
-              Criar conta gratuita
-              <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </a>
-        </motion.div>
+          <Button
+            size="lg"
+            className="py-4 px-10 text-lg bg-white text-[hsl(161,79%,25%)] hover:bg-white/95 font-semibold shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] transition-all duration-300 animate-pulse hover:animate-none group"
+          >
+            Criar conta gratuita
+            <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+        </a>
 
-        <p className="mt-4 text-[11px] text-[hsl(161,25%,35%)]">
+        <p className="mt-4 text-sm text-white/60">
           Leva menos de 1 minuto.
         </p>
-      </motion.div>
-    </div>
-  </section>
-);
+      </div>
+    </section>
+  );
+};
