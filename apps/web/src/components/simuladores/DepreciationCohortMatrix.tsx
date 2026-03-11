@@ -216,15 +216,30 @@ export const DepreciationCohortMatrix: React.FC<DepreciationCohortMatrixProps> =
 }) => {
   const cohort = useCohortMatrix();
   const [exporting, setExporting] = useState<'csv' | 'excel' | 'pdf' | null>(null);
+  const lastFetchedCodeRef = React.useRef<string | null>(null);
+  const retriedForCodeRef = React.useRef<string | null>(null);
 
-  // Fetch cohort data when fipeCode changes
+  // 1) Fetch cohort data whenever fipeCode is available (mount + fipeCode change)
   useEffect(() => {
-    if (fipeCode) {
-      cohort.fetchCohortData(fipeCode);
-    }
-    // NOTE: Removed cohort.reset() from cleanup to prevent cancelling in-flight requests
-    // The hook handles abort internally when a new request starts
+    if (!fipeCode?.trim()) return;
+    const code = fipeCode.trim();
+    lastFetchedCodeRef.current = code;
+    retriedForCodeRef.current = null; // allow one retry for this code if needed
+    cohort.fetchCohortData(code);
   }, [fipeCode, cohort.fetchCohortData]);
+
+  // 2) Safeguard: if we have fipeCode but no data and not loading, retry once per fipeCode
+  //    (handles race where first fetch was aborted or failed before state updated)
+  useEffect(() => {
+    if (!fipeCode?.trim() || cohort.loading || cohort.matrixData || cohort.error) return;
+    const code = fipeCode.trim();
+    if (retriedForCodeRef.current === code) return;
+    retriedForCodeRef.current = code;
+    const t = window.setTimeout(() => {
+      cohort.fetchCohortData(code);
+    }, 500);
+    return () => clearTimeout(t);
+  }, [fipeCode, cohort.loading, cohort.matrixData, cohort.error, cohort.fetchCohortData]);
 
   // Export helpers
   const getExportData = useCallback(() => {
