@@ -173,16 +173,23 @@ export const useFiscalOrganizer = () => {
         throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
       }
 
-      // Stream response (header values must be valid ByteStrings)
+      // Stream response: usar Headers para garantir ByteStrings (evita erro no Request)
+      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim() : '';
+      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/fiscal-organizer` : '';
+      const tokenStr = String(token ?? '').trim();
+      if (!url || !tokenStr) {
+        throw new Error('Configuração de sessão inválida. Faça login novamente.');
+      }
+      const authValue = `Bearer ${tokenStr}`;
+      const headers = new Headers();
+      headers.set('Content-Type', 'application/json');
+      headers.set('Authorization', authValue);
+
       let resp: Response;
       try {
-        const authHeader = `Bearer ${token.trim()}`;
-        resp = await fetch(CHAT_URL, {
+        resp = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
+          headers,
           body: JSON.stringify({
             messages: [...messages, userMessage].map(m => ({
               role: m.role,
