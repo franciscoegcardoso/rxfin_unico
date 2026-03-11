@@ -11,6 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,15 +70,18 @@ const PlanejamentoAnual: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="content-zone py-5 md:py-6 space-y-5">
-        <PageHeader icon={BarChart2} title="Planejamento Anual" subtitle="Visão anual de receitas, despesas e saldo" />
-        <PageSkeleton />
-      </div>
+      <AppLayout>
+        <div className="content-zone py-5 md:py-6 space-y-5">
+          <PageHeader icon={BarChart2} title="Planejamento Anual" subtitle="Visão anual de receitas, despesas e saldo" />
+          <PageSkeleton />
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="content-zone py-5 md:py-6 space-y-6">
+    <AppLayout>
+      <div className="content-zone py-5 md:py-6 space-y-6">
         <PageHeader
           icon={BarChart2}
           title="Planejamento Anual"
@@ -203,7 +207,8 @@ const PlanejamentoAnual: React.FC = () => {
             </div>
           </div>
         )}
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

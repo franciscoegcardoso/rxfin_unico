@@ -15,7 +15,6 @@ import { GlobalSyncIndicator } from "@/components/sync/GlobalSyncIndicator";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/design-system/layouts/AppShell";
-import { AppLayout } from "@/components/layout/AppLayout";
 // AdminProtectedRoute removed — all admin routes now use AdminSecureLayout (MFA-required)
 import { GuidedTour } from "@/components/tour/GuidedTour";
 import { ImpersonationFloater } from "@/components/admin/ImpersonationFloater";
@@ -207,14 +206,14 @@ const App = () => (
                       <Route path="credito" element={<CreditoTab />} />
                       <Route path="seguros" element={<SegurosTab />} />
                     </Route>
-                    <Route path="cartao-credito" element={<AppLayout><CartaoCredito /></AppLayout>} />
+                    <Route path="cartao-credito" element={<CartaoCredito />} />
                     <Route path="planejamento" element={<PlanejamentoLayout />}>
                       <Route index element={<Navigate to="visao-mensal" replace />} />
                       <Route path="visao-mensal" element={<VisaoMensalTab />} />
                       <Route path="metas" element={<MetasTab />} />
                       <Route path="analises" element={<AnalisesTab />} />
                     </Route>
-                    <Route path="planejamento-anual" element={<AppLayout><PlanejamentoAnual /></AppLayout>} />
+                    <Route path="planejamento-anual" element={<PlanejamentoAnual />} />
                     <Route path="planejamento-cartao" element={<Navigate to="/cartao-credito" replace />} />
                     <Route path="metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
                     <Route path="registro-compras" element={<RegistroCompras />} />
@@ -255,7 +254,7 @@ const App = () => (
                     <Route path="presentes" element={<Presentes />} />
                     <Route path="rx-split" element={<RXSplit />} />
                     <Route path="dividir-conta" element={<DividirConta />} />
-                    <Route path="meu-ir" element={<AppLayout><MeuIR /></AppLayout>} />
+                    <Route path="meu-ir" element={<MeuIR />} />
                   </Route>
                   {/* Redirects from old routes */}
                   <Route path="/configuracoes" element={<Navigate to="/minha-conta?tab=perfil" replace />} />

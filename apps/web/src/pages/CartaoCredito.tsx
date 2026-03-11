@@ -6,6 +6,7 @@ import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
@@ -94,7 +95,8 @@ const CartaoCredito: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
+    <AppLayout>
+      <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
           icon={CreditCard}
@@ -240,7 +242,8 @@ const CartaoCredito: React.FC = () => {
 
         <CartaoCreditoSection />
         </div>
-        </div>
+      </div>
+    </AppLayout>
   );
 };
 
