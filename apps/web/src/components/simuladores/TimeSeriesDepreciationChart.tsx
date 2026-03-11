@@ -797,14 +797,14 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                     interval={0}
                   />
                   {/* Escala do eixo Y (valores em R$):
-                      - Mínimo: o menor entre (menor valor exibido - 5000) e (70% do valor 0km / firstPrice).
+                      - Mínimo: o menor entre (menor valor exibido - 5000) e (80% do valor 0km / firstPrice).
                         Garante margem inferior e evita escala excessivamente baixa.
                       - Máximo: maior valor exibido + 5000 (margem superior).
                       - Escala linear; valores formatados em R$ (ex.: R$ 128k). */}
                   <YAxis 
                     tickFormatter={formatCurrencyShort}
                     domain={[
-                      (dataMin: number) => Math.min(dataMin - 5000, metrics.firstPrice * 0.7),
+                      (dataMin: number) => Math.min(dataMin - 5000, metrics.firstPrice * 0.8),
                       (dataMax: number) => dataMax + 5000
                     ]}
                     width={52}
