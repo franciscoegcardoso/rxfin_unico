@@ -205,9 +205,12 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
     { id: 'file-parser', pdf: { engine: 'pdf-text' as const } },
   ];
 
-  async function callOpenRouter(content: unknown[], usePlugins: boolean): Promise<Response> {
+  const MODELS_TO_TRY = ['google/gemini-2.0-flash-exp', 'openai/gpt-4o-mini'] as const;
+
+  async function callOpenRouter(content: unknown[], usePlugins: boolean, modelIndex = 0): Promise<Response> {
+    const model = MODELS_TO_TRY[modelIndex] ?? MODELS_TO_TRY[0];
     const body: Record<string, unknown> = {
-      model: 'google/gemini-2.0-flash-exp',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content },
@@ -242,7 +245,16 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
     response = await callOpenRouter(userContent, false);
   }
 
-  // 3) Se ainda 400, fallback para image_url (alguns modelos aceitam PDF como "imagem")
+  // 3) Se ainda 400, tentar só o file (um único bloco) com plugin
+  if (response.status === 400) {
+    console.log('OpenRouter rejeitou file+text, tentando apenas file com plugin...');
+    userContent = [
+      { type: 'file', file: { filename: 'declaracao-ir.pdf', file_data: dataUrl } },
+    ];
+    response = await callOpenRouter(userContent, true);
+  }
+
+  // 4) Se ainda 400, fallback para image_url (alguns modelos aceitam PDF como "imagem")
   if (response.status === 400) {
     console.log('OpenRouter rejeitou tipo file, tentando image_url...');
     userContent = [
@@ -252,13 +264,29 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
     response = await callOpenRouter(userContent, false);
   }
 
+  // 5) Se ainda 400, tentar modelo alternativo (gpt-4o-mini) com text+file+plugin
+  if (response.status === 400) {
+    console.log('Tentando modelo alternativo (gpt-4o-mini) com file+plugin...');
+    userContent = [
+      { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
+      { type: 'file', file: { filename: 'declaracao-ir.pdf', file_data: dataUrl } },
+    ];
+    response = await callOpenRouter(userContent, true, 1);
+  }
+
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('AI API error:', response.status, errorText);
+    console.error('OpenRouter error:', response.status, 'body length:', errorText.length, 'preview:', errorText.slice(0, 300));
     let userMessage = 'Não foi possível processar o PDF. Use o arquivo XML ou .dec exportado pelo programa IRPF da Receita Federal.';
-    if (response.status === 429) userMessage = 'Serviço temporariamente indisponível. Tente novamente em alguns instantes.';
-    else if (response.status === 402) userMessage = 'Limite de processamento atingido. Entre em contato com o suporte.';
-    else if (response.status === 400) {
+    if (response.status === 401) {
+      userMessage = 'Serviço de processamento temporariamente indisponível. Use o arquivo XML ou .dec exportado pelo programa IRPF.';
+    } else if (response.status === 403) {
+      userMessage = 'Acesso ao processamento de PDF não autorizado. Use o arquivo XML ou .dec do programa IRPF.';
+    } else if (response.status === 429) {
+      userMessage = 'Serviço temporariamente indisponível. Tente novamente em alguns instantes.';
+    } else if (response.status === 402) {
+      userMessage = 'Limite de processamento atingido. Entre em contato com o suporte.';
+    } else if (response.status === 400 || response.status === 422) {
       try {
         const errJson = JSON.parse(errorText);
         const detail = (errJson as { error?: { message?: string }; message?: string }).error?.message ?? (errJson as { message?: string }).message;
@@ -268,6 +296,8 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
       } catch {
         userMessage = 'O PDF não pôde ser analisado. Use o arquivo XML ou .dec exportado pelo programa IRPF.';
       }
+    } else if (response.status >= 500) {
+      userMessage = 'Serviço de processamento indisponível no momento. Tente novamente em alguns minutos ou use o arquivo XML/.dec do programa IRPF.';
     }
     throw new Error(userMessage);
   }
