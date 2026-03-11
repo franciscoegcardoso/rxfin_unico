@@ -198,7 +198,7 @@ export const SecurityTab: React.FC = () => {
                 )}
               </div>
             </div>
-            <Button variant="destructive" size="sm" className="h-8 text-xs shrink-0" onClick={handleSignOut}>
+            <Button variant="outline" size="sm" className="h-8 text-xs shrink-0 text-muted-foreground border-muted-foreground/30 hover:bg-muted hover:text-muted-foreground" onClick={handleSignOut}>
               <LogOut className="h-3.5 w-3.5 mr-1.5" /> Sair
             </Button>
           </div>
