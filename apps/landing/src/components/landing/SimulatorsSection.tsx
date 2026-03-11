@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Search, Scale, Target, BarChart3, HandCoins, Clock, Percent, LineChart, Info } from 'lucide-react';
+import { ArrowRight, Search, Scale, Target, BarChart3, HandCoins, Clock, Percent, LineChart, Info, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { trackCTAClick, trackFeaturePreview } from '@/lib/tracking';
 
 const APP_URL = 'https://app.rxfin.com.br';
@@ -75,10 +76,10 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                     transition={{ delay: i * 0.05 }}
                   >
                     <Card
-                      className={`h-full cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group ${
+                      className={`h-full cursor-pointer transition-all duration-200 group relative overflow-hidden ${
                         sim.available
-                          ? 'border-primary/30 bg-primary/[0.03] hover:border-primary/50'
-                          : 'border-border hover:border-primary/30'
+                          ? 'border-2 border-primary/30 bg-primary/[0.03] hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/60'
+                          : 'border-2 border-border hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/30'
                       }`}
                       onClick={() => {
                         if (sim.available) {
@@ -89,6 +90,15 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                         }
                       }}
                     >
+                      {/* Overlay "Em breve" no hover (apenas cards não disponíveis) */}
+                      {!sim.available && (
+                        <div
+                          className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                          aria-hidden
+                        >
+                          <span className="text-sm font-medium text-muted-foreground">Em breve</span>
+                        </div>
+                      )}
                       <CardContent className="p-5 min-h-[140px] flex flex-col">
                         <div className="flex items-start justify-between mb-3">
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors shrink-0 ${
@@ -110,10 +120,29 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                           {sim.title}
                         </h4>
                         <p className="text-xs sm:text-sm text-muted-foreground mb-3 leading-snug">{sim.description}</p>
-                        <div className="flex items-center text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                          <Info className="h-3 w-3 mr-1" />
-                          Saiba mais
-                        </div>
+                        {sim.available ? (
+                          <div className="flex items-center text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                            <Info className="h-3 w-3 mr-1" />
+                            Saiba mais
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-xs text-muted-foreground" onClick={(e) => e.stopPropagation()}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="flex items-center gap-1 rounded p-1 -m-1 hover:text-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                                  aria-label="Notifique-me"
+                                >
+                                  <Bell className="h-3.5 w-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                Notifique-me
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </motion.div>
