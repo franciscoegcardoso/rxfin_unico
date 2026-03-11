@@ -1,8 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { trackCTAClick } from '@/lib/tracking';
+import {
+  fetchFipeBrands,
+  fetchFipeModels,
+  fetchFipeYears,
+  fetchFipePrice,
+  fetchFipeHistory,
+  type FipeBrand,
+  type FipeModel,
+  type FipeYear,
+  type FipePrice,
+  type HistoryPoint,
+} from '@/lib/fipeLandingApi';
 
 const APP_URL = 'https://app.rxfin.com.br';
 const FIPE_ANALYSIS_URL = `${APP_URL}/simuladores/veiculos/simulador-fipe`;
@@ -18,19 +30,163 @@ function formatBRL(value: number): string {
   }).format(value);
 }
 
+/** Extrai valor numérico do campo Valor da FIPE (ex: "R$ 85.000,00" -> 85000) */
+function parseFipeValor(valorStr: string): number {
+  const num = valorStr.replace(/[^\d,]/g, '').replace(',', '.');
+  return parseFloat(num) || 0;
+}
+
+/** Gráfico de depreciação em SVG (linha + pontos) */
+function DepreciationChart({ points }: { points: HistoryPoint[] }) {
+  if (points.length < 2) return null;
+  const values = points.map((p) => p.price);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const w = 280;
+  const h = 120;
+  const pad = { t: 8, r: 8, b: 24, l: 40 };
+  const x0 = pad.l;
+  const y0 = pad.t;
+  const gw = w - pad.l - pad.r;
+  const gh = h - pad.t - pad.b;
+
+  const toX = (i: number) => x0 + (i / (points.length - 1)) * gw;
+  const toY = (v: number) => y0 + gh - ((v - min) / range) * gh;
+
+  const pathD = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.price)}`)
+    .join(' ');
+
+  const labels = points.filter((_, i) => i === 0 || i === points.length - 1);
+
+  return (
+    <div className="w-full max-w-[280px] mx-auto">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-[120px]" preserveAspectRatio="xMidYMid meet">
+        <path
+          d={pathD}
+          fill="none"
+          stroke="hsl(161,79%,35%)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={toX(i)}
+            cy={toY(p.price)}
+            r="3"
+            fill="hsl(161,79%,35%)"
+          />
+        ))}
+        {labels.map((p, i) => {
+          const idx = i === 0 ? 0 : points.length - 1;
+          return (
+            <text
+              key={i}
+              x={toX(idx)}
+              y={h - 4}
+              textAnchor={idx === 0 ? 'start' : 'end'}
+              fontSize="9"
+              fill="currentColor"
+              className="fill-muted-foreground"
+            >
+              {p.monthLabel}
+            </text>
+          );
+        })}
+      </svg>
+      <p className="text-[10px] text-center text-muted-foreground mt-0.5">Histórico FIPE (depreciação)</p>
+    </div>
+  );
+}
+
 export const SimuladorInline: React.FC = () => {
-  const [rawInput, setRawInput] = useState('');
-  const valor = useMemo(() => {
-    const num = rawInput.replace(/\D/g, '');
-    return num ? parseInt(num, 10) : 0;
-  }, [rawInput]);
+  const [brands, setBrands] = useState<FipeBrand[]>([]);
+  const [models, setModels] = useState<FipeModel[]>([]);
+  const [years, setYears] = useState<FipeYear[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [price, setPrice] = useState<FipePrice | null>(null);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [loadingBrands, setLoadingBrands] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [loadingYears, setLoadingYears] = useState(false);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
-  const custoMensal = useMemo(() => Math.round(valor * CUSTO_MENSAL_FATOR), [valor]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingBrands(true);
+    fetchFipeBrands()
+      .then((data) => { if (!cancelled) setBrands(data); })
+      .finally(() => { if (!cancelled) setLoadingBrands(false); });
+    return () => { cancelled = true; };
+  }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value.replace(/\D/g, '');
-    setRawInput(v);
-  };
+  useEffect(() => {
+    setSelectedModel('');
+    setSelectedYear('');
+    setYears([]);
+    setPrice(null);
+    setHistory([]);
+    if (!selectedBrand) {
+      setModels([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingModels(true);
+    fetchFipeModels(selectedBrand)
+      .then((data) => { if (!cancelled) setModels(data); })
+      .finally(() => { if (!cancelled) setLoadingModels(false); });
+    return () => { cancelled = true; };
+  }, [selectedBrand]);
+
+  useEffect(() => {
+    setSelectedYear('');
+    setPrice(null);
+    setHistory([]);
+    if (!selectedBrand || !selectedModel) {
+      setYears([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingYears(true);
+    fetchFipeYears(selectedBrand, selectedModel)
+      .then((data) => { if (!cancelled) setYears(data); })
+      .finally(() => { if (!cancelled) setLoadingYears(false); });
+    return () => { cancelled = true; };
+  }, [selectedBrand, selectedModel]);
+
+  useEffect(() => {
+    setPrice(null);
+    setHistory([]);
+    if (!selectedBrand || !selectedModel || !selectedYear) return;
+    let cancelled = false;
+    setLoadingPrice(true);
+    fetchFipePrice(selectedBrand, selectedModel, selectedYear)
+      .then((p) => {
+        if (cancelled || !p) return;
+        setPrice(p);
+        return fetchFipeHistory(p.CodigoFipe, p.AnoModelo);
+      })
+      .then((h) => {
+        if (!cancelled && Array.isArray(h)) setHistory(h);
+      })
+      .catch(() => { if (!cancelled) setPrice(null); })
+      .finally(() => { if (!cancelled) setLoadingPrice(false); });
+    return () => { cancelled = true; };
+  }, [selectedBrand, selectedModel, selectedYear]);
+
+  const priceValue = useMemo(
+    () => (price ? parseFipeValor(price.Valor) : 0),
+    [price]
+  );
+  const custoMensal = useMemo(
+    () => Math.round(priceValue * CUSTO_MENSAL_FATOR),
+    [priceValue]
+  );
 
   return (
     <motion.div
@@ -40,39 +196,94 @@ export const SimuladorInline: React.FC = () => {
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-lg font-semibold text-foreground">Experimente agora, sem cadastro</h3>
-            <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">
-              Gratuito
-            </Badge>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Prévia do Simulador FIPE</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Escolha marca, modelo e ano. Veja o valor FIPE, a depreciação e o custo mensal estimado.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">
-            Qual é o valor do seu veículo? Estime o custo mensal operacional (IPVA + seguro + manutenção média).
-          </p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium text-foreground">Valor do veículo (R$)</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Ex: 80000"
-                value={rawInput}
-                onChange={handleInputChange}
-                className="rounded-lg border border-input bg-background px-4 py-2.5 text-base w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </label>
-            {valor > 0 && (
-              <div className="flex items-baseline gap-2 text-primary font-semibold">
-                <span className="text-muted-foreground font-normal text-sm">~</span>
-                {formatBRL(custoMensal)}
-                <span className="text-sm font-normal text-muted-foreground">/mês em custos operacionais</span>
-              </div>
-            )}
-          </div>
+          <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs">
+            Gratuito
+          </Badge>
         </div>
-        <div className="shrink-0">
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-foreground">Marca</span>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              disabled={loadingBrands}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">{loadingBrands ? 'Carregando…' : 'Selecione a marca'}</option>
+              {brands.map((b) => (
+                <option key={b.codigo} value={b.codigo}>{b.nome}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-foreground">Modelo</span>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={loadingModels || !selectedBrand}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">{loadingModels ? 'Carregando…' : 'Selecione o modelo'}</option>
+              {models.map((m) => (
+                <option key={m.codigo} value={String(m.codigo)}>{m.nome}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-foreground">Ano</span>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              disabled={loadingYears || !selectedModel}
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">{loadingYears ? 'Carregando…' : 'Selecione o ano'}</option>
+              {years.map((y) => (
+                <option key={y.codigo} value={y.codigo}>{y.nome}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {loadingPrice && (selectedBrand && selectedModel && selectedYear) && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Consultando valor FIPE e histórico…
+          </div>
+        )}
+
+        {!loadingPrice && price && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-primary/20">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Valor FIPE</p>
+              <p className="text-xl font-bold text-primary">{price.Valor}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {price.Marca} {price.Modelo} · {price.MesReferencia}
+              </p>
+              <p className="text-sm font-medium text-foreground mt-2">
+                ~ {formatBRL(custoMensal)} <span className="text-muted-foreground font-normal">/mês em custos operacionais</span>
+              </p>
+            </div>
+            <div className="flex flex-col items-center justify-center">
+              {history.length >= 2 ? (
+                <DepreciationChart points={history} />
+              ) : (
+                <p className="text-xs text-muted-foreground">Histórico não disponível para este veículo.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-2">
           <a
             href={FIPE_ANALYSIS_URL}
             target="_blank"

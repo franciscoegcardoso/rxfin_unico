@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Shield, Telescope, Sparkles } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Search, Shield, Telescope, Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-const AUTO_ADVANCE_MS = 4000;
 
 const blocks = [
   {
     step: '01',
-    tabLabel: 'Passado',
     label: 'Entenda o passado',
     icon: Search,
     title: 'Diagnóstico Real',
@@ -20,7 +17,6 @@ const blocks = [
   },
   {
     step: '02',
-    tabLabel: 'Presente',
     label: 'Controle o presente',
     icon: Shield,
     title: 'Gestão de Alto Nível',
@@ -33,7 +29,6 @@ const blocks = [
   },
   {
     step: '03',
-    tabLabel: 'Futuro',
     label: 'Projete o futuro',
     icon: Telescope,
     title: 'Visão de Longo Prazo',
@@ -46,49 +41,35 @@ const blocks = [
   },
 ];
 
+const container = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.18,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const cardItem = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+  },
+};
+
 export const TimelineSection: React.FC = () => {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const progressRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
-  const startTimeRef = useRef<number>(0);
-
-  useEffect(() => {
-    if (isPaused) {
-      if (progressRef.current) cancelAnimationFrame(progressRef.current);
-      return;
-    }
-    startTimeRef.current = performance.now();
-    setProgress(0);
-
-    const tick = () => {
-      const elapsed = performance.now() - startTimeRef.current;
-      const p = Math.min((elapsed / AUTO_ADVANCE_MS) * 100, 100);
-      setProgress(p);
-      if (p >= 100) {
-        setActiveIndex((i) => (i + 1) % blocks.length);
-        startTimeRef.current = performance.now();
-        setProgress(0);
-      }
-      progressRef.current = requestAnimationFrame(tick);
-    };
-    progressRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (progressRef.current) cancelAnimationFrame(progressRef.current);
-    };
-  }, [activeIndex, isPaused]);
-
   return (
     <section
       id="sistema"
       className="py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
     >
       <div className="max-w-7xl mx-auto">
         <motion.div
-          className="text-center mb-10"
+          className="text-center mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -106,68 +87,88 @@ export const TimelineSection: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+        {/* Grid: 3 cards lado a lado no desktop, com setas animadas de interligação */}
+        <motion.div
+          className="relative grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
+          variants={container}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
           {blocks.map((item, i) => (
-            <button
+            <motion.div
               key={item.step}
-              type="button"
-              onClick={() => {
-                setActiveIndex(i);
-                setProgress(0);
-                startTimeRef.current = performance.now();
-              }}
-              className={`relative overflow-hidden px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                i === activeIndex
-                  ? 'bg-white text-[hsl(161,79%,25%)] shadow-md'
-                  : 'bg-white/10 text-white/60 hover:bg-white/15 hover:text-white/80'
-              }`}
+              variants={cardItem}
+              className="group relative"
             >
-              <span className="font-mono mr-1.5 opacity-80">{item.step}</span>
-              {item.tabLabel}
-              {i === activeIndex && (
-                <span
-                  className="absolute bottom-0 left-0 h-0.5 bg-[hsl(161,79%,25%)] rounded-full transition-all duration-100"
-                  style={{ width: `${progress}%` }}
-                />
-              )}
-            </button>
+              <motion.div
+                className="relative h-full p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 transition-all duration-300"
+                whileHover={{
+                  y: -6,
+                  boxShadow: '0 20px 40px -12px hsla(161,79%,15%,0.35)',
+                  borderColor: 'hsl(161,30%,70%)',
+                }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              >
+                {/* Seta de interligação à direita (desktop) */}
+                {i < blocks.length - 1 && (
+                  <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 items-center justify-center w-8 h-8 rounded-full bg-[hsl(161,79%,25%)]/90 text-white">
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </motion.div>
+                  </div>
+                )}
+
+                <p className="text-xs font-medium text-[hsl(161,40%,25%)] uppercase tracking-wider mb-4">
+                  <span className="font-bold text-[hsl(161,79%,25%)] mr-1.5">{item.step}</span>
+                  {item.label}
+                </p>
+
+                <motion.div
+                  className="w-14 h-14 mb-5 rounded-2xl bg-[hsl(161,79%,25%)] flex items-center justify-center"
+                  whileHover={{ scale: 1.05, rotate: -3 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {React.createElement(item.icon, { className: 'h-7 w-7 text-white' })}
+                </motion.div>
+
+                <h3 className="text-xl font-bold mb-4 text-[hsl(161,40%,12%)]">
+                  {item.title}
+                </h3>
+
+                <ul className="space-y-2">
+                  {item.bullets.map((b, j) => (
+                    <li key={j} className="flex items-start gap-2 text-sm text-[hsl(161,30%,20%)] leading-relaxed">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(161,79%,25%)] shrink-0" />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        {/* Conteúdo da tab ativa */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeIndex}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="relative rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 p-6 sm:p-8 lg:p-10 max-w-4xl mx-auto"
-          >
-            <p className="text-xs font-medium text-[hsl(161,40%,25%)] uppercase tracking-wider mb-4">
-              <span className="font-bold text-[hsl(161,79%,25%)] mr-1.5">{blocks[activeIndex].step}</span>
-              {blocks[activeIndex].label}
-            </p>
-
-            <div className="w-14 h-14 mb-5 rounded-2xl bg-[hsl(161,79%,25%)] flex items-center justify-center">
-                {React.createElement(blocks[activeIndex].icon, { className: 'h-7 w-7 text-white' })}
-            </div>
-
-            <h3 className="text-xl sm:text-2xl font-bold mb-4 text-[hsl(161,40%,12%)]">
-              {blocks[activeIndex].title}
-            </h3>
-
-            <ul className="space-y-2">
-              {blocks[activeIndex].bullets.map((b, j) => (
-                <li key={j} className="flex items-start gap-2 text-sm text-[hsl(161,30%,20%)] leading-relaxed">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(161,79%,25%)] shrink-0" />
-                  {b}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        </AnimatePresence>
+        {/* Barra de fluxo contínua abaixo dos cards: reforça a ideia de fases interligadas */}
+        <motion.div
+          className="mt-8 flex justify-center"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+        >
+          <div className="h-1 w-full max-w-2xl rounded-full bg-white/10 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-white/0 via-white/40 to-white/0"
+              style={{ width: '40%' }}
+              animate={{ x: ['-100%', '350%'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+            />
+          </div>
+        </motion.div>
       </div>
     </section>
   );
