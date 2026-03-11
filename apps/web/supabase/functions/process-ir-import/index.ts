@@ -200,38 +200,56 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
 
   const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
 
-  async function callOpenRouter(content: unknown[]): Promise<Response> {
+  // Plugin file-parser: OpenRouter converte o PDF em texto antes de enviar ao modelo (funciona com qualquer modelo)
+  const plugins = [
+    { id: 'file-parser', pdf: { engine: 'pdf-text' as const } },
+  ];
+
+  async function callOpenRouter(content: unknown[], usePlugins: boolean): Promise<Response> {
+    const body: Record<string, unknown> = {
+      model: 'google/gemini-2.0-flash-exp',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content },
+      ],
+    };
+    if (usePlugins) body.plugins = plugins;
     return fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content },
-        ],
-      }),
+      body: JSON.stringify(body),
     });
   }
 
-  // 1) Tentar formato "file" (recomendado pelo OpenRouter para PDF)
+  // 1) Tentar com plugin file-parser (OpenRouter extrai texto do PDF e envia ao modelo)
+  // Documentação: file com file_data (snake_case) ou fileData; plugins com id "file-parser" e engine "pdf-text"
   let userContent: unknown[] = [
     { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
-    { type: 'file', file: { filename: 'declaracao-ir.pdf', fileData: dataUrl } },
+    { type: 'file', file: { filename: 'declaracao-ir.pdf', file_data: dataUrl } },
   ];
-  let response = await callOpenRouter(userContent);
+  let response = await callOpenRouter(userContent, true);
 
-  // 2) Se 400 (formato rejeitado), fallback para image_url (alguns modelos aceitam PDF como "imagem")
+  // 2) Se 400, tentar fileData (camelCase) sem plugin
+  if (response.status === 400) {
+    console.log('OpenRouter rejeitou file+plugin, tentando fileData sem plugin...');
+    userContent = [
+      { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
+      { type: 'file', file: { filename: 'declaracao-ir.pdf', fileData: dataUrl } },
+    ];
+    response = await callOpenRouter(userContent, false);
+  }
+
+  // 3) Se ainda 400, fallback para image_url (alguns modelos aceitam PDF como "imagem")
   if (response.status === 400) {
     console.log('OpenRouter rejeitou tipo file, tentando image_url...');
     userContent = [
       { type: 'text', text: 'Extraia os dados desta declaração de Imposto de Renda:' },
       { type: 'image_url', image_url: { url: dataUrl } },
     ];
-    response = await callOpenRouter(userContent);
+    response = await callOpenRouter(userContent, false);
   }
 
   if (!response.ok) {
