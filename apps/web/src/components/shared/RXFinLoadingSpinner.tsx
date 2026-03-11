@@ -16,8 +16,7 @@ interface RXFinLoadingSpinnerProps {
 
 /**
  * RXFin brand loading spinner.
- * Recreates the logo as SVG with the 3 "blades" spinning like a fan
- * (accelerate → cruise → decelerate) while the "$" stays fixed.
+ * Logo SVG com hélices girando ao redor do $ (anel em um sentido, hélices no outro).
  */
 export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
   size = 48,
@@ -26,13 +25,17 @@ export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
   className,
   variant = 'default',
 }) => {
+  const isFullScreen = height === 'h-screen' || className?.includes('h-screen');
+  const displayMessage = message ?? (isFullScreen ? 'Carregando...' : undefined);
+
   const spinner = (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="relative animate-in fade-in duration-300" style={{ width: size, height: size }} aria-hidden="true">
       <svg
         viewBox="0 0 100 100"
         width={size}
         height={size}
         className="block"
+        aria-label="Carregando"
       >
         {/* Outer ring */}
         <circle
@@ -56,23 +59,29 @@ export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
           className="rxfin-ring-spin"
         />
 
-        {/* Rotating blades group */}
-        <g className="rxfin-blades-spin" style={{ transformOrigin: '50px 50px' }}>
+        {/* Rotating blades group (hélices girando ao redor do $) */}
+        <g className="rxfin-blades-spin">
           {/* Blade 1 - top */}
           <path
             d="M50 50 C50 50, 38 18, 50 8 C62 18, 50 50, 50 50Z"
             fill="hsl(var(--primary))"
             opacity="0.85"
           />
-          {/* Blade 2 - bottom-left */}
+          {/* Blade 2 - right */}
           <path
-            d="M50 50 C50 50, 18 58, 13 47 C20 36, 50 50, 50 50Z"
+            d="M50 50 C50 50, 82 42, 92 50 C82 58, 50 50, 50 50Z"
             fill="hsl(var(--primary))"
             opacity="0.85"
           />
-          {/* Blade 3 - bottom-right */}
+          {/* Blade 3 - bottom */}
           <path
-            d="M50 50 C50 50, 82 58, 87 47 C80 36, 50 50, 50 50Z"
+            d="M50 50 C50 50, 62 82, 50 92 C38 82, 50 50, 50 50Z"
+            fill="hsl(var(--primary))"
+            opacity="0.85"
+          />
+          {/* Blade 4 - left */}
+          <path
+            d="M50 50 C50 50, 18 58, 8 50 C18 42, 50 50, 50 50Z"
             fill="hsl(var(--primary))"
             opacity="0.85"
           />
@@ -109,16 +118,21 @@ export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
   }
 
   return (
-    <div className={cn(
-      height || 'h-full min-h-[120px]',
-      "flex items-center justify-center",
-      className
-    )}>
-      <div className="flex flex-col items-center gap-3">
+    <div
+      className={cn(
+        height || 'h-full min-h-[120px]',
+        'flex items-center justify-center bg-background',
+        className
+      )}
+      role="status"
+      aria-live="polite"
+      aria-label={displayMessage || 'Carregando'}
+    >
+      <div className="flex flex-col items-center gap-4">
         {spinner}
-        {message && (
+        {displayMessage && (
           <span className="text-sm text-muted-foreground font-medium animate-pulse">
-            {message}
+            {displayMessage}
           </span>
         )}
       </div>
