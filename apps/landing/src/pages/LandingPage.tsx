@@ -17,7 +17,6 @@ import { featureContentMap } from '@/components/landing/featureSlideContents';
 import { ExitIntentPopup } from '@/components/landing/ExitIntentPopup';
 import { LeadGateDialog } from '@/components/landing/LeadGateDialog';
 import { CibeliaWidget } from '@/components/landing/CibeliaWidget';
-import { MobileCtaBar } from '@/components/landing/MobileCtaBar';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProofBar } from '@/components/landing/SocialProofBar';
 import { SimulatorsSection } from '@/components/landing/SimulatorsSection';
@@ -260,8 +259,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
-
-      <MobileCtaBar />
     </div>
   );
 };

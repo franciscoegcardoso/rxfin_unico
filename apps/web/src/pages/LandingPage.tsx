@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import logoHorizontal from '@/assets/Logo_RXFin-10.png';
 import { FeaturePreviewDialog } from '@/components/landing/FeaturePreviewDialog';
 import { featureContentMap } from '@/components/landing/featureSlideContents';
+import { MobileCtaBar } from '@/components/landing/MobileCtaBar';
 
 const LandingPage: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -682,6 +683,8 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      <MobileCtaBar />
     </div>
   );
 };
