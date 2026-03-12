@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ChevronUp, Sparkles } from 'lucide-react';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { Button } from '@/components/ui/button';
-import { openCibeliaChat } from '@/components/ai/RaioXChat';
 
 const SESSION_KEY = 'demo-banner-minimized';
 
@@ -24,6 +25,16 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
     try { return sessionStorage.getItem(SESSION_KEY) !== 'false'; } catch { return true; }
   });
 
+  const navigate = useNavigate();
+  const { currentPhase, advancePhase } = useOnboardingCheckpoint();
+
+  const handleRaioXClick = async () => {
+    if (currentPhase === 'not_started') {
+      await advancePhase('started');
+    }
+    navigate('/onboarding2');
+  };
+
   useEffect(() => {
     try { sessionStorage.setItem(SESSION_KEY, String(minimized)); } catch {}
   }, [minimized]);
@@ -44,7 +55,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
         <span>DADOS FICTÍCIOS</span>
         <span className="mx-1">•</span>
         <button
-          onClick={(e) => { e.stopPropagation(); openCibeliaChat(); }}
+          onClick={(e) => { e.stopPropagation(); handleRaioXClick(); }}
           className="underline font-bold hover:opacity-80"
         >
           COMEÇAR RAIO-X →
@@ -72,7 +83,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
             size="sm"
             variant="secondary"
             className="font-bold text-xs sm:text-sm gap-1.5 bg-background text-foreground hover:bg-background/90 shadow-md whitespace-nowrap"
-            onClick={() => openCibeliaChat()}
+            onClick={handleRaioXClick}
           >
             <Sparkles className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">COMEÇAR SEU RAIO-X FINANCEIRO AGORA!</span>
