@@ -25,6 +25,7 @@ import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { RXFinLoadingSpinner } from "@/components/shared/RXFinLoadingSpinner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { AdminSecureLayout } from '@/components/admin/AdminSecureLayout';
 import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
 
@@ -184,6 +185,7 @@ const App = () => (
                     <Sonner />
                     <GlobalSyncIndicator />
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <ScrollToTop />
                   <AccountPendingChangesProvider>
                   <CanonicalLink />
                   <TrackingProvider>
