@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import { parseReceiptWithAuth } from '@/lib/parseReceipt';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateBillSplit } from '@/hooks/useRXSplit';
 import { toPng } from 'html-to-image';
@@ -184,9 +184,7 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         r.onerror = reject;
         r.readAsDataURL(file);
       });
-      const { data, error } = await supabase.functions.invoke('parse-receipt', {
-        body: { imageBase64: base64, mode: 'bill' },
-      });
+      const { data, error } = await parseReceiptWithAuth({ imageBase64: base64, mode: 'bill' });
       if (error) {
         throw new Error((data as any)?.error || error.message || 'Erro ao processar.');
       }
@@ -194,7 +192,7 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         setScanError((data as any)?.error || 'Nenhum item encontrado. Tente outra foto.');
         return;
       }
-      const itemsPayload = (data as { items?: Array<{ description?: string; qty?: number; unitPrice?: number }> })?.items;
+      const itemsPayload = data?.items;
       if (itemsPayload?.length > 0) {
         const parsed: BillItem[] = itemsPayload.map((item: any, i: number) => {
           const q = Number(item.qty) ?? 1;

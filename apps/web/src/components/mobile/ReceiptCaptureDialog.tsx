@@ -27,7 +27,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { parseReceiptWithAuth } from '@/lib/parseReceipt';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useLancamentosRealizados, LancamentoInput } from '@/hooks/useLancamentosRealizados';
 import { format } from 'date-fns';
@@ -105,14 +105,12 @@ export const ReceiptCaptureDialog: React.FC<ReceiptCaptureDialogProps> = ({
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('parse-receipt', {
-        body: { imageBase64 },
-      });
+      const { data, error: fnError } = await parseReceiptWithAuth({ imageBase64 });
 
       if (fnError) throw fnError;
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erro ao processar comprovante');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao processar comprovante');
       }
 
       const receipt = data.data as ParsedReceipt;

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { parseReceiptWithAuth } from '@/lib/parseReceipt';
 import { toast } from 'sonner';
 import {
   useRXSplitGroups, useRXSplitContacts, useRXSplitExpenses, useCreateExpense, useDeleteExpense,
@@ -85,12 +85,10 @@ export const ExpensesTab: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = reader.result as string;
-        const { data, error } = await supabase.functions.invoke('parse-receipt', {
-          body: { imageBase64: base64 },
-        });
+        const { data, error } = await parseReceiptWithAuth({ imageBase64: base64 });
 
         if (error || !data?.success) {
-          toast.error(data?.error || 'Erro ao ler comprovante');
+          toast.error(data?.error || error?.message || 'Erro ao ler comprovante');
           setIsParsingReceipt(false);
           return;
         }
