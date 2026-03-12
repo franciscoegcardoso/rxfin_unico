@@ -103,6 +103,9 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [importedFromScan, setImportedFromScan] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Travar scroll da página atrás do modal (evita touch/scroll vazar para o fundo no mobile)
   useEffect(() => {
@@ -181,6 +184,8 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
     setHistorySaved(false);
     setScanError(null);
     setPreviewImage(null);
+    setImportedFromScan(false);
+    setEditingItemId(null);
   };
 
   // Camera scan
@@ -224,6 +229,8 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
           };
         });
         setItems(parsed);
+        setImportedFromScan(true);
+        setEditingItemId(null);
         // Usar o percentual pré-calculado pela Edge Function (baseado no subtotalCupom real)
         const taxaServicoPercent = data?.data?.taxaServicoPercent;
         if (taxaServicoPercent && taxaServicoPercent > 0) {
@@ -253,6 +260,20 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
     }));
   };
   const updateItemDescription = (id: number, value: string) => setItems(items.map(i => i.id === id ? { ...i, description: value } : i));
+
+  const handleLongPressStart = (itemId: number) => {
+    longPressTimer.current = setTimeout(() => {
+      setEditingItemId(itemId);
+      if (navigator.vibrate) navigator.vibrate(40);
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
 
   const parseBillText = (text: string) => {
     const lines = text.split('\n').filter(l => l.trim());
@@ -449,20 +470,137 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
             {scanError && <div className="bg-destructive/10 text-destructive rounded-xl p-3 text-sm">{scanError}</div>}
             <textarea className="w-full p-3 rounded-xl border border-input bg-background text-sm resize-none h-16 focus:ring-2 focus:ring-ring focus:outline-none" placeholder="Cole o texto da conta (ex: Hambúrguer 2 x 35,00)" onPaste={(e) => { const text = e.clipboardData.getData('text'); if (text) parseBillText(text); }} onChange={(e) => { if (e.target.value.includes('\n')) parseBillText(e.target.value); }} />
             <div className="space-y-2">
-              <div className="grid grid-cols-[1fr_52px_72px_72px_28px] gap-1.5 text-[11px] font-semibold text-muted-foreground px-0.5">
-                <span>Item</span><span className="text-center">Qtde</span><span className="text-right">V. Unit.</span><span className="text-right">V. Total</span><span></span>
+              <div className={cn(
+                'grid gap-1.5 text-[11px] font-semibold text-muted-foreground px-0.5',
+                importedFromScan && editingItemId === null
+                  ? 'grid-cols-[1fr_48px_80px_80px]'
+                  : 'grid-cols-[1fr_52px_72px_72px_28px]'
+              )}>
+                <span>Item</span>
+                <span className="text-center">Qtde</span>
+                <span className="text-right">V. Unit.</span>
+                <span className="text-right">V. Total</span>
+                {(!importedFromScan || editingItemId !== null) && <span />}
               </div>
-              {items.map(item => (
-                <div key={item.id} className="grid grid-cols-[1fr_52px_72px_72px_28px] gap-1.5 items-center">
-                  <Input value={item.description} onChange={e => updateItemDescription(item.id, e.target.value)} placeholder="Descrição" className="h-9 text-sm rounded-lg" />
-                  <Input type="number" min={1} value={item.qty} onChange={e => updateItemField(item.id, 'qty', e.target.value)} className="h-9 text-sm text-center rounded-lg px-1" />
-                  <Input type="number" min={0} step={0.01} value={item.unitPrice} onChange={e => updateItemField(item.id, 'unitPrice', e.target.value)} placeholder="0,00" className="h-9 text-sm text-right rounded-lg px-1" />
-                  <Input type="number" min={0} step={0.01} value={item.totalPrice} onChange={e => updateItemField(item.id, 'totalPrice', e.target.value)} placeholder="0,00" className="h-9 text-sm text-right rounded-lg px-1" />
-                  <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors" disabled={items.length <= 1}><Trash2 className="w-4 h-4" /></button>
-                </div>
-              ))}
+
+              {items.map(item => {
+                const isEditing = !importedFromScan || editingItemId === item.id;
+
+                return isEditing ? (
+                  <div
+                    key={item.id}
+                    className="grid grid-cols-[1fr_52px_72px_72px_28px] gap-1.5 items-center ring-2 ring-primary/40 rounded-xl px-2 py-1 bg-primary/5"
+                  >
+                    <Input
+                      value={item.description}
+                      onChange={e => updateItemDescription(item.id, e.target.value)}
+                      placeholder="Descrição"
+                      className="h-9 text-sm rounded-lg"
+                      autoFocus={importedFromScan}
+                    />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={item.qty}
+                      onChange={e => updateItemField(item.id, 'qty', e.target.value)}
+                      className="h-9 text-sm text-center rounded-lg px-1"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={item.unitPrice}
+                      onChange={e => updateItemField(item.id, 'unitPrice', e.target.value)}
+                      placeholder="0,00"
+                      className="h-9 text-sm text-right rounded-lg px-1"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={item.totalPrice}
+                      onChange={e => updateItemField(item.id, 'totalPrice', e.target.value)}
+                      placeholder="0,00"
+                      className="h-9 text-sm text-right rounded-lg px-1"
+                    />
+                    <button
+                      onClick={() => {
+                        removeItem(item.id);
+                        if (editingItemId === item.id) setEditingItemId(null);
+                      }}
+                      className="p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                      disabled={items.length <= 1}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      'grid grid-cols-[1fr_48px_80px_80px] gap-1.5 items-center',
+                      'px-3 py-2.5 rounded-xl border border-border/60 bg-card',
+                      'select-none cursor-default transition-colors active:bg-primary/5'
+                    )}
+                    onMouseDown={() => handleLongPressStart(item.id)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(item.id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onTouchCancel={handleLongPressEnd}
+                  >
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {item.description}
+                    </span>
+                    <span className="text-sm text-center text-muted-foreground">
+                      {item.qty}
+                    </span>
+                    <span className="text-sm text-right text-muted-foreground">
+                      {formatCurrency(parseNum(item.unitPrice))}
+                    </span>
+                    <span className="text-sm text-right font-semibold text-foreground">
+                      {formatCurrency(parseNum(item.totalPrice) || parseNum(item.qty) * parseNum(item.unitPrice))}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <Button variant="outline" onClick={addItem} className="w-full gap-2 h-10"><Plus className="w-4 h-4" /> Adicionar Item</Button>
+
+            {importedFromScan && editingItemId === null && (
+              <p className="text-[11px] text-muted-foreground text-center flex items-center justify-center gap-1 pt-1">
+                <span>✋</span> Segure qualquer linha para editar
+              </p>
+            )}
+
+            {importedFromScan && editingItemId !== null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground h-8"
+                onClick={() => setEditingItemId(null)}
+              >
+                ✓ Concluir edição
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              className="w-full gap-2 h-10"
+              onClick={() => {
+                const newId = Date.now();
+                setItems([...items, {
+                  id: newId,
+                  description: '',
+                  qty: '1',
+                  unitPrice: '',
+                  totalPrice: '',
+                  lastEdited: []
+                }]);
+                if (importedFromScan) setEditingItemId(newId);
+              }}
+            >
+              <Plus className="w-4 h-4" /> Adicionar Item
+            </Button>
             <div className="bg-card rounded-xl border border-border p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold">Taxa de serviço</Label>
