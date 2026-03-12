@@ -18,7 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target, RefreshCw, BarChart2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target, RefreshCw, BarChart2, BarChart3, CalendarDays } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VisibilityToggle } from '@/components/ui/visibility-toggle';
+import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
+import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
+import { PlanoAnualTab, Plano30AnosTab } from './planejamento-anual';
 import { useAnnualOverview } from '@/hooks/useAnnualOverview';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -30,6 +35,7 @@ const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Se
 const PlanejamentoAnual: React.FC = () => {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
+  const [activeTab, setActiveTab] = useState<'visao-geral' | 'plano-anual' | 'plano-30-anos'>('visao-geral');
   const { data, isLoading, error, refetch } = useAnnualOverview(year);
 
   const months = data?.months ?? [];
@@ -80,12 +86,39 @@ const PlanejamentoAnual: React.FC = () => {
 
   return (
     <AppLayout>
-      <div className="content-zone py-5 md:py-6 space-y-6">
-        <PageHeader
-          icon={BarChart2}
-          title="Planejamento Anual"
-          subtitle="Visão anual de receitas, despesas e saldo"
-          actions={
+      <div className="content-zone py-5 md:py-6 space-y-4">
+        {/* Header fixo — título e toggle de visibilidade */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Planejamento Anual</h1>
+              <p className="text-muted-foreground mt-1">
+                Projeção de longo prazo e planejamento estratégico
+              </p>
+            </div>
+            <VisibilityToggle />
+            <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.projecao30Anos} />
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+          <TabsList className="grid w-full grid-cols-3 h-10">
+            <TabsTrigger value="visao-geral" className="flex items-center gap-2 text-sm">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Visão Geral</span>
+            </TabsTrigger>
+            <TabsTrigger value="plano-anual" className="flex items-center gap-2 text-sm">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">Plano 2026–2027</span>
+            </TabsTrigger>
+            <TabsTrigger value="plano-30-anos" className="flex items-center gap-2 text-sm">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Plano 30 Anos</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tab 1: Visão Geral — conteúdo atual */}
+          <TabsContent value="visao-geral" className="space-y-6 mt-4">
             <div className="flex items-center gap-2 flex-wrap">
               <Button variant="outline" size="sm" className="min-h-[44px] touch-manipulation" onClick={() => setYear((y) => y - 1)} aria-label="Ano anterior">
                 <ChevronLeft className="h-4 w-4" />
@@ -98,112 +131,119 @@ const PlanejamentoAnual: React.FC = () => {
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
-          }
-        />
 
-        {error && (
-          <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetch()} />
-        )}
+            {error && (
+              <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetch()} />
+            )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <HeaderMetricCard label="Total receitas" value={formatCurrency(totalIncome)} variant="positive" icon={<TrendingUp className="h-4 w-4" />} />
-          <HeaderMetricCard label="Total despesas" value={formatCurrency(totalExpense)} variant="negative" icon={<TrendingDown className="h-4 w-4" />} />
-          <HeaderMetricCard label="Saldo do ano" value={formatCurrency(totalBalance)} variant={totalBalance >= 0 ? 'positive' : 'negative'} icon={<Target className="h-4 w-4" />} />
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <HeaderMetricCard label="Total receitas" value={formatCurrency(totalIncome)} variant="positive" icon={<TrendingUp className="h-4 w-4" />} />
+              <HeaderMetricCard label="Total despesas" value={formatCurrency(totalExpense)} variant="negative" icon={<TrendingDown className="h-4 w-4" />} />
+              <HeaderMetricCard label="Saldo do ano" value={formatCurrency(totalBalance)} variant={totalBalance >= 0 ? 'positive' : 'negative'} icon={<Target className="h-4 w-4" />} />
+            </div>
 
-        <Card className="rounded-xl border border-border bg-card p-6">
-          <CardHeader>
-            <CardTitle className="text-base text-foreground">Receitas e despesas por mês</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {chartData.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">Sem dados para o ano selecionado.</p>
-            ) : (
-              <div className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                    <Legend />
-                    <Bar dataKey="receita" name="Receita" fill="hsl(var(--income))" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="despesa" name="Despesa" fill="hsl(var(--expense))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <Card className="rounded-xl border border-border bg-card p-6">
+              <CardHeader>
+                <CardTitle className="text-base text-foreground">Receitas e despesas por mês</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-8 text-center">Sem dados para o ano selecionado.</p>
+                ) : (
+                  <div className="h-[320px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Legend />
+                        <Bar dataKey="receita" name="Receita" fill="hsl(var(--income))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="despesa" name="Despesa" fill="hsl(var(--expense))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-xl border border-border bg-card p-6">
+              <CardHeader>
+                <CardTitle className="text-base text-foreground">Resumo dos 12 meses</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 pt-0">
+                <div className="overflow-x-auto md:overflow-visible pb-2 md:pb-0">
+                  <div className="flex md:grid md:grid-cols-4 md:grid-rows-3 gap-3 min-w-max md:min-w-0">
+                    {chartData.map((row, i) => {
+                      const m = months[i];
+                      const status = getMonthStatus(m ?? {}, i);
+                      return (
+                        <div
+                          key={row.monthKey}
+                          className={cn(
+                            'rounded-xl border border-border bg-card p-3 min-w-[140px] md:min-w-0 shrink-0',
+                            status.border === 'income' && 'border-l-4 border-l-income',
+                            status.border === 'warning' && 'border-l-4 border-l-warning',
+                            status.border === 'expense' && 'border-l-4 border-l-expense',
+                            status.border === 'muted' && 'border-l-4 border-l-muted'
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-foreground">{row.month}</span>
+                            <Badge variant={status.variant}>{status.label}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs mt-1">
+                            <span className="text-muted-foreground">Receita</span>
+                            <span className="text-right text-income">{formatCurrency(row.receita)}</span>
+                            <span className="text-muted-foreground">Despesa</span>
+                            <span className="text-right text-expense">{formatCurrency(row.despesa)}</span>
+                            <span className="text-muted-foreground">Saldo</span>
+                            <span className={cn('text-right font-medium', row.saldo >= 0 ? 'text-income' : 'text-expense')}>{formatCurrency(row.saldo)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {savingsGoals.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-base font-semibold text-foreground">Metas de economia</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {savingsGoals.map((goal, i) => {
+                    const target = goal.target ?? 0;
+                    const current = goal.current ?? 0;
+                    const deadlineStr = goal.deadline ? format(new Date(goal.deadline), 'dd/MM/yyyy', { locale: ptBR }) : '';
+                    const daysLeft = goal.deadline ? Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
+                    const status = daysLeft < 0 ? 'overdue' : daysLeft <= 30 ? 'attention' : 'on_track';
+                    return (
+                      <GoalCard
+                        key={i}
+                        title={goal.name ?? 'Meta'}
+                        currentValue={current}
+                        targetValue={target}
+                        deadline={deadlineStr ? `Prazo: ${deadlineStr}` : 'Sem prazo'}
+                        category={goal.category ?? 'Economia'}
+                        status={status}
+                        deadlineIso={goal.deadline ?? undefined}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
 
-        {/* Grid 12 meses: mobile scroll horizontal, desktop grid-cols-4 grid-rows-3 */}
-        <Card className="rounded-xl border border-border bg-card p-6">
-          <CardHeader>
-            <CardTitle className="text-base text-foreground">Resumo dos 12 meses</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 pt-0">
-            <div className="overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-              <div className="flex md:grid md:grid-cols-4 md:grid-rows-3 gap-3 min-w-max md:min-w-0">
-                {chartData.map((row, i) => {
-                  const m = months[i];
-                  const status = getMonthStatus(m ?? {}, i);
-                  return (
-                    <div
-                      key={row.monthKey}
-                      className={cn(
-                        'rounded-xl border border-border bg-card p-3 min-w-[140px] md:min-w-0 shrink-0',
-                        status.border === 'income' && 'border-l-4 border-l-income',
-                        status.border === 'warning' && 'border-l-4 border-l-warning',
-                        status.border === 'expense' && 'border-l-4 border-l-expense',
-                        status.border === 'muted' && 'border-l-4 border-l-muted'
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm text-foreground">{row.month}</span>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs mt-1">
-                        <span className="text-muted-foreground">Receita</span>
-                        <span className="text-right text-income">{formatCurrency(row.receita)}</span>
-                        <span className="text-muted-foreground">Despesa</span>
-                        <span className="text-right text-expense">{formatCurrency(row.despesa)}</span>
-                        <span className="text-muted-foreground">Saldo</span>
-                        <span className={cn('text-right font-medium', row.saldo >= 0 ? 'text-income' : 'text-expense')}>{formatCurrency(row.saldo)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <TabsContent value="plano-anual" className="mt-4">
+            <PlanoAnualTab />
+          </TabsContent>
 
-        {savingsGoals.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-base font-semibold text-foreground">Metas de economia</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savingsGoals.map((goal, i) => {
-                const target = goal.target ?? 0;
-                const current = goal.current ?? 0;
-                const deadlineStr = goal.deadline ? format(new Date(goal.deadline), 'dd/MM/yyyy', { locale: ptBR }) : '';
-                const daysLeft = goal.deadline ? Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0;
-                const status = daysLeft < 0 ? 'overdue' : daysLeft <= 30 ? 'attention' : 'on_track';
-                return (
-                  <GoalCard
-                    key={i}
-                    title={goal.name ?? 'Meta'}
-                    currentValue={current}
-                    targetValue={target}
-                    deadline={deadlineStr ? `Prazo: ${deadlineStr}` : 'Sem prazo'}
-                    category={goal.category ?? 'Economia'}
-                    status={status}
-                    deadlineIso={goal.deadline ?? undefined}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
+          <TabsContent value="plano-30-anos" className="mt-4">
+            <Plano30AnosTab />
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
