@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -71,12 +71,32 @@ export default function DemoFlow() {
   const [revealed, setRevealed] = useState<number[]>([]);
   const [animated4, setAnimated4] = useState(false);
   const [milestoneVals, setMilestoneVals] = useState({ a: 0, b: 0, c: 0, d: 0 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (paused) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (isVisible) setStep(0);
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (paused || !isVisible) return;
     const t = setInterval(() => setStep((s) => (s >= 4 ? 0 : s + 1)), 9000);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, isVisible]);
 
   useEffect(() => {
     if (step !== 1) return;
@@ -123,7 +143,7 @@ export default function DemoFlow() {
   const content = STEP_CONTENT[step];
 
   return (
-    <section className="bg-[#0d2b20]">
+    <section ref={sectionRef} className="bg-[#0d2b20]">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-14">
           <span className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-white/60 text-xs px-4 py-1.5 rounded-full mb-6">

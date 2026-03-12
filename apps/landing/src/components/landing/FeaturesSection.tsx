@@ -61,7 +61,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
 
   const renderComplementaryCard = (item: FeatureItem) => (
     <Card
-      className="h-full cursor-pointer border-border/50 hover:border-primary/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+      className="h-full cursor-pointer border-border/50 opacity-90 hover:border-primary/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
       onClick={() => handleMicroCta(item.id)}
     >
       <CardContent className="p-5">
@@ -134,7 +134,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
         </motion.div>
 
         {/* Bloco B — 3 Pilares */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-2">
           {pillars.map((p, i) => (
             <motion.div
               key={p.id}
@@ -149,14 +149,16 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
         </div>
 
         {/* Separador visual */}
-        <div className="flex items-center gap-4 my-8">
+        <div className="flex items-center gap-4 my-2">
           <div className="flex-1 h-px bg-border" />
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Recursos Complementares</span>
+          <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground px-2">
+            Recursos Complementares
+          </span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
         {/* Bloco C — 3 Complementares */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-2">
           {complementary.map((c, i) => (
             <motion.div
               key={c.id}

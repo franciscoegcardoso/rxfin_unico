@@ -41,26 +41,6 @@ const blocks = [
   },
 ];
 
-const container = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.18,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const cardItem = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
-  },
-};
-
 export const TimelineSection: React.FC = () => {
   return (
     <section
@@ -90,16 +70,16 @@ export const TimelineSection: React.FC = () => {
         {/* Grid: 3 cards lado a lado no desktop, com setas animadas de interligação */}
         <motion.div
           className="relative grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
-          variants={container}
-          initial="hidden"
-          whileInView="visible"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.3 }}
         >
           {blocks.map((item, i) => (
-            <motion.div
+            <div
               key={item.step}
-              variants={cardItem}
-              className="group relative"
+              className="group relative opacity-0 animate-[fadeSlideUp_0.6s_ease-out_forwards]"
+              style={{ animationDelay: i === 0 ? '0ms' : i === 1 ? '150ms' : '300ms' }}
             >
               <motion.div
                 className="relative h-full p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 transition-all duration-300"
@@ -148,7 +128,7 @@ export const TimelineSection: React.FC = () => {
                   ))}
                 </ul>
               </motion.div>
-            </motion.div>
+            </div>
           ))}
         </motion.div>
 
