@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -76,6 +76,19 @@ const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
 
+/** Itens canônicos do grupo Simuladores para o sidebar: garante que a rota aberta tenha sempre um item correspondente e fique marcada. */
+const SIMULATOR_SIDEBAR_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
+  { path: '/simuladores', label: 'Hub Simuladores', icon: Calculator },
+  { path: '/simuladores/veiculos/simulador-fipe', label: 'Simulador FIPE', icon: Car },
+  { path: '/simuladores/veiculos/simulador-carro-ab', label: 'Comparador Carro A vs B', icon: Car },
+  { path: '/simuladores/veiculos/simulador-custo-oportunidade-carro', label: 'Carro vs Alternativas', icon: Car },
+  { path: '/simuladores/dividas/financiamento-consorcio', label: 'Financiamento vs Consórcio', icon: Building2 },
+  { path: '/simuladores/dividas/renegociacao-dividas', label: 'SOS Quitação de Dívidas', icon: AlertCircle },
+  { path: '/simuladores/planejamento/simulador-custo-hora', label: 'Quanto vale sua Hora?', icon: Clock },
+  { path: '/simuladores/planejamento/simulador-desconto-justo', label: 'Mestre da Negociação', icon: BadgePercent },
+  { path: '/simuladores/planejamento/econograph', label: 'EconoGraph', icon: LineChart },
+];
+
 /** Estrutura canônica do menu: Meu IR em Planejamento (após Planejamento Anual); Gestão de Veículos primeiro em Controles. */
 function normalizeGroupedSections(
   sections: NavMenuSection[],
@@ -132,6 +145,27 @@ function normalizeGroupedSections(
       if (base.some((i) => i.path === '/gestao-veiculos')) return section;
       return { ...section, items: [gestao, ...base] };
     }
+    // Simuladores: garantir que todos os simuladores tenham item no menu para o sidebar marcar o aberto
+    if (section.slug === 'simuladores') {
+      const existingPaths = new Set(section.items.map((i) => i.path));
+      const merged: NavMenuItem[] = [...section.items];
+      for (const { path, label, icon } of SIMULATOR_SIDEBAR_ITEMS) {
+        if (!existingPaths.has(path)) {
+          existingPaths.add(path);
+          merged.push({
+            path,
+            label,
+            icon,
+            accessLevel: 'free',
+            canAccessAsAdmin: effectiveAdmin,
+          });
+        }
+      }
+      // Ordenar: Hub primeiro, depois na ordem de SIMULATOR_SIDEBAR_ITEMS
+      const order = new Map(SIMULATOR_SIDEBAR_ITEMS.map((s, i) => [s.path, i]));
+      merged.sort((a, b) => (order.get(a.path) ?? 99) - (order.get(b.path) ?? 99));
+      return { ...section, items: merged };
+    }
     return section;
   });
 }
@@ -173,10 +207,9 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
       ],
     },
     {
-      title: 'Simuladores', slug: 'simuladores', icon: Calculator, items: [
-        { path: '/simuladores', label: 'Hub Simuladores', icon: Calculator, accessLevel: 'free', canAccessAsAdmin: true },
-        { path: '/simuladores/veiculos/simulador-fipe', label: 'Simulador FIPE', icon: Car, accessLevel: 'free', canAccessAsAdmin: true },
-      ],
+      title: 'Simuladores', slug: 'simuladores', icon: Calculator, items: SIMULATOR_SIDEBAR_ITEMS.map(({ path, label, icon }) => ({
+        path, label, icon, accessLevel: 'free' as const, canAccessAsAdmin: true,
+      })),
     },
     {
       title: 'Configurações', slug: 'configuracoes', icon: Settings2, items: [], // CTA único → /minha-conta (guias)
