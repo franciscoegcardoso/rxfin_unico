@@ -149,6 +149,14 @@ function OnboardingRoute() {
     />
   );
 }
+
+/** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br) */
+function RootRoute() {
+  const { user } = useAuth();
+  if (user) return <Navigate to="/inicio" replace />;
+  return <LandingPage />;
+}
+
 // Perfil page removed - now part of MinhaConta
 
 const queryClient = new QueryClient();
@@ -176,8 +184,7 @@ const App = () => (
                     <RaioXChat />
                     <ErrorBoundary>
                     <Routes>
-                  <Route path="/" element={<Navigate to="/inicio" replace />} />
-                  <Route path="/landing" element={<LandingPage />} />
+                  <Route path="/" element={<RootRoute />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/auth" element={<Login />} /> {/* Redirect legacy route */}
