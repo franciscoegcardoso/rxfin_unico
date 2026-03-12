@@ -212,10 +212,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     const isOpen = openSections.has(section.slug);
     const isGroupActive = section.items.some((i) => isPathActive(i.path));
 
-    // Configurações: CTA único (sem sub-itens) → link direto para as guias em /minha-conta
+    // Configurações: CTA único (sem sub-itens) → link para /minha-conta; considerado ativo em qualquer página de configurações
     const isConfiguracoesCta = section.slug === 'configuracoes' && section.items.length === 0;
     const configuracoesPath = '/minha-conta';
-    const isConfiguracoesActive = isConfiguracoesCta && (location.pathname === configuracoesPath || location.pathname.startsWith(configuracoesPath + '/'));
+    const settingsPaths = ['/minha-conta', '/parametros', '/instituicoes-financeiras', '/configuracoes-fiscais', '/financeiro'];
+    const isOnSettingsPage = settingsPaths.some((p) => location.pathname === p || (p !== '/minha-conta' && location.pathname.startsWith(p + '/')));
+    const isConfiguracoesActive = isConfiguracoesCta && (location.pathname === configuracoesPath || location.pathname.startsWith(configuracoesPath + '/') || isOnSettingsPage);
 
     if (isConfiguracoesCta) {
       const configClass = cn(

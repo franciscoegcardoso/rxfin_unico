@@ -46,7 +46,27 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, action, comprovante } = await req.json();
+    let body: { messages?: unknown[]; action?: string; comprovante?: unknown };
+    try {
+      body = await req.json();
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      console.error("fiscal-organizer body parse error:", msg);
+      return new Response(JSON.stringify({
+        error: "Body inválido. Envie JSON com o campo messages.",
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { messages, action, comprovante } = body;
+    console.log("Request recebido:", {
+      action: action || "chat",
+      messagesCount: messages?.length ?? 0,
+      hasApiKey: !!OPENROUTER_API_KEY,
+      apiKeyLength: OPENROUTER_API_KEY?.length ?? 0,
+    });
 
     if (!OPENROUTER_API_KEY) {
       return new Response(JSON.stringify({
@@ -169,12 +189,21 @@ Seja específico sobre o que está faltando ou por que não é dedutível.`;
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
-    console.error("fiscal-organizer error:", error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : "Erro desconhecido",
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("fiscal-organizer error:", msg, error);
+
+    if (msg.includes("JSON") || msg.includes("json") || msg.includes("parse")) {
+      console.error("Possível body malformado no request");
+    }
+
+    return new Response(
+      JSON.stringify({
+        error: "Erro interno no assistente fiscal. Detalhes: " + msg,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
