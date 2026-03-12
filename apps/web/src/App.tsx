@@ -247,6 +247,11 @@ const App = () => (
                     <Route path="simuladores/veiculos/simulador-carro-ab" element={<SimuladorCarroAB />} />
                     <Route path="simuladores/veiculos/simulador-custo-oportunidade-carro" element={<SimuladorCustoOportunidadeCarro />} />
                     <Route path="simuladores/dividas/renegociacao-dividas" element={<RenegociacaoDividas />} />
+                    {/* Sub-rotas de renegociação — dentro do AppShell para manter sidebar/bottom-nav */}
+                    <Route path="renegociacao-dividas/quitacao-desconto" element={<QuitacaoDesconto />} />
+                    <Route path="renegociacao-dividas/parcelamento"      element={<ParcelamentoDivida />} />
+                    <Route path="renegociacao-dividas/portabilidade"     element={<PortabilidadeCredito />} />
+                    <Route path="renegociacao-dividas/consolidacao"     element={<ConsolidacaoDividas />} />
                     <Route path="simuladores/dividas/financiamento-consorcio" element={<SimuladorFinanciamento />} />
                     <Route path="simuladores/planejamento/simulador-custo-hora" element={<SimuladorCustoHora />} />
                     <Route path="simuladores/planejamento/simulador-desconto-justo" element={<SimuladorDescontoJusto />} />
@@ -295,10 +300,11 @@ const App = () => (
                   <Route path="/simulador-desconto-justo" element={<Navigate to="/simuladores/planejamento/simulador-desconto-justo" replace />} />
                   <Route path="/econograph" element={<Navigate to="/simuladores/planejamento/econograph" replace />} />
                   <Route path="/renegociacao-dividas" element={<Navigate to="/simuladores/dividas/renegociacao-dividas" replace />} />
-                   <Route path="/renegociacao-dividas/quitacao-desconto" element={<ProtectedRoute><QuitacaoDesconto /></ProtectedRoute>} />
-                   <Route path="/renegociacao-dividas/parcelamento" element={<ProtectedRoute><ParcelamentoDivida /></ProtectedRoute>} />
-                   <Route path="/renegociacao-dividas/portabilidade" element={<ProtectedRoute><PortabilidadeCredito /></ProtectedRoute>} />
-                   <Route path="/renegociacao-dividas/consolidacao" element={<ProtectedRoute><ConsolidacaoDividas /></ProtectedRoute>} />
+                  {/* Legacy redirects — sub-rotas de renegociação agora dentro do AppShell */}
+                  <Route path="/renegociacao-dividas/quitacao-desconto" element={<Navigate to="/renegociacao-dividas/quitacao-desconto" replace />} />
+                  <Route path="/renegociacao-dividas/parcelamento"      element={<Navigate to="/renegociacao-dividas/parcelamento" replace />} />
+                  <Route path="/renegociacao-dividas/portabilidade"     element={<Navigate to="/renegociacao-dividas/portabilidade" replace />} />
+                  <Route path="/renegociacao-dividas/consolidacao"      element={<Navigate to="/renegociacao-dividas/consolidacao" replace />} />
                   <Route path="/balanco-patrimonial" element={<Navigate to="/bens-investimentos/consolidado" replace />} />
                   <Route path="/rxsplit" element={<Navigate to="/rx-split" replace />} />
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
