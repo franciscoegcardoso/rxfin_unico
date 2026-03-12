@@ -12,6 +12,7 @@ import { VisibilityProvider } from "@/contexts/VisibilityContext";
 import { TourProvider } from "@/contexts/TourContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { SyncProvider } from "@/contexts/SyncContext";
+import { AccountPendingChangesProvider } from "@/contexts/AccountPendingChangesContext";
 import { GlobalSyncIndicator } from "@/components/sync/GlobalSyncIndicator";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -183,6 +184,7 @@ const App = () => (
                     <Sonner />
                     <GlobalSyncIndicator />
                 <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                  <AccountPendingChangesProvider>
                   <CanonicalLink />
                   <TrackingProvider>
                   <MagicLinkHandler>
@@ -337,6 +339,7 @@ const App = () => (
                     </ErrorBoundary>
                   </MagicLinkHandler>
                   </TrackingProvider>
+                  </AccountPendingChangesProvider>
                 </BrowserRouter>
                   </SyncProvider>
                 </TooltipProvider>
