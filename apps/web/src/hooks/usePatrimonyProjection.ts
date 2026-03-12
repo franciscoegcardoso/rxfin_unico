@@ -131,6 +131,11 @@ interface UsePatrimonyProjectionProps {
   getManualEntry: (month: string, assetId: string) => number | undefined;
   projectionRate: number; // % ao ano
   currentMonth: string;   // 'YYYY-MM'
+  /**
+   * Mapa opcional de funções de depreciação por assetId (engine v7.4).
+   * Se presente para um ativo, substitui o calculateAssetValueForMonth para veículos.
+   */
+  vehicleDepreciationMap?: Map<string, (year: number) => number>;
 }
 
 export function usePatrimonyProjection({
@@ -138,6 +143,7 @@ export function usePatrimonyProjection({
   getManualEntry,
   projectionRate,
   currentMonth,
+  vehicleDepreciationMap,
 }: UsePatrimonyProjectionProps): PatrimonyProjectionResult {
 
   const getAssetMonthlyValue = useMemo(() => {
@@ -149,10 +155,23 @@ export function usePatrimonyProjection({
       const manual = getManualEntry(month, assetId);
       if (manual !== undefined) return manual;
 
+      // v7.4: engine de depreciação para veículos com dados FIPE
+      if (asset.type === 'vehicle' && vehicleDepreciationMap?.has(assetId)) {
+        const [ty, tm] = month.split('-').map(Number);
+        const fractionalYear = ty + (tm - 1) / 12;
+        const floorYear = Math.floor(fractionalYear);
+        const ceilYear = floorYear + 1;
+        const frac = fractionalYear - floorYear;
+        const getVal = vehicleDepreciationMap.get(assetId)!;
+        const v0 = getVal(floorYear);
+        const v1 = getVal(ceilYear);
+        return Math.round(v0 + (v1 - v0) * frac);
+      }
+
       // Fallback: cálculo automático
       return calculateAssetValueForMonth(asset, month, projectionRate);
     };
-  }, [assets, getManualEntry, projectionRate]);
+  }, [assets, getManualEntry, projectionRate, vehicleDepreciationMap]);
 
   const getMonthlyTotals = useMemo(() => {
     return (month: string): MonthlyPatrimonyTotals => {

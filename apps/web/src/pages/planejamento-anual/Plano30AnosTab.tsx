@@ -12,39 +12,16 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, RotateCcw, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
-
-// ─── Dados históricos (espelhados de PlanejamentoAnual.tsx) ───────────────────
-
-const historicalData: Record<number, { ipca: number; igpm: number; ibovespa: number; cdi: number }> = {
-  2010: { ipca: 5.91, igpm: 11.32, ibovespa: 1.04, cdi: 9.75 },
-  2011: { ipca: 6.50, igpm: 5.10, ibovespa: -18.11, cdi: 11.60 },
-  2012: { ipca: 5.84, igpm: 7.82, ibovespa: 7.40, cdi: 8.40 },
-  2013: { ipca: 5.91, igpm: 5.51, ibovespa: -15.50, cdi: 8.06 },
-  2014: { ipca: 6.41, igpm: 3.69, ibovespa: -2.91, cdi: 10.81 },
-  2015: { ipca: 10.67, igpm: 10.54, ibovespa: -13.31, cdi: 13.24 },
-  2016: { ipca: 6.29, igpm: 7.17, ibovespa: 38.93, cdi: 14.00 },
-  2017: { ipca: 2.95, igpm: -0.52, ibovespa: 26.86, cdi: 9.93 },
-  2018: { ipca: 3.75, igpm: 7.55, ibovespa: 15.03, cdi: 6.42 },
-  2019: { ipca: 4.31, igpm: 7.30, ibovespa: 31.58, cdi: 5.97 },
-  2020: { ipca: 4.52, igpm: 23.14, ibovespa: 2.92, cdi: 2.76 },
-  2021: { ipca: 10.06, igpm: 17.78, ibovespa: -11.93, cdi: 4.42 },
-  2022: { ipca: 5.79, igpm: 5.45, ibovespa: 4.69, cdi: 12.39 },
-  2023: { ipca: 4.62, igpm: -3.18, ibovespa: 22.28, cdi: 13.04 },
-  2024: { ipca: 4.83, igpm: 6.54, ibovespa: -10.36, cdi: 10.87 },
-};
+import { calculateAverageIndex } from '@/data/economicIndices';
+import { useVehicleDepreciation } from '@/hooks/useVehicleDepreciation';
 
 const AVERAGE_YEARS = 5;
 
-function calcAverage(index: 'ipca' | 'igpm' | 'ibovespa' | 'cdi'): number {
-  const years = Object.keys(historicalData).map(Number).sort((a, b) => b - a).slice(0, AVERAGE_YEARS);
-  return years.reduce((acc, y) => acc + historicalData[y][index], 0) / AVERAGE_YEARS;
-}
-
 const INDEX_AVERAGES: Record<ProjectionIndex, number> = {
-  ipca:     calcAverage('ipca'),
-  igpm:     calcAverage('igpm'),
-  cdi:      calcAverage('cdi'),
-  ibovespa: calcAverage('ibovespa'),
+  ipca:     calculateAverageIndex('ipca',     AVERAGE_YEARS),
+  igpm:     calculateAverageIndex('igpm',     AVERAGE_YEARS),
+  cdi:      calculateAverageIndex('cdi',      AVERAGE_YEARS),
+  ibovespa: calculateAverageIndex('ibovespa', AVERAGE_YEARS),
   custom:   0,
 };
 
@@ -75,6 +52,7 @@ export const Plano30AnosTab: React.FC = () => {
 
   const { params, updateLine, resetToDefaults, isLoading: paramsLoading } = useProjectionLineParams();
   const { closings } = useAnnualClosings();
+  const { depreciationMap } = useVehicleDepreciation({ assets: config.assets });
 
   const years = useMemo(
     () => generateYears(CURRENT_YEAR, PROJECTION_HORIZON),
@@ -136,6 +114,7 @@ export const Plano30AnosTab: React.FC = () => {
     getManualEntry,
     projectionRate: INDEX_AVERAGES.ipca + 2,
     currentMonth,
+    vehicleDepreciationMap: depreciationMap,
   });
 
   const basePatrimony = useMemo(() => {

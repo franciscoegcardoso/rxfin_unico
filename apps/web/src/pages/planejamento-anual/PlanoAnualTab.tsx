@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
+import { calculateAverageIndex } from '@/data/economicIndices';
+import { useVehicleDepreciation } from '@/hooks/useVehicleDepreciation';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,9 +37,7 @@ const generateMonthsForYear = (year: number): string[] =>
     `${year}-${String(i + 1).padStart(2, '0')}`
   );
 
-// Índices históricos para cálculo do projectionRate (IPCA últimos 5 anos)
-const HISTORICAL_IPCA: number[] = [4.83, 4.62, 5.79, 10.06, 4.31]; // 2024→2020
-const DEFAULT_PROJECTION_RATE = HISTORICAL_IPCA.reduce((a, b) => a + b, 0) / HISTORICAL_IPCA.length + 2; // média + spread 2%
+const DEFAULT_PROJECTION_RATE = calculateAverageIndex('ipca', 5) + 2;
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -71,11 +71,14 @@ export const PlanoAnualTab: React.FC = () => {
     return entry?.value;
   };
 
+  const { depreciationMap } = useVehicleDepreciation({ assets: config.assets });
+
   const patrimonyProjection = usePatrimonyProjection({
     assets: config.assets,
     getManualEntry,
     projectionRate: DEFAULT_PROJECTION_RATE,
     currentMonth,
+    vehicleDepreciationMap: depreciationMap,
   });
 
   // ─── Totais mensais de receita/despesa ────────────────────────────
