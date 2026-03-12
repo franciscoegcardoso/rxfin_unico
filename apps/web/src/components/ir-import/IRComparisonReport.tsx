@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -146,22 +146,15 @@ export const IRComparisonReport: React.FC<IRComparisonReportProps> = ({ imports 
         dividas: ir.dividas,
       }));
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/ir-analysis`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ declarations }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('ir-analysis', {
+        body: { declarations },
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao analisar declarações');
+      if (error) {
+        throw new Error(error.message || 'Erro ao analisar declarações');
+      }
+      if (!data) {
+        throw new Error('Resposta vazia da análise');
       }
 
       setAnalysis(data);
@@ -208,30 +201,21 @@ export const IRComparisonReport: React.FC<IRComparisonReportProps> = ({ imports 
         ...analysis.analysis
       });
 
-      const response = await fetch(
-        `${SUPABASE_URL}/functions/v1/ir-analysis`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            chatMode: true,
-            analysisContext,
-            chatHistory: chatMessages,
-            userMessage,
-          }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('ir-analysis', {
+        body: {
+          chatMode: true,
+          analysisContext,
+          chatHistory: chatMessages,
+          userMessage,
+        },
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao processar mensagem');
+      if (error) {
+        throw new Error(error.message || 'Erro ao processar mensagem');
       }
 
-      setChatMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      const responseText = data?.response;
+      setChatMessages(prev => [...prev, { role: 'assistant', content: typeof responseText === 'string' ? responseText : 'Desculpe, não consegui processar.' }]);
     } catch (err) {
       console.error('Chat error:', err);
       setChatMessages(prev => [...prev, { 
