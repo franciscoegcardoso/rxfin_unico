@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { getSessionId } from '@/lib/simulatorSession';
+import { useAuth } from '@/contexts/AuthContext';
 import { ResultCard } from '@/components/simulators/ResultCard';
 import { SimulatorCTA } from '@/components/simulators/SimulatorCTA';
 import { CurrencyInput } from '@/components/simulators/CurrencyInput';
@@ -14,6 +15,7 @@ import { formatCurrency } from '@/lib/utils';
 const SALARIO_MINIMO_HORA = 1412 / 220; // ~6,42
 
 export default function SimuladorCustoHora() {
+  const { user } = useAuth();
   const [rendaBruta, setRendaBruta] = useState(0);
   const [horasSemana, setHorasSemana] = useState(40);
   const [diasUteis, setDiasUteis] = useState(22);
@@ -23,6 +25,7 @@ export default function SimuladorCustoHora() {
   const [investimentoFormacao, setInvestimentoFormacao] = useState(0);
 
   useEffect(() => {
+    if (!user) return;
     const sessionId = getSessionId();
     if (!sessionId) return;
     supabase
@@ -30,7 +33,7 @@ export default function SimuladorCustoHora() {
       .insert({ page: '/simulador-custo-hora', session_id: sessionId })
       .then(() => {})
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   const result = useMemo(() => {
     const horasTrabalhoMes = (horasSemana || 0) * (52.1429 / 12);

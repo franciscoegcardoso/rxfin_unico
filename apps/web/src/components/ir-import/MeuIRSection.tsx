@@ -114,7 +114,7 @@ const getBemCategoria = (codigo: string | number): { label: string; icon: React.
 export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refreshKey }) => {
   const { imports, fetchImports, deleteImport, downloadFile, isLoading } = useIRImport();
   const { isHidden } = useVisibility();
-  const [expandedYear, setExpandedYear] = useState<string | undefined>();
+  const [expandedYear, setExpandedYear] = useState<string>('');
   const [linkingDialogData, setLinkingDialogData] = useState<IRImportData | null>(null);
   const [linkingSingleItemIndex, setLinkingSingleItemIndex] = useState<number | null>(null);
   const [valoresReais, setValoresReais] = useState<ValorReal>({});
@@ -334,7 +334,7 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
             collapsible 
             value={expandedYear}
             onValueChange={(value) => {
-              setExpandedYear(value);
+              setExpandedYear(value ?? '');
               setActiveTab('resumo');
               setFilterTipo('todos');
               setSearchTerm('');

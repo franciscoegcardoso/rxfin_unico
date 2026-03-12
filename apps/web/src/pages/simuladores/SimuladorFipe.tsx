@@ -19,6 +19,7 @@ import { Car } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { getSessionId } from '@/lib/simulatorSession';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const VEHICLE_TYPES = [
@@ -28,6 +29,7 @@ const VEHICLE_TYPES = [
 ];
 
 export default function SimuladorFipe() {
+  const { user } = useAuth();
   const [ctaClicked, setCtaClicked] = useState(false);
   const {
     vehicleType,
@@ -58,6 +60,7 @@ export default function SimuladorFipe() {
   const [kmPorMes, setKmPorMes] = useState<number | ''>('');
 
   useEffect(() => {
+    if (!user) return;
     const sessionId = getSessionId();
     if (!sessionId) return;
     supabase
@@ -65,7 +68,7 @@ export default function SimuladorFipe() {
       .insert({ page: '/simuladores/veiculos/simulador-fipe', session_id: sessionId })
       .then(() => {})
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   // Default cost estimates when FIPE price is set
   useEffect(() => {

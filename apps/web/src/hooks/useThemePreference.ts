@@ -11,23 +11,28 @@ export function useThemePreference() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Fetch theme preference from Supabase
+  // Fetch theme preference from Supabase (coluna theme_preference pode não existir no DB)
   const { data: savedTheme } = useQuery({
     queryKey: ['theme-preference', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('theme_preference')
         .eq('id', user.id)
         .single();
-      
+
       if (error) {
-        console.error('Error fetching theme preference:', error);
+        const isMissingColumn =
+          error.code === '42703' ||
+          (typeof error.message === 'string' && error.message.includes('does not exist'));
+        if (!isMissingColumn) {
+          console.error('Error fetching theme preference:', error);
+        }
         return null;
       }
-      
+
       return data?.theme_preference as ThemeValue | null;
     },
     enabled: !!user?.id,
@@ -41,11 +46,10 @@ export function useThemePreference() {
     }
   }, [savedTheme, setTheme]); // Removed theme from deps to avoid infinite loop
 
-  // Mutation to save theme preference
+  // Mutation to save theme preference (ignora erro se coluna theme_preference não existir)
   const saveThemeMutation = useMutation({
     mutationFn: async (newTheme: ThemeValue) => {
       if (!user?.id) {
-        // Just update local theme if not logged in
         return newTheme;
       }
 
@@ -55,8 +59,13 @@ export function useThemePreference() {
         .eq('id', user.id);
 
       if (error) {
-        console.error('Error saving theme preference:', error);
-        throw error;
+        const isMissingColumn =
+          error.code === '42703' ||
+          (typeof error.message === 'string' && error.message.includes('does not exist'));
+        if (!isMissingColumn) {
+          console.error('Error saving theme preference:', error);
+          throw error;
+        }
       }
 
       return newTheme;

@@ -104,6 +104,7 @@ export default function Hub() {
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
     const sessionId = getSessionId();
     if (!sessionId) return;
     supabase
@@ -111,7 +112,7 @@ export default function Hub() {
       .insert({ page: '/simuladores', session_id: sessionId })
       .then(() => {})
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   const isLoggedIn = user !== null;
 
