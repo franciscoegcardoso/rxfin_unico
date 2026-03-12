@@ -231,10 +231,20 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         setItems(parsed);
         setImportedFromScan(true);
         setEditingItemId(null);
-        // Usar o percentual pré-calculado pela Edge Function (baseado no subtotalCupom real)
-        const taxaServicoPercent = data?.data?.taxaServicoPercent;
-        if (taxaServicoPercent && taxaServicoPercent > 0) {
-          setServiceChargePercent(taxaServicoPercent);
+        // Estratégia: usar o valor em R$ lido diretamente do cupom para calcular
+        // o percentual com precisão — evita erros de arredondamento de Math.round para inteiro.
+        // Ex: R$13,23 / subtotal R$150,39 = 8,797% → setar 8.80% → 150,39 × 8,80% = 13,23 ✓
+        const taxaServicoValor = data?.data?.taxaServicoValor;  // valor em R$ do cupom
+        const subtotalCupom = data?.data?.subtotalCupom;        // subtotal real do cupom
+
+        if (taxaServicoValor && taxaServicoValor > 0 && subtotalCupom && subtotalCupom > 0) {
+          // Calcular o percentual com 2 casas decimais para manter precisão
+          const pct = Math.round((taxaServicoValor / subtotalCupom) * 10000) / 100;
+          setServiceChargePercent(pct);
+          setIncludeServiceCharge(true);
+        } else if (data?.data?.taxaServicoPercent) {
+          // Fallback: usar o percentual da Edge Function se não vier o valor em R$
+          setServiceChargePercent(data.data.taxaServicoPercent);
           setIncludeServiceCharge(true);
         }
       } else {
