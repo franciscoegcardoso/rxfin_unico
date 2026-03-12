@@ -237,6 +237,8 @@ const App = () => (
                     <Route path="sonhos" element={<Sonhos />} />
                     <Route path="minha-conta" element={<MinhaConta />} />
                     {/* Simuladores dentro do shell para navegação funcionar */}
+                    <Route path="simuladores" element={<HubSimuladores />} />
+                    <Route path="simuladores/:category" element={<Simuladores />} />
                     <Route path="simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
                     <Route path="simuladores/veiculos/simulador-carro-ab" element={<SimuladorCarroAB />} />
                     <Route path="simuladores/veiculos/simulador-custo-oportunidade-carro" element={<SimuladorCustoOportunidadeCarro />} />
@@ -276,9 +278,7 @@ const App = () => (
                   <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
                   <Route path="/minhas-indicacoes" element={<Navigate to="/financeiro/minhas-indicacoes" replace />} />
                   <Route path="/regras-categoria" element={<Navigate to="/parametros?tab=regras" replace />} />
-                  {/* Simuladores — Hub e categorias (rotas com shell estão dentro de AppShell acima) */}
-                  <Route path="/simuladores" element={<HubSimuladores />} />
-                  <Route path="/simuladores/:category" element={<Simuladores />} />
+                  {/* Simuladores — rotas com shell estão dentro de AppShell acima */}
                   {/* URL antiga: apenas redirect — não renderizar componente em /simulador-fipe */}
                   <Route path="/simulador-fipe" element={<Navigate to="/simuladores/veiculos/simulador-fipe" replace />} />
                   <Route path="/simulador-custo-hora" element={<Navigate to="/simuladores/planejamento/simulador-custo-hora" replace />} />

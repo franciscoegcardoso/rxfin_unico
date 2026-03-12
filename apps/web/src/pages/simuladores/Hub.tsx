@@ -10,6 +10,7 @@ import {
   Building2,
   LineChart,
   ArrowRight,
+  Calculator,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getSessionId } from '@/lib/simulatorSession';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { PublicSimuladoresHeader } from '@/components/simuladores/PublicSimuladoresHeader';
 import { SimuladorCard } from '@/components/simuladores/SimuladorCard';
 import { SIMULATOR_CATEGORIES } from '@/components/simuladores/simulatorCategories';
@@ -199,19 +201,16 @@ export default function Hub() {
     </>
   );
 
-  // Layout para usuário LOGADO: AppLayout + seções por tema
+  // Layout para usuário LOGADO: AppLayout (com shell) + PageHeader + seções por tema
   if (isLoggedIn) {
     return (
       <AppLayout>
-        <div className="p-4 sm:p-6 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Simuladores Financeiros
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Ferramentas agrupadas por tema para decisões com mais clareza
-            </p>
-          </div>
+        <PageHeader
+          icon={Calculator}
+          title="Simuladores"
+          subtitle="Ferramentas agrupadas por tema para decisões com mais clareza"
+        />
+        <div className="space-y-6">
           {SectionContent}
         </div>
       </AppLayout>
