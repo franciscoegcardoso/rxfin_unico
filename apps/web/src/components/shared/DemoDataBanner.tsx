@@ -54,11 +54,11 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
   }
 
   return (
-    <div className={`${basePlacement} min-h-[48px] bg-destructive text-destructive-foreground flex items-center`}>
+    <div className={`${basePlacement} min-h-[48px] bg-destructive text-white flex items-center`}>
       <div className="max-w-[1800px] mx-auto px-4 py-3 w-full min-h-[48px] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 text-white">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <p className="text-sm font-medium text-left">
+          <p className="text-sm font-medium text-left text-white">
             <span className="hidden sm:inline">Estes são dados fictícios para você conhecer a ferramenta. </span>
             <span className="sm:hidden">Dados fictícios — </span>
             <span className="font-normal opacity-90 hidden md:inline">
