@@ -152,9 +152,10 @@ function OnboardingRoute() {
   );
 }
 
-/** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br). MobileCtaBar aqui para garantir inclusão no bundle. */
+/** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br). MobileCtaBar aqui para garantir inclusão no bundle e na árvore React. */
 function RootRoute() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return null;
   if (user) return <Navigate to="/inicio" replace />;
   return (
     <>
