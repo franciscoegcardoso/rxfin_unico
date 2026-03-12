@@ -145,26 +145,16 @@ function normalizeGroupedSections(
       if (base.some((i) => i.path === '/gestao-veiculos')) return section;
       return { ...section, items: [gestao, ...base] };
     }
-    // Simuladores: garantir que todos os simuladores tenham item no menu para o sidebar marcar o aberto
+    // Simuladores: usar apenas a lista canônica para evitar duplicatas (DB pode ter várias páginas para o mesmo path)
     if (section.slug === 'simuladores') {
-      const existingPaths = new Set(section.items.map((i) => i.path));
-      const merged: NavMenuItem[] = [...section.items];
-      for (const { path, label, icon } of SIMULATOR_SIDEBAR_ITEMS) {
-        if (!existingPaths.has(path)) {
-          existingPaths.add(path);
-          merged.push({
-            path,
-            label,
-            icon,
-            accessLevel: 'free',
-            canAccessAsAdmin: effectiveAdmin,
-          });
-        }
-      }
-      // Ordenar: Hub primeiro, depois na ordem de SIMULATOR_SIDEBAR_ITEMS
-      const order = new Map(SIMULATOR_SIDEBAR_ITEMS.map((s, i) => [s.path, i]));
-      merged.sort((a, b) => (order.get(a.path) ?? 99) - (order.get(b.path) ?? 99));
-      return { ...section, items: merged };
+      const items: NavMenuItem[] = SIMULATOR_SIDEBAR_ITEMS.map(({ path, label, icon }) => ({
+        path,
+        label,
+        icon,
+        accessLevel: 'free' as const,
+        canAccessAsAdmin: effectiveAdmin,
+      }));
+      return { ...section, items };
     }
     return section;
   });
