@@ -104,6 +104,21 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   const [scanError, setScanError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
+  // Travar scroll da página atrás do modal (evita touch/scroll vazar para o fundo no mobile)
+  useEffect(() => {
+    if (!isOpen) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, [isOpen]);
+
   const validItems = items.filter(i => i.description.trim() && (parseNum(i.totalPrice) > 0 || (parseNum(i.qty) > 0 && parseNum(i.unitPrice) > 0)));
   const subtotal = validItems.reduce((sum, item) => {
     const t = parseNum(item.totalPrice);
@@ -333,6 +348,17 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
     }
   };
 
+  const nextStepButtonLabel = (): string => {
+    if (currentStep === 'results') return 'Continuar';
+    const next = STEPS[stepIndex + 1];
+    if (currentStep === 'split-config' || (currentStep === 'split-mode' && splitMode === 'equal')) return 'Ver Resultado';
+    if (next === 'people-count') return 'Avançar para Pessoas';
+    if (next === 'people-names') return 'Avançar para Nomes';
+    if (next === 'split-mode') return 'Avançar para Divisão';
+    if (next === 'split-config') return 'Avançar para Ajustar';
+    return 'Continuar';
+  };
+
   // Share via html-to-image
   const shareAsImage = async () => {
     try {
@@ -360,8 +386,8 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 md:bg-black/50 animate-fade-in">
-      <div className="bg-background w-full h-full md:max-w-xl md:max-h-[calc(100vh-2rem)] md:h-auto md:min-h-0 md:rounded-xl md:shadow-xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 md:bg-black/50 animate-fade-in overscroll-none touch-pan-y" style={{ overscrollBehavior: 'contain' }}>
+      <div className="bg-background w-full h-full md:max-w-xl md:max-h-[calc(100vh-2rem)] md:h-auto md:min-h-0 md:rounded-xl md:shadow-xl flex flex-col overflow-hidden isolate">
         {/* Header — fundo verde; respeita safe-area no mobile para não cortar sob a status bar */}
         <div
           className="bg-gradient-to-br from-primary via-primary to-primary/90 text-white px-4 pb-2 shrink-0"
@@ -399,8 +425,8 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 min-h-0">
+        {/* Content — overscroll-behavior evita que o scroll “vaze” para a página ao fundo no mobile */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 min-h-0 overscroll-contain touch-pan-y" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
         {/* Step: Items */}
         {currentStep === 'items' && (
           <div className="space-y-4">
@@ -458,6 +484,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
               {includeServiceCharge && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Serviço ({serviceChargePercent}%)</span><span className="font-medium">{formatCurrency(serviceCharge)}</span></div>}
               <div className="flex justify-between text-base font-bold pt-1 border-t border-border"><span>Total</span><span className="text-primary">{formatCurrency(grandTotal)}</span></div>
             </div>
+            <p className="text-center text-sm text-muted-foreground pt-2">
+              Pronto com os itens? Toque em <strong className="text-foreground">Avançar para Pessoas</strong> abaixo.
+            </p>
+            <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 bg-primary text-white hover:bg-primary/90 mt-2">
+              Continuar <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         )}
 
@@ -716,14 +748,17 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
 
         {/* Footer Navigation */}
         {currentStep !== 'results' && (
-          <div className="p-4 border-t border-border bg-card/95 backdrop-blur-xl shrink-0">
+          <div className="p-4 border-t border-border bg-card/95 backdrop-blur-xl shrink-0 safe-area-pb">
             <div className="flex gap-3">
               {stepIndex > 0 && <Button variant="outline" onClick={goBack} className="gap-2"><ChevronLeft className="w-4 h-4" /> Voltar</Button>}
-              <Button onClick={goNext} disabled={!canGoNext()} className="flex-1 gap-2 bg-primary text-white hover:bg-primary/90">
-                {currentStep === 'split-config' || (currentStep === 'split-mode' && splitMode === 'equal') ? 'Ver Resultado' : 'Continuar'}
+              <Button onClick={goNext} disabled={!canGoNext()} className="flex-1 gap-2 bg-primary text-white hover:bg-primary/90 min-h-11">
+                {nextStepButtonLabel()}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
+            {currentStep === 'items' && !canGoNext() && (
+              <p className="text-xs text-muted-foreground text-center mt-2">Adicione ao menos um item com descrição e valor para continuar.</p>
+            )}
           </div>
         )}
       </div>
