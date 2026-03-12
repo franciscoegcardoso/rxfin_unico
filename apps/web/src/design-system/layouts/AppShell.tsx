@@ -6,6 +6,7 @@ import { ShellContext } from "./ShellContext";
 import { MobileShell } from "./MobileShell";
 import { DesktopShell } from "./DesktopShell";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AccountNavigationGuard } from "@/components/account/AccountNavigationGuard";
 
 /**
  * App shell: rotas autenticadas.
@@ -26,6 +27,7 @@ export const AppShell: React.FC = () => {
 
   return (
     <ShellContext.Provider value={{ insideShell: true }}>
+      <AccountNavigationGuard />
       <MobileMenuProvider>
         {isMobile ? (
           <div className="min-h-screen">

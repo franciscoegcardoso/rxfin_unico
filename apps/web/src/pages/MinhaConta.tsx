@@ -6,8 +6,7 @@ import { SecurityTab } from '@/components/account/SecurityTab';
 import { SubscriptionTab } from '@/components/account/SubscriptionTab';
 import PreferenciasTab from '@/pages/minha-conta/PreferenciasTab';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
-import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
-import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
+import { useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft, UserCog } from 'lucide-react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -207,12 +206,7 @@ const MinhaContaContent: React.FC = () => {
 };
 
 const MinhaConta: React.FC = () => {
-  return (
-    <AccountPendingChangesProvider>
-      <AccountNavigationGuard />
-      <MinhaContaContent />
-    </AccountPendingChangesProvider>
-  );
+  return <MinhaContaContent />;
 };
 
 export default MinhaConta;

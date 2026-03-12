@@ -3,8 +3,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
-import { AccountPendingChangesProvider, useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
-import { AccountNavigationGuard } from '@/components/account/AccountNavigationGuard';
+import { useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
 import { User, Briefcase, Shield, Crown, Settings2, ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -144,12 +143,7 @@ const MinhaContaContent: React.FC = () => {
 };
 
 const MinhaContaLayout: React.FC = () => {
-  return (
-    <AccountPendingChangesProvider>
-      <AccountNavigationGuard />
-      <MinhaContaContent />
-    </AccountPendingChangesProvider>
-  );
+  return <MinhaContaContent />;
 };
 
 export default MinhaContaLayout;
