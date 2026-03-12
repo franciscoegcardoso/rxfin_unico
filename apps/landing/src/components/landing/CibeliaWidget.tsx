@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import cibeliaImg from '@/assets/cibelia.png';
 import {
   Tooltip,
@@ -21,18 +21,21 @@ export const CibeliaWidget: React.FC = () => {
 
   return (
     <TooltipProvider>
-      <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-0">
+      <div
+        className="fixed right-6 z-50 flex flex-col items-end gap-0"
+        style={{ bottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))' }}
+      >
         {/* Painel de chat */}
         {isOpen && (
           <div
-            className="fixed bottom-44 right-6 z-50 w-[360px] max-h-[520px] flex flex-col rounded-2xl border border-border bg-background shadow-2xl overflow-hidden"
-            style={{ maxHeight: 520 }}
+            className="fixed right-6 z-50 w-[360px] max-h-[520px] flex flex-col rounded-2xl border border-border bg-background shadow-2xl overflow-hidden"
+            style={{ maxHeight: 520, bottom: 'calc(max(1rem, env(safe-area-inset-bottom, 1rem)) + 4.5rem)' }}
           >
             {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 bg-primary text-primary-foreground">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                  <Sparkles className="h-4 w-4 text-white" />
+                <div className="h-9 w-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white/20">
+                  <img src={cibeliaImg} alt="" className="h-full w-full object-cover" />
                 </div>
                 <div className="min-w-0">
                   <p className="font-bold text-sm leading-tight">Cibélia</p>
@@ -71,7 +74,7 @@ export const CibeliaWidget: React.FC = () => {
               {isOpen ? (
                 <X className="h-6 w-6" />
               ) : (
-                <img src={cibeliaImg} alt="Cibélia" className="h-8 w-8 rounded-full object-cover" />
+                <img src={cibeliaImg} alt="Cibélia" className="h-11 w-11 rounded-full object-cover" />
               )}
               {/* Badge pulsante: só antes da primeira abertura */}
               {!hasBeenOpened && (
