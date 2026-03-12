@@ -222,6 +222,8 @@ IMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.`;
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://app.rxfin.com.br',
+        'X-Title': 'RXFin IR Import',
       },
       body: JSON.stringify(body),
     });
