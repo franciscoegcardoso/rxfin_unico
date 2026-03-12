@@ -27,6 +27,7 @@ import { AdminSecureLayout } from '@/components/admin/AdminSecureLayout';
 import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
 
 import LandingPage from "./pages/LandingPage";
+import { MobileCtaBar } from "@/components/landing/MobileCtaBar";
 import Inicio from "./pages/Inicio";
 // Dashboard removed - charts moved to Planejamento, indicators to Inicio
 import Parametros from "./pages/Parametros";
@@ -150,11 +151,16 @@ function OnboardingRoute() {
   );
 }
 
-/** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br) */
+/** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br). MobileCtaBar aqui para garantir inclusão no bundle. */
 function RootRoute() {
   const { user } = useAuth();
   if (user) return <Navigate to="/inicio" replace />;
-  return <LandingPage />;
+  return (
+    <>
+      <LandingPage />
+      <MobileCtaBar />
+    </>
+  );
 }
 
 // Perfil page removed - now part of MinhaConta
