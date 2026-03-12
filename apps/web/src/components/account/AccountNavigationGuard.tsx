@@ -36,6 +36,7 @@ export function AccountNavigationGuard() {
   const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
   const isMinhaConta = normalizePath(location.pathname) === '/minha-conta';
   const isOnSimulatorPage = location.pathname.startsWith('/simuladores');
+  const isOnPlanejamentoPage = location.pathname.startsWith('/planejamento');
 
   // Rotas para as quais nunca bloqueamos (configurações) — evita usuário preso ao sair de simuladores/etc.
   const SETTINGS_PATH_PREFIXES = ['/minha-conta', '/parametros', '/instituicoes-financeiras', '/configuracoes-fiscais', '/financeiro', '/configuracoes-hub'];
@@ -43,12 +44,12 @@ export function AccountNavigationGuard() {
     SETTINGS_PATH_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'));
 
   // Intercept link clicks apenas quando há alterações E não estamos em Minha Conta.
-  // Nunca ativamos o guard em páginas de simulador: permite sair para configurações sem travar.
+  // Nunca ativamos o guard em páginas de simulador ou planejamento: permite trocar abas e sair sem travar.
   useEffect(() => {
-    if (!hasChanges || isMinhaConta || isOnSimulatorPage) return;
+    if (!hasChanges || isMinhaConta || isOnSimulatorPage || isOnPlanejamentoPage) return;
     const handler = (e: MouseEvent) => {
       const currentPathFromWindow = normalizePath(window.location.pathname);
-      if (currentPathFromWindow === '/minha-conta' || currentPathFromWindow.startsWith('/simuladores')) return;
+      if (currentPathFromWindow === '/minha-conta' || currentPathFromWindow.startsWith('/simuladores') || currentPathFromWindow.startsWith('/planejamento')) return;
       const anchor = (e.target as HTMLElement).closest('a');
       if (!anchor?.href) return;
       const url = new URL(anchor.href);
@@ -65,18 +66,18 @@ export function AccountNavigationGuard() {
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
-  }, [hasChanges, isMinhaConta, isOnSimulatorPage, location.pathname]);
+  }, [hasChanges, isMinhaConta, isOnSimulatorPage, isOnPlanejamentoPage, location.pathname]);
 
-  // popstate (voltar/avançar) — não bloqueia em Minha Conta nem em páginas de simulador
+  // popstate (voltar/avançar) — não bloqueia em Minha Conta, simulador ou planejamento
   useEffect(() => {
-    if (!hasChanges || isMinhaConta || isOnSimulatorPage) return;
+    if (!hasChanges || isMinhaConta || isOnSimulatorPage || isOnPlanejamentoPage) return;
     const handler = () => {
       window.history.pushState(null, '', location.pathname + location.search);
       setShowDialog(true);
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
-  }, [hasChanges, isMinhaConta, isOnSimulatorPage, location.pathname, location.search]);
+  }, [hasChanges, isMinhaConta, isOnSimulatorPage, isOnPlanejamentoPage, location.pathname, location.search]);
 
   const handleSaveAndLeave = useCallback(async () => {
     try {

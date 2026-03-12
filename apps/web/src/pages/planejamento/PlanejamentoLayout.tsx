@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CalendarCheck } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -46,10 +46,6 @@ const PlanejamentoLayout: React.FC = () => {
     }
   }, [location.search]);
 
-  const handleTabChange = (value: string) => {
-    navigate(`/planejamento/${value}`);
-  };
-
   return (
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
@@ -72,15 +68,16 @@ const PlanejamentoLayout: React.FC = () => {
           </div>
         )}
 
-        <Tabs value={currentTab || 'visao-mensal'} onValueChange={handleTabChange} className="mt-2">
+        <Tabs value={currentTab || 'visao-mensal'} className="mt-2">
           <TabsList className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))] px-4 md:px-8 rounded-none h-auto p-0 gap-0 w-full justify-start">
             {TABS.map(tab => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
+                asChild
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--color-brand-700))] data-[state=active]:text-[hsl(var(--color-brand-700))] data-[state=active]:bg-transparent px-4 py-3 text-[13px] font-medium"
               >
-                {tab.label}
+                <Link to={`/planejamento/${tab.id}`}>{tab.label}</Link>
               </TabsTrigger>
             ))}
           </TabsList>
