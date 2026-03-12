@@ -9,13 +9,10 @@ export function MobileCtaBar() {
       const scrollY = window.scrollY;
       const docH = document.documentElement.scrollHeight;
       const winH = window.innerHeight;
-      // Aparece após 500px de scroll
-      // Desaparece nos últimos 300px (footer entrando)
-      const nearFooter = scrollY + winH > docH - 300;
-      setVisible(scrollY > 500 && !nearFooter);
+      setVisible(scrollY > 500 && scrollY + winH <= docH - 300);
     };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll(); // run once on mount
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -31,7 +28,7 @@ export function MobileCtaBar() {
         className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold text-sm"
       >
         Criar conta gratuita
-        <ArrowRight className="h-4 w-4" aria-hidden />
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </a>
       <p className="text-center text-[11px] text-muted-foreground mt-1.5">
         Grátis · Sem cartão · Leva menos de 1 minuto
