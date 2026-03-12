@@ -335,17 +335,13 @@
     }
   }
 
-  /* ─── RXFin loading spinner: hélices e anel girando ao redor do $ ─── */
+  /* ─── RXFin loading spinner ─── */
   @keyframes rxfin-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
   .rxfin-blades-spin {
     animation: rxfin-spin 1.1s linear infinite;
-    transform-origin: 50% 50%;
-  }
-  .rxfin-ring-spin {
-    animation: rxfin-spin 1.8s linear infinite reverse;
     transform-origin: 50% 50%;
   }
 }
