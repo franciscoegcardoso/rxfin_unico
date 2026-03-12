@@ -681,9 +681,9 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
           </div>
         )}
 
-        {/* Step: Results */}
+        {/* Step: Results — padding-bottom no mobile para os botões não ficarem atrás do menu inferior */}
         {currentStep === 'results' && (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))] md:pb-4">
             <div ref={resultRef} className="space-y-4 bg-background p-1">
               <div className="bg-card rounded-2xl border border-border overflow-hidden">
                 <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-4 text-center">
