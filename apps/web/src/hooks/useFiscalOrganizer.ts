@@ -1,7 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+
+/** Garante que o valor é uma string segura para header (ByteString: apenas bytes 0-255) para evitar "Failed to construct Request: headers not a valid ByteString". */
+function safeHeaderValue(value: unknown): string {
+  const s = value != null ? String(value).trim() : '';
+  return Array.from(s)
+    .filter((c) => c.charCodeAt(0) <= 255)
+    .join('') || '';
+}
 
 export interface ChatMessage {
   id: string;
@@ -40,8 +48,6 @@ export interface ComprovanteStats {
   totalNaoDedutivel: number;
   anoAtual: number;
 }
-
-const CHAT_URL = `${SUPABASE_URL}/functions/v1/fiscal-organizer`;
 
 export const useFiscalOrganizer = () => {
   const { session } = useAuth();
@@ -173,28 +179,35 @@ export const useFiscalOrganizer = () => {
         throw new Error(insertError.message || 'Erro ao salvar sua mensagem.');
       }
 
-      // Token fresco do Supabase (evita proxy/getter que quebra ByteString em alguns ambientes)
+      // Sessão e URL/keys válidos antes do fetch — evita "Failed to construct Request: headers not a valid ByteString"
       const { data: { session: freshSession } } = await supabase.auth.getSession();
       const rawToken = freshSession?.access_token ?? token ?? '';
-      const tokenStr = String(rawToken).trim().replace(/[\x00-\x1F\x7F\r\n]/g, '').replace(/[^\x20-\x7E]/g, '');
+      const tokenStr = safeHeaderValue(rawToken);
       if (!tokenStr) {
         throw new Error('Configuração de sessão inválida. Faça login novamente.');
       }
 
       const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim().replace(/[\s\r\n]/g, '') : '';
       const url = (baseUrl || 'https://kneaniaifzgqibpajyji.supabase.co').replace(/\/$/, '') + '/functions/v1/fiscal-organizer';
+      const apikey = safeHeaderValue(SUPABASE_ANON_KEY);
+      if (!url.startsWith('http') || !apikey) {
+        console.error('Supabase URL ou anon key não configurados');
+        throw new Error('Configuração inválida. Contate o suporte.');
+      }
+
       const bodyStr = JSON.stringify({
         messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
       });
 
+      const authHeaderValue = 'Bearer ' + tokenStr;
+      const headersInit: [string, string][] = [
+        ['Content-Type', 'application/json'],
+        ['Authorization', authHeaderValue],
+        ['apikey', apikey],
+      ];
+
       let resp: Response;
       try {
-        // Headers como array de pares [key, value] (HeadersInit) — evita bug ByteString em alguns runtimes
-        const authHeaderValue = 'Bearer ' + tokenStr;
-        const headersInit: [string, string][] = [
-          ['Content-Type', 'application/json'],
-          ['Authorization', authHeaderValue],
-        ];
         resp = await fetch(url, {
           method: 'POST',
           headers: headersInit,
