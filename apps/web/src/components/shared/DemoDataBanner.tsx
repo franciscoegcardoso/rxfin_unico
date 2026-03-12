@@ -55,7 +55,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
 
   return (
     <div className={`${basePlacement} min-h-[48px] bg-destructive text-destructive-foreground flex items-center`}>
-      <div className="max-w-[1800px] mx-auto px-4 py-3 w-full min-h-[48px] flex flex-wrap items-center justify-start gap-3">
+      <div className="max-w-[1800px] mx-auto px-4 py-3 w-full min-h-[48px] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <p className="text-sm font-medium text-left">
@@ -67,7 +67,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 min-w-0">
+        <div className="flex items-center gap-2 shrink-0 min-w-0 ml-auto">
           <Button
             size="sm"
             variant="secondary"
