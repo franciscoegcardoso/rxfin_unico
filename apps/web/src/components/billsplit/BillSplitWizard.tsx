@@ -484,12 +484,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
               {includeServiceCharge && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Serviço ({serviceChargePercent}%)</span><span className="font-medium">{formatCurrency(serviceCharge)}</span></div>}
               <div className="flex justify-between text-base font-bold pt-1 border-t border-border"><span>Total</span><span className="text-primary">{formatCurrency(grandTotal)}</span></div>
             </div>
-            <p className="text-center text-sm text-muted-foreground pt-2">
-              Pronto com os itens? Toque em <strong className="text-foreground">Avançar para Pessoas</strong> abaixo.
-            </p>
-            <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 bg-primary text-white hover:bg-primary/90 mt-2">
-              Continuar <ChevronRight className="w-4 h-4" />
-            </Button>
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 h-12 text-base font-semibold bg-primary text-white hover:bg-primary/90 rounded-xl">
+                {nextStepButtonLabel()}
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -510,6 +510,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
               <p className="text-sm text-muted-foreground">Divisão igual seria</p>
               <p className="text-2xl font-bold text-primary">{formatCurrency(grandTotal / peopleCount)}</p>
               <p className="text-xs text-muted-foreground">por pessoa</p>
+            </div>
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 h-12 text-base font-semibold bg-primary text-white hover:bg-primary/90 rounded-xl">
+                {nextStepButtonLabel()}
+                <ChevronRight className="w-5 h-5" />
+              </Button>
             </div>
           </div>
         )}
@@ -556,6 +562,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
                 </div>
               ))}
             </div>
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 h-12 text-base font-semibold bg-primary text-white hover:bg-primary/90 rounded-xl">
+                {nextStepButtonLabel()}
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -576,6 +588,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
                 {splitMode === mode.id && <Check className="w-5 h-5 text-primary shrink-0" />}
               </button>
             ))}
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 h-12 text-base font-semibold bg-primary text-white hover:bg-primary/90 rounded-xl">
+                {nextStepButtonLabel()}
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -654,6 +672,12 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
                 ))}
               </>
             )}
+            <div className="mt-8 pt-6 border-t border-border/60">
+              <Button onClick={goNext} disabled={!canGoNext()} className="w-full gap-2 h-12 text-base font-semibold bg-primary text-white hover:bg-primary/90 rounded-xl">
+                {nextStepButtonLabel()}
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         )}
 
