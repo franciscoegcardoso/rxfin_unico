@@ -5,7 +5,6 @@ import { CalendarCheck } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { useBudgetVsActual } from '@/hooks/useBudgetVsActual';
@@ -68,20 +67,28 @@ const PlanejamentoLayout: React.FC = () => {
           </div>
         )}
 
-        <Tabs value={currentTab || 'visao-mensal'} className="mt-2">
-          <TabsList className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))] px-4 md:px-8 rounded-none h-auto p-0 gap-0 w-full justify-start">
-            {TABS.map(tab => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                asChild
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[hsl(var(--color-brand-700))] data-[state=active]:text-[hsl(var(--color-brand-700))] data-[state=active]:bg-transparent px-4 py-3 text-[13px] font-medium"
-              >
-                <Link to={`/planejamento/${tab.id}`}>{tab.label}</Link>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {/* Navegação de abas por rota — sem Radix Tabs */}
+        <div className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))] px-4 md:px-8 mt-2">
+          <nav className="flex gap-0">
+            {TABS.map(tab => {
+              const isActive = currentTab === tab.id || (!currentTab && tab.id === 'visao-mensal');
+              return (
+                <Link
+                  key={tab.id}
+                  to={`/planejamento/${tab.id}`}
+                  className={cn(
+                    'border-b-2 px-4 py-3 text-[13px] font-medium transition-colors',
+                    isActive
+                      ? 'border-[hsl(var(--color-brand-700))] text-[hsl(var(--color-brand-700))]'
+                      : 'border-transparent text-[hsl(var(--color-text-secondary))] hover:text-[hsl(var(--color-text-primary))]'
+                  )}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         <Outlet />
         </div>

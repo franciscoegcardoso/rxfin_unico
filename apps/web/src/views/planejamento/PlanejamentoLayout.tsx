@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Calculator } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
+import { cn } from '@/lib/utils';
 
 const TABS = [
   { id: 'visao-mensal', label: 'Visão Mensal' },
@@ -41,10 +41,6 @@ const PlanejamentoLayout: React.FC = () => {
     }
   }, [location.search, navigate]);
 
-  const handleTabChange = (value: string) => {
-    navigate(`/planejamento/${value}`);
-  };
-
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -57,13 +53,28 @@ const PlanejamentoLayout: React.FC = () => {
           <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.planejamentoMensal} />
         </PageHeader>
 
-        <Tabs value={currentTab || 'visao-mensal'} onValueChange={handleTabChange} className="mt-5">
-          <TabsList>
-            {TABS.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {/* Navegação de abas por rota — sem Radix Tabs (legado: views/ não usado pela rota atual) */}
+        <div className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))] px-4 md:px-8 mt-5">
+          <nav className="flex gap-0">
+            {TABS.map(tab => {
+              const isActive = currentTab === tab.id || (!currentTab && tab.id === 'visao-mensal');
+              return (
+                <Link
+                  key={tab.id}
+                  to={`/planejamento/${tab.id}`}
+                  className={cn(
+                    'border-b-2 px-4 py-3 text-[13px] font-medium transition-colors',
+                    isActive
+                      ? 'border-[hsl(var(--color-brand-700))] text-[hsl(var(--color-brand-700))]'
+                      : 'border-transparent text-[hsl(var(--color-text-secondary))] hover:text-[hsl(var(--color-text-primary))]'
+                  )}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
         <Outlet />
       </div>
