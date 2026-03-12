@@ -441,12 +441,12 @@ export function useNavMenuPages(): NavMenuData {
 export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading: boolean } {
   const { groupedSections, isLoading } = useNavMenuPages();
   
-  // No mobile, não mostramos o grupo "admin" no menu regular (usuário acessa por outra via)
+  // No mobile/tablet: não mostramos admin nem os itens individuais de Simuladores (Hub, FIPE, etc.)
   const mobileSections = groupedSections.filter(
-    section => section.slug !== 'admin'
+    section => section.slug !== 'admin' && section.slug !== 'simuladores'
   );
 
-  // Inject simulator categories as a dedicated section
+  // Apenas categorias (Veículos, Dívidas, Planejamento) no menu mobile/tablet
   const simuladoresSection: NavMenuSection = {
     title: 'Simuladores',
     slug: 'simuladores',
