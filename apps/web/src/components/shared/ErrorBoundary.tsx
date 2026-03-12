@@ -7,6 +7,8 @@ interface Props {
   children: ReactNode;
   /** Static fallback UI or function that receives retry (remounts children) */
   fallback?: ReactNode | ((retry: () => void) => ReactNode);
+  /** When this value changes, error state is reset (e.g. pathname for route changes). Avoids remounting children. */
+  resetKey?: string;
 }
 
 interface State {
@@ -31,6 +33,12 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught:', error, errorInfo);
     // Não chamar setState aqui — getDerivedStateFromError já atualizou o estado.
     // childKey é incrementado apenas no retry (handleRetry).
+  }
+
+  public componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null });
+    }
   }
 
   private handleRetry = () => {

@@ -55,7 +55,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   );
 
   const content = (
-    <ErrorBoundary key={location.pathname} fallback={errorFallback}>
+    <ErrorBoundary resetKey={location.pathname} fallback={errorFallback}>
       <div className="w-full max-w-full">
         <PageTransition>
           {children}
