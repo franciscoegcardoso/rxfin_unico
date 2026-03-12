@@ -31,11 +31,15 @@ const pageVariants: Variants = {
 
 export const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
   const location = useLocation();
+  // Usar apenas o segmento raiz como key da animação.
+  // Rotas nested (ex: /planejamento/metas vs /planejamento/visao-mensal) compartilham o mesmo key
+  // e não disparam re-mount desnecessário (evita travamento de abas).
+  const rootSegment = location.pathname.split('/').filter(Boolean)[0] ?? '/';
 
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={location.pathname}
+        key={rootSegment}
         initial="initial"
         animate="enter"
         exit="exit"
