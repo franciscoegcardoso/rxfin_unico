@@ -31,7 +31,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BudgetInsightsSummary } from "@/components/inicio/BudgetInsightsSummary";
-import { PackagesSummaryCard } from "@/components/inicio/PackagesSummaryCard";
 import { InsuranceExpirationAlerts } from "@/components/inicio/InsuranceExpirationAlerts";
 import { MobileHomeHero } from "@/components/inicio/MobileHomeHero";
 import { OnboardingInsightCard } from "@/components/inicio/OnboardingInsightCard";
@@ -664,11 +663,9 @@ const Inicio: React.FC = () => {
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
-          {/* Alertas e atalhos em uma única linha compacta */}
+          {/* Atalhos em uma única linha compacta */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <InsuranceExpirationAlerts />
             <UpcomingEventsCard />
-            <PackagesSummaryCard />
           </div>
 
         {/* Evolução e Cartão lado a lado no desktop para reduzir espaços vazios */}
