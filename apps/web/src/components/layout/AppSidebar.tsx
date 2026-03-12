@@ -18,6 +18,7 @@ import { LockedFeatureIndicator } from '@/components/subscription/LockedFeatureI
 import { ImpersonationButton } from '@/components/admin/ImpersonationButton';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { showComingSoonToast } from '@/components/subscription/ComingSoonToast';
+import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -497,6 +498,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         'border-t border-border py-3 px-2 space-y-1 shrink-0',
         collapsed && 'flex flex-col items-center',
       )}>
+        {/* Badge de segurança — visível apenas quando sidebar expandida */}
+        {!collapsed && (
+          <div className="px-1 pt-1 pb-0.5">
+            <SecureConnectionBadge />
+          </div>
+        )}
         <div className={cn('flex', collapsed ? 'justify-center' : 'px-1')}>
           <NotificationBell />
         </div>

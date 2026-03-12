@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { SecureConnectionBadge } from "@/components/shared/SecureConnectionBadge";
 
 interface DesktopShellProps {
   userName: string;
@@ -20,6 +21,9 @@ export const DesktopShell: React.FC<DesktopShellProps> = () => {
         <div className="flex-1 min-w-0 overflow-y-auto">
           <Outlet />
         </div>
+        <footer className="w-full border-t py-2 px-6 flex justify-center shrink-0">
+          <SecureConnectionBadge />
+        </footer>
       </div>
     </div>
   );
