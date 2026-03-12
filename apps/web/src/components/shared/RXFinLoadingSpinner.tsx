@@ -104,7 +104,7 @@ export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
           textAnchor="middle"
           fontSize="18"
           fontWeight="700"
-          fill="hsl(var(--primary))"
+          fill="hsl(var(--background))"
           fontFamily="Inter, sans-serif"
         >
           $
