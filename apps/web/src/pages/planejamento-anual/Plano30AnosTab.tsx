@@ -6,11 +6,9 @@ import { useProjectionLineParams, type ProjectionIndex } from '@/hooks/useProjec
 import { useAnnualClosings } from '@/hooks/useAnnualClosings';
 import { usePatrimonyProjection } from '@/hooks/usePatrimonyProjection';
 import { Patrimony30YearsTable } from '@/components/planejamento/Patrimony30YearsTable';
+import { ProjectionParamsPanel } from '@/components/planejamento/ProjectionParamsPanel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, RotateCcw, Info } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TrendingUp } from 'lucide-react';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { calculateAverageIndex } from '@/data/economicIndices';
 import { useVehicleDepreciation } from '@/hooks/useVehicleDepreciation';
@@ -149,45 +147,13 @@ export const Plano30AnosTab: React.FC = () => {
   return (
     <div className="space-y-5">
 
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="space-y-0.5">
-          <p className="text-sm font-semibold">
-            Projeção {CURRENT_YEAR} → {CURRENT_YEAR + PROJECTION_HORIZON - 1}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Clique no ⚙ de cada linha para ajustar o índice e spread.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="outline" className="text-[10px] gap-1 cursor-default">
-                  <Info className="h-3 w-3" />
-                  Médias {AVERAGE_YEARS}a
-                  {' '}IPCA {INDEX_AVERAGES.ipca.toFixed(1)}%
-                  {' '}CDI {INDEX_AVERAGES.cdi.toFixed(1)}%
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent className="text-xs max-w-60">
-                Taxas médias dos últimos {AVERAGE_YEARS} anos usadas como base nas projeções.
-                Ajuste o spread de cada linha conforme sua expectativa.
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs gap-1 text-muted-foreground"
-            onClick={resetToDefaults}
-            disabled={paramsLoading}
-          >
-            <RotateCcw className="h-3 w-3" />
-            Resetar
-          </Button>
-        </div>
+      <div className="space-y-0.5">
+        <p className="text-sm font-semibold">
+          Projeção {CURRENT_YEAR} → {CURRENT_YEAR + PROJECTION_HORIZON - 1}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Ajuste os parâmetros de cada linha no painel abaixo.
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -202,6 +168,14 @@ export const Plano30AnosTab: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <ProjectionParamsPanel
+        params={params}
+        updateLine={updateLine}
+        resetToDefaults={resetToDefaults}
+        indexAverages={INDEX_AVERAGES}
+        isLoading={paramsLoading}
+      />
 
       <Card>
         <CardHeader className="pb-2">
@@ -219,7 +193,6 @@ export const Plano30AnosTab: React.FC = () => {
             years={years}
             currentYear={CURRENT_YEAR}
             params={params}
-            onUpdateLine={updateLine}
             baseIncome={baseAnnuals.income}
             baseExpense={baseAnnuals.expense}
             basePatrimony={{

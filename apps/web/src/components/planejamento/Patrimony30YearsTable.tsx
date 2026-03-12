@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Building2, Car, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LineProjectionPopover } from './LineProjectionPopover';
 import type { ProjectionLineParams, LineParamKey, ProjectionIndex } from '@/hooks/useProjectionLineParams';
 import { LINE_LABELS } from '@/hooks/useProjectionLineParams';
 import type { AnnualClosing } from '@/hooks/useAnnualClosings';
@@ -12,7 +11,6 @@ interface Patrimony30YearsTableProps {
   years: number[];
   currentYear: number;
   params: ProjectionLineParams;
-  onUpdateLine: (key: LineParamKey, update: Partial<{ index: ProjectionIndex; spread: number; customRate?: number }>) => void;
   baseIncome: number;
   baseExpense: number;
   basePatrimony: {
@@ -77,7 +75,6 @@ export const Patrimony30YearsTable: React.FC<Patrimony30YearsTableProps> = ({
   years,
   currentYear,
   params,
-  onUpdateLine,
   baseIncome,
   baseExpense,
   basePatrimony,
@@ -161,20 +158,15 @@ export const Patrimony30YearsTable: React.FC<Patrimony30YearsTableProps> = ({
           return (
             <div
               key={key}
-              className="py-1.5 px-3 h-8 border-b border-border/40 flex items-center gap-1.5 group"
+              className="py-1.5 px-3 h-8 border-b border-border/40 flex items-center gap-1.5"
             >
               {LINE_ICONS[key]}
               <span className={cn('flex-1 truncate font-medium', LINE_COLORS[key])}>
                 {LINE_LABELS[key]}
               </span>
-              <span className="text-[9px] text-muted-foreground tabular-nums mr-0.5">
+              <span className="text-[9px] text-muted-foreground tabular-nums">
                 {rate >= 0 ? '+' : ''}{rate.toFixed(1)}%
               </span>
-              <LineProjectionPopover
-                label={LINE_LABELS[key]}
-                param={params[key]}
-                onChange={(update) => onUpdateLine(key, update)}
-              />
             </div>
           );
         })}
