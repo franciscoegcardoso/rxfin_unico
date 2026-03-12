@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   ChevronDown,
   ChevronRight,
@@ -230,14 +230,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <a
-                    href={configuracoesPath}
+                  <Link
+                    to={configuracoesPath}
                     className={cn(configClass, 'justify-center px-2 py-2')}
-                    onClick={(e) => { e.preventDefault(); navigate(configuracoesPath); }}
                     aria-current={isConfiguracoesActive ? 'page' : undefined}
                   >
                     {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
-                  </a>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="text-xs">{section.title}</TooltipContent>
               </Tooltip>
@@ -247,17 +246,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       }
       return (
         <div key={section.slug} className="py-0.5">
-          <a
-            href={configuracoesPath}
+          <Link
+            to={configuracoesPath}
             className={cn(configClass, 'gap-2.5 px-3 py-2')}
-            onClick={(e) => { e.preventDefault(); navigate(configuracoesPath); }}
             aria-current={isConfiguracoesActive ? 'page' : undefined}
           >
             {section.icon && (
               <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
             )}
             <span className="flex-1 truncate text-left">{section.title}</span>
-          </a>
+          </Link>
         </div>
       );
     }

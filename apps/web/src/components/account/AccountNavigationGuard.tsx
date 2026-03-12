@@ -36,12 +36,16 @@ export function AccountNavigationGuard() {
   const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
   const isMinhaConta = normalizePath(location.pathname) === '/minha-conta';
 
+  // Rotas para as quais nunca bloqueamos (configurações) — evita usuário preso ao sair de simuladores/etc.
+  const SETTINGS_PATH_PREFIXES = ['/minha-conta', '/parametros', '/instituicoes-financeiras', '/configuracoes-fiscais', '/financeiro', '/configuracoes-hub'];
+  const isTargetSettings = (targetPath: string) =>
+    SETTINGS_PATH_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'));
+
   // Intercept link clicks apenas quando há alterações E não estamos em Minha Conta.
-  // Em Minha Conta nunca bloqueamos (nem ao sair) para evitar usuário preso na aba Perfil.
+  // Nunca bloqueamos navegação para páginas de configurações (evita tela travada ao sair de simulador).
   useEffect(() => {
     if (!hasChanges || isMinhaConta) return;
     const handler = (e: MouseEvent) => {
-      // Defensivo: nunca bloquear se a URL atual é /minha-conta (evita closure desatualizada)
       const currentPathFromWindow = normalizePath(window.location.pathname);
       if (currentPathFromWindow === '/minha-conta') return;
       const anchor = (e.target as HTMLElement).closest('a');
@@ -50,8 +54,7 @@ export function AccountNavigationGuard() {
       const sameOrigin = url.origin === window.location.origin;
       const currentPath = normalizePath(location.pathname);
       const targetPath = normalizePath(url.pathname);
-      // Nunca bloquear navegação de/para /minha-conta
-      if (currentPath === '/minha-conta' || targetPath === '/minha-conta') return;
+      if (currentPath === '/minha-conta' || isTargetSettings(targetPath)) return;
       if (sameOrigin && targetPath !== currentPath) {
         e.preventDefault();
         e.stopPropagation();
@@ -63,7 +66,7 @@ export function AccountNavigationGuard() {
     return () => document.removeEventListener('click', handler, true);
   }, [hasChanges, isMinhaConta, location.pathname]);
 
-  // popstate (voltar/avançar do browser) — em Minha Conta não bloqueia para não prender o usuário
+  // popstate (voltar/avançar) — não bloqueia em Minha Conta nem quando destino é configurações
   useEffect(() => {
     if (!hasChanges || isMinhaConta) return;
     const handler = () => {
