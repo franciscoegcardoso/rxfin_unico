@@ -91,6 +91,7 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   const [splitMode, setSplitMode] = useState<SplitMode>('equal');
   const [serviceChargePercent, setServiceChargePercent] = useState(10);
   const [includeServiceCharge, setIncludeServiceCharge] = useState(true);
+  const [serviceChargeOverride, setServiceChargeOverride] = useState<number | null>(null);
   const [personSplits, setPersonSplits] = useState<PersonSplit[]>([]);
   const [excludedItems, setExcludedItems] = useState<Record<number, number[]>>({});
   const [itemAssignments, setItemAssignments] = useState<Record<number, number[]>>({});
@@ -128,7 +129,9 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
     if (t > 0) return sum + t;
     return sum + parseNum(item.qty) * parseNum(item.unitPrice);
   }, 0);
-  const serviceCharge = includeServiceCharge ? subtotal * (serviceChargePercent / 100) : 0;
+  const serviceCharge = includeServiceCharge
+    ? (serviceChargeOverride !== null ? serviceChargeOverride : subtotal * (serviceChargePercent / 100))
+    : 0;
   const grandTotal = subtotal + serviceCharge;
   const stepIndex = STEPS.indexOf(currentStep);
   const userName = currentUserName || 'Você';
@@ -174,6 +177,7 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
     setSplitMode('equal');
     setServiceChargePercent(10);
     setIncludeServiceCharge(true);
+    setServiceChargeOverride(null);
     setPersonSplits([]);
     setExcludedItems({});
     setItemAssignments({});
@@ -231,21 +235,16 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         setItems(parsed);
         setImportedFromScan(true);
         setEditingItemId(null);
-        // Estratégia: usar o valor em R$ lido diretamente do cupom para calcular
-        // o percentual com precisão — evita erros de arredondamento de Math.round para inteiro.
-        // Ex: R$13,23 / subtotal R$150,39 = 8,797% → setar 8.80% → 150,39 × 8,80% = 13,23 ✓
-        const taxaServicoValor = data?.data?.taxaServicoValor;  // valor em R$ do cupom
-        const subtotalCupom = data?.data?.subtotalCupom;        // subtotal real do cupom
+        const taxaServicoValor = data?.data?.taxaServicoValor;
+        const subtotalCupom = data?.data?.subtotalCupom;
 
-        if (taxaServicoValor && taxaServicoValor > 0 && subtotalCupom && subtotalCupom > 0) {
-          // Calcular o percentual com 2 casas decimais para manter precisão
-          const pct = Math.round((taxaServicoValor / subtotalCupom) * 10000) / 100;
-          setServiceChargePercent(pct);
+        if (taxaServicoValor && taxaServicoValor > 0) {
+          setServiceChargeOverride(taxaServicoValor);
           setIncludeServiceCharge(true);
-        } else if (data?.data?.taxaServicoPercent) {
-          // Fallback: usar o percentual da Edge Function se não vier o valor em R$
-          setServiceChargePercent(data.data.taxaServicoPercent);
-          setIncludeServiceCharge(true);
+          if (subtotalCupom && subtotalCupom > 0) {
+            const pct = Math.round((taxaServicoValor / subtotalCupom) * 10000) / 100;
+            setServiceChargePercent(pct);
+          }
         }
       } else {
         setScanError((data as any)?.data?.error || 'Nenhum item encontrado. Tente outra foto.');
@@ -621,7 +620,7 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
               </div>
               {includeServiceCharge && (
                 <div className="flex items-center gap-2">
-                  <Input type="number" min={0} max={100} value={serviceChargePercent} onChange={e => setServiceChargePercent(parseFloat(e.target.value) || 0)} className="w-20 h-8 text-sm text-center rounded-lg" />
+                  <Input type="number" min={0} max={100} value={serviceChargePercent} onChange={e => { setServiceChargePercent(parseFloat(e.target.value) || 0); setServiceChargeOverride(null); }} className="w-20 h-8 text-sm text-center rounded-lg" />
                   <span className="text-sm text-muted-foreground">%</span>
                   <span className="text-sm text-muted-foreground ml-auto">{formatCurrency(serviceCharge)}</span>
                 </div>
