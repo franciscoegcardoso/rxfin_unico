@@ -86,6 +86,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
   const toPath = (path: string): string =>
     path && path.startsWith('/') ? path : `/${path}`;
 
+  /** Item está ativo por match exato ou por rota aninhada (ex: /planejamento ativo em /planejamento/visao-mensal) */
+  const isPathActive = (path: string): boolean => {
+    const p = toPath(path);
+    return location.pathname === p || (p !== '/' && location.pathname.startsWith(p + '/'));
+  };
+
   const handleItemClick = (item: NavMenuItem, e: React.MouseEvent, path: string) => {
     if (item.canAccessAsAdmin) return;
     if (item.isComingSoon || item.isLocked) {
@@ -98,9 +104,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     navigate(path);
   };
 
-  const renderItem = (item: NavMenuItem, indent = false) => {
+  /** Em seções com sub-itens, só destaca o item de path mais específico que bater com a URL (evita dois ativos em rotas aninhadas). */
+  const isItemActive = (item: NavMenuItem, sectionItems?: NavMenuItem[]): boolean => {
+    if (!isPathActive(item.path)) return false;
+    if (!sectionItems || sectionItems.length <= 1) return true;
+    const myPath = toPath(item.path);
+    const hasStricterMatch = sectionItems.some(
+      (other) => other.path !== item.path && isPathActive(other.path) && toPath(other.path).length > myPath.length
+    );
+    return !hasStricterMatch;
+  };
+
+  const renderItem = (item: NavMenuItem, indent = false, sectionItems?: NavMenuItem[]) => {
     const path = toPath(item.path);
-    const isActive = location.pathname === path;
+    const isActive = isItemActive(item, sectionItems);
     const isVisuallyDisabled = item.isLocked || item.isComingSoon;
     const canNavigate = item.canAccessAsAdmin || !isVisuallyDisabled;
 
@@ -193,7 +210,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
 
   const renderSection = (section: NavMenuSection) => {
     const isOpen = openSections.has(section.slug);
-    const isGroupActive = section.items.some((i) => location.pathname === toPath(i.path));
+    const isGroupActive = section.items.some((i) => isPathActive(i.path));
 
     // Configurações: CTA único (sem sub-itens) → link direto para as guias em /minha-conta
     const isConfiguracoesCta = section.slug === 'configuracoes' && section.items.length === 0;
@@ -293,7 +310,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         </button>
         {isOpen && (
           <div className="mt-0.5 space-y-0.5">
-            {section.items.map((item) => renderItem(item, true))}
+            {section.items.map((item) => renderItem(item, true, section.items))}
           </div>
         )}
       </div>
