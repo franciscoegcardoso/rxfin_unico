@@ -73,6 +73,8 @@ import { CurrencyInput } from '@/components/ui/currency-input';
 
 interface MeuIRSectionProps {
   onOpenImport: () => void;
+  /** Quando muda, a seção refaz o fetch das importações (ex.: após importação bem-sucedida no dialog) */
+  refreshKey?: number;
 }
 
 interface ValorReal {
@@ -109,7 +111,7 @@ const getBemCategoria = (codigo: string | number): { label: string; icon: React.
   return { label: 'Outro', icon: <FileText className="h-4 w-4" />, color: 'text-muted-foreground', filterValue: 'outro' };
 };
 
-export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport }) => {
+export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refreshKey }) => {
   const { imports, fetchImports, deleteImport, downloadFile, isLoading } = useIRImport();
   const { isHidden } = useVisibility();
   const [expandedYear, setExpandedYear] = useState<string | undefined>();
@@ -133,7 +135,7 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport }) => {
 
   useEffect(() => {
     fetchImports();
-  }, []);
+  }, [refreshKey]);
 
   useEffect(() => {
     if (imports.length > 0 && !expandedYear) {

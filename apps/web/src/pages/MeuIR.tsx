@@ -23,6 +23,8 @@ import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 const MeuIR: React.FC = () => {
   const [isIRImportOpen, setIsIRImportOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
+  /** Incrementado após importação bem-sucedida para que MeuIRSection refaça o fetch e exiba a nova declaração sem F5 */
+  const [irRefreshKey, setIrRefreshKey] = useState(0);
   const {
     messages,
     comprovantes,
@@ -146,8 +148,9 @@ const MeuIR: React.FC = () => {
             <IRImportDialog
               open={isIRImportOpen}
               onOpenChange={setIsIRImportOpen}
+              onImportComplete={() => setIrRefreshKey((k) => k + 1)}
             />
-            <MeuIRSection onOpenImport={() => setIsIRImportOpen(true)} />
+            <MeuIRSection onOpenImport={() => setIsIRImportOpen(true)} refreshKey={irRefreshKey} />
           </TabsContent>
         </Tabs>
         </div>
