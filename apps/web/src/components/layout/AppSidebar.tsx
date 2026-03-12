@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
   ChevronDown,
@@ -30,6 +30,11 @@ import logoRxfinWhite from '@/assets/logo-rxfin-white.png';
 import { useTheme } from 'next-themes';
 
 const STORAGE_KEY = 'rxfin-sidebar-collapsed';
+const STORAGE_KEY_WIDTH = 'rxfin-sidebar-width';
+const DEFAULT_SIDEBAR_WIDTH_PX = 280;
+const MIN_SIDEBAR_WIDTH_PX = 200;
+const MAX_SIDEBAR_WIDTH_PX = 420;
+const COLLAPSED_WIDTH_PX = 56;
 
 interface AppSidebarProps {
   className?: string;
@@ -47,9 +52,54 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
   });
 
+  const [sidebarWidthPx, setSidebarWidthPx] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_WIDTH);
+      if (stored) {
+        const n = Number(stored);
+        if (!Number.isNaN(n)) return Math.min(MAX_SIDEBAR_WIDTH_PX, Math.max(MIN_SIDEBAR_WIDTH_PX, n));
+      }
+    } catch {}
+    return DEFAULT_SIDEBAR_WIDTH_PX;
+  });
+
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStartRef = useRef({ x: 0, w: 0 });
+
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, String(collapsed)); } catch {}
   }, [collapsed]);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_WIDTH, String(sidebarWidthPx)); } catch {}
+  }, [sidebarWidthPx]);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    if (collapsed) return;
+    e.preventDefault();
+    setIsResizing(true);
+    resizeStartRef.current = { x: e.clientX, w: sidebarWidthPx };
+  }, [collapsed, sidebarWidthPx]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e: MouseEvent) => {
+      const delta = e.clientX - resizeStartRef.current.x;
+      const next = Math.min(MAX_SIDEBAR_WIDTH_PX, Math.max(MIN_SIDEBAR_WIDTH_PX, resizeStartRef.current.w + delta));
+      setSidebarWidthPx(next);
+    };
+    const onUp = () => setIsResizing(false);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   const [openSections, setOpenSections] = useState<Set<string>>(() => new Set<string>());
 
@@ -345,16 +395,17 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     );
   };
 
-  const sidebarWidth = collapsed ? 'w-14' : 'w-60';
+  const effectiveWidthPx = collapsed ? COLLAPSED_WIDTH_PX : sidebarWidthPx;
 
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col h-screen bg-card border-r border-border',
-        'transition-all duration-200 ease-in-out overflow-hidden shrink-0',
-        sidebarWidth,
+        'hidden md:flex flex-col h-screen bg-card border-r border-border relative',
+        'overflow-hidden shrink-0',
+        !collapsed && 'transition-[width] duration-200 ease-in-out',
         className,
       )}
+      style={{ width: effectiveWidthPx }}
     >
       <div className={cn(
         'flex items-center h-14 px-3 border-b border-border shrink-0',
@@ -499,6 +550,20 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           </button>
         )}
       </div>
+
+      {/* Resize handle — desktop, quando expandido */}
+      {!collapsed && (
+        <div
+          role="separator"
+          aria-label="Redimensionar menu"
+          onMouseDown={handleResizeStart}
+          className={cn(
+            'absolute top-0 right-0 w-1 h-full cursor-col-resize shrink-0 z-10',
+            'hover:bg-primary/20 active:bg-primary/30',
+            isResizing && 'bg-primary/30',
+          )}
+        />
+      )}
     </aside>
   );
 };

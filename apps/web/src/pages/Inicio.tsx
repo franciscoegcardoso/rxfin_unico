@@ -110,9 +110,10 @@ const DemoCardWrapper: React.FC<{
   className?: string;
 }> = ({ isDemoMode, children, className }) => {
   if (!isDemoMode) return <>{children}</>;
+  const passHeight = Boolean(className?.includes('h-full'));
   return (
     <div className={cn("relative", className)}>
-      <div className="[&>*]:border-dashed [&>*]:opacity-80">{children}</div>
+      <div className={cn("[&>*]:border-dashed [&>*]:opacity-80", passHeight && "h-full min-h-0")}>{children}</div>
       <DemoBadge />
     </div>
   );
@@ -822,14 +823,14 @@ const Inicio: React.FC = () => {
 
         <div
           className={cn(
-            "grid gap-4",
+            "grid gap-4 items-stretch",
             showMetasMensais ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
           )}
         >
           {showMetasMensais && (
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div data-tour="category-goals" className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))]">
+            <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
+              <div data-tour="category-goals" className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))] shrink-0">
                   <div>
                     <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>
                     <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Gasto vs meta por categoria</p>
@@ -843,7 +844,7 @@ const Inicio: React.FC = () => {
                     <ChevronRight className="h-3 w-3" />
                   </button>
                 </div>
-                <div className="max-h-[320px] overflow-y-auto px-4 py-2">
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
                   {categoryGoals.length > 0 ? (
                     <ul className="list-none p-0 m-0">
                       {categoryGoals.map((item) => (
@@ -867,7 +868,7 @@ const Inicio: React.FC = () => {
             </DemoCardWrapper>
           )}
 
-          <DemoCardWrapper isDemoMode={isDemoMode}>
+          <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
             <BudgetCompositionCard />
           </DemoCardWrapper>
         </div>
