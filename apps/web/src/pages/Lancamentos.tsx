@@ -1213,8 +1213,8 @@ export const Lancamentos: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Filtros + conteúdo: mobile = chips + Tabs; desktop = grid sidebar | Tabs */}
-        <div className={cn(isMobile ? 'space-y-4 mb-6' : 'grid grid-cols-[240px_1fr] gap-0 mb-6')}>
+        {/* Filtros + conteúdo: mobile = chips + Tabs; desktop = grid sidebar | Tabs. Gap centraliza a borda entre painel e conteúdo. */}
+        <div className={cn(isMobile ? 'space-y-4 mb-6' : 'grid grid-cols-[240px_1fr] gap-6 mb-6')}>
         {isMobile ? (
           <>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
@@ -1284,7 +1284,7 @@ export const Lancamentos: React.FC = () => {
             </div>
           </>
         ) : (
-            <aside className="w-[240px] shrink-0 bg-card border-r border-border p-4 space-y-4">
+            <aside className="w-[240px] shrink-0 bg-card border-r border-border pr-6 p-4 space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
                 <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>

@@ -24,14 +24,14 @@ function addMonths(yearMonth: string, delta: number): string {
 export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onMonthChange, activeMonth }) => {
   const months = useMemo(() => {
     const result: string[] = [];
-    for (let i = -3; i <= 3; i++) {
+    for (let i = -12; i <= 12; i++) {
       result.push(addMonths(selectedMonth, i));
     }
     return result;
   }, [selectedMonth]);
 
   return (
-    <div className="flex items-center justify-between bg-card border border-border rounded-lg px-2 py-1.5">
+    <div className="flex items-center justify-between bg-card border-2 border-border rounded-xl px-2 py-2 shadow-sm">
       <Button
         variant="ghost"
         size="icon"
@@ -42,16 +42,16 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0 flex-1 mx-1">
         {months.map((m) => {
           const isSelected = m === selectedMonth;
           return (
             <button
               key={m}
               onClick={() => onMonthChange(m)}
-              className={`relative px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`relative px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
                 isSelected
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
