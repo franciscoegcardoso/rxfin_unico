@@ -41,13 +41,21 @@ export const PlanComparisonDialog: React.FC<PlanComparisonDialogProps> = ({
 
   const isLoading = featuresLoading || plansLoading;
 
-  // Get prices from plans
-  const freePlan = plans?.find(p => p.slug === 'free');
-  const starterPlan = plans?.find(p => p.slug === 'basic');
-  const proPlan = plans?.find(p => p.slug === 'pro');
+  // Get plans: match by slug with fallback to order_index (free, starter, pro)
+  const freePlan = plans?.find(p => p.slug === 'free') ?? plans?.[0];
+  const starterPlan = plans?.find(p => p.slug === 'basic' || p.slug === 'starter') ?? plans?.[1];
+  const proPlan = plans?.find(p => p.slug === 'pro') ?? plans?.[2];
+
+  // Preço mensal com desconto: price_monthly já é o valor vigente (com promo se houver)
+  const monthlyDisplayPrice = (plan: typeof freePlan) => {
+    if (!plan) return undefined;
+    if (plan.price_monthly > 0) return plan.price_monthly;
+    if (plan.price_yearly > 0) return plan.price_yearly / 12;
+    return 0;
+  };
 
   const formatPrice = (price: number | undefined) => {
-    if (!price || price === 0) return 'R$ 0';
+    if (price == null || price === 0) return 'R$ 0';
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
   };
 
@@ -92,11 +100,11 @@ export const PlanComparisonDialog: React.FC<PlanComparisonDialogProps> = ({
                   </div>
                   <div className="p-4 text-center border-l border-border bg-primary/5">
                     <div className="font-semibold text-primary">{starterPlan?.name || 'RX Starter'}</div>
-                    <div className="text-xs text-muted-foreground">{formatPrice(starterPlan?.price_monthly)}/mês</div>
+                    <div className="text-xs text-muted-foreground">{formatPrice(monthlyDisplayPrice(starterPlan))}/mês</div>
                   </div>
                   <div className="p-4 text-center border-l border-border bg-amber-500/5">
                     <div className="font-semibold text-amber-600">{proPlan?.name || 'RX Pro'}</div>
-                    <div className="text-xs text-muted-foreground">{formatPrice(proPlan?.price_monthly)}/mês</div>
+                    <div className="text-xs text-muted-foreground">{formatPrice(monthlyDisplayPrice(proPlan))}/mês</div>
                   </div>
                 </div>
                 
