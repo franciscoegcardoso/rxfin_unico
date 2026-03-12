@@ -224,19 +224,33 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         'flex w-full items-center rounded-md text-sm font-medium transition-all duration-150',
         isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
       );
+      // Em páginas de simulador, usar navegação programática para evitar travamento ao ir para Configurações
+      const isOnSimulator = location.pathname.startsWith('/simuladores');
+      const configClick = () => navigate(configuracoesPath);
       if (collapsed) {
         return (
           <div key={section.slug} className="py-0.5">
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Link
-                    to={configuracoesPath}
-                    className={cn(configClass, 'justify-center px-2 py-2')}
-                    aria-current={isConfiguracoesActive ? 'page' : undefined}
-                  >
-                    {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
-                  </Link>
+                  {isOnSimulator ? (
+                    <button
+                      type="button"
+                      onClick={configClick}
+                      className={cn(configClass, 'justify-center px-2 py-2')}
+                      aria-current={isConfiguracoesActive ? 'page' : undefined}
+                    >
+                      {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
+                    </button>
+                  ) : (
+                    <Link
+                      to={configuracoesPath}
+                      className={cn(configClass, 'justify-center px-2 py-2')}
+                      aria-current={isConfiguracoesActive ? 'page' : undefined}
+                    >
+                      {section.icon && <section.icon className="h-4 w-4 shrink-0" />}
+                    </Link>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent side="right" className="text-xs">{section.title}</TooltipContent>
               </Tooltip>
@@ -246,16 +260,30 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       }
       return (
         <div key={section.slug} className="py-0.5">
-          <Link
-            to={configuracoesPath}
-            className={cn(configClass, 'gap-2.5 px-3 py-2')}
-            aria-current={isConfiguracoesActive ? 'page' : undefined}
-          >
-            {section.icon && (
-              <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
-            )}
-            <span className="flex-1 truncate text-left">{section.title}</span>
-          </Link>
+          {isOnSimulator ? (
+            <button
+              type="button"
+              onClick={configClick}
+              className={cn(configClass, 'gap-2.5 px-3 py-2')}
+              aria-current={isConfiguracoesActive ? 'page' : undefined}
+            >
+              {section.icon && (
+                <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
+              )}
+              <span className="flex-1 truncate text-left">{section.title}</span>
+            </button>
+          ) : (
+            <Link
+              to={configuracoesPath}
+              className={cn(configClass, 'gap-2.5 px-3 py-2')}
+              aria-current={isConfiguracoesActive ? 'page' : undefined}
+            >
+              {section.icon && (
+                <section.icon className={cn('h-4 w-4 shrink-0', isConfiguracoesActive ? 'text-primary' : '')} />
+              )}
+              <span className="flex-1 truncate text-left">{section.title}</span>
+            </Link>
+          )}
         </div>
       );
     }

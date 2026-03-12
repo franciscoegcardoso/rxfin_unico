@@ -35,6 +35,7 @@ export function AccountNavigationGuard() {
 
   const normalizePath = (path: string) => path.replace(/\/+$/, '') || '/';
   const isMinhaConta = normalizePath(location.pathname) === '/minha-conta';
+  const isOnSimulatorPage = location.pathname.startsWith('/simuladores');
 
   // Rotas para as quais nunca bloqueamos (configurações) — evita usuário preso ao sair de simuladores/etc.
   const SETTINGS_PATH_PREFIXES = ['/minha-conta', '/parametros', '/instituicoes-financeiras', '/configuracoes-fiscais', '/financeiro', '/configuracoes-hub'];
@@ -42,12 +43,12 @@ export function AccountNavigationGuard() {
     SETTINGS_PATH_PREFIXES.some((p) => targetPath === p || targetPath.startsWith(p + '/'));
 
   // Intercept link clicks apenas quando há alterações E não estamos em Minha Conta.
-  // Nunca bloqueamos navegação para páginas de configurações (evita tela travada ao sair de simulador).
+  // Nunca ativamos o guard em páginas de simulador: permite sair para configurações sem travar.
   useEffect(() => {
-    if (!hasChanges || isMinhaConta) return;
+    if (!hasChanges || isMinhaConta || isOnSimulatorPage) return;
     const handler = (e: MouseEvent) => {
       const currentPathFromWindow = normalizePath(window.location.pathname);
-      if (currentPathFromWindow === '/minha-conta') return;
+      if (currentPathFromWindow === '/minha-conta' || currentPathFromWindow.startsWith('/simuladores')) return;
       const anchor = (e.target as HTMLElement).closest('a');
       if (!anchor?.href) return;
       const url = new URL(anchor.href);
@@ -64,18 +65,18 @@ export function AccountNavigationGuard() {
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
-  }, [hasChanges, isMinhaConta, location.pathname]);
+  }, [hasChanges, isMinhaConta, isOnSimulatorPage, location.pathname]);
 
-  // popstate (voltar/avançar) — não bloqueia em Minha Conta nem quando destino é configurações
+  // popstate (voltar/avançar) — não bloqueia em Minha Conta nem em páginas de simulador
   useEffect(() => {
-    if (!hasChanges || isMinhaConta) return;
+    if (!hasChanges || isMinhaConta || isOnSimulatorPage) return;
     const handler = () => {
       window.history.pushState(null, '', location.pathname + location.search);
       setShowDialog(true);
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
-  }, [hasChanges, isMinhaConta, location.pathname, location.search]);
+  }, [hasChanges, isMinhaConta, isOnSimulatorPage, location.pathname, location.search]);
 
   const handleSaveAndLeave = useCallback(async () => {
     try {
