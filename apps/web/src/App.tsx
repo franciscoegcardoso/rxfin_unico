@@ -177,6 +177,7 @@ const App = () => (
                     <ErrorBoundary>
                     <Routes>
                   <Route path="/" element={<Navigate to="/inicio" replace />} />
+                  <Route path="/landing" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/auth" element={<Login />} /> {/* Redirect legacy route */}
