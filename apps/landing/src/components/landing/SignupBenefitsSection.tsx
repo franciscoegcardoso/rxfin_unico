@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { trackCTAClick } from '@/lib/tracking';
 import { useInView } from '@/hooks/useInView';
@@ -8,12 +8,12 @@ import { useInView } from '@/hooks/useInView';
 const APP_URL = 'https://app.rxfin.com.br';
 
 const benefits = [
-  'Usar todos os simuladores gratuitamente',
-  'Salvar suas simulações',
-  'Comparar decisões ao longo do tempo',
-  'Acesso antecipado e atualizações',
-  'Condição especial de lançamento',
-  'Evoluir para o sistema completo em breve',
+  'Simule antes de assinar, financiar ou investir — de graça',
+  'Guarde e compare cenários ao longo do tempo',
+  'Veja onde seu dinheiro vai antes que ele suma',
+  'Entre antes do lançamento com condição especial',
+  'Conecte seus bancos e pare de adivinhar seu saldo real',
+  'Tenha o mesmo nível de controle financeiro das empresas',
 ];
 
 export const SignupBenefitsSection: React.FC = () => {
@@ -60,7 +60,7 @@ export const SignupBenefitsSection: React.FC = () => {
         </a>
 
         <p className="mt-4 text-sm text-white/60">
-          Leva menos de 1 minuto.
+          Leva menos de 1 minuto. Sem cartão de crédito.
         </p>
       </div>
     </section>
