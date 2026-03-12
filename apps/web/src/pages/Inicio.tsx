@@ -57,41 +57,45 @@ const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
-// Componente de Categoria com Meta
+// Componente de Categoria com Meta — formato lista compacta
 const CategoryGoalItem: React.FC<{
   category: string;
   spent: number;
   goal: number;
   isHidden: boolean;
 }> = ({ category, spent, goal, isHidden }) => {
-  const percentage = goal > 0 ? Math.min((spent / goal) * 100, 100) : 0;
-  const isOverBudget = spent > goal;
+  const validGoal = typeof goal === "number" && !Number.isNaN(goal) && goal > 0;
+  const percentage = validGoal ? Math.min((spent / goal) * 100, 100) : 0;
+  const isOverBudget = validGoal && spent > goal;
 
   const formatCurrencyLocal = (value: number) => {
     if (isHidden) return "••••";
+    if (typeof value !== "number" || Number.isNaN(value)) return "—";
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(value);
   };
 
+  const goalLabel = validGoal ? formatCurrencyLocal(goal) : "—";
+
   return (
-    <div className="space-y-1.5 p-3.5 rounded-xl bg-muted/20 border border-border">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-foreground">{category}</span>
+    <div className="py-2.5 px-1 border-b border-[hsl(var(--color-border-subtle))] last:border-b-0 last:pb-0 first:pt-0">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-medium text-foreground truncate min-w-0">{category}</span>
         <span
           className={cn(
-            "text-sm tabular-nums",
+            "text-xs sm:text-sm tabular-nums shrink-0",
             isOverBudget ? "text-expense" : "text-muted-foreground"
           )}
         >
-          {formatCurrencyLocal(spent)} / {formatCurrencyLocal(goal)}
+          {formatCurrencyLocal(spent)} / {goalLabel}
         </span>
       </div>
       <Progress
         value={percentage}
         className={cn(
-          "h-2 w-full overflow-hidden rounded-full bg-muted [&>div]:rounded-full",
+          "h-1.5 w-full overflow-hidden rounded-full bg-muted mt-1.5 [&>div]:rounded-full",
           isOverBudget ? "[&>div]:bg-expense" : "[&>div]:bg-primary"
         )}
       />
@@ -825,31 +829,34 @@ const Inicio: React.FC = () => {
           {showMetasMensais && (
             <DemoCardWrapper isDemoMode={isDemoMode}>
               <div data-tour="category-goals" className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))]">
                   <div>
                     <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>
                     <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Gasto vs meta por categoria</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigate("/planejamento?tab=metas")}
+                    onClick={() => navigate("/planejamento/metas")}
                     className="text-xs text-[hsl(var(--color-brand-700))] hover:underline flex items-center gap-1 font-medium"
                   >
                     Editar metas
                     <ChevronRight className="h-3 w-3" />
                   </button>
                 </div>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto p-5">
+                <div className="max-h-[320px] overflow-y-auto px-4 py-2">
                   {categoryGoals.length > 0 ? (
-                    categoryGoals.map((item) => (
-                      <CategoryGoalItem
-                        key={item.category}
-                        category={item.category}
-                        spent={item.spent}
-                        goal={item.goal}
-                        isHidden={isHidden}
-                      />
-                    ))
+                    <ul className="list-none p-0 m-0">
+                      {categoryGoals.map((item) => (
+                        <li key={item.category}>
+                          <CategoryGoalItem
+                            category={item.category}
+                            spent={item.spent}
+                            goal={item.goal}
+                            isHidden={isHidden}
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
                     <p className="text-sm text-[hsl(var(--color-text-tertiary))] text-center py-4">
                       Nenhuma categoria configurada. Configure em Parâmetros.

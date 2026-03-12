@@ -23,7 +23,6 @@ import { useAnnualOverview } from '@/hooks/useAnnualOverview';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { GoalCard } from '@/design-system/components/GoalCard';
-import { EmptyMetas } from '@/design-system/components/empty-states';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -179,9 +178,7 @@ const PlanejamentoAnual: React.FC = () => {
           </CardContent>
         </Card>
 
-        {savingsGoals.length === 0 ? (
-          <EmptyMetas />
-        ) : (
+        {savingsGoals.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-base font-semibold text-foreground">Metas de economia</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
