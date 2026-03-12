@@ -367,8 +367,11 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 md:bg-black/50 animate-fade-in">
       <div className="bg-background w-full h-full md:max-w-xl md:max-h-[calc(100vh-2rem)] md:h-auto md:min-h-0 md:rounded-xl md:shadow-xl flex flex-col overflow-hidden">
-        {/* Header — fundo verde com texto branco; botão X no canto superior direito */}
-        <div className="bg-gradient-to-br from-primary via-primary to-primary/90 text-white px-4 pt-4 pb-2 shrink-0">
+        {/* Header — fundo verde; respeita safe-area no mobile para não cortar sob a status bar */}
+        <div
+          className="bg-gradient-to-br from-primary via-primary to-primary/90 text-white px-4 pb-2 shrink-0"
+          style={{ paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))' }}
+        >
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-lg font-bold text-white">Dividir Conta</h1>
             <button
