@@ -209,16 +209,11 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
           };
         });
         setItems(parsed);
-        // Pré-preencher taxa de serviço se a IA detectou
-        const taxaServico = data?.data?.taxaServico;
-        if (taxaServico && taxaServico > 0) {
-          const totalItens = itemsPayload.reduce((sum: number, item: any) =>
-            sum + (Number(item.total) || 0), 0);
-          if (totalItens > 0) {
-            const pct = Math.round((taxaServico / totalItens) * 100);
-            setServiceChargePercent(pct);
-            setIncludeServiceCharge(true);
-          }
+        // Usar o percentual pré-calculado pela Edge Function (baseado no subtotalCupom real)
+        const taxaServicoPercent = data?.data?.taxaServicoPercent;
+        if (taxaServicoPercent && taxaServicoPercent > 0) {
+          setServiceChargePercent(taxaServicoPercent);
+          setIncludeServiceCharge(true);
         }
       } else {
         setScanError((data as any)?.data?.error || 'Nenhum item encontrado. Tente outra foto.');
