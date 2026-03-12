@@ -24,12 +24,15 @@ export async function parseReceiptWithAuth(
     return { data: null, error: new Error('Não autenticado. Faça login novamente.') };
   }
 
-  const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/parse-receipt`;
+  const functionName = body.mode === 'bill' ? 'parse-receipt-items' : 'parse-receipt';
+  const url = `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/${functionName}`;
   const token = String(session.access_token).trim();
   const apikey = String(SUPABASE_ANON_KEY ?? '').trim();
   if (!url.startsWith('http') || !apikey) {
     return { data: null, error: new Error('Configuração inválida.') };
   }
+
+  const requestBody = body.mode === 'bill' ? { imageBase64: body.imageBase64 } : body;
 
   try {
     const res = await fetch(url, {
@@ -39,7 +42,7 @@ export async function parseReceiptWithAuth(
         'Authorization': `Bearer ${token}`,
         'apikey': apikey,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(requestBody),
     });
 
     const json = (await res.json()) as ParseReceiptResponse & { message?: string };

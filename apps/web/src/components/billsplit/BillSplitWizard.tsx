@@ -192,14 +192,15 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
         setScanError((data as any)?.error || 'Nenhum item encontrado. Tente outra foto.');
         return;
       }
-      const itemsPayload = data?.items;
+      // A nova Edge Function retorna os itens em data.data.items (não data.items)
+      const itemsPayload = data?.data?.items;
       if (itemsPayload?.length > 0) {
         const parsed: BillItem[] = itemsPayload.map((item: any, i: number) => {
-          const q = Number(item.qty) ?? 1;
-          const u = Number(item.unitPrice) ?? 0;
+          const q = Number(item.qty) || 1;
+          const u = Number(item.unitPrice) || 0;
           return {
             id: Date.now() + i,
-            description: String(item.description || '').trim() || 'Item',
+            description: String(item.name || item.description || '').trim() || 'Item',
             qty: q.toString(),
             unitPrice: u.toFixed(2),
             totalPrice: (q * u).toFixed(2),
@@ -208,8 +209,19 @@ export const BillSplitWizard: React.FC<BillSplitWizardProps> = ({ isOpen, onClos
           };
         });
         setItems(parsed);
+        // Pré-preencher taxa de serviço se a IA detectou
+        const taxaServico = data?.data?.taxaServico;
+        if (taxaServico && taxaServico > 0) {
+          const totalItens = itemsPayload.reduce((sum: number, item: any) =>
+            sum + (Number(item.total) || 0), 0);
+          if (totalItens > 0) {
+            const pct = Math.round((taxaServico / totalItens) * 100);
+            setServiceChargePercent(pct);
+            setIncludeServiceCharge(true);
+          }
+        }
       } else {
-        setScanError((data as any)?.error || 'Nenhum item encontrado. Tente outra foto.');
+        setScanError((data as any)?.data?.error || 'Nenhum item encontrado. Tente outra foto.');
       }
     } catch (err: any) {
       setScanError(err?.message || 'Erro ao processar a imagem.');
