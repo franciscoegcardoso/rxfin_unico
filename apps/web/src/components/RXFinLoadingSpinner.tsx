@@ -37,34 +37,38 @@ export const RXFinLoadingSpinner: React.FC<RXFinLoadingSpinnerProps> = ({
         viewBox="0 0 200 200"
         width={size}
         height={size}
-        className="rxfin-blades-spin block absolute top-0 left-0"
-        style={{ transformOrigin: '100px 100px' }}
+        className="block absolute top-0 left-0"
         aria-hidden="true"
       >
-        {/* Anel externo */}
-        <circle
-          cx="100" cy="100" r="94"
-          stroke="hsl(var(--primary))"
-          strokeWidth="12"
-          fill="none"
-        />
-        {/* Pá 1 — centro 90° */}
-        <path
-          d="M 115.00 125.98 L 142.50 173.61 A 85 85 0 0 1 57.50 173.61 L 85.00 125.98 A 30 30 0 0 0 115.00 125.98 Z"
-          fill="hsl(var(--primary))"
-        />
-        {/* Pá 2 — centro 210° */}
-        <path
-          d="M 70.00 100.00 L 15.00 100.00 A 85 85 0 0 1 57.50 26.39 L 85.00 74.02 A 30 30 0 0 0 70.00 100.00 Z"
-          fill="hsl(var(--primary))"
-        />
-        {/* Pá 3 — centro 330° */}
-        <path
-          d="M 115.00 74.02 L 142.50 26.39 A 85 85 0 0 1 185.00 100.00 L 130.00 100.00 A 30 30 0 0 0 115.00 74.02 Z"
-          fill="hsl(var(--primary))"
-        />
-        {/* Hub central */}
-        <circle cx="100" cy="100" r="28" fill="hsl(var(--primary))" />
+        <g
+          className="rxfin-blades-spin"
+          style={{ transformOrigin: 'center' }}
+        >
+          {/* Anel externo */}
+          <circle
+            cx="100" cy="100" r="94"
+            stroke="hsl(var(--primary))"
+            strokeWidth="12"
+            fill="none"
+          />
+          {/* Pá 1 — centro 90° */}
+          <path
+            d="M 115.00 125.98 L 142.50 173.61 A 85 85 0 0 1 57.50 173.61 L 85.00 125.98 A 30 30 0 0 0 115.00 125.98 Z"
+            fill="hsl(var(--primary))"
+          />
+          {/* Pá 2 — centro 210° */}
+          <path
+            d="M 70.00 100.00 L 15.00 100.00 A 85 85 0 0 1 57.50 26.39 L 85.00 74.02 A 30 30 0 0 0 70.00 100.00 Z"
+            fill="hsl(var(--primary))"
+          />
+          {/* Pá 3 — centro 330° */}
+          <path
+            d="M 115.00 74.02 L 142.50 26.39 A 85 85 0 0 1 185.00 100.00 L 130.00 100.00 A 30 30 0 0 0 115.00 74.02 Z"
+            fill="hsl(var(--primary))"
+          />
+          {/* Hub central */}
+          <circle cx="100" cy="100" r="28" fill="hsl(var(--primary))" />
+        </g>
       </svg>
 
       {/* Camada estática: apenas o "$" — nunca gira */}
