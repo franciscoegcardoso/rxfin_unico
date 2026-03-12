@@ -1,3 +1,4 @@
+// build-trigger: MobileCtaBar fix
 import React, { lazy, Suspense } from 'react';
 import * as Sentry from '@sentry/react';
 import { Toaster } from "@/components/ui/toaster";
