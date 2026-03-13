@@ -94,7 +94,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   return (
     <>
-      <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
+      <div className="min-h-screen bg-[hsl(var(--color-surface-base))] w-full max-w-full overflow-x-hidden flex flex-col">
         <DemoDataBanner />
         <OnboardingProgressBanner />
         <main
@@ -107,7 +107,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           {content}
         </main>
         {!isMobile && (
-          <footer className="w-full border-t border-border py-2 px-6 flex justify-center bg-background">
+          <footer className="w-full border-t border-[hsl(var(--color-border))] py-2 px-6 flex justify-center bg-[hsl(var(--color-surface-base))]">
             <SecureConnectionBadge />
           </footer>
         )}

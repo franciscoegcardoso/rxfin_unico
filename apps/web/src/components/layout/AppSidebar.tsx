@@ -177,11 +177,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     const baseClass = cn(
       'group flex items-center rounded-md transition-all duration-150',
       isSecondLevel ? 'gap-2 px-3 py-1.5 min-h-[32px] text-xs font-normal' : 'gap-2.5 px-3 py-2 min-h-[36px] text-sm font-medium',
-      indent && !isActive && 'ml-3 pl-3 border-l border-border',
+      indent && !isActive && 'ml-3 pl-3 border-l border-[hsl(var(--color-border))]',
       indent && isActive  && 'ml-3 pl-3 border-l-2 border-primary',
       isActive
         ? 'bg-accent text-accent-foreground'
-        : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+        : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
       isVisuallyDisabled && !item.canAccessAsAdmin && 'opacity-50',
     );
 
@@ -192,7 +192,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <item.icon
             className={cn(
               iconSizeClass,
-              isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
+              isActive ? 'text-primary' : 'text-[hsl(var(--color-text-muted))] group-hover:text-foreground',
             )}
           />
         )}
@@ -200,7 +200,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <span className="flex-1 truncate leading-tight">{item.label}</span>
         )}
         {!collapsed && item.isComingSoon && (
-          <span className="ml-auto flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border font-semibold">
+          <span className="ml-auto flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))] border border-[hsl(var(--color-border))] font-semibold">
             <Rocket className="h-2.5 w-2.5" />
             Em breve
           </span>
@@ -277,7 +277,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     if (isConfiguracoesCta) {
       const configClass = cn(
         'flex w-full items-center rounded-md text-sm font-medium transition-all duration-150',
-        isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+        isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
       );
       // Em páginas de simulador, usar navegação programática para evitar travamento ao ir para Configurações
       const isOnSimulator = location.pathname.startsWith('/simuladores');
@@ -355,7 +355,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                     'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
                     isGroupActive
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                      : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
                   )}
                   onClick={() => {
                     setCollapsed(false);
@@ -379,7 +379,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           onClick={() => toggleSection(section.slug)}
           className={cn(
             'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
-            isGroupActive ? 'text-foreground' : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+            isGroupActive ? 'text-foreground' : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
           )}
         >
           {section.icon && (
@@ -405,7 +405,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col h-screen bg-card border-r border-border relative',
+        'hidden md:flex flex-col h-screen bg-[hsl(var(--color-surface-raised))] border-r border-[hsl(var(--color-border))] relative',
         'overflow-hidden shrink-0',
         !collapsed && 'transition-[width] duration-200 ease-in-out',
         className,
@@ -413,7 +413,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       style={{ width: effectiveWidthPx }}
     >
       <div className={cn(
-        'flex items-center h-14 px-3 border-b border-border shrink-0',
+        'flex items-center h-14 px-3 border-b border-[hsl(var(--color-border))] shrink-0',
         collapsed ? 'justify-center flex-col gap-1 pt-2' : 'justify-between',
       )}>
         {!collapsed && (
@@ -423,7 +423,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             onClick={(e) => { e.preventDefault(); navigate('/'); }}
           >
             <img src={currentLogo} alt="RXFin" className="h-7 w-7 object-contain shrink-0" />
-            <span className="font-semibold text-sm text-foreground truncate">RXFin</span>
+            <span className="font-semibold text-sm text-[hsl(var(--color-text-primary))] truncate">RXFin</span>
           </a>
         )}
         {collapsed && (
@@ -438,7 +438,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors shrink-0"
+          className="rounded-md p-1.5 text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors shrink-0"
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -449,14 +449,14 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         {mainItems.map((item) => renderItem(item))}
 
         {mainItems.length > 0 && groupedSections.length > 0 && (
-          <div className="my-2 border-t border-border/60" />
+          <div className="my-2 border-t border-[hsl(var(--color-border-subtle))]" />
         )}
 
         {groupedSections.map((section) => renderSection(section))}
 
         {isAdmin && (
           <>
-            <div className="my-2 border-t border-border/60" />
+            <div className="my-2 border-t border-[hsl(var(--color-border-subtle))]" />
             {collapsed ? (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
@@ -467,7 +467,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                         'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
                         isAdminActive
                           ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                          : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
                       )}
                       onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
                       aria-current={isAdminActive ? 'page' : undefined}
@@ -485,7 +485,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                   'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all',
                   isAdminActive
                     ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                    : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
                 )}
                 onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
                 aria-current={isAdminActive ? 'page' : undefined}
@@ -499,7 +499,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       </nav>
 
       <div className={cn(
-        'border-t border-border py-3 px-2 space-y-1 shrink-0',
+        'border-t border-[hsl(var(--color-border))] py-3 px-2 space-y-1 shrink-0',
         collapsed && 'flex flex-col items-center',
       )}>
         {/* Badge de segurança — visível apenas quando sidebar expandida */}
@@ -521,9 +521,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         {!collapsed && isAdmin && (
           <div className="flex flex-wrap gap-1 px-1 pt-1">
             <span className={cn(
-              'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-border',
+              'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-[hsl(var(--color-border))]',
               isStaging
-                ? 'bg-muted text-muted-foreground'
+                ? 'bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))]'
                 : 'bg-primary/10 text-primary',
             )}>
               {isStaging ? 'Staging' : 'Produção'}
@@ -542,7 +542,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full"
+                  className="flex items-center justify-center rounded-md p-2 text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors w-full"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -554,7 +554,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             <span>Sair</span>

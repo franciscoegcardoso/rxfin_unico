@@ -80,11 +80,11 @@ const CategoryGoalItem: React.FC<{
   return (
     <div className="py-2.5 px-1 border-b border-[hsl(var(--color-border-subtle))] last:border-b-0 last:pb-0 first:pt-0">
       <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium text-foreground truncate min-w-0">{category}</span>
+        <span className="font-medium text-[hsl(var(--color-text-primary))] truncate min-w-0">{category}</span>
         <span
           className={cn(
             "text-xs sm:text-sm tabular-nums shrink-0",
-            isOverBudget ? "text-expense" : "text-muted-foreground"
+            isOverBudget ? "text-[hsl(var(--color-text-danger))]" : "text-[hsl(var(--color-text-muted))]"
           )}
         >
           {formatCurrencyLocal(spent)} / {goalLabel}
@@ -93,7 +93,7 @@ const CategoryGoalItem: React.FC<{
       <Progress
         value={percentage}
         className={cn(
-          "h-1.5 w-full overflow-hidden rounded-full bg-muted mt-1.5 [&>div]:rounded-full",
+          "h-1.5 w-full overflow-hidden rounded-full bg-[hsl(var(--color-surface-raised))] mt-1.5 [&>div]:rounded-full",
           isOverBudget ? "[&>div]:bg-expense" : "[&>div]:bg-primary"
         )}
       />
@@ -136,7 +136,7 @@ const RecentTransactionsList: React.FC<{
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4 text-center">
+      <p className="text-sm text-[hsl(var(--color-text-muted))] py-4 text-center">
         Nenhuma transação recente.
       </p>
     );
@@ -147,17 +147,17 @@ const RecentTransactionsList: React.FC<{
       {items.map((l) => (
         <li
           key={l.id}
-          className="flex items-center justify-between gap-2 py-2 border-b border-border last:border-0"
+          className="flex items-center justify-between gap-2 py-2 border-b border-[hsl(var(--color-border-subtle))] last:border-0"
         >
           <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <Receipt className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-[hsl(var(--color-surface-raised))] flex items-center justify-center shrink-0">
+              <Receipt className="h-4 w-4 text-[hsl(var(--color-text-muted))]" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
+              <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] truncate">
                 {l.nome || "Sem nome"}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-[hsl(var(--color-text-muted))]">
                 {getDate(l)
                   ? dateFmt.format(new Date(getDate(l)))
                   : "—"}
@@ -167,7 +167,7 @@ const RecentTransactionsList: React.FC<{
           <span
             className={cn(
               "text-sm font-sans font-semibold tabular-nums tracking-tight shrink-0",
-              l.tipo === "receita" ? "text-income" : "text-expense"
+              l.tipo === "receita" ? "text-[hsl(var(--color-text-success))]" : "text-[hsl(var(--color-text-danger))]"
             )}
           >
             {formatVal(l.valor_realizado ?? 0, l.tipo)}
@@ -182,9 +182,9 @@ const RecentTransactionsList: React.FC<{
 const FluxoPlaceholderCard: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <Card className="rounded-xl border border-border bg-card">
+    <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
       <CardHeader className="pb-2 p-4">
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))] flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-primary" />
           Fluxo — últimos 30 dias
         </CardTitle>
@@ -492,9 +492,9 @@ const Inicio: React.FC = () => {
           <InsuranceExpirationAlerts />
           <UpcomingEventsCard />
 
-          <Card className="rounded-xl border border-border bg-card">
+          <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
             <CardHeader className="pb-2 p-4">
-              <CardTitle className="text-base">Transações recentes</CardTitle>
+              <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))]">Transações recentes</CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               {dashboardLoading ? (
@@ -547,20 +547,20 @@ const Inicio: React.FC = () => {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="rounded-xl border border-border bg-card p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
             <div className="flex items-center gap-4 min-w-0">
-              <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-border shrink-0">
+              <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-[hsl(var(--color-border-subtle))] shrink-0">
                 <AvatarImage src={avatarUrl} alt={displayFirstName} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                   {getInitials(displayFirstName || "U")}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+                <h1 className="text-xl sm:text-2xl font-bold text-[hsl(var(--color-text-primary))] truncate">
                   Olá, {displayFirstName || "Usuário"}! 👋
                 </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-[hsl(var(--color-text-secondary))] mt-0.5">
                   {periodLabel}
                 </p>
               </div>
@@ -573,27 +573,27 @@ const Inicio: React.FC = () => {
                   <p
                     className={cn(
                       "font-numeric text-2xl sm:text-3xl font-bold tabular-nums tracking-tight leading-tight",
-                      isPositiveBalance ? "text-income" : "text-expense"
+                      isPositiveBalance ? "text-[hsl(var(--color-text-success))]" : "text-[hsl(var(--color-text-danger))]"
                     )}
                   >
                     {formatCurrencyFull(saldoLiquido)}
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
                     {isPositiveVariation ? (
-                      <TrendingUp className="h-4 w-4 text-income shrink-0" aria-hidden />
+                      <TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))] shrink-0" aria-hidden />
                     ) : (
-                      <TrendingDown className="h-4 w-4 text-expense shrink-0" aria-hidden />
+                      <TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))] shrink-0" aria-hidden />
                     )}
                     <span
                       className={cn(
                         "text-sm font-numeric tabular-nums",
-                        isPositiveVariation ? "text-income" : "text-expense"
+                        isPositiveVariation ? "text-[hsl(var(--color-text-success))]" : "text-[hsl(var(--color-text-danger))]"
                       )}
                     >
                       {isPositiveVariation ? "+" : ""}
                       {balanceVariation.pct.toFixed(1)}%
                     </span>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                    <span className="text-xs text-[hsl(var(--color-text-muted))] hidden sm:inline">
                       {" "}
                       vs mês anterior
                     </span>
@@ -673,10 +673,10 @@ const Inicio: React.FC = () => {
                         key={row.category}
                         className="flex items-center gap-2 sm:gap-3 min-w-0"
                       >
-                        <span className="w-24 sm:w-32 shrink-0 text-xs sm:text-sm font-medium truncate text-foreground">
+                        <span className="w-24 sm:w-32 shrink-0 text-xs sm:text-sm font-medium truncate text-[hsl(var(--color-text-primary))]">
                           {row.category}
                         </span>
-                        <div className="flex-1 h-6 rounded-md bg-muted overflow-hidden min-w-0">
+                        <div className="flex-1 h-6 rounded-md bg-[hsl(var(--color-surface-raised))] overflow-hidden min-w-0">
                           <div
                             className="h-full rounded-md transition-all"
                             style={{
@@ -685,7 +685,7 @@ const Inicio: React.FC = () => {
                             }}
                           />
                         </div>
-                        <span className="shrink-0 text-sm text-muted-foreground tabular-nums whitespace-nowrap">
+                        <span className="shrink-0 text-sm text-[hsl(var(--color-text-muted))] tabular-nums whitespace-nowrap">
                           {isHidden ? "••••" : formatCurrency(row.total ?? 0)} (
                           {pct.toFixed(1)}%)
                         </span>
@@ -719,10 +719,10 @@ const Inicio: React.FC = () => {
                   ) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between rounded-lg border border-border p-3"
+                      className="flex items-center justify-between rounded-lg border border-[hsl(var(--color-border-subtle))] p-3"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium truncate text-foreground">
+                        <span className="font-medium truncate text-[hsl(var(--color-text-primary))]">
                           {bill.card_name ?? "Cartão"}
                         </span>
                         {bill.status === "paid" && (
@@ -736,13 +736,13 @@ const Inicio: React.FC = () => {
                           </span>
                         )}
                         {bill.status !== "paid" && !bill.is_overdue && (
-                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))]">
                             Aberta
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold text-[hsl(var(--color-text-primary))]">
                           {isHidden ? "••••" : formatCurrency(bill.total_value ?? 0)}
                         </span>
                         <Link
@@ -763,19 +763,19 @@ const Inicio: React.FC = () => {
 
         {insuranceAlerts.length > 0 && (
           <Link to="/alertas" className="block">
-            <Card className="rounded-xl border border-border bg-warning/10 p-4 hover:bg-warning/15 transition-colors">
-              <div className="flex items-center gap-3">
-                <Shield className="h-8 w-8 text-warning shrink-0" />
-                <div>
-                  {(
-                    insuranceAlerts as Array<{
-                      nome?: string;
-                      seguradora?: string;
-                      days_left?: number;
-                      dias_restantes?: number;
-                    }>
-                  ).map((a, i) => (
-                    <p key={i} className="text-sm font-medium text-foreground">
+<Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-warning/10 p-4 hover:bg-warning/15 transition-colors">
+          <div className="flex items-center gap-3">
+            <Shield className="h-8 w-8 text-warning shrink-0" />
+            <div>
+              {(
+                insuranceAlerts as Array<{
+                  nome?: string;
+                  seguradora?: string;
+                  days_left?: number;
+                  dias_restantes?: number;
+                }>
+              ).map((a, i) => (
+                <p key={i} className="text-sm font-medium text-[hsl(var(--color-text-primary))]">
                       {a.nome}
                       {a.seguradora ? ` (${a.seguradora})` : ""} vence em{" "}
                       {a.days_left ?? a.dias_restantes ?? 0} dia

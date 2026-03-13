@@ -48,6 +48,8 @@
     --color-text-secondary:  218 14% 42%;
     --color-text-tertiary:   216 10% 62%;
     --color-text-disabled:   216 8% 75%;
+    --color-text-success:    var(--color-income);
+    --color-text-danger:     var(--color-expense);
 
     /* ── Semantic ── */
     --color-income:          142 71% 40%;
@@ -165,6 +167,8 @@
     --color-warning-bg:      38 60% 10%;
     --color-info:            214 80% 62%;
     --color-info-bg:         214 60% 10%;
+    --color-text-success:    var(--color-income);
+    --color-text-danger:     var(--color-expense);
 
     /* ── Sidebar — Dark ── */
     --sidebar-background:    228 17% 6%;

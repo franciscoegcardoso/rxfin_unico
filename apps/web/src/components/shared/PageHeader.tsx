@@ -80,12 +80,12 @@ export function PageHeader({
               })()
             )
           )}
-          <h1 className="text-lg font-semibold text-foreground sm:text-xl lg:text-2xl leading-tight break-words md:truncate">
+          <h1 className="text-lg font-bold text-[hsl(var(--color-text-primary))] sm:text-xl lg:text-2xl leading-tight break-words md:truncate">
             {title}
           </h1>
         </div>
         {subtitleText && (
-          <p className="text-xs text-muted-foreground mt-1 ml-6 md:ml-7">
+          <p className="text-xs text-[hsl(var(--color-text-secondary))] mt-1 ml-6 md:ml-7">
             {subtitleText}
           </p>
         )}

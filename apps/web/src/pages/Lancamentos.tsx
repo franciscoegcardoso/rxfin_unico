@@ -826,7 +826,7 @@ export const Lancamentos: React.FC = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => handleOpenContaDialog('pagar')} className="gap-3 cursor-pointer">
                       <div className="h-8 w-8 rounded-full bg-expense/10 flex items-center justify-center">
-                        <TrendingDown className="h-4 w-4 text-expense" />
+                        <TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))]" />
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium">Conta a Pagar</span>
@@ -835,7 +835,7 @@ export const Lancamentos: React.FC = () => {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleOpenContaDialog('receber')} className="gap-3 cursor-pointer">
                       <div className="h-8 w-8 rounded-full bg-income/10 flex items-center justify-center">
-                        <TrendingUp className="h-4 w-4 text-income" />
+                        <TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))]" />
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium">Conta a Receber</span>
@@ -932,7 +932,7 @@ export const Lancamentos: React.FC = () => {
                     <CardContent>
                       <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(142, 71%, 32%)' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(0, 72%, 51%)' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                          <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(var(--color-income))' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(var(--color-expense))' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                             <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
@@ -1050,7 +1050,7 @@ export const Lancamentos: React.FC = () => {
                     className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-income/30 bg-income/5 hover:border-income hover:bg-income/10 transition-all"
                   >
                     <div className="h-12 w-12 rounded-full bg-income/20 flex items-center justify-center">
-                      <TrendingUp className="h-6 w-6 text-income" />
+                      <TrendingUp className="h-6 w-6 text-[hsl(var(--color-text-success))]" />
                     </div>
                     <span className="font-semibold text-foreground">Receita</span>
                     <span className="text-xs text-muted-foreground text-center">Salários, vendas, aluguéis e rendimentos recebidos</span>
@@ -1060,7 +1060,7 @@ export const Lancamentos: React.FC = () => {
                     className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-expense/30 bg-expense/5 hover:border-expense hover:bg-expense/10 transition-all"
                   >
                     <div className="h-12 w-12 rounded-full bg-expense/20 flex items-center justify-center">
-                      <TrendingDown className="h-6 w-6 text-expense" />
+                      <TrendingDown className="h-6 w-6 text-[hsl(var(--color-text-danger))]" />
                     </div>
                     <span className="font-semibold text-foreground">Despesa</span>
                     <span className="text-xs text-muted-foreground text-center">Contas, compras e pagamentos realizados</span>
@@ -1072,9 +1072,9 @@ export const Lancamentos: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     {lancamentoTipo === 'entrada' ? (
-                      <><TrendingUp className="h-5 w-5 text-income" /> Nova Receita</>
+                      <><TrendingUp className="h-5 w-5 text-[hsl(var(--color-text-success))]" /> Nova Receita</>
                     ) : (
-                      <><TrendingDown className="h-5 w-5 text-expense" /> Nova Despesa</>
+                      <><TrendingDown className="h-5 w-5 text-[hsl(var(--color-text-danger))]" /> Nova Despesa</>
                     )}
                   </DialogTitle>
                 </DialogHeader>
@@ -1090,7 +1090,7 @@ export const Lancamentos: React.FC = () => {
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       lancamentoTipo === 'entrada' ? 'bg-income/20' : 'bg-expense/20'
                     }`}>
-                      <Pencil className={`h-5 w-5 ${lancamentoTipo === 'entrada' ? 'text-income' : 'text-expense'}`} />
+                      <Pencil className={`h-5 w-5 ${lancamentoTipo === 'entrada' ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`} />
                     </div>
                     <div>
                       <span className="font-semibold text-foreground block">Inserir Manualmente</span>
@@ -1109,7 +1109,7 @@ export const Lancamentos: React.FC = () => {
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       lancamentoTipo === 'entrada' ? 'bg-income/20' : 'bg-expense/20'
                     }`}>
-                      <Sparkles className={`h-5 w-5 ${lancamentoTipo === 'entrada' ? 'text-income' : 'text-expense'}`} />
+                      <Sparkles className={`h-5 w-5 ${lancamentoTipo === 'entrada' ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`} />
                     </div>
                     <div>
                       <span className="font-semibold text-foreground block">
@@ -1133,9 +1133,9 @@ export const Lancamentos: React.FC = () => {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     {lancamentoTipo === 'entrada' ? (
-                      <><TrendingUp className="h-5 w-5 text-income" /> {editingId ? 'Editar Entrada' : 'Registrar Nova Entrada'}</>
+                      <><TrendingUp className="h-5 w-5 text-[hsl(var(--color-text-success))]" /> {editingId ? 'Editar Entrada' : 'Registrar Nova Entrada'}</>
                     ) : (
-                      <><TrendingDown className="h-5 w-5 text-expense" /> {editingId ? 'Editar Saída' : 'Registrar Nova Saída'}</>
+                      <><TrendingDown className="h-5 w-5 text-[hsl(var(--color-text-danger))]" /> {editingId ? 'Editar Saída' : 'Registrar Nova Saída'}</>
                     )}
                   </DialogTitle>
                 </DialogHeader>
@@ -1199,7 +1199,7 @@ export const Lancamentos: React.FC = () => {
                           </div>
                           {newSaida.purchaseItemId && (
                             <>
-                              <p className="text-xs text-income flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Item será marcado como comprado</p>
+                              <p className="text-xs text-[hsl(var(--color-text-success))] flex items-center gap-1"><ShoppingBag className="h-3 w-3" /> Item será marcado como comprado</p>
                               <WarrantySection {...warranty} />
                             </>
                           )}
@@ -1279,16 +1279,16 @@ export const Lancamentos: React.FC = () => {
                 placeholder="Buscar por nome..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 min-h-[44px] w-full touch-manipulation border-border bg-background text-foreground"
+                className="pl-9 min-h-[44px] w-full touch-manipulation border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))]"
               />
             </div>
           </>
         ) : (
-            <aside className="w-[240px] shrink-0 bg-card border-r border-border pr-6 p-4 space-y-4">
+            <aside className="w-[240px] shrink-0 bg-[hsl(var(--color-surface-base))] border-r border-[hsl(var(--color-border-subtle))] pr-6 p-4 space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
                 <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
-                  <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                  <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1301,7 +1301,7 @@ export const Lancamentos: React.FC = () => {
               <div>
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Status</Label>
                 <Select value={filterStatus} onValueChange={(v: 'all' | 'paid' | 'pending' | 'overdue') => setFilterStatus(v)}>
-                  <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                  <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1316,7 +1316,7 @@ export const Lancamentos: React.FC = () => {
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Categoria</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="mt-1.5 w-full justify-between border-border bg-background text-foreground">
+                    <Button variant="outline" className="mt-1.5 w-full justify-between border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))]">
                       <span className="truncate">{filterCategories.length === 0 ? 'Todas' : `${filterCategories.length} selecionada(s)`}</span>
                       <ChevronDown className="h-4 w-4 shrink-0" />
                     </Button>
@@ -1349,7 +1349,7 @@ export const Lancamentos: React.FC = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground uppercase tracking-wider">Banco</Label>
                   <Select value={selectedBank} onValueChange={setSelectedBank}>
-                    <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                    <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1370,7 +1370,7 @@ export const Lancamentos: React.FC = () => {
                 <div>
                   <Label className="text-xs text-muted-foreground uppercase tracking-wider">Conta</Label>
                   <Select value={selectedAccountType} onValueChange={setSelectedAccountType}>
-                    <SelectTrigger className="mt-1.5 w-full border-border bg-background">
+                    <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1390,7 +1390,7 @@ export const Lancamentos: React.FC = () => {
                     placeholder="Por nome..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-9 w-full border-border bg-background text-foreground text-sm"
+                    className="pl-8 h-9 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] text-sm"
                   />
                 </div>
               </div>
@@ -1414,11 +1414,11 @@ export const Lancamentos: React.FC = () => {
               Geral
             </TabsTrigger>
             <TabsTrigger value="entradas" className="flex items-center gap-2 group">
-              <TrendingUp className="h-4 w-4 shrink-0 text-income group-data-[state=active]:text-foreground" />
+              <TrendingUp className="h-4 w-4 shrink-0 text-[hsl(var(--color-text-success))] group-data-[state=active]:text-foreground" />
               Entradas
             </TabsTrigger>
             <TabsTrigger value="saidas" className="flex items-center gap-2 group">
-              <TrendingDown className="h-4 w-4 shrink-0 text-expense group-data-[state=active]:text-foreground" />
+              <TrendingDown className="h-4 w-4 shrink-0 text-[hsl(var(--color-text-danger))] group-data-[state=active]:text-foreground" />
               Saídas
             </TabsTrigger>
           </TabsList>
@@ -1434,7 +1434,7 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Entradas</p>
-                      <p className="text-base sm:text-xl font-bold text-income truncate">{formatCurrency(totalEntradas)}</p>
+                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-success))] truncate">{formatCurrency(totalEntradas)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1447,7 +1447,7 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Saídas</p>
-                      <p className="text-base sm:text-xl font-bold text-expense truncate">{formatCurrency(totalSaidas)}</p>
+                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-danger))] truncate">{formatCurrency(totalSaidas)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1456,11 +1456,11 @@ export const Lancamentos: React.FC = () => {
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center gap-3">
                     <div className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${totalEntradas - totalSaidas >= 0 ? 'bg-income/10' : 'bg-expense/10'}`}>
-                      <Wallet className={`h-5 w-5 ${totalEntradas - totalSaidas >= 0 ? 'text-income' : 'text-expense'}`} />
+                      <Wallet className={`h-5 w-5 ${totalEntradas - totalSaidas >= 0 ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Saldo</p>
-                      <p className={`text-base sm:text-xl font-bold truncate ${totalEntradas - totalSaidas >= 0 ? 'text-income' : 'text-expense'}`}>
+                      <p className={`text-base sm:text-xl font-bold truncate ${totalEntradas - totalSaidas >= 0 ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`}>
                         {formatCurrency(totalEntradas - totalSaidas)}
                       </p>
                     </div>
@@ -1504,7 +1504,7 @@ export const Lancamentos: React.FC = () => {
 
             <CollapsibleModule
               title="Contas a Pagar"
-              icon={<TrendingDown className="h-4 w-4 text-expense" />}
+              icon={<TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))]" />}
               count={contasPagar.length}
               useDialogOnDesktop
             >
@@ -1522,7 +1522,7 @@ export const Lancamentos: React.FC = () => {
 
             <CollapsibleModule
               title="Contas a Receber"
-              icon={<TrendingUp className="h-4 w-4 text-income" />}
+              icon={<TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))]" />}
               count={contasReceber.length}
               useDialogOnDesktop
             >
@@ -1545,7 +1545,7 @@ export const Lancamentos: React.FC = () => {
               useDialogOnDesktop
             >
               {totalCount > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-border mb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[hsl(var(--color-border-subtle))] mb-2">
                   <p className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
                     <span className="sm:hidden">p. {page + 1}/{Math.max(1, totalPages)}</span>
                     <span className="hidden sm:inline">Página {page + 1} de {Math.max(1, totalPages)} ({totalCount} registro{totalCount !== 1 ? 's' : ''})</span>
@@ -1554,7 +1554,7 @@ export const Lancamentos: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="min-h-[36px] touch-manipulation border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="min-h-[36px] touch-manipulation border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] hover:bg-accent hover:text-accent-foreground"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
                     >
@@ -1564,7 +1564,7 @@ export const Lancamentos: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="min-h-[36px] touch-manipulation border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className="min-h-[36px] touch-manipulation border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] hover:bg-accent hover:text-accent-foreground"
                       onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                       disabled={page >= Math.max(1, totalPages) - 1}
                     >
@@ -1615,7 +1615,7 @@ export const Lancamentos: React.FC = () => {
                             <div
                               key={item.id}
                               className={cn(
-                                'rounded-xl border border-border bg-card p-4 flex items-center gap-3 cursor-pointer hover:bg-accent/50 transition-colors',
+                                'rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-base))] p-4 flex items-center gap-3 cursor-pointer hover:bg-[hsl(var(--color-surface-raised)/0.3)] transition-colors',
                                 recon?.isBillPayment && 'opacity-60'
                               )}
                               onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
@@ -1624,14 +1624,14 @@ export const Lancamentos: React.FC = () => {
                                 <Receipt className="h-5 w-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-foreground font-medium truncate">{item.friendly_name || item.nome}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
+                                <p className="text-[hsl(var(--color-text-primary))] font-medium truncate">{item.friendly_name || item.nome}</p>
+                                <p className="text-xs text-[hsl(var(--color-text-muted))] mt-0.5">
                                   {item.data_pagamento
                                     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                                     : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
                                 </p>
                               </div>
-                              <p className={cn('font-sans font-semibold tabular-nums tracking-tight shrink-0', isEntrada ? 'text-income' : 'text-expense')}>
+                              <p className={cn('font-sans font-semibold tabular-nums tracking-tight shrink-0', isEntrada ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]')}>
                                 {isEntrada ? '+' : '-'} {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                               </p>
                             </div>
@@ -1684,7 +1684,7 @@ export const Lancamentos: React.FC = () => {
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-[13px] text-[hsl(var(--color-text-primary))] truncate hidden sm:table-cell">{item.categoria}</td>
-                              <td className={cn('px-4 py-3 font-numeric text-[13px] font-semibold tracking-[-0.01em] tabular-nums whitespace-nowrap text-right', isEntrada ? 'text-[hsl(var(--color-income))]' : 'text-[hsl(var(--color-expense))]')}>
+                              <td className={cn('px-4 py-3 font-numeric text-[13px] font-semibold tracking-[-0.01em] tabular-nums whitespace-nowrap text-right', isEntrada ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]')}>
                                 {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                               </td>
                               <td className="px-4 py-3 text-[12px] text-[hsl(var(--color-text-secondary))] tabular-nums whitespace-nowrap text-right">
@@ -1723,7 +1723,7 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Total do Mês</p>
-                      <p className="text-base sm:text-xl font-bold text-income truncate">
+                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-success))] truncate">
                         {formatCurrency(totalEntradas)}
                       </p>
                     </div>
@@ -1763,7 +1763,7 @@ export const Lancamentos: React.FC = () => {
             {/* Contas a Receber */}
             <CollapsibleModule
               title="Contas a Receber"
-              icon={<TrendingUp className="h-4 w-4 text-income" />}
+              icon={<TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))]" />}
               count={contasReceber.length}
               useDialogOnDesktop
             >
@@ -1789,7 +1789,7 @@ export const Lancamentos: React.FC = () => {
             {/* Transactions */}
             <CollapsibleModule
               title="Últimas Entradas"
-              icon={<TrendingUp className="h-4 w-4 text-income" />}
+              icon={<TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))]" />}
               count={entradas.length}
               useDialogOnDesktop
             >
@@ -1814,7 +1814,7 @@ export const Lancamentos: React.FC = () => {
                           <p className="font-medium text-sm text-foreground truncate">
                             {item.friendly_name || item.nome}
                           </p>
-                          <p className="font-bold text-sm text-income whitespace-nowrap shrink-0 text-right tabular-nums">
+                          <p className="font-bold text-sm text-[hsl(var(--color-text-success))] whitespace-nowrap shrink-0 text-right tabular-nums">
                             + {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
@@ -1859,7 +1859,7 @@ export const Lancamentos: React.FC = () => {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Total do Mês</p>
-                      <p className="text-base sm:text-xl font-bold text-expense truncate">
+                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-danger))] truncate">
                         {formatCurrency(totalSaidas)}
                       </p>
                     </div>
@@ -1899,7 +1899,7 @@ export const Lancamentos: React.FC = () => {
             {/* Contas a Pagar */}
             <CollapsibleModule
               title="Contas a Pagar"
-              icon={<TrendingDown className="h-4 w-4 text-expense" />}
+              icon={<TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))]" />}
               count={contasPagar.length}
               useDialogOnDesktop
             >
@@ -1925,7 +1925,7 @@ export const Lancamentos: React.FC = () => {
             {/* Transactions */}
             <CollapsibleModule
               title="Últimas Saídas"
-              icon={<Wallet className="h-4 w-4 text-expense" />}
+              icon={<Wallet className="h-4 w-4 text-[hsl(var(--color-text-danger))]" />}
               count={saidas.length}
               useDialogOnDesktop
             >
@@ -1966,7 +1966,7 @@ export const Lancamentos: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <p className="font-bold text-sm text-expense whitespace-nowrap shrink-0 text-right tabular-nums">
+                          <p className="font-bold text-sm text-[hsl(var(--color-text-danger))] whitespace-nowrap shrink-0 text-right tabular-nums">
                             - {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
                         </div>
