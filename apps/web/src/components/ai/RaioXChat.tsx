@@ -556,12 +556,19 @@ export function RaioXChat() {
           style={isMobile ? { paddingBottom: keyboardPaddingBottom } : undefined}
         >
           <SheetHeader className="p-4 border-b flex-row items-center gap-3">
-            <div className="h-10 w-10 rounded-full overflow-hidden border border-border shrink-0" style={{ backgroundColor: '#0e7051' }}>
-              <img src={cibeliaAvatar} alt="Cibelia" className="h-full w-full object-cover" />
+            <div className="h-10 w-10 rounded-full overflow-hidden border border-border shrink-0 relative" style={{ backgroundColor: '#0e7051' }}>
+              <img src={cibeliaAvatar} alt="Cibélia" className="h-full w-full object-cover" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" title="Online" aria-hidden />
             </div>
-            <div className="flex-1">
-              <SheetTitle className="text-base">Cibelia</SheetTitle>
-              <span className="text-xs text-muted-foreground">Sua assistente pessoal • {model.label}</span>
+            <div className="flex-1 min-w-0">
+              <SheetTitle className="text-base">Cibélia</SheetTitle>
+              <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                Sua assistente RXfin
+                <span className="inline-flex items-center gap-1 shrink-0" title="Responde na hora">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
+                  Online
+                </span>
+              </span>
             </div>
             <Badge variant="secondary" className="text-xs">IA</Badge>
           </SheetHeader>

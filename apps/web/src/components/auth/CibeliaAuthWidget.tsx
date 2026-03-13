@@ -124,8 +124,12 @@ export const CibeliaAuthWidget: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-[13px] leading-tight">Cibélia</p>
-                <p className="text-[11px] text-white/70 leading-tight">
-                  Assistente RXFin
+                <p className="text-[11px] text-white/70 leading-tight flex items-center gap-1.5">
+                  Sua assistente RXfin
+                  <span className="inline-flex items-center gap-1 shrink-0" title="Responde na hora">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-400" aria-hidden />
+                    <span>Online</span>
+                  </span>
                 </p>
               </div>
             </div>
