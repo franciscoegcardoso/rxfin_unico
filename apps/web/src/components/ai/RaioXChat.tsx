@@ -527,26 +527,39 @@ export function RaioXChat() {
     }
   };
 
+  // Evitar duplicata no mobile: só exibir botão flutuante quando logado (em auth pages só CibeliaAuthWidget)
+  if (!user) return null;
+
   return (
     <>
-      {/* Floating button — Cibelia avatar (desktop z-50; mobile z-40 acima do bottom-nav) */}
+      {/* Floating button — Cibélia (benchmark: CibeliaWidget da landing) */}
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             onClick={() => setIsOpen(true)}
             className={cn(
-              'fixed right-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-lg border-2 border-primary overflow-hidden hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-              isMobile ? 'bottom-20 z-40' : 'bottom-6 z-50'
+              'fixed right-6 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              isMobile ? 'bottom-20 z-40' : 'bottom-6 z-50',
+              'h-16 w-16 sm:h-[72px] sm:w-[72px]'
             )}
             style={{ backgroundColor: '#0e7051' }}
-            aria-label="Abrir chat com Cibelia"
+            aria-label="Abrir chat com Cibélia"
           >
-            <img src={cibeliaAvatar} alt="Cibelia — Assistente IA" className="h-full w-full object-cover" />
+            <img
+              src={cibeliaAvatar}
+              alt="Cibélia — Assistente IA"
+              className="h-[60px] w-[60px] sm:h-[66px] sm:w-[66px] rounded-full object-cover"
+            />
+            <span
+              className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-400 animate-pulse ring-2 ring-background"
+              title="Online"
+              aria-hidden
+            />
           </button>
         </TooltipTrigger>
-        {shouldStartAIOnboarding && (
-          <TooltipContent side="left">Olá! Sou a Cibelia, sua assistente pessoal 💼</TooltipContent>
-        )}
+        <TooltipContent side="left">
+          Oá! Sou a Cibélia, sua assistente pessoal 💼
+        </TooltipContent>
       </Tooltip>
 
       {/* Chat Panel */}

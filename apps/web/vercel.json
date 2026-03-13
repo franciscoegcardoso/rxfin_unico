@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "! git diff HEAD~1 --name-only | grep -qE '^(apps/web|packages)/'",
   "rewrites": [
     {
       "source": "/(.*)",

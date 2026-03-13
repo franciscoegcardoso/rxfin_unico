@@ -96,15 +96,24 @@ export const useOnboardingV2Store = create<OnboardingV2State>((set, get) => ({
   },
 
   setPersona: async (persona) => {
-    const userId = await getUserId();
-    if (!userId) return;
     set({ isSaving: true, error: null });
     try {
-      const { error: err } = await supabase.rpc('set_onboarding_persona', { p_persona: persona });
+      const userId = await getUserId();
+      if (!userId) throw new Error('unauthenticated');
+
+      const { error: err } = await (supabase as any)
+        .from('onboarding_state')
+        .update({ persona, onboarding_version: 2 })
+        .eq('user_id', userId);
+
       if (err) throw err;
+
       set({ persona, isSaving: false });
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Erro ao salvar', isSaving: false });
+      set({
+        error: e instanceof Error ? e.message : 'Erro ao salvar persona',
+        isSaving: false,
+      });
     }
   },
 

@@ -89,7 +89,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           className="text-center mb-14"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
         >
           <Badge className="mb-5 bg-primary/15 text-primary border-primary/40 hover:bg-primary/20 text-xs px-3 py-1 font-medium">
@@ -139,7 +139,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
               key={p.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ delay: i * 0.1, duration: 0.4 }}
             >
               {renderPillarCard(p)}
@@ -163,7 +163,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
               key={c.id}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ delay: i * 0.08, duration: 0.4 }}
             >
               {renderComplementaryCard(c)}
@@ -176,7 +176,7 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
           className="mt-12 text-center"
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.4 }}
         >
           <a href="https://app.rxfin.com.br/signup">

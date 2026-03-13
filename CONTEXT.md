@@ -62,6 +62,15 @@ Plataforma brasileira de finanças pessoais com foco em:
 | Veículos | API FIPE (547k+ registros de preços) |
 | CI/CD | GitHub Actions |
 | Monorepo | Turborepo |
+| Deploy Web/Landing | Vercel (dois projetos: apps/web, apps/landing) |
+
+## Otimização de Build no Vercel
+
+Para reduzir Build Minutes (plano Pro):
+
+- **turbo.json:** `remoteCache.enabled: true` para reutilizar artefatos entre deploys.
+- **ignoreCommand** em cada app: build do **web** só roda se houve mudança em `apps/web` ou `packages/`; build da **landing** só roda se houve mudança em `apps/landing` ou `packages/`.
+- **Preview Deployments (manual):** No dashboard Vercel, em cada projeto (web e landing), em *Settings → Git → Preview Deployments*, configurar para **"Only Production Branch"** ou allowlist `["main"]`, para evitar builds em todo push de branch.
 
 ## Projetos Supabase
 

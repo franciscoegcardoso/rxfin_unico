@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useInView } from '@/hooks/useInView';
 import { ArrowRight, Search, Scale, Target, BarChart3, HandCoins, Clock, Percent, LineChart, Info, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,19 +43,17 @@ interface SimulatorsSectionProps {
 }
 
 export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulatorClick, onOpenLeadGate }) => {
-  const [sectionRef, isInView] = useInView(0.08);
   return (
     <section
       id="simuladores"
-      ref={sectionRef}
-      className={`py-10 px-4 sm:px-6 lg:px-8 w-full transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+      className="py-10 px-4 sm:px-6 lg:px-8 w-full"
     >
       <div className="max-w-[1200px] mx-auto w-full">
         <motion.div
           className="text-center mb-6"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
         >
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 tracking-tight">
             <span className="text-primary">Simuladores</span> financeiros
@@ -81,7 +78,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
                     key={sim.id}
                     initial={{ opacity: 0, y: 16 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    viewport={{ once: true, amount: 0.1 }}
                     transition={{ delay: i * 0.05 }}
                   >
                     <Card
@@ -174,7 +171,7 @@ export const SimulatorsSection: React.FC<SimulatorsSectionProps> = ({ onSimulato
           className="text-center mt-6 text-xs text-muted-foreground/70"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
         >
           Novos simuladores são liberados mensalmente. Cadastre-se para ser notificado.
         </motion.p>

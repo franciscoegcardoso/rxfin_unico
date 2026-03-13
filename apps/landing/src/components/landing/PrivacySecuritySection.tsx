@@ -2,7 +2,6 @@ import React from 'react';
 import { Shield, Cloud, Lock, CheckCircle, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { useInView } from '@/hooks/useInView';
 
 const badges = [
   {
@@ -37,19 +36,17 @@ const itemVariant = {
 };
 
 export const PrivacySecuritySection: React.FC = () => {
-  const [sectionRef, isInView] = useInView(0.08);
   return (
   <section
     id="seguranca"
-    ref={sectionRef}
-    className={`py-14 px-4 sm:px-6 lg:px-8 bg-white transition-all duration-700 ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+    className="py-14 px-4 sm:px-6 lg:px-8 bg-white"
   >
     <div className="max-w-5xl mx-auto">
       <motion.div
         className="text-center mb-10"
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.5 }}
       >
         <Badge className="mb-5 inline-flex items-center rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-sm font-medium text-primary">
@@ -74,7 +71,7 @@ export const PrivacySecuritySection: React.FC = () => {
             variants={itemVariant}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center hover:bg-slate-100 transition-colors duration-200"
           >
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">

@@ -52,7 +52,7 @@ export const TimelineSection: React.FC = () => {
           className="text-center mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
         >
           <Badge className="mb-5 bg-white/20 text-white border-white/30 hover:bg-white/25 text-xs px-3 py-1 font-medium">
             <Sparkles className="h-3 w-3 mr-1.5" />
@@ -138,7 +138,7 @@ export const TimelineSection: React.FC = () => {
           className="mt-8 flex justify-center"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ delay: 0.7, duration: 0.5 }}
         >
           <div className="h-1 w-full max-w-2xl rounded-full bg-white/10 overflow-hidden">

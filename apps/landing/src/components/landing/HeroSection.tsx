@@ -13,8 +13,11 @@ interface HeroSectionProps {
 }
 
 const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.15, delayChildren: 0.1 } },
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+  },
 };
 
 const fadeUp = {
@@ -145,11 +148,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onScrollToSystem }) =>
           </motion.div>
         </motion.div>
 
-        {/* Direita: mockup do dashboard */}
+        {/* Direita: mockup do dashboard — valores explícitos (fora do container com stagger) */}
         <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
           className="flex-1 min-w-0 flex justify-center mt-10 lg:mt-0"
         >
           <div className="relative w-full">

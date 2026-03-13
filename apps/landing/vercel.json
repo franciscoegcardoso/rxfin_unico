@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "! git diff HEAD~1 --name-only | grep -qE '^(apps/landing|packages)/'",
   "buildCommand": "cd ../.. && npm install --legacy-peer-deps && cd apps/landing && npx vite build",
   "outputDirectory": "dist",
   "framework": null,
