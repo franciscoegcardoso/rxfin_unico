@@ -89,7 +89,7 @@ export const OnboardingProgressBanner: React.FC<OnboardingProgressBannerProps> =
       {/* Botão */}
       <Button
         size="sm"
-        onClick={() => navigate('/onboarding2')}
+        onClick={() => navigate('/onboarding-raio-x')}
         className="
           ml-auto h-6 px-3 text-xs font-semibold gap-1
           bg-[hsl(var(--color-brand-600))]

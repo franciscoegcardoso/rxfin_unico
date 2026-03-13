@@ -206,6 +206,7 @@ const App = () => (
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/planos" element={<Navigate to="/financeiro/planos" replace />} />
                   <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
+                  <Route path="/onboarding-raio-x" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
                   <Route path="/onboarding" element={<OnboardingRoute />} />
                   <Route path="/onboarding-controle" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingControlPage /></Suspense></ProtectedRoute>} />
                   <Route path="/app" element={<Navigate to="/inicio" replace />} />

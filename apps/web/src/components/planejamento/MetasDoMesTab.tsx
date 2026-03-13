@@ -61,6 +61,29 @@ import { toast } from 'sonner';
 import { PaymentMethod } from '@/types/financial';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// Type assertions to resolve React/Radix JSX type mismatch (ReactNode vs FC return types)
+type FCAny = React.ComponentType<Record<string, unknown>>;
+const AlertDialogT = AlertDialog as FCAny;
+const AlertDialogContentT = AlertDialogContent as FCAny;
+const AlertDialogHeaderT = AlertDialogHeader as FCAny;
+const AlertDialogTitleT = AlertDialogTitle as FCAny;
+const AlertDialogDescriptionT = AlertDialogDescription as FCAny;
+const AlertDialogFooterT = AlertDialogFooter as FCAny;
+const AlertDialogCancelT = AlertDialogCancel as FCAny;
+const AlertDialogActionT = AlertDialogAction as FCAny;
+const TooltipT = Tooltip as FCAny;
+const TooltipTriggerT = TooltipTrigger as FCAny;
+const TooltipContentT = TooltipContent as FCAny;
+const DropdownMenuT = DropdownMenu as FCAny;
+const DropdownMenuTriggerT = DropdownMenuTrigger as FCAny;
+const DropdownMenuContentT = DropdownMenuContent as FCAny;
+const DropdownMenuItemT = DropdownMenuItem as FCAny;
+const DialogT = Dialog as FCAny;
+const DialogContentT = DialogContent as FCAny;
+const DialogHeaderT = DialogHeader as FCAny;
+const DialogTitleT = DialogTitle as FCAny;
+const DialogDescriptionT = DialogDescription as FCAny;
 import { CategoryPaymentMatrix } from '@/components/metas/CategoryPaymentMatrix';
 import { useHistoricalAverages, getBaseByExpenseNature, natureBaseShortLabels } from '@/hooks/useHistoricalAverages';
 import { HistoryBaseSelector } from '@/components/metas/HistoryBaseSelector';
@@ -618,22 +641,22 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
       </div>
 
       {/* Reset Confirmation Dialog */}
-      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resetar metas para projeção?</AlertDialogTitle>
-            <AlertDialogDescription>
+      <AlertDialogT open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContentT>
+          <AlertDialogHeaderT>
+            <AlertDialogTitleT>Resetar metas para projeção?</AlertDialogTitleT>
+            <AlertDialogDescriptionT>
               Esta ação irá substituir todas as metas personalizadas pelos valores originais da projeção do planejamento. Os desafios de redução também serão zerados.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetToProjection}>
+            </AlertDialogDescriptionT>
+          </AlertDialogHeaderT>
+          <AlertDialogFooterT>
+            <AlertDialogCancelT>Cancelar</AlertDialogCancelT>
+            <AlertDialogActionT onClick={handleResetToProjection}>
               Confirmar Reset
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </AlertDialogActionT>
+          </AlertDialogFooterT>
+        </AlertDialogContentT>
+      </AlertDialogT>
       
       {/* Cards de Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -943,8 +966,8 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                 <Target className="h-5 w-5" />
                 Metas por Grupo de Despesa
               </CardTitle>
-              <Tooltip>
-                <TooltipTrigger asChild>
+              <TooltipT>
+                <TooltipTriggerT asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -953,11 +976,11 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                   >
                     <Calculator className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
+                </TooltipTriggerT>
+                <TooltipContentT>
                   <p>Configurar cálculo automático de metas</p>
-                </TooltipContent>
-              </Tooltip>
+                </TooltipContentT>
+              </TooltipT>
             </div>
             <Button 
               variant="outline" 
@@ -1068,15 +1091,15 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                         <TableRow key={item.id}>
                           <TableCell className="pl-8">
                             <div className="flex items-center gap-2">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                              <DropdownMenuT>
+                                <DropdownMenuTriggerT asChild>
                                   <button className="p-1 rounded hover:bg-muted transition-colors cursor-pointer" title="Alterar forma de pagamento">
                                     {getPaymentIcon(item.paymentMethod)}
                                   </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start">
+                                </DropdownMenuTriggerT>
+                                <DropdownMenuContentT align="start">
                                   {paymentMethods.map((method) => (
-                                    <DropdownMenuItem
+                                    <DropdownMenuItemT
                                       key={method.value}
                                       onClick={() => updateExpensePaymentMethod(item.id, method.value)}
                                       className={cn(
@@ -1086,10 +1109,10 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
                                     >
                                       {getPaymentIcon(method.value)}
                                       <span>{method.label}</span>
-                                    </DropdownMenuItem>
+                                    </DropdownMenuItemT>
                                   ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                                </DropdownMenuContentT>
+                              </DropdownMenuT>
                               <span className="text-sm truncate">{item.name}</span>
                             </div>
                           </TableCell>
@@ -1216,17 +1239,17 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
       </div>
 
       {/* Dialog de Configuração de Cálculo Automático */}
-      <Dialog open={showAutoCalcDialog} onOpenChange={setShowAutoCalcDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      <DialogT open={showAutoCalcDialog} onOpenChange={setShowAutoCalcDialog}>
+        <DialogContentT className="max-w-2xl">
+          <DialogHeaderT>
+            <DialogTitleT className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-primary" />
               Base de Cálculo Automático
-            </DialogTitle>
-            <DialogDescription>
+            </DialogTitleT>
+            <DialogDescriptionT>
               Fixa: último mês • Semi-variável: média 3 meses • Variável: média 6 meses
-            </DialogDescription>
-          </DialogHeader>
+            </DialogDescriptionT>
+          </DialogHeaderT>
           
           <div className="flex flex-col gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1377,8 +1400,8 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DialogContentT>
+      </DialogT>
     </div>
   );
 };

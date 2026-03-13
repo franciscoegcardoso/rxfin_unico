@@ -32,7 +32,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
     if (currentPhase === 'not_started') {
       await advancePhase('started');
     }
-    navigate('/onboarding2');
+    navigate('/onboarding-raio-x');
   };
 
   useEffect(() => {

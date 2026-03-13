@@ -40,6 +40,13 @@ export const OnboardingWizardV3: React.FC = () => {
   const [step, setStep] = useState(0);
   const [draftRestored, setDraftRestored] = useState(false);
 
+  // Guard: usuário já completou o Raio-X — evita reabrir o wizard ao acessar /onboarding-raio-x diretamente
+  useEffect(() => {
+    if (currentPhase === 'completed') {
+      navigate('/inicio', { replace: true });
+    }
+  }, [currentPhase, navigate]);
+
   // Restore draft on mount
   useEffect(() => {
     if (draftRestored) return;
@@ -95,6 +102,8 @@ export const OnboardingWizardV3: React.FC = () => {
     toast.success('🎉 Parabéns! Seu Raio-X está completo!');
     navigate('/inicio');
   };
+
+  if (currentPhase === 'completed') return null; // redirect em andamento (evita flash do wizard)
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
