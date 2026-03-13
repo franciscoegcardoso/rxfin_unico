@@ -181,7 +181,7 @@ export const useOnboardingV2Store = create<OnboardingV2State>((set, get) => ({
     set({ isSaving: true, error: null });
     try {
       const { error: err } = await supabase
-        .from('onboarding_state' as 'public')
+        .from('onboarding_state' as any)
         .update({ ir_import_status: status })
         .eq('user_id', userId);
       if (err) throw err;
