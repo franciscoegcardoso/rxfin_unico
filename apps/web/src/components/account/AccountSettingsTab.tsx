@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useFinancial } from '@/contexts/FinancialContext';
-import { useTour } from '@/contexts/TourContext';
-import { User, Users, Pencil, Save, X, Crown, TrendingUp, RotateCcw, HelpCircle, FileText, ChevronRight } from 'lucide-react';
+import { User, Users, Pencil, Save, X, Crown, TrendingUp, FileText, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AddPersonDialog } from '@/components/shared/AddPersonDialog';
@@ -17,7 +16,6 @@ import { ActiveModulesSection } from './ActiveModulesSection';
 
 export const AccountSettingsTab: React.FC = () => {
   const { config, updateUserProfile, setAccountType, addSharedPerson, removeSharedPerson, updateSharedPerson } = useFinancial();
-  const { resetTour, startTour, hasCompletedTour } = useTour();
   const { userProfile } = config;
 
   // Person income dialog
@@ -330,32 +328,6 @@ export const AccountSettingsTab: React.FC = () => {
         onConfirm={handleMigrationConfirm}
         onCancel={handleMigrationCancel}
       />
-
-      {/* Tour & Ajuda */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
-            Ajuda e Tour Guiado
-          </CardTitle>
-          <CardDescription>
-            Reveja o tour guiado para conhecer as funcionalidades do RXFin
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              resetTour();
-              startTour();
-              toast.success('Tour guiado iniciado! Navegue até a página Início para começar.');
-            }}
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            {hasCompletedTour ? 'Refazer Tour Guiado' : 'Iniciar Tour Guiado'}
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Legal */}
       <Card>

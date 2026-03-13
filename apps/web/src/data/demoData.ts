@@ -1,4 +1,13 @@
 /**
+ * @deprecated
+ * Este arquivo foi substituído pela conta demo real no Supabase.
+ * UUID da conta demo: a1b2c3d4-e5f6-4a7b-8c9d-000000000001
+ * Registrado em app_config com key = 'demo_user_id'
+ *
+ * Manter como referência dos valores originais usados para seed.
+ * Pode ser deletado após validação completa em produção.
+ *
+ * ---
  * Dados fictícios centralizados para o Modo Demo.
  * Perfil base: renda média brasileira (~R$ 8.500/mês).
  * Estes dados NUNCA são inseridos no banco — são retornados em memória pelos hooks.

@@ -37,41 +37,39 @@ export interface HomeDashboardData {
 
 /**
  * Fetches home dashboard data via get_home_dashboard RPC.
- * Uses auth.uid() when p_user_id is omitted.
+ * Uses auth.uid() when demoUserId is omitted. When demoUserId is provided (modo demo),
+ * the RPC returns data for that user instead.
  */
-export function useHomeDashboard(month: string) {
+export function useHomeDashboard(month: string, demoUserId?: string | null) {
   const [data, setData] = useState<HomeDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboard = useCallback(
-    async (pUserId?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params: Record<string, unknown> = { p_month: month };
-        if (pUserId) params.p_user_id = pUserId;
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Record<string, unknown> = { p_month: month };
+      if (demoUserId) params.p_user_id = demoUserId;
 
-        const { data: result, error: rpcError } = await supabase.rpc('get_home_dashboard', params);
+      const { data: result, error: rpcError } = await supabase.rpc('get_home_dashboard', params);
 
-        if (rpcError) {
-          setError(rpcError.message);
-          setData(null);
-          return null;
-        }
-        setData((result as HomeDashboardData) ?? null);
-        return result as HomeDashboardData;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
+      if (rpcError) {
+        setError(rpcError.message);
         setData(null);
         return null;
-      } finally {
-        setLoading(false);
       }
-    },
-    [month]
-  );
+      setData((result as HomeDashboardData) ?? null);
+      return result as HomeDashboardData;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setData(null);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [month, demoUserId]);
 
   useEffect(() => {
     fetchDashboard();

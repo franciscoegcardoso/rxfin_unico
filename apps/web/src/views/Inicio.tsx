@@ -25,7 +25,6 @@ import { PackagesSummaryCard } from '@/components/inicio/PackagesSummaryCard';
 import { InsuranceExpirationAlerts } from '@/components/inicio/InsuranceExpirationAlerts';
 import { MobileHomeHero } from '@/components/inicio/MobileHomeHero';
 import { OnboardingInsightCard } from '@/components/inicio/OnboardingInsightCard';
-import { DemoBadge } from '@/components/inicio/DemoBadge';
 import { ControlOnboardingBanner } from '@/components/shared/ControlOnboardingBanner';
 import {
   MonthSummaryCard,
@@ -84,17 +83,9 @@ const CategoryGoalItem: React.FC<{
   );
 };
 
-/** Wrapper that adds demo visual treatment to cards */
-const DemoCardWrapper: React.FC<{ isDemoMode: boolean; children: React.ReactNode; className?: string }> = ({ isDemoMode, children, className }) => {
-  if (!isDemoMode) return <>{children}</>;
-  return (
-    <div className={cn("relative", className)}>
-      <div className="[&>*]:border-dashed [&>*]:opacity-80">
-        {children}
-      </div>
-      <DemoBadge />
-    </div>
-  );
+/** Wrapper for cards; demo mode only affects banner, no blur/overlay (data comes from real demo account). */
+const DemoCardWrapper: React.FC<{ isDemoMode: boolean; children: React.ReactNode; className?: string }> = ({ children, className }) => {
+  return <div className={cn(className)}>{children}</div>;
 };
 
 const Inicio: React.FC = () => {

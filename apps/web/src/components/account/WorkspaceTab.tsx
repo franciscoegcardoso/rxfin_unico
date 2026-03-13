@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useFinancial } from '@/contexts/FinancialContext';
-import { useTour } from '@/contexts/TourContext';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useAccountPendingChanges } from '@/contexts/AccountPendingChangesContext';
-import { User, Users, Pencil, Save, X, Crown, TrendingUp, RotateCcw, HelpCircle, FileText, ChevronRight, Lock } from 'lucide-react';
+import { User, Users, Pencil, Save, X, Crown, TrendingUp, FileText, ChevronRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AddPersonDialog } from '@/components/shared/AddPersonDialog';
@@ -20,7 +19,6 @@ import { ActiveModulesSection } from './ActiveModulesSection';
 
 export const WorkspaceTab: React.FC = () => {
   const { config, updateUserProfile, setAccountType, addSharedPerson, removeSharedPerson, updateSharedPerson } = useFinancial();
-  const { resetTour, startTour, hasCompletedTour } = useTour();
   const { settings } = useAppSettings();
   const { registerDirty, unregisterDirty } = useAccountPendingChanges();
   const { userProfile } = config;
@@ -416,36 +414,6 @@ export const WorkspaceTab: React.FC = () => {
         onConfirm={handleMigrationConfirm}
         onCancel={handleMigrationCancel}
       />
-
-      {/* Tour & Help */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <HelpCircle className="h-4 w-4 text-primary" />
-            </div>
-            Ajuda e Tour Guiado
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Reveja o tour guiado para conhecer as funcionalidades
-          </CardDescription>
-        </CardHeader>
-        <Separator className="mb-4" />
-        <CardContent>
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              resetTour();
-              startTour();
-              toast.success('Tour guiado iniciado! Navegue até a página Início para começar.');
-            }}
-          >
-            <RotateCcw className="h-3.5 w-3.5 mr-2" />
-            {hasCompletedTour ? 'Refazer Tour Guiado' : 'Iniciar Tour Guiado'}
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Legal */}
       <Card>

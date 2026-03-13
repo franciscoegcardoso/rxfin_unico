@@ -9,6 +9,7 @@ import { useVisibility } from "@/contexts/VisibilityContext";
 import { useTour } from "@/contexts/TourContext";
 import { useFeaturePreferences } from "@/hooks/useFeaturePreferences";
 import { useDemoMode } from "@/hooks/useDemoMode";
+import { useDemoUserId } from "@/hooks/useDemoUserId";
 import { useOnboardingCheckpoint } from "@/hooks/useOnboardingCheckpoint";
 import { supabase } from "@/integrations/supabase/client";
 import { VisibilityToggle } from "@/components/ui/visibility-toggle";
@@ -34,7 +35,6 @@ import { BudgetInsightsSummary } from "@/components/inicio/BudgetInsightsSummary
 import { InsuranceExpirationAlerts } from "@/components/inicio/InsuranceExpirationAlerts";
 import { MobileHomeHero } from "@/components/inicio/MobileHomeHero";
 import { OnboardingInsightCard } from "@/components/inicio/OnboardingInsightCard";
-import { DemoBadge } from "@/components/inicio/DemoBadge";
 import { ControlOnboardingBanner } from "@/components/shared/ControlOnboardingBanner";
 import {
   MonthSummaryCard,
@@ -102,20 +102,13 @@ const CategoryGoalItem: React.FC<{
   );
 };
 
-/** Wrapper that adds demo visual treatment to cards */
+/** Wrapper for cards; demo mode only affects banner, no blur/overlay (data comes from real demo account). */
 const DemoCardWrapper: React.FC<{
   isDemoMode: boolean;
   children: React.ReactNode;
   className?: string;
-}> = ({ isDemoMode, children, className }) => {
-  if (!isDemoMode) return <>{children}</>;
-  const passHeight = Boolean(className?.includes('h-full'));
-  return (
-    <div className={cn("relative", className)}>
-      <div className={cn("[&>*]:border-dashed [&>*]:opacity-80", passHeight && "h-full min-h-0")}>{children}</div>
-      <DemoBadge />
-    </div>
-  );
+}> = ({ children, className }) => {
+  return <div className={cn(className)}>{children}</div>;
 };
 
 /** Últimas 5 transações para o dashboard */
@@ -218,6 +211,8 @@ const Inicio: React.FC = () => {
   const { hasCompletedTour, startTour } = useTour();
   const { isFeatureEnabled } = useFeaturePreferences();
   const { isDemoMode } = useDemoMode();
+  const demoUserId = useDemoUserId();
+  const effectiveDemoUserId = isDemoMode ? demoUserId : null;
   const { currentPhase, controlDone } = useOnboardingCheckpoint();
   const showControlBanner = currentPhase === "completed" && !controlDone;
   const navigate = useNavigate();
@@ -230,7 +225,7 @@ const Inicio: React.FC = () => {
     data: dashboardData,
     loading: dashboardLoading,
     error: dashboardError,
-  } = useHomeDashboard(currentMonth);
+  } = useHomeDashboard(currentMonth, effectiveDemoUserId);
 
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
   const { lancamentos } = useLancamentosRealizados();
