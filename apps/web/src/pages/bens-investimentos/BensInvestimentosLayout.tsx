@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 
-import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart } from 'lucide-react';
+import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart, Briefcase } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -39,13 +39,13 @@ import { AddAssetDialog } from '@/components/bens/AddAssetDialog';
 import { SeguroDialog } from '@/components/seguros/SeguroDialog';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
-import { assetIcons, formatCurrencyBase, type AssetDependencies } from './constants';
+import { assetIcons, formatCurrencyBase, TABS, VALID_TABS, type AssetDependencies, type BensTab } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-import { IrHistoricoPatrimonial } from '@/components/ir/IrHistoricoPatrimonial';
+import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
@@ -58,8 +58,14 @@ const BensInvestimentosLayout: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
-  const validTabs = ['overview', 'imoveis', 'veiculos', 'investimentos', 'financiamentos', 'seguros', 'historico-ir'] as const;
-  const tabFromUrl = validTabs.includes(pathSegment as any) ? pathSegment : 'overview';
+  const validTabs = VALID_TABS as readonly string[];
+  const tabFromUrl = (() => {
+    if (pathSegment === 'overview') return 'consolidado';
+    if (pathSegment === 'imoveis' || pathSegment === 'veiculos') return 'patrimonio';
+    if (pathSegment === 'financiamentos') return 'passivos';
+    if (pathSegment === 'credito') return 'passivos';
+    return validTabs.includes(pathSegment) ? pathSegment : 'consolidado';
+  })();
 
   const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
   useEffect(() => {
@@ -98,7 +104,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const [trashSheetOpen, setTrashSheetOpen] = useState(false);
   const [auditSheetOpen, setAuditSheetOpen] = useState(false);
 
-  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : currentTab === 'veiculos' ? 'vehicle' : 'property';
+  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : 'property';
   const assets = patrimonioData?.assets ?? [];
   const imoveis = assets.filter((a: { type?: string }) => a.type === 'imovel');
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
@@ -480,47 +486,34 @@ const BensInvestimentosLayout: React.FC = () => {
               setIsDialogOpen(open);
             }}
             editingAsset={editingAsset}
-            defaultType={openAsVehicleOnly || currentTab === 'veiculos' ? 'vehicle' : defaultAssetType}
-            vehicleOnly={openAsVehicleOnly || currentTab === 'veiculos'}
+            defaultType={defaultAssetType}
+            vehicleOnly={openAsVehicleOnly}
           />
 
           {/* Tab Navigation — overflow-x em mobile, ativa sempre visível */}
           <Tabs value={currentTab} onValueChange={handleTabChange}>
             <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 scrollbar-thin">
               <TabsList className="inline-flex w-max min-w-full sm:min-w-0 gap-1 h-auto flex-nowrap p-1 bg-muted/50 rounded-lg">
-              <TabsTrigger ref={currentTab === 'overview' ? activeTabRef : undefined} value="overview" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden xs:inline">Visão Geral</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'imoveis' ? activeTabRef : undefined} value="imoveis" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <Home className="h-3.5 w-3.5 shrink-0" />
-                <span>Imóveis</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'veiculos' ? activeTabRef : undefined} value="veiculos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <Car className="h-3.5 w-3.5 shrink-0" />
-                <span>Veículos</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'investimentos' ? activeTabRef : undefined} value="investimentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <TrendingUp className="h-3.5 w-3.5 shrink-0" />
-                <span>Investimentos</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'financiamentos' ? activeTabRef : undefined} value="financiamentos" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <Landmark className="h-3.5 w-3.5 shrink-0" />
-                <span>Financiamentos</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'seguros' ? activeTabRef : undefined} value="seguros" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <Shield className="h-3.5 w-3.5 shrink-0" />
-                <span>Seguros</span>
-              </TabsTrigger>
-              <TabsTrigger ref={currentTab === 'historico-ir' ? activeTabRef : undefined} value="historico-ir" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
-                <FileBarChart className="h-3.5 w-3.5 shrink-0" />
-                <span>Histórico IR</span>
-              </TabsTrigger>
+              {TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = currentTab === tab.id;
+                return (
+                  <TabsTrigger
+                    key={tab.id}
+                    ref={isActive ? activeTabRef : undefined}
+                    value={tab.id}
+                    className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0"
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className={tab.id === 'consolidado' ? 'hidden xs:inline' : undefined}>{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
             </TabsList>
             </div>
 
             <div className="mt-4 space-y-4">
-              {currentTab === 'overview' && (
+              {currentTab === 'consolidado' && (
                 <>
                   <IrHistoricoPatrimonial />
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
@@ -528,7 +521,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4" /> Imóveis</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('imoveis')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('patrimonio' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {imoveis.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -541,7 +534,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Car className="h-4 w-4" /> Veículos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('veiculos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('patrimonio' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {veiculosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -554,7 +547,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Investimentos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('investimentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('investimentos' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {investimentosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -567,7 +560,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Financiamentos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('financiamentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('passivos' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {financiamentosList.slice(0, 3).map((f: { nome?: string; saldo_devedor?: number; progress_pct?: number }, i: number) => (
@@ -583,7 +576,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Seguros</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('seguros')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('seguros' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <p className="text-sm text-muted-foreground">{segurosList.filter((s: { is_active?: boolean }) => s.is_active).length} ativos · {segurosList.filter((s: { is_active?: boolean }) => !s.is_active).length} vencidos</p>
                     </Card>
@@ -595,7 +588,8 @@ const BensInvestimentosLayout: React.FC = () => {
                 </>
               )}
 
-              {currentTab === 'imoveis' && (
+              {currentTab === 'patrimonio' && (
+                <div className="space-y-8">
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -644,9 +638,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )}
 
-              {currentTab === 'veiculos' && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -715,6 +707,7 @@ const BensInvestimentosLayout: React.FC = () => {
                       ))}
                     </div>
                   )}
+                </div>
                 </div>
               )}
 
@@ -875,7 +868,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
-              {currentTab === 'financiamentos' && (
+              {currentTab === 'passivos' && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -936,6 +929,38 @@ const BensInvestimentosLayout: React.FC = () => {
                   ))}
                     </>
                   )}
+                </div>
+              )}
+
+              {currentTab === 'participacoes' && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    Participações Societárias
+                  </h2>
+                  <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                    <CardContent className="flex flex-col items-center justify-center text-center">
+                      <Building2 className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                      <p className="font-medium text-foreground">Em breve</p>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-sm">Participações societárias serão exibidas aqui.</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {currentTab === 'intangiveis' && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Intangíveis
+                  </h2>
+                  <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
+                    <CardContent className="flex flex-col items-center justify-center text-center">
+                      <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                      <p className="font-medium text-foreground">Em breve</p>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-sm">Propriedade intelectual, licenças e direitos contratuais serão exibidos aqui.</p>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 

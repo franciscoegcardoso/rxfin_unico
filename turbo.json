@@ -6,6 +6,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["src/**", "public/**", "index.html", "vite.config.*", "tsconfig.*", "package.json"],
       "outputs": ["dist/**", ".next/**"],
       "env": ["VERCEL_BUILD_ID"]
     },

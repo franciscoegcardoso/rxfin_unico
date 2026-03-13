@@ -19,8 +19,8 @@ import { useFiscalOrganizer } from '@/hooks/useFiscalOrganizer';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
-import { IrBensDireitosTab } from '@/components/ir/IrBensDireitosTab';
-import { IrExercicioSummaryCard } from '@/components/ir/IrExercicioSummaryCard';
+import IrBensDireitosTab from '@/components/ir/IrBensDireitosTab';
+import IrExercicioSummaryCard from '@/components/ir/IrExercicioSummaryCard';
 
 const MeuIR: React.FC = () => {
   const [activeTab, setActiveTab] = useState('organizer');

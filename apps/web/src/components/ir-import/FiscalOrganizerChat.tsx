@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
+import cibeliaAvatar from '@/assets/cibelia.png';
 import { cn } from '@/lib/utils';
 import { ChatMessage } from '@/hooks/useFiscalOrganizer';
 
@@ -45,10 +46,13 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
     <Card className="flex flex-col h-[500px]">
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-primary/10">
-            <Bot className="h-4 w-4 text-primary" />
-          </div>
-          <CardTitle className="text-base">Fiscal Organizer</CardTitle>
+          <Avatar className="h-8 w-8 rounded-lg border border-border">
+            <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
+            <AvatarFallback className="rounded-lg bg-primary/10">
+              <Bot className="h-4 w-4 text-primary" />
+            </AvatarFallback>
+          </Avatar>
+          <CardTitle className="text-base">Cibélia</CardTitle>
         </div>
         {messages.length > 0 && (
           <Button
@@ -67,17 +71,17 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
         <div className="space-y-4">
           {welcomeMessage && (
             <div className="flex gap-3">
-              <Avatar className="h-8 w-8 bg-primary/10">
-                <AvatarFallback className="bg-primary/10">
+              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0">
+                <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
+                <AvatarFallback className="rounded-lg bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-2 min-w-0">
                 <div className="bg-muted rounded-lg p-3 text-sm">
-                  <p className="font-medium mb-2">Olá! 👋 Sou seu Organizador Fiscal.</p>
+                  <p className="font-medium mb-2">Olá, eu sou a Cibélia e estou aqui para te ajudar na organização fiscal.</p>
                   <p className="text-muted-foreground">
-                    Posso te ajudar a organizar seus comprovantes fiscais para o Imposto de Renda. 
-                    Me envie informações sobre recibos médicos, escolares ou de previdência e eu vou:
+                    Posso te ajudar a organizar seus comprovantes fiscais para o Imposto de Renda. Me envie informações sobre recibos médicos, escolares ou de previdência e eu vou:
                   </p>
                   <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
                     <li>Verificar se são válidos para dedução</li>
@@ -143,8 +147,9 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
           
           {isLoading && messages[messages.length - 1]?.role === 'user' && (
             <div className="flex gap-3">
-              <Avatar className="h-8 w-8 bg-primary/10">
-                <AvatarFallback className="bg-primary/10">
+              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0">
+                <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
+                <AvatarFallback className="rounded-lg bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
                 </AvatarFallback>
               </Avatar>

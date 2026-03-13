@@ -64,7 +64,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
-
+import type { BensTab } from './bens-investimentos/constants';
 
 const assetIcons: Record<AssetType, React.ReactNode> = {
   property: <Building2 className="h-5 w-5" />,
@@ -402,11 +402,12 @@ const BensInvestimentos: React.FC = () => {
   const [trashSheetOpen, setTrashSheetOpen] = useState(false);
   const [auditSheetOpen, setAuditSheetOpen] = useState(false);
   
-  // Get initial tab from URL or default to 'consolidado'
+  // Get initial tab from URL or default to 'consolidado' (credito → passivos para retrocompatibilidade)
   const tabParam = searchParams.get('tab');
-  const validTabs = ['consolidado', 'patrimonio', 'investimentos', 'credito'] as const;
-  const initialTab = validTabs.includes(tabParam as any) ? tabParam as typeof validTabs[number] : 'consolidado';
-  const [mainTab, setMainTab] = useState<typeof validTabs[number]>(initialTab);
+  const tabFromParam = tabParam === 'credito' ? 'passivos' : tabParam;
+  const validTabsForPage = ['consolidado', 'patrimonio', 'investimentos', 'passivos', 'seguros'] as const;
+  const initialTab = (validTabsForPage as readonly string[]).includes(tabFromParam ?? '') ? tabFromParam as typeof validTabsForPage[number] : 'consolidado';
+  const [mainTab, setMainTab] = useState<typeof validTabsForPage[number]>(initialTab);
   
   const [patrimonioViewMode, setPatrimonioViewMode] = useState<'list' | 'cards'>('list');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -619,15 +620,16 @@ const BensInvestimentos: React.FC = () => {
     setForceDeleteConfirmed(false);
   };
 
-  // Sync tab with URL
+  // Sync tab with URL (credito → passivos para retrocompatibilidade)
   useEffect(() => {
-    if (tabParam && validTabs.includes(tabParam as any)) {
-      setMainTab(tabParam as typeof validTabs[number]);
+    const resolved = tabParam === 'credito' ? 'passivos' : tabParam;
+    if (resolved && (validTabsForPage as readonly string[]).includes(resolved)) {
+      setMainTab(resolved as typeof validTabsForPage[number]);
     }
   }, [tabParam]);
 
   const handleTabChange = (value: string) => {
-    setMainTab(value as typeof validTabs[number]);
+    setMainTab(value as typeof validTabsForPage[number]);
     if (value !== 'consolidado') {
       setSearchParams({ tab: value });
     } else {
@@ -979,9 +981,9 @@ const BensInvestimentos: React.FC = () => {
               <TrendingUp className="h-4 w-4" />
               <span>Investimentos</span>
             </TabsTrigger>
-            <TabsTrigger value="credito" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
+            <TabsTrigger value="passivos" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
               <Landmark className="h-4 w-4" />
-              <span>Crédito</span>
+              <span>Passivos</span>
             </TabsTrigger>
             <TabsTrigger value="seguros" className="flex flex-col sm:flex-row gap-0.5 sm:gap-2 text-[10px] sm:text-sm px-1 sm:px-4">
               <Shield className="h-4 w-4" />
@@ -1354,8 +1356,8 @@ const BensInvestimentos: React.FC = () => {
         <EquityEvolutionSection />
           </TabsContent>
 
-          {/* Tab Crédito - Agrupa Consórcios e Financiamentos */}
-          <TabsContent value="credito" className="space-y-6 mt-4">
+          {/* Tab Passivos - Agrupa Consórcios e Financiamentos (credito redireciona aqui) */}
+          <TabsContent value="passivos" className="space-y-6 mt-4">
             <CreditoSection />
           </TabsContent>
 
