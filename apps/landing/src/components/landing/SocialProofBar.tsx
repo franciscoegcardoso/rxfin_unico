@@ -122,7 +122,7 @@ export const SocialProofBar: React.FC = () => {
             variants={cardVariants}
             custom={4}
           >
-            <span className="text-3xl font-bold text-white tracking-tight leading-none">
+            <span className="text-4xl font-bold text-white tracking-tight leading-none">
               {stats[4].value}
             </span>
             <span className="text-xs text-white/90 leading-snug whitespace-pre-line mt-0.5">
@@ -163,7 +163,7 @@ function StatCard({ stat, index, inView, variants, className }: StatCardProps) {
       variants={variants}
       custom={index}
     >
-      <span className="text-3xl lg:text-4xl font-bold text-white tracking-tight leading-none">
+      <span className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight leading-none">
         {displayValue}
       </span>
       <span className="text-xs text-white/90 leading-snug whitespace-pre-line mt-1 sm:mt-0.5">

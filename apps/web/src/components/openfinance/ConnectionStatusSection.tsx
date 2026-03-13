@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,18 +28,11 @@ import {
 import { ConnectorLogo } from './ConnectorLogo';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { usePluggyConnect } from '@/hooks/usePluggyConnect';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-
-interface SyncJob {
-  id: string;
-  item_id: string;
-  status: string;
-  action: string;
-  error_message: string | null;
-  created_at: string;
-  finished_at: string | null;
-}
+import { invokePluggySync } from '@/lib/pluggySync';
+import type { SyncConnection } from '@/hooks/useSyncStatus';
 
 interface SyncLog {
   id: string;
@@ -77,11 +70,12 @@ function formatDateTimeBR(dateStr: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const jobStatusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning'; icon: React.ReactNode }> = {
-  pending: { label: 'Pendente', variant: 'warning', icon: <Clock className="h-3 w-3" /> },
-  running: { label: 'Sincronizando', variant: 'default', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
-  done: { label: 'Concluído', variant: 'success', icon: <CheckCircle2 className="h-3 w-3" /> },
+const uiStateToBadge: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning'; icon: React.ReactNode }> = {
+  queued: { label: 'Pendente', variant: 'warning', icon: <Clock className="h-3 w-3" /> },
+  syncing: { label: 'Sincronizando', variant: 'default', icon: <Loader2 className="h-3 w-3 animate-spin" /> },
+  idle: { label: 'Concluído', variant: 'success', icon: <CheckCircle2 className="h-3 w-3" /> },
   error: { label: 'Erro', variant: 'destructive', icon: <AlertCircle className="h-3 w-3" /> },
+  unknown: { label: '—', variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
 };
 
 const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
@@ -116,21 +110,19 @@ function formatCooldownText(remainingMs: number, syncedToday: boolean): string {
 }
 
 export const ConnectionStatusSection: React.FC = () => {
-  const { connections, fetchConnections, triggerSync } = usePluggyConnect();
+  const { connections, fetchConnections } = usePluggyConnect();
+  const { data: syncData } = useSyncStatus();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<SyncJob[]>([]);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [triggeringItems, setTriggeringItems] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(Date.now());
 
-  const fetchJobs = useCallback(async () => {
-    const { data } = await supabase
-      .from('pluggy_sync_jobs_v')
-      .select('id, item_id, status, action, error_message, created_at, finished_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (data) setJobs(data as SyncJob[]);
-  }, []);
+  const syncConnectionsByItemId = React.useMemo(() => {
+    const map = new Map<string, SyncConnection>();
+    syncData?.connections?.forEach((c) => map.set(c.item_id, c));
+    return map;
+  }, [syncData?.connections]);
 
   const fetchLogs = useCallback(async () => {
     const sevenDaysAgo = new Date();
@@ -146,9 +138,8 @@ export const ConnectionStatusSection: React.FC = () => {
 
   useEffect(() => {
     fetchConnections();
-    fetchJobs();
     fetchLogs();
-  }, [fetchConnections, fetchJobs, fetchLogs]);
+  }, [fetchConnections, fetchLogs]);
 
   // Tick every 30s to update cooldown timers
   useEffect(() => {
@@ -157,17 +148,6 @@ export const ConnectionStatusSection: React.FC = () => {
     const interval = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(interval);
   }, [connections]);
-
-  // Poll for active jobs
-  useEffect(() => {
-    const hasActiveJobs = jobs.some(j => j.status === 'pending' || j.status === 'running');
-    if (!hasActiveJobs) return;
-    const interval = setInterval(() => {
-      fetchJobs();
-      fetchLogs();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [jobs, fetchJobs, fetchLogs]);
 
   const handleTriggerSync = useCallback(async (itemId: string) => {
     // Client-side cooldown check
@@ -184,12 +164,11 @@ export const ConnectionStatusSection: React.FC = () => {
 
     setTriggeringItems(prev => new Set(prev).add(itemId));
     try {
-      await triggerSync(itemId);
+      const { error } = await invokePluggySync({ action: 'refresh', itemId });
+      if (error) throw new Error(error.message);
       toast({ title: 'Sincronização solicitada', description: 'Os dados aparecerão em instantes.' });
-      setTimeout(() => {
-        fetchJobs();
-        fetchConnections();
-      }, 1500);
+      queryClient.invalidateQueries({ queryKey: ['syncStatus'] });
+      setTimeout(() => fetchConnections(), 1500);
     } catch (err: any) {
       if (err?.cooldown) {
         toast({
@@ -197,7 +176,7 @@ export const ConnectionStatusSection: React.FC = () => {
           description: err.message || 'Esta conta foi atualizada recentemente.',
         });
       } else {
-        toast({ title: 'Erro', description: 'Não foi possível iniciar a sincronização.', variant: 'destructive' });
+        toast({ title: 'Erro', description: err?.message ?? 'Não foi possível iniciar a sincronização.', variant: 'destructive' });
       }
     } finally {
       setTriggeringItems(prev => {
@@ -206,17 +185,13 @@ export const ConnectionStatusSection: React.FC = () => {
         return next;
       });
     }
-  }, [triggerSync, toast, fetchJobs]);
-
-  const getLatestJob = useCallback((itemId: string): SyncJob | null => {
-    return jobs.find(j => j.item_id === itemId) || null;
-  }, [jobs]);
+  }, [toast, queryClient, fetchConnections]);
 
   const getLogsForItem = useCallback((itemId: string): SyncLog[] => {
     return logs.filter(l => l.item_id === itemId);
   }, [logs]);
 
-  const errorJobs = jobs.filter(j => j.status === 'error');
+  const errorConnections = syncData?.connections?.filter((c) => c.ui_state === 'error') ?? [];
 
   if (connections.length === 0) return null;
 
@@ -228,29 +203,29 @@ export const ConnectionStatusSection: React.FC = () => {
       </div>
 
       {/* Error Alert */}
-      {errorJobs.length > 0 && (
+      {errorConnections.length > 0 && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-destructive">
-                  {errorJobs.length === 1 ? '1 sincronização com erro' : `${errorJobs.length} sincronizações com erro`}
+                  {errorConnections.length === 1 ? '1 sincronização com erro' : `${errorConnections.length} sincronizações com erro`}
                 </p>
-                {errorJobs.slice(0, 3).map(job => {
-                  const conn = connections.find(c => c.item_id === job.item_id);
+                {errorConnections.slice(0, 3).map((syncConn) => {
+                  const conn = connections.find((c) => c.item_id === syncConn.item_id);
                   return (
-                    <div key={job.id} className="mt-2 flex items-center justify-between gap-2">
+                    <div key={syncConn.item_id} className="mt-2 flex items-center justify-between gap-2">
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">{conn?.connector_name || 'Desconhecido'}</span>
-                        {job.error_message && ` — ${job.error_message}`}
+                        <span className="font-medium text-foreground">{conn?.connector_name ?? syncConn.connector_name ?? 'Desconhecido'}</span>
+                        {syncConn.error_code && ` — ${syncConn.error_code}`}
                       </p>
                       <Button
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs gap-1 shrink-0"
-                        onClick={() => handleTriggerSync(job.item_id)}
-                        disabled={triggeringItems.has(job.item_id)}
+                        onClick={() => handleTriggerSync(syncConn.item_id)}
+                        disabled={triggeringItems.has(syncConn.item_id)}
                       >
                         <RotateCcw className="h-3 w-3" />
                         Tentar novamente
@@ -266,15 +241,17 @@ export const ConnectionStatusSection: React.FC = () => {
 
       {/* Connections List */}
       <div className="space-y-2">
-        {connections.map(conn => {
-          const latestJob = getLatestJob(conn.item_id);
+        {connections.map((conn) => {
+          const syncConn = syncConnectionsByItemId.get(conn.item_id);
+          const uiState = syncConn?.ui_state ?? 'unknown';
+          const badgeConf = uiStateToBadge[uiState] ?? uiStateToBadge.unknown;
           const itemLogs = getLogsForItem(conn.item_id);
           const isTriggering = triggeringItems.has(conn.item_id);
-          const jobConf = latestJob ? jobStatusConfig[latestJob.status] || jobStatusConfig.pending : null;
           const cooldownRemaining = getCooldownRemaining(conn.last_sync_at);
           const syncedToday = isSyncedToday(conn.last_sync_at);
           const isOnCooldown = cooldownRemaining > 0 || syncedToday;
           const cooldownText = isOnCooldown ? formatCooldownText(cooldownRemaining, syncedToday) : '';
+          const isSyncing = uiState === 'syncing' || uiState === 'queued';
 
           return (
             <Collapsible key={conn.id}>
@@ -304,20 +281,11 @@ export const ConnectionStatusSection: React.FC = () => {
                     >
                       {conn.status === 'LOGIN_ERROR' ? 'Erro Login' : conn.status === 'OUTDATED' ? 'Expirada' : 'Conectado'}
                     </Badge>
-                    {jobConf && (
-                      <Badge variant={jobConf.variant} className="text-[10px] gap-1">
-                        {jobConf.icon}
-                        {jobConf.label}
-                      </Badge>
-                    )}
-                    <SyncStatusBadge
-                      itemId={conn.item_id}
-                      onSyncComplete={() => {
-                        fetchJobs();
-                        fetchLogs();
-                        fetchConnections();
-                      }}
-                    />
+                    <Badge variant={badgeConf.variant} className="text-[10px] gap-1">
+                      {badgeConf.icon}
+                      {badgeConf.label}
+                    </Badge>
+                    <SyncStatusBadge itemId={conn.item_id} />
                   </div>
 
                   {/* Right: Actions */}
@@ -331,7 +299,7 @@ export const ConnectionStatusSection: React.FC = () => {
                               size="sm"
                               className="h-8 text-xs gap-1.5"
                               onClick={() => handleTriggerSync(conn.item_id)}
-                              disabled={isTriggering || isOnCooldown || latestJob?.status === 'running' || latestJob?.status === 'pending'}
+                              disabled={isTriggering || isOnCooldown || isSyncing}
                             >
                               {isTriggering ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

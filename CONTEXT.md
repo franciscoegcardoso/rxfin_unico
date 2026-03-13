@@ -98,12 +98,14 @@ Para reduzir Build Minutes (plano Pro):
 
 **RLS ativo em todas as tabelas.**
 
+**Sync Open Finance:** Estado de sincronização Pluggy não usa mais a tabela `pluggy_sync_jobs`; o frontend usa o hook `useSyncStatus` (apps/web/src/hooks/useSyncStatus.ts), que chama a Edge Function `sync-status`. Usar em qualquer componente que exiba status de conexão (ex.: `ConnectionStatusSection`, `SyncStatusBadge`). Botão "Atualizar" deve chamar `pluggy-sync` com `{ action: 'refresh', itemId }` e invalidar a query `['syncStatus']`.
+
 ## Edge Functions (50+)
 
 **Principais por domínio:**
 
 - **Auth:** `auth-email-hook`, `send-email-verification`, `verify-email-otp`, `send-password-reset`, `manage-guest-invitation`, `send-invitation`, `admin-invite-users`, `delete-own-account`, `save-user-cpf`
-- **Open Banking:** `pluggy-connect`, `pluggy-sync`, `pluggy-worker`, `pluggy-trigger-sync`, `pluggy-sync-accounts`, `pluggy-sync-bills`, `pluggy-sync-transactions`
+- **Open Banking:** `pluggy-connect`, `pluggy-sync`, `sync-status`, `pluggy-worker`, `pluggy-trigger-sync`, `pluggy-sync-accounts`, `pluggy-sync-bills`, `pluggy-sync-transactions`
 - **FIPE:** `fipe-proxy`, `fipe-history-v2`, `fipe-full-history`, `fipe-bulk-import`, `fipe-monthly-sync`, `fipe-orchestrator`, `fipe-auto-runner`, `fipe-phase3-runner`, `fipe-cache-warmup`, `fipe-cohort-matrix`, `fipe-cohort-standard-curve`, `fipe-sibling-history`, `fipe-discover-popular`
 - **IA:** `categorize-transactions`, `budget-insights`, `car-comparison-verdict`, `fiscal-organizer`, `ir-analysis`, `ir-investment-type-suggestions`, `ir-link-suggestions`, `property-insights`, `vehicle-insights`
 - **Email:** `send-email-n8n`, `send-campaign-email`, `check-expiration-notifications`

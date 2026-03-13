@@ -78,7 +78,7 @@ const PERMISSIVE_POLICIES_EXAMPLE = [
 ];
 
 const SECURITY_DEFINER_VIEWS = [
-  'credit_card_transactions_v', 'pluggy_sync_jobs_v', 'onboarding_control_funnel',
+  'credit_card_transactions_v', 'onboarding_control_funnel',
   'lancamentos_realizados_v', 'sync_jobs_v', 'v_crm_kanban', 'notification_settings_v',
   'v_db_health_summary', 'pluggy_transactions_v', 'notification_user_settings_v',
   'onboarding_funnel', 'notification_preferences_v',

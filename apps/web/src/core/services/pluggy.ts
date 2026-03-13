@@ -112,17 +112,27 @@ export async function getTotalInvestido(userId: string): Promise<number> {
 }
 
 // ─── Status de Sync ───────────────────────────────────────────────────────────
+// Migrado para Edge Function sync-status; esta função mantém compatibilidade para callers legados.
 
-export async function getSyncJobAtivo(userId: string) {
-  const { data, error } = await supabase
-    .from('sync_jobs_v')
-    .select('*')
-    .eq('user_id', userId)
-    .in('status', ['pending', 'running'])
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+export async function getSyncJobAtivo(_userId: string): Promise<{ id: string; status: string; item_id: string } | null> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return null
 
-  if (error) throw error
-  return data
+  const url = `${import.meta.env.VITE_SUPABASE_URL ?? 'https://kneaniaifzgqibpajyji.supabase.co'}/functions/v1/sync-status`
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+  const json = await res.json()
+  if (!json.success || !json.data?.summary?.is_syncing) return null
+  const conn = json.data.connections?.[0]
+  if (!conn) return null
+  return {
+    id: `sync-${conn.item_id}`,
+    status: 'running',
+    item_id: conn.item_id,
+  }
 }
