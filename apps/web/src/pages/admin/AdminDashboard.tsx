@@ -31,12 +31,28 @@ interface DashMetrics {
 }
 
 interface ChartData {
-  monthly_active: { month: string; value: number }[];
-  new_active_daily: { day: string; value: number }[];
-  new_active_weekly: { week: string; value: number }[];
-  new_active_monthly: { month: string; value: number }[];
-  monthly_churn: { month: string; value: number }[];
-  monthly_reactivated: { month: string; value: number }[];
+  monthly_active?: { month: string; value: number }[];
+  new_active_daily?: { day: string; value: number }[];
+  new_active_weekly?: { week: string; value: number }[];
+  new_active_monthly?: { month: string; value: number }[];
+  monthly_churn?: { month: string; value: number }[];
+  monthly_reactivated?: { month: string; value: number }[];
+}
+
+function normalizeChartData(raw: unknown): ChartData | null {
+  if (raw == null) return null;
+  const o = typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+  if (!o) return null;
+  const arr = (v: unknown): { month: string; value: number }[] | { day: string; value: number }[] | { week: string; value: number }[] =>
+    Array.isArray(v) ? v : [];
+  return {
+    monthly_active: arr(o.monthly_active) as { month: string; value: number }[],
+    new_active_daily: arr(o.new_active_daily) as { day: string; value: number }[],
+    new_active_weekly: arr(o.new_active_weekly) as { week: string; value: number }[],
+    new_active_monthly: arr(o.new_active_monthly) as { month: string; value: number }[],
+    monthly_churn: arr(o.monthly_churn) as { month: string; value: number }[],
+    monthly_reactivated: arr(o.monthly_reactivated) as { month: string; value: number }[],
+  };
 }
 
 interface PageSummary {
@@ -104,7 +120,8 @@ export default function AdminDashboard() {
         });
 
         const chartRaw = chartDataRes?.data;
-        setChartData((Array.isArray(chartRaw) ? chartRaw[0] : chartRaw) as ChartData ?? null);
+        const chartUnwrap = Array.isArray(chartRaw) ? chartRaw[0] : chartRaw;
+        setChartData(normalizeChartData(chartUnwrap));
 
         const pagesRaw = pagesListRes?.data;
         const pagesList = Array.isArray(pagesRaw) ? pagesRaw : [];

@@ -7,12 +7,6 @@ import React from 'react';
 export default function DashboardMockup() {
   return (
     <div className="w-full max-w-[600px] rounded-xl overflow-hidden shadow-2xl border border-border bg-background text-left">
-      {/* Topbar vermelha */}
-      <div className="bg-red-600 py-1.5 px-3 text-white text-[8px] font-bold tracking-wide flex items-center justify-center gap-1">
-        <span>⚠</span>
-        <span>DADOS FICTÍCIOS • COMEÇAR RAIO-X →</span>
-      </div>
-
       <div className="flex">
         {/* Sidebar */}
         <div className="w-14 flex-shrink-0 bg-muted/50 border-r border-border py-2 flex flex-col items-center gap-3">

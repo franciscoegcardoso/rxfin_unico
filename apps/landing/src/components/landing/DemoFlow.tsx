@@ -347,9 +347,6 @@ function Step1Visual({ revealed }: { revealed: number[] }) {
 function Step2Visual() {
   return (
     <div className="max-w-sm mx-auto rounded-xl overflow-hidden shadow-2xl border border-white/10 -rotate-1 text-left">
-      <div className="bg-red-600 py-1 px-3 text-white text-[8px] font-bold tracking-wide">
-        ⚠ DADOS FICTÍCIOS • COMEÇAR RAIO-X →
-      </div>
       <div className="bg-white px-4 py-2.5 flex justify-between items-center border-b border-gray-100">
         <div className="flex items-center gap-2">
           <div className="rounded-full w-6 h-6 bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">F</div>

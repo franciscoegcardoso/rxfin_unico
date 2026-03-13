@@ -51,16 +51,25 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
   );
 };
 
+const ensureArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? v : []) as T[];
+
 export function AdminDashboardCharts({ data, loading }: Props) {
   const [newActiveView, setNewActiveView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   if (loading || !data) return null;
 
+  const monthlyActive = ensureArray<{ month: string; value: number }>(data.monthly_active);
+  const newActiveDaily = ensureArray<{ day: string; value: number }>(data.new_active_daily);
+  const newActiveWeekly = ensureArray<{ week: string; value: number }>(data.new_active_weekly);
+  const newActiveMonthly = ensureArray<{ month: string; value: number }>(data.new_active_monthly);
+  const monthlyChurn = ensureArray<{ month: string; value: number }>(data.monthly_churn);
+  const monthlyReactivated = ensureArray<{ month: string; value: number }>(data.monthly_reactivated);
+
   const newActiveData = newActiveView === 'daily'
-    ? (data.new_active_daily ?? []).map(d => ({ label: d.day, value: d.value }))
+    ? newActiveDaily.map(d => ({ label: d.day, value: d.value }))
     : newActiveView === 'weekly'
-    ? (data.new_active_weekly ?? []).map(d => ({ label: d.week, value: d.value }))
-    : (data.new_active_monthly ?? []).map(d => ({ label: d.month, value: d.value }));
+    ? newActiveWeekly.map(d => ({ label: d.week, value: d.value }))
+    : newActiveMonthly.map(d => ({ label: d.month, value: d.value }));
 
   const newActiveFormatter = newActiveView === 'daily' ? formatDay : newActiveView === 'monthly' ? formatMonth : (v: string) => v;
 
@@ -138,7 +147,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
         <CardContent>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthly_churn ?? []}>
+              <BarChart data={monthlyChurn}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
@@ -161,7 +170,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
         <CardContent>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthly_reactivated ?? []}>
+              <BarChart data={monthlyReactivated}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />

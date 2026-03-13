@@ -74,18 +74,6 @@ export const SIMULATOR_CATEGORIES: CategoryConfig[] = [
         buttonLabel: 'Comparar opções',
         buttonVariant: 'outline',
       },
-      {
-        slug: 'simulador-comparativo-carro',
-        title: 'Comparativo de carros',
-        tags: ['Cenários', 'Financiamento', 'Longo prazo'],
-        bullets: [
-          'Avalie diferentes cenários de compra',
-          'Simule variações de entrada e financiamento',
-          'Analise impacto no longo prazo',
-        ],
-        buttonLabel: 'Simular agora',
-        buttonVariant: 'outline',
-      },
     ],
   },
   {

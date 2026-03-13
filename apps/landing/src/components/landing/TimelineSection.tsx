@@ -45,7 +45,7 @@ export const TimelineSection: React.FC = () => {
   return (
     <section
       id="sistema"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,25%)]"
+      className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0d2b20]"
     >
       <div className="max-w-7xl mx-auto">
         <motion.div
@@ -82,17 +82,18 @@ export const TimelineSection: React.FC = () => {
               style={{ animationDelay: i === 0 ? '0ms' : i === 1 ? '150ms' : '300ms' }}
             >
               <motion.div
-                className="relative h-full p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-[hsl(161,40%,88%)] to-[hsl(161,35%,78%)] border border-[hsl(161,30%,70%)]/50 transition-all duration-300"
+                className="relative h-full p-6 sm:p-8 rounded-2xl bg-white/5 border border-white/10 transition-all duration-300"
                 whileHover={{
                   y: -6,
-                  boxShadow: '0 20px 40px -12px hsla(161,79%,15%,0.35)',
-                  borderColor: 'hsl(161,30%,70%)',
+                  boxShadow: '0 20px 40px -12px rgba(0,0,0,0.25)',
+                  borderColor: 'rgba(255,255,255,0.2)',
+                  backgroundColor: 'rgba(255,255,255,0.08)',
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               >
                 {/* Seta de interligação à direita (desktop) */}
                 {i < blocks.length - 1 && (
-                  <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 items-center justify-center w-8 h-8 rounded-full bg-[hsl(161,79%,25%)]/90 text-white">
+                  <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 items-center justify-center w-8 h-8 rounded-full bg-white/20 text-white border border-white/20">
                     <motion.div
                       animate={{ x: [0, 4, 0] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
@@ -102,27 +103,27 @@ export const TimelineSection: React.FC = () => {
                   </div>
                 )}
 
-                <p className="text-xs font-medium text-[hsl(161,40%,25%)] uppercase tracking-wider mb-4">
-                  <span className="font-bold text-[hsl(161,79%,25%)] mr-1.5">{item.step}</span>
+                <p className="text-xs font-medium text-white/70 uppercase tracking-wider mb-4">
+                  <span className="font-bold text-white mr-1.5">{item.step}</span>
                   {item.label}
                 </p>
 
                 <motion.div
-                  className="w-14 h-14 mb-5 rounded-2xl bg-[hsl(161,79%,25%)] flex items-center justify-center"
+                  className="w-14 h-14 mb-5 rounded-2xl bg-white/10 flex items-center justify-center border border-white/10"
                   whileHover={{ scale: 1.05, rotate: -3 }}
                   transition={{ type: 'spring', stiffness: 300 }}
                 >
                   {React.createElement(item.icon, { className: 'h-7 w-7 text-white' })}
                 </motion.div>
 
-                <h3 className="text-xl font-bold mb-4 text-[hsl(161,40%,12%)]">
+                <h3 className="text-xl font-bold mb-4 text-white">
                   {item.title}
                 </h3>
 
                 <ul className="space-y-2">
                   {item.bullets.map((b, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-[hsl(161,30%,20%)] leading-relaxed">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[hsl(161,79%,25%)] shrink-0" />
+                    <li key={j} className="flex items-start gap-2 text-sm text-white/90 leading-relaxed">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-white/60 shrink-0" />
                       {b}
                     </li>
                   ))}
