@@ -1325,12 +1325,12 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           </div>
           ) : currentStep === 'details' ? (
           <div className="space-y-6 py-4">
-            {/* Para veículo: Configurações FIPE primeiro (Tipo, Marca, Modelo, Ano — mesmo do simulador FIPE) */}
+            {/* Para veículo: uma única seção FIPE (Tipo, Marca, Modelo, Ano — dados da FIPE) */}
             {newAsset.type === 'vehicle' && (
-              <div className="border rounded-lg p-4 space-y-4">
-                <h3 className="font-medium flex items-center gap-2">
+              <div className="border border-border rounded-xl p-5 space-y-4 bg-card/50">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Car className="h-4 w-4 text-primary" />
-                  Configurações do Veículo
+                  Configurações do veículo (dados da FIPE)
                 </h3>
                 <VehicleFipeForm
                   fipe={fipe}
@@ -1441,22 +1441,21 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               </div>
             </div>
 
-            {/* Dados da compra */}
-            <div className="border rounded-lg p-4 space-y-4">
-              <h3 className="font-medium flex items-center gap-2">
+            {/* Dados da Compra */}
+            <div className="border border-border rounded-xl p-5 space-y-4 bg-card/50">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 Dados da Compra
               </h3>
-              <div className={`grid grid-cols-1 gap-4 ${newAsset.type === 'vehicle' ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2'}`}>
+              <div className={`grid grid-cols-1 gap-4 ${newAsset.type === 'vehicle' ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2'}`}>
                 <div className="space-y-2">
-                  <Label>Data da Compra</Label>
+                  <Label htmlFor="purchaseDate">Data da Compra</Label>
                   <DatePickerFriendly
                     value={newAsset.purchaseDate}
                     onChange={(date) => setNewAsset({ ...newAsset, purchaseDate: date })}
                     placeholder="DD/MM/AAAA"
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="purchaseValue">Valor da Compra</Label>
                   <CurrencyInput
@@ -1466,7 +1465,6 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                     placeholder="0"
                   />
                 </div>
-
                 {newAsset.type === 'vehicle' && (
                   <>
                     <div className="space-y-2">
@@ -1482,13 +1480,16 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                         }}
                         placeholder="Ex: 0"
                         disabled={newAsset.isZeroKm}
+                        className="h-9"
                       />
                     </div>
                     <div className="space-y-2 flex flex-col justify-end">
-                      <Label className="text-muted-foreground font-normal">Veículo Zero KM?</Label>
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-accent/50 border border-border/60">
-                        <span className="text-sm text-muted-foreground shrink-0">Marque se comprou novo</span>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5 min-h-[40px]">
+                        <Label htmlFor="zeroKm" className="text-sm font-medium text-foreground cursor-pointer shrink-0">
+                          Veículo Zero KM?
+                        </Label>
                         <Switch
+                          id="zeroKm"
                           checked={newAsset.isZeroKm}
                           onCheckedChange={(checked) => setNewAsset({
                             ...newAsset,
@@ -1497,6 +1498,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                           })}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">Marque se comprou novo (odômetro será 0)</p>
                     </div>
                   </>
                 )}
@@ -1518,12 +1520,12 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
 
             {/* Parâmetros de custos do veículo (Estado, combustível, km etc.) */}
             {newAsset.type === 'vehicle' && (
-              <div className="border rounded-lg p-4 space-y-4">
-                <div className="space-y-4 p-4 rounded-lg bg-expense/5 border border-expense/20">
-                  <h4 className="text-sm font-medium text-expense flex items-center gap-2">
-                    <Fuel className="h-4 w-4" />
-                    Parâmetros para Cálculo de Custos
-                  </h4>
+              <div className="border border-border rounded-xl p-5 space-y-4 bg-card/50">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Fuel className="h-4 w-4 text-primary" />
+                  Parâmetros para Cálculo de Custos
+                </h3>
+                <div className="space-y-4">
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">

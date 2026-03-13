@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { BrandSearchSelect } from '@/components/ui/brand-search-select';
-import { Car, Loader2, Percent, AlertCircle } from 'lucide-react';
+import { Loader2, Percent, AlertCircle } from 'lucide-react';
 import { UseFipeReturn, VehicleType, formatFipeYearName } from '@/hooks/useFipe';
 
 interface VehicleFipeFormProps {
@@ -21,12 +21,7 @@ export const VehicleFipeForm: React.FC<VehicleFipeFormProps> = ({
   formatCurrency,
 }) => {
   return (
-    <div className="space-y-4 p-4 rounded-lg bg-card border">
-      <h4 className="text-sm font-medium text-primary flex items-center gap-2">
-        <Car className="h-4 w-4" />
-        Consulta Tabela FIPE
-      </h4>
-
+    <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Tipo de veículo */}
         <div className="space-y-2">
