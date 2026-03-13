@@ -32,6 +32,7 @@ import logoHorizontal from '@/assets/Logo_RXFin-10.png';
 import { FeaturePreviewDialog } from '@/components/landing/FeaturePreviewDialog';
 import { featureContentMap } from '@/components/landing/featureSlideContents';
 import { InteractiveDemoSection } from '@/components/landing/InteractiveDemoSection';
+import { LANDING_BUILD_ID } from '@/build-id';
 
 const LandingPage: React.FC = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -539,8 +540,10 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Do banco conectado ao Plano de 30 anos — simulador interativo */}
-      <InteractiveDemoSection />
+      {/* Do banco conectado ao Plano de 30 anos — simulador interativo (build: LANDING_BUILD_ID) */}
+      <div data-landing-build={LANDING_BUILD_ID}>
+        <InteractiveDemoSection />
+      </div>
 
       {/* Features Preview - Compact Grid */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-secondary">

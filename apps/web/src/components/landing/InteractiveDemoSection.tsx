@@ -83,7 +83,7 @@ const STEP_LABELS = ['Conectar banco', 'IA categoriza', 'Orçamento', 'IR organi
 function IPhoneFrame({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`relative mx-auto w-full max-w-[320px] overflow-visible ${className}`}
+      className={`relative mx-auto w-full max-w-[320px] overflow-visible max-h-[70vh] sm:max-h-[80vh] md:max-h-none ${className}`}
       style={{ aspectRatio: '320/620' }}
     >
       {/* Corpo do iPhone — bordas e sombra via style para garantir em produção */}
@@ -169,29 +169,29 @@ export const InteractiveDemoSection: React.FC = () => {
   }, [currentStep]);
 
   return (
-    <section className="bg-[#0d2b20] py-16 px-4 sm:px-6 lg:px-8 overflow-visible">
+    <section className="bg-[#0d2b20] overflow-x-hidden py-12 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:py-16 sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] lg:py-20 lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))] overflow-visible">
       <div className="max-w-4xl mx-auto overflow-visible">
-        <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-1.5 rounded-full mb-6 block text-center">
+        <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-1.5 rounded-full mb-4 sm:mb-6 block text-center">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Simulador interativo — explore cada etapa
         </span>
 
         <motion.div
-          className="text-center mb-8"
+          className="text-center mb-6 sm:mb-8"
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 px-1">
             Do banco conectado ao Plano de 30 anos
           </h2>
-          <p className="text-white/70 text-sm">
+          <p className="text-white/70 text-xs sm:text-sm">
             Veja como o RXFin organiza sua vida financeira em poucos passos
           </p>
         </motion.div>
 
-        {/* Stepper */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6">
+        {/* Stepper — responsivo: mobile (toque 44px), tablet/desktop compacto */}
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
           {STEP_LABELS.map((label, i) => {
             const step = i + 1;
             const isActive = currentStep === step;
@@ -202,28 +202,28 @@ export const InteractiveDemoSection: React.FC = () => {
                 key={step}
                 type="button"
                 onClick={() => isUnlocked && setCurrentStep(step)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 min-h-[44px] px-3 py-2.5 sm:min-h-0 sm:py-2 rounded-lg text-xs font-medium transition-all touch-manipulation ${
                   !isUnlocked
                     ? 'opacity-30 cursor-not-allowed text-white/50'
                     : isActive
-                    ? 'bg-emerald-500 text-white scale-110 shadow-lg'
+                    ? 'bg-emerald-500 text-white scale-105 sm:scale-110 shadow-lg'
                     : isPast
                     ? 'bg-emerald-500/60 text-white'
-                    : 'bg-white/10 text-white/90 hover:bg-white/20'
+                    : 'bg-white/10 text-white/90 hover:bg-white/20 active:bg-white/25'
                 }`}
               >
-                {isPast && <Check className="h-3.5 w-3.5" />}
+                {isPast && <Check className="h-3.5 w-3.5 shrink-0" />}
                 <span>{label}</span>
               </button>
             );
           })}
         </div>
 
-        <p className="text-center text-sm text-white/40 mb-8 min-h-[20px]">
+        <p className="text-center text-xs sm:text-sm text-white/40 mb-6 sm:mb-8 min-h-[2.5rem] px-2">
           {STEP_HINTS[currentStep - 1]}
         </p>
 
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-4 sm:gap-6 w-full max-w-[320px] mx-auto">
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
               <motion.div
@@ -231,7 +231,7 @@ export const InteractiveDemoSection: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-3 sm:gap-4 w-full"
               >
                 <IPhoneFrame>
                   <div className="p-4 space-y-3">
@@ -299,7 +299,7 @@ export const InteractiveDemoSection: React.FC = () => {
                   size="sm"
                   onClick={handleNextStep1}
                   disabled={connectedBanks.length === 0}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1 min-h-[44px] sm:min-h-0 w-full sm:w-auto touch-manipulation"
                 >
                   Avançar <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -312,7 +312,7 @@ export const InteractiveDemoSection: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-3 sm:gap-4 w-full"
               >
                 <IPhoneFrame>
                   <div className="p-3 space-y-2">
@@ -375,7 +375,7 @@ export const InteractiveDemoSection: React.FC = () => {
                     ))}
                     <Button
                       size="sm"
-                      className="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs"
+                      className="w-full mt-2 min-h-[44px] sm:min-h-0 bg-emerald-500 hover:bg-emerald-600 text-white text-xs touch-manipulation"
                       onClick={handleConfirmAllStep2}
                       disabled={allCategoriesConfirmed || !allTxConfirmed}
                     >
@@ -392,7 +392,7 @@ export const InteractiveDemoSection: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-4"
+                className="flex flex-col items-center gap-3 sm:gap-4 w-full"
               >
                 <IPhoneFrame>
                   <div className="p-3 space-y-3">
@@ -450,7 +450,7 @@ export const InteractiveDemoSection: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center w-full"
               >
                 <IPhoneFrame>
                   <div className="p-4 space-y-4">
@@ -479,7 +479,7 @@ export const InteractiveDemoSection: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center w-full"
               >
                 <IPhoneFrame>
                   <div className="p-4 space-y-3">
