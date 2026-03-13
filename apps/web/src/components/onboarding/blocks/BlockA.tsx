@@ -8,13 +8,21 @@ import { useFinancial } from '@/contexts/FinancialContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-
 interface BlockAProps {
   step: number;
   onStepChange: (step: number) => void;
   onComplete: () => void;
   onSaveDraft: (key: string, data: any) => void;
+  /** Valores controlados pelo wizard (lift-up) para persistência ao avançar. */
+  incomeValues: Record<string, number>;
+  expenseValues: Record<string, number>;
+  onIncomeChange: (values: Record<string, number>) => void;
+  onExpenseChange: (values: Record<string, number>) => void;
+  /** Chamado ao clicar "Próximo: Despesas" — persiste receitas e avança para step 2. */
+  onNextFromReceitas: () => Promise<void>;
+  /** Chamado ao clicar "Ver meu Raio-X" — persiste receitas e despesas e avança para step 3. */
+  onViewRaioX: () => Promise<void>;
+  isSaving?: boolean;
 }
 
 interface CategoryItem {
@@ -36,7 +44,19 @@ const INCOME_LABEL_OVERRIDE: Record<string, string> = {
   outro: 'Outros',
 };
 
-export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
+export const BlockA: React.FC<BlockAProps> = ({
+  step,
+  onStepChange,
+  onComplete,
+  onSaveDraft,
+  incomeValues,
+  expenseValues,
+  onIncomeChange,
+  onExpenseChange,
+  onNextFromReceitas,
+  onViewRaioX,
+  isSaving = false,
+}) => {
   const { config, setAccountType } = useFinancial();
   const { user } = useAuth();
 
@@ -51,10 +71,6 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
     staleTime: 300_000,
   });
 
-  // Form state for income/expense values
-  const [incomeValues, setIncomeValues] = useState<Record<string, number>>({});
-  const [expenseValues, setExpenseValues] = useState<Record<string, number>>({});
-  const [saving, setSaving] = useState(false);
   const [milestoneData, setMilestoneData] = useState<any>(null);
 
   // Fetch milestone when reaching conquest step
@@ -64,44 +80,6 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
         .then(({ data }) => setMilestoneData(data));
     }
   }, [step, user?.id]);
-
-  const handleSaveBlockA = async () => {
-    if (!user?.id) return;
-    setSaving(true);
-    try {
-      const incomeData = Object.entries(incomeValues)
-        .filter(([, v]) => v > 0)
-        .map(([key, value]) => ({ key, value }));
-      const expenseData = Object.entries(expenseValues)
-        .filter(([, v]) => v > 0)
-        .map(([key, value]) => ({ key, value }));
-
-      if (incomeData.length === 0) {
-        toast.error('Informe pelo menos uma receita.');
-        setSaving(false);
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('save_onboarding_block_a', {
-        p_income_data: incomeData as any,
-        p_expense_data: expenseData as any,
-      });
-
-      if (error) {
-        console.error('[BlockA] save_onboarding_block_a error:', error);
-        toast.error('Erro ao salvar dados. Tente novamente.');
-        setSaving(false);
-        return;
-      }
-
-      onSaveDraft('blockA', { incomeValues, expenseValues });
-      onStepChange(3);
-    } catch (e) {
-      console.error('[BlockA] unexpected error:', e);
-      toast.error('Erro inesperado.');
-    }
-    setSaving(false);
-  };
 
   // ─── Step 0: Welcome ─────────────────────────────────────────
   if (step === 0) {
@@ -192,8 +170,8 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
           <Button variant="outline" size="sm" onClick={() => onStepChange(0)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('income', incomeValues); onStepChange(2); }}>
-            Próximo: Despesas <ArrowRight className="h-4 w-4 ml-1" />
+          <Button variant="hero" size="sm" onClick={() => onNextFromReceitas()} disabled={isSaving}>
+            {isSaving ? 'Salvando...' : 'Próximo: Despesas'} <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
@@ -220,7 +198,7 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
                     placeholder="0"
                     className="w-28 h-8 text-sm"
                     value={incomeValues[item.key] ?? 0}
-                    onChange={(val) => setIncomeValues(prev => ({ ...prev, [item.key]: val }))}
+                    onChange={(val) => onIncomeChange({ ...incomeValues, [item.key]: val })}
                   />
                 </div>
               </div>
@@ -241,8 +219,8 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
           <Button variant="outline" size="sm" onClick={() => onStepChange(1)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={handleSaveBlockA} disabled={saving}>
-            {saving ? 'Salvando...' : 'Ver meu Raio-X'} <ArrowRight className="h-4 w-4 ml-1" />
+          <Button variant="hero" size="sm" onClick={() => onViewRaioX()} disabled={isSaving}>
+            {isSaving ? 'Salvando...' : 'Ver meu Raio-X'} <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
 
@@ -267,7 +245,7 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
                     placeholder="0"
                     className="w-28 h-8 text-sm"
                     value={expenseValues[item.key] ?? 0}
-                    onChange={(val) => setExpenseValues(prev => ({ ...prev, [item.key]: val }))}
+                    onChange={(val) => onExpenseChange({ ...expenseValues, [item.key]: val })}
                   />
                 </div>
               </div>
