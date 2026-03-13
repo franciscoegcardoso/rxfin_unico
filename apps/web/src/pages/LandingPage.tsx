@@ -15,8 +15,6 @@ import {
   Sparkles,
   Lock,
   Users,
-  Instagram,
-  Mail,
   Check,
   ArrowRight,
   Rocket,
@@ -609,76 +607,98 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer - Dark Green */}
-      <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-[hsl(145,30%,15%)] dark:bg-[hsl(145,25%,5%)] text-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex flex-col items-center sm:items-start gap-1">
-              <img src={logoHorizontal} alt="RXFin" className="h-8 object-contain" />
-              <p className="text-xs text-white/60">
-                Seu Raio-X Financeiro Completo
+      {/* Footer - Dark Green — 3 colunas + bottom bar */}
+      <footer className="py-16 px-4 sm:px-6 lg:px-8 bg-[hsl(145,30%,15%)] dark:bg-[hsl(145,25%,5%)] text-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pb-12">
+
+            {/* Col 1 — Marca + Redes sociais */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <img src={logoHorizontal} alt="RXFin" className="h-8 object-contain" />
+              </div>
+              <p className="text-sm text-white/60 leading-relaxed max-w-xs">
+                Seu Raio-X Financeiro Completo. Conecte seus bancos e tome decisões com clareza.
               </p>
+              <div className="flex items-center gap-4 mt-1">
+                <a
+                  href="https://instagram.com/rxfin.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/50 hover:text-white transition-colors"
+                  aria-label="Instagram RXFin"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+                  </svg>
+                </a>
+                <a
+                  href="mailto:contato@rxfin.com.br"
+                  className="text-white/50 hover:text-white transition-colors"
+                  aria-label="E-mail RXFin"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                </a>
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => {
-                  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                  if (isMobile) {
-                    // Try to open Instagram app first, fallback to web
-                    window.location.href = 'instagram://user?username=rxfin.app';
-                    setTimeout(() => {
-                      window.open('https://www.instagram.com/rxfin.app/', '_blank', 'noopener,noreferrer');
-                    }, 500);
-                  } else {
-                    window.open('https://www.instagram.com/rxfin.app/', '_blank', 'noopener,noreferrer');
-                  }
-                }}
-                className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
-              >
-                <Instagram className="h-4 w-4" />
-                @rxfin.app
-              </button>
-              <a 
-                href="mailto:contato@rxfin.com.br"
-                className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
-              >
-                <Mail className="h-4 w-4" />
-                contato@rxfin.com.br
-              </a>
+            {/* Col 2 — Produto */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">
+                Produto
+              </h3>
+              <ul className="flex flex-col gap-3">
+                {[
+                  { label: 'Início', to: '/inicio' },
+                  { label: 'Simuladores', to: '/simuladores' },
+                  { label: 'Lançamentos', to: '/lancamentos' },
+                  { label: 'Investimentos', to: '/investimentos' },
+                  { label: 'Meu IR', to: '/meu-ir' },
+                  { label: 'Simulador FIPE', to: '/simuladores/veiculos/simulador-fipe' },
+                ].map(({ label, to }) => (
+                  <li key={to}>
+                    <Link to={to} className="text-sm text-white/60 hover:text-white transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Link to="/simuladores/veiculos/simulador-fipe">
-                <Button size="sm" className="bg-white text-[hsl(145,30%,15%)] hover:bg-white/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
-                  Testar Simulador
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm" className="bg-white text-[hsl(145,30%,15%)] hover:bg-white/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
-                  Criar Conta Grátis
-                </Button>
-              </Link>
+            {/* Col 3 — Legal */}
+            <div>
+              <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">
+                Legal
+              </h3>
+              <ul className="flex flex-col gap-3">
+                {[
+                  { label: 'Termos de Uso', to: '/termos-de-uso' },
+                  { label: 'Política de Privacidade', to: '/politica-privacidade' },
+                  { label: 'Política de Cookies', to: '/politica-cookies' },
+                ].map(({ label, to }) => (
+                  <li key={to}>
+                    <Link to={to} className="text-sm text-white/60 hover:text-white transition-colors">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+
           </div>
 
-          <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[11px] text-white/50">
-              © {new Date().getFullYear()} RXFin. Todos os direitos reservados.
+          {/* Bottom bar */}
+          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-[11px] text-white/40">
+              © 2025 RXFin · Todos os direitos reservados
             </p>
-            <div className="flex items-center gap-4 text-[11px] text-white/50">
-              <Link to="/termos-de-uso" className="hover:text-white transition-colors">
-                Termos de Uso
-              </Link>
-              <span className="text-white/20">|</span>
-              <Link to="/politica-privacidade" className="hover:text-white transition-colors">
-                Política de Privacidade
-              </Link>
-              <span className="text-white/20">|</span>
-              <Link to="/politica-cookies" className="hover:text-white transition-colors">
-                Política de Cookies
-              </Link>
-            </div>
+            <p className="text-[11px] text-white/30 text-center sm:text-right">
+              Dados protegidos com criptografia bancária via Open Finance regulamentado pelo Banco Central do Brasil.
+            </p>
           </div>
         </div>
       </footer>
