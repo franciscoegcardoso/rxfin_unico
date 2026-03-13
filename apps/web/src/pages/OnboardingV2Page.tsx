@@ -54,8 +54,8 @@ export default function OnboardingV2Page() {
             transition={{ duration: 0.25 }}
           >
             {currentStep === 0 && <Step0Persona />}
-            {currentStep === 1 && <Step1Identidade onContinue={() => {}} />}
-            {currentStep === 2 && <Step2Conexao onContinue={() => {}} />}
+            {currentStep === 1 && <Step1Identidade onContinue={() => goToStep(2)} />}
+            {currentStep === 2 && <Step2Conexao onContinue={() => goToStep(3)} />}
             {currentStep === 3 && <StepPlaceholder stepNumber={3} />}
             {currentStep === 4 && <StepPlaceholder stepNumber={4} />}
             {currentStep === 5 && <StepPlaceholder stepNumber={5} />}
