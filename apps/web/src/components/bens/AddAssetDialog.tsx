@@ -38,7 +38,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useFipe } from '@/hooks/useFipe';
+import { useFipe, formatFipeYearName } from '@/hooks/useFipe';
 import { VehicleFipeForm } from '@/components/bens/VehicleFipeForm';
 import { CompanyForm } from '@/components/bens/CompanyForm';
 import { CorporatePensionForm } from '@/components/bens/CorporatePensionForm';
@@ -415,6 +415,24 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
       setNewAsset(prev => ({ ...prev, value: adjustedValue }));
     }
   }, [fipe.priceValue, newAsset.fipePercentage, newAsset.type]);
+
+  // Auto-fill Nome/Identificação for vehicle from marca + modelo + ano (máx. 25 caracteres)
+  useEffect(() => {
+    if (newAsset.type !== 'vehicle') return;
+    let autoName = '';
+    if (fipe.price) {
+      autoName = `${fipe.price.Marca} ${fipe.price.Modelo} ${fipe.price.AnoModelo}`;
+    } else if (fipe.selectedBrand && fipe.selectedModel && fipe.selectedYear) {
+      const brandName = fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome ?? '';
+      const modelName = fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome ?? '';
+      const yearEl = fipe.years.find(y => y.codigo === fipe.selectedYear);
+      const yearLabel = yearEl ? formatFipeYearName(yearEl.nome) : '';
+      autoName = [brandName, modelName, yearLabel].filter(Boolean).join(' ');
+    }
+    if (autoName) {
+      setNewAsset(prev => ({ ...prev, name: autoName.slice(0, 25) }));
+    }
+  }, [newAsset.type, fipe.price, fipe.selectedBrand, fipe.selectedModel, fipe.selectedYear]);
 
   // Get FIPE full name for storage (not auto-fill name anymore)
   const fipeFullName = useMemo(() => {
@@ -1291,16 +1309,42 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           </div>
           ) : currentStep === 'details' ? (
           <div className="space-y-6 py-4">
-            {/* Dados básicos para outros tipos de bens */}
+            {/* Para veículo: Configurações FIPE primeiro (Tipo, Marca, Modelo, Ano — mesmo do simulador FIPE) */}
+            {newAsset.type === 'vehicle' && (
+              <div className="border rounded-lg p-4 space-y-4">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Car className="h-4 w-4 text-primary" />
+                  Configurações do Veículo
+                </h3>
+                <VehicleFipeForm
+                  fipe={fipe}
+                  fipePercentage={newAsset.fipePercentage}
+                  onFipePercentageChange={(value) => setNewAsset({ ...newAsset, fipePercentage: value })}
+                  formatCurrency={formatCurrency}
+                />
+              </div>
+            )}
+
+            {/* Nome/Identificação: para veículo vem depois de FIPE (preenchido automaticamente marca modelo ano); para outros tipos vem primeiro */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome / Identificação <span className="text-xs text-muted-foreground">(máx. 20 caracteres)</span></Label>
+                <Label htmlFor="name">
+                  Nome / Identificação{' '}
+                  <span className="text-xs text-muted-foreground">
+                    {newAsset.type === 'vehicle' ? '(máx. 25 caracteres)' : '(máx. 20 caracteres)'}
+                  </span>
+                </Label>
                 <Input
                   id="name"
-                  placeholder="Ex: Apto Centro..."
+                  placeholder={newAsset.type === 'vehicle' ? 'Preenchido por marca, modelo e ano' : 'Ex: Apto Centro...'}
                   value={newAsset.name}
-                  onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value.slice(0, 20) })}
-                  maxLength={20}
+                  onChange={(e) =>
+                    setNewAsset({
+                      ...newAsset,
+                      name: e.target.value.slice(0, newAsset.type === 'vehicle' ? 25 : 20),
+                    })
+                  }
+                  maxLength={newAsset.type === 'vehicle' ? 25 : 20}
                 />
               </div>
 
@@ -1456,21 +1500,9 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               />
             )}
 
-            {/* Opções para Veículos */}
+            {/* Parâmetros de custos do veículo (Estado, combustível, km etc.) */}
             {newAsset.type === 'vehicle' && (
               <div className="border rounded-lg p-4 space-y-4">
-                <h3 className="font-medium flex items-center gap-2">
-                  <Car className="h-4 w-4 text-primary" />
-                  Configurações do Veículo
-                </h3>
-
-                <VehicleFipeForm
-                  fipe={fipe}
-                  fipePercentage={newAsset.fipePercentage}
-                  onFipePercentageChange={(value) => setNewAsset({ ...newAsset, fipePercentage: value })}
-                  formatCurrency={formatCurrency}
-                />
-
                 <div className="space-y-4 p-4 rounded-lg bg-expense/5 border border-expense/20">
                   <h4 className="text-sm font-medium text-expense flex items-center gap-2">
                     <Fuel className="h-4 w-4" />

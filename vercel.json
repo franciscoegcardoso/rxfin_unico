@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "npm run build:web",
+  "buildCommand": "npx turbo run build --filter=vite_react_shadcn_ts --force",
   "outputDirectory": "apps/web/dist",
   "redirects": [
     {
