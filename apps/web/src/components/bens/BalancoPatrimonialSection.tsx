@@ -407,7 +407,7 @@ export const BalancoPatrimonialSection: React.FC = () => {
                 icon={<CreditCard className="h-6 w-6 text-muted-foreground" />}
                 description="Nenhuma dívida cadastrada — Parabéns! 🎉"
                 actionLabel="Adicionar primeiro crédito"
-                onAction={() => navigate('/credito')}
+                onAction={() => navigate('/bens-investimentos/credito')}
                 className="py-8"
               />
             )}
@@ -566,7 +566,7 @@ export const BalancoPatrimonialSection: React.FC = () => {
             )}
 
             {financiamentos.length === 0 && consorcios.length === 0 && (
-              <EmptyState description="Nenhuma dívida cadastrada" actionLabel="Adicionar primeiro crédito" onAction={() => navigate('/credito')} className="py-4" />
+              <EmptyState description="Nenhuma dívida cadastrada" actionLabel="Adicionar primeiro crédito" onAction={() => navigate('/bens-investimentos/credito')} className="py-4" />
             )}
           </CardContent>
         </Card>

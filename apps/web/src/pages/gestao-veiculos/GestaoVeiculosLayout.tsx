@@ -192,6 +192,7 @@ const GestaoVeiculosLayout: React.FC = () => {
           onOpenChange={setAssetDialogOpen}
           editingAsset={editingAsset}
           defaultType="vehicle"
+          vehicleOnly
         />
 
         <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

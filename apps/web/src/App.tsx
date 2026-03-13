@@ -303,6 +303,7 @@ const App = () => (
                   <Route path="/renegociacao-dividas/portabilidade"     element={<Navigate to="/renegociacao-dividas/portabilidade" replace />} />
                   <Route path="/renegociacao-dividas/consolidacao"      element={<Navigate to="/renegociacao-dividas/consolidacao" replace />} />
                   <Route path="/balanco-patrimonial" element={<Navigate to="/bens-investimentos/consolidado" replace />} />
+                  <Route path="/credito" element={<Navigate to="/bens-investimentos/credito" replace />} />
                   <Route path="/rxsplit" element={<Navigate to="/rx-split" replace />} />
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Admin /></AdminSecureLayout>} />

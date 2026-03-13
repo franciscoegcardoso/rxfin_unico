@@ -245,6 +245,8 @@ interface AddAssetDialogProps {
   onOpenChange: (open: boolean) => void;
   editingAsset?: Asset | null;
   defaultType?: AssetType; // To open directly in investment mode
+  /** When true, title is "Adicionar novo veículo" and Tipo field is hidden (type is vehicle) */
+  vehicleOnly?: boolean;
 }
 
 export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
@@ -252,6 +254,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
   onOpenChange,
   editingAsset,
   defaultType = 'property',
+  vehicleOnly = false,
 }) => {
   const { config, addAsset, updateAsset } = useFinancial();
   const { addMultipleContas } = useContasPagarReceber();
@@ -915,7 +918,9 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 ? (editingAsset ? 'Editar Investimento' : 'Novo Investimento')
                 : newAsset.type === 'property'
                   ? (editingAsset ? 'Editar Imóvel' : 'Novo Imóvel')
-                  : (editingAsset ? 'Editar Bem' : 'Novo Bem')
+                  : newAsset.type === 'vehicle' && vehicleOnly
+                    ? (editingAsset ? 'Editar veículo' : 'Adicionar novo veículo')
+                    : (editingAsset ? 'Editar Bem' : 'Novo Bem')
               }
             </span>
             {newAsset.type === 'vehicle' && (
@@ -942,7 +947,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               : newAsset.type === 'property'
                 ? 'Preencha as informações do imóvel'
                 : (currentStep === 'details' 
-                    ? (editingAsset ? 'Altere os dados do item selecionado' : 'Cadastre um novo item ao seu patrimônio')
+                    ? (editingAsset ? 'Altere os dados do veículo' : vehicleOnly ? 'Cadastre um novo veículo no seu patrimônio.' : 'Cadastre um novo item ao seu patrimônio')
                     : 'Configure os custos do veículo para vinculação ao planejamento'
                   )
             }
@@ -1299,34 +1304,36 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="type">Tipo</Label>
-                <Select
-                  value={newAsset.type}
-                  onValueChange={(value: AssetType) => setNewAsset({
-                    ...newAsset,
-                    type: value,
-                    isRentalProperty: false,
-                    propertyAdjustment: 'none',
-                    useFipeReference: true,
-                    isZeroKm: false,
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    {assetTypes.filter(t => t.value !== 'investment').map(({ value, label }) => (
-                      <SelectItem key={value} value={value}>
-                        <span className="flex items-center gap-2">
-                          {assetIcons[value]}
-                          {label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!vehicleOnly && (
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo</Label>
+                  <Select
+                    value={newAsset.type}
+                    onValueChange={(value: AssetType) => setNewAsset({
+                      ...newAsset,
+                      type: value,
+                      isRentalProperty: false,
+                      propertyAdjustment: 'none',
+                      useFipeReference: true,
+                      isZeroKm: false,
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover">
+                      {assetTypes.filter(t => t.value !== 'investment').map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          <span className="flex items-center gap-2">
+                            {assetIcons[value]}
+                            {label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Valor Atual */}
               {newAsset.type !== 'vehicle' && (
@@ -1380,7 +1387,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 Dados da Compra
               </h3>
-              <div className={`grid grid-cols-1 gap-4 ${newAsset.type === 'vehicle' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+              <div className={`grid grid-cols-1 gap-4 ${newAsset.type === 'vehicle' ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2'}`}>
                 <div className="space-y-2">
                   <Label>Data da Compra</Label>
                   <DatePickerFriendly
@@ -1401,20 +1408,37 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 </div>
 
                 {newAsset.type === 'vehicle' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="purchaseOdometer">Odômetro na Compra (km)</Label>
-                    <Input
-                      id="purchaseOdometer"
-                      type="text"
-                      inputMode="numeric"
-                      value={newAsset.purchaseOdometer ? newAsset.purchaseOdometer.toLocaleString('pt-BR') : ''}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\./g, '');
-                        setNewAsset({ ...newAsset, purchaseOdometer: parseInt(val) || 0 });
-                      }}
-                      placeholder="Ex: 0"
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="purchaseOdometer">Odômetro na Compra (km)</Label>
+                      <Input
+                        id="purchaseOdometer"
+                        type="text"
+                        inputMode="numeric"
+                        value={newAsset.purchaseOdometer ? newAsset.purchaseOdometer.toLocaleString('pt-BR') : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\./g, '');
+                          setNewAsset({ ...newAsset, purchaseOdometer: parseInt(val) || 0 });
+                        }}
+                        placeholder="Ex: 0"
+                        disabled={newAsset.isZeroKm}
+                      />
+                    </div>
+                    <div className="space-y-2 flex flex-col justify-end">
+                      <Label className="text-muted-foreground font-normal">Veículo Zero KM?</Label>
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-accent/50 border border-border/60">
+                        <span className="text-sm text-muted-foreground shrink-0">Marque se comprou novo</span>
+                        <Switch
+                          checked={newAsset.isZeroKm}
+                          onCheckedChange={(checked) => setNewAsset({
+                            ...newAsset,
+                            isZeroKm: checked,
+                            purchaseOdometer: checked ? 0 : newAsset.purchaseOdometer,
+                          })}
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1439,22 +1463,6 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                   <Car className="h-4 w-4 text-primary" />
                   Configurações do Veículo
                 </h3>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
-                  <div className="flex items-center gap-3">
-                    <Car className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Veículo Zero KM?</p>
-                      <p className="text-sm text-muted-foreground">
-                        Marque se o veículo foi comprado novo
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={newAsset.isZeroKm}
-                    onCheckedChange={(checked) => setNewAsset({ ...newAsset, isZeroKm: checked })}
-                  />
-                </div>
 
                 <VehicleFipeForm
                   fipe={fipe}

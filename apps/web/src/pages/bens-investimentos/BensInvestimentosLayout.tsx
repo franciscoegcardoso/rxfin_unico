@@ -81,6 +81,7 @@ const BensInvestimentosLayout: React.FC = () => {
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [openAsVehicleOnly, setOpenAsVehicleOnly] = useState(false);
 
   // Delete state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -473,9 +474,13 @@ const BensInvestimentosLayout: React.FC = () => {
 
           <AddAssetDialog
             open={isDialogOpen}
-            onOpenChange={setIsDialogOpen}
+            onOpenChange={(open) => {
+              if (!open) setOpenAsVehicleOnly(false);
+              setIsDialogOpen(open);
+            }}
             editingAsset={editingAsset}
-            defaultType={defaultAssetType}
+            defaultType={openAsVehicleOnly || currentTab === 'veiculos' ? 'vehicle' : defaultAssetType}
+            vehicleOnly={openAsVehicleOnly || currentTab === 'veiculos'}
           />
 
           {/* Tab Navigation — overflow-x em mobile, ativa sempre visível */}
@@ -648,7 +653,7 @@ const BensInvestimentosLayout: React.FC = () => {
                           <ChevronRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
-                      <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                      <Button size="sm" className="gap-1.5" onClick={() => { setOpenAsVehicleOnly(true); setEditingAsset(null); setIsDialogOpen(true); }}>
                         <Plus className="h-4 w-4" />
                         Adicionar veículo
                       </Button>
@@ -663,7 +668,7 @@ const BensInvestimentosLayout: React.FC = () => {
                         <p className="font-medium text-foreground">Nenhum veículo cadastrado</p>
                         <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus veículos para acompanhar valor, custos e depreciação no patrimônio.</p>
                         <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                          <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                          <Button size="sm" className="gap-1.5" onClick={() => { setOpenAsVehicleOnly(true); setEditingAsset(null); setIsDialogOpen(true); }}>
                             <Plus className="h-4 w-4" />
                             Adicionar veículo
                           </Button>
@@ -870,7 +875,7 @@ const BensInvestimentosLayout: React.FC = () => {
                       Meus Financiamentos
                     </h2>
                     <Button size="sm" className="gap-1.5" asChild>
-                      <Link to="/credito">
+                      <Link to="/bens-investimentos/credito">
                         <Plus className="h-4 w-4" />
                         Adicionar financiamento ou consórcio
                       </Link>
@@ -885,7 +890,7 @@ const BensInvestimentosLayout: React.FC = () => {
                         <p className="font-medium text-foreground">Nenhum financiamento ou consórcio</p>
                         <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre financiamentos e consórcios para acompanhar parcelas e saldo devedor no patrimônio.</p>
                         <Button size="sm" className="gap-1.5 mt-4" asChild>
-                          <Link to="/credito">
+                          <Link to="/bens-investimentos/credito">
                             <Plus className="h-4 w-4" />
                             Adicionar financiamento ou consórcio
                           </Link>

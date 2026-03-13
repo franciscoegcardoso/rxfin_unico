@@ -380,7 +380,7 @@ export const ConsolidatedSection: React.FC<ConsolidatedSectionProps> = ({ onNavi
                 icon={<Target className="h-6 w-6 text-muted-foreground" />}
                 description="Você ainda não cadastrou nenhum consórcio"
                 actionLabel="Adicionar primeiro consórcio"
-                onAction={() => navigate('/credito')}
+                onAction={() => navigate('/bens-investimentos/credito')}
                 className="py-6"
               />
             ) : (
@@ -434,7 +434,7 @@ export const ConsolidatedSection: React.FC<ConsolidatedSectionProps> = ({ onNavi
                 icon={<Landmark className="h-6 w-6 text-muted-foreground" />}
                 description="Você ainda não cadastrou nenhum financiamento"
                 actionLabel="Adicionar primeiro financiamento"
-                onAction={() => navigate('/credito')}
+                onAction={() => navigate('/bens-investimentos/credito')}
                 className="py-6"
               />
             ) : (
