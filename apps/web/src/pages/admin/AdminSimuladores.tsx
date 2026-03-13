@@ -34,6 +34,8 @@ interface SimulatorMetrics {
   unique_visitors_7d?: number;
   conversions_total?: number;
   completion_rate?: number;
+  /** Total de sessões únicas no período (denominador correto para taxa de conclusão) */
+  sessions_total?: number;
   top_simulators?: { page?: string; views?: number; sessions?: number; conversions?: number }[];
 }
 
@@ -79,7 +81,9 @@ export default function AdminSimuladores() {
   }, [fetch]);
 
   const topSimulators = data?.top_simulators ?? [];
-  const conversionRate = data?.completion_rate ?? 0;
+  const conversions = data?.conversions_total ?? 0;
+  const totalSessions = data?.sessions_total ?? topSimulators.reduce((sum, r) => sum + (r.sessions ?? 0), 0) ?? data?.page_views_total ?? 0;
+  const completionRatePct = totalSessions > 0 ? (conversions / totalSessions) * 100 : 0;
 
   return (
     <div className="space-y-8">
@@ -147,7 +151,7 @@ export default function AdminSimuladores() {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Taxa de conclusão</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">{formatPct(conversionRate)}</p>
+                <p className="text-2xl font-bold">{formatPct(completionRatePct)}</p>
               </CardContent>
             </Card>
           </div>

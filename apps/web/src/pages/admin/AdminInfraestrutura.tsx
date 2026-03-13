@@ -75,8 +75,8 @@ export default function AdminInfraestrutura() {
   const [loadingMvs, setLoadingMvs] = useState(true);
   const [partitionsError, setPartitionsError] = useState<string | null>(null);
   const [mvsError, setMvsError] = useState<string | null>(null);
-  const [filterPeriod, setFilterPeriod] = useState<string>('default');
-  const [filterSizeClass, setFilterSizeClass] = useState<string>('default');
+  const [filterPeriod, setFilterPeriod] = useState<string>('all');
+  const [filterSizeClass, setFilterSizeClass] = useState<string>('all');
   const [createPartitionsOpen, setCreatePartitionsOpen] = useState(false);
   const [creatingPartitions, setCreatingPartitions] = useState(false);
   const [refreshingMv, setRefreshingMv] = useState<string | null>(null);
@@ -133,8 +133,8 @@ export default function AdminInfraestrutura() {
   }, [fetchPartitions, fetchMvs]);
 
   const filteredPartitions = partitions.filter((p) => {
-    if (filterPeriod !== 'default' && (p.period ?? '') !== filterPeriod) return false;
-    if (filterSizeClass !== 'default' && (p.size_class ?? '') !== filterSizeClass) return false;
+    if (filterPeriod !== 'all' && (p.period ?? '') !== filterPeriod) return false;
+    if (filterSizeClass !== 'all' && (p.size_class ?? '') !== filterSizeClass) return false;
     return true;
   });
 
@@ -216,10 +216,10 @@ export default function AdminInfraestrutura() {
           <div className="flex flex-wrap items-center gap-3">
             <Select value={filterPeriod} onValueChange={setFilterPeriod}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Período" />
+                <SelectValue placeholder="Todos os períodos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Todos</SelectItem>
+                <SelectItem value="all">Todos os períodos</SelectItem>
                 {periodOptions.map((p) => (
                   <SelectItem key={p} value={p}>{p}</SelectItem>
                 ))}
@@ -227,10 +227,10 @@ export default function AdminInfraestrutura() {
             </Select>
             <Select value={filterSizeClass} onValueChange={setFilterSizeClass}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Size class" />
+                <SelectValue placeholder="Todas as classes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Todos</SelectItem>
+                <SelectItem value="all">Todas as classes</SelectItem>
                 {sizeClassOptions.map((s) => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}

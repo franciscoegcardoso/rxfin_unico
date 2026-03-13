@@ -498,7 +498,20 @@ export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading
   const result = [...mobileSections];
   result.splice(insertIndex, 0, simuladoresSection);
 
-  return { sections: result, isLoading };
+  // Configurações com items vazios: exibir como botão que leva a /configuracoes (menu MAIS mobile/tablet)
+  const sectionsWithConfig = result.map((section) => {
+    if (section.slug === 'configuracoes' && section.items.length === 0) {
+      return {
+        ...section,
+        items: [
+          { path: '/configuracoes', label: 'Configurações', icon: Settings2, accessLevel: 'free' as const, canAccessAsAdmin: true },
+        ],
+      };
+    }
+    return section;
+  });
+
+  return { sections: sectionsWithConfig, isLoading };
 }
 
 /**

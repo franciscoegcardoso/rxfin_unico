@@ -300,7 +300,7 @@ function UnitEconomicsSection() {
               <CardTitle className="text-sm">CAC vs meta</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold">{formatCurrency(data.cac ?? 0)}</p>
+              <p className="font-semibold">{data.cac != null ? formatCurrency(data.cac) : '—'}</p>
               <p className="text-xs text-muted-foreground">Meta: R$ {CAC_META}</p>
             </CardContent>
           </Card>
@@ -309,7 +309,7 @@ function UnitEconomicsSection() {
               <CardTitle className="text-sm">LTV</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold">{formatCurrency(data.ltv ?? 0)}</p>
+              <p className="font-semibold">{data.ltv != null ? formatCurrency(data.ltv) : '—'}</p>
               <p className="text-xs text-muted-foreground">ARPU × tempo vida</p>
             </CardContent>
           </Card>
@@ -323,7 +323,7 @@ function UnitEconomicsSection() {
               <CardTitle className="text-sm">LTV/CAC</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-semibold">{(ratio).toFixed(2)}×</p>
+              <p className="font-semibold">{data.ltv_cac_ratio != null && Number.isFinite(data.ltv_cac_ratio) ? `${data.ltv_cac_ratio.toFixed(2)}×` : '—'}</p>
               <p className="text-xs text-muted-foreground">
                 {ratioStatus === 'green' && '≥3× saudável'}
                 {ratioStatus === 'yellow' && '1–3× atenção'}
