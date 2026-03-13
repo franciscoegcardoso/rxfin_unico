@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -22,10 +23,14 @@ import {
   Repeat,
   Share2,
   AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useAdminStrategicDashboard } from '@/hooks/admin/useAdminStrategicDashboard';
+import { useAdminUnitEconomics, CAC_META } from '@/hooks/admin/useAdminUnitEconomics';
 import type { RoadmapPhase, ValuationData, AarrrData, SimulatorsData, CronogramaData, CampaignRow } from '@/hooks/admin/useAdminStrategicDashboard';
 
 const ARR_TARGET = 1_000_000;
@@ -254,6 +259,102 @@ function CronogramaSection({ c }: { c: CronogramaData }) {
   );
 }
 
+const UNIT_ECONOMICS_MONTHS = [1, 3, 6] as const;
+
+function UnitEconomicsSection() {
+  const [months, setMonths] = useState<number>(3);
+  const { data, isLoading, error, refetch } = useAdminUnitEconomics(months);
+
+  const ratio = data?.ltv_cac_ratio ?? 0;
+  const ratioStatus = ratio >= 3 ? 'green' : ratio >= 1 ? 'yellow' : 'red';
+
+  return (
+    <section>
+      <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+        <DollarSign className="h-4 w-4" /> Unit Economics
+      </h2>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {UNIT_ECONOMICS_MONTHS.map((m) => (
+              <SelectItem key={m} value={String(m)}>{m}m</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+          {isLoading ? 'Carregando...' : 'Atualizar'}
+        </Button>
+      </div>
+      {error && (
+        <p className="text-sm text-destructive mb-2">{(error as Error).message}</p>
+      )}
+      {isLoading && !data ? (
+        <Skeleton className="h-32 w-full" />
+      ) : data ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="border-blue-500/30 bg-blue-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">CAC vs meta</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold">{formatCurrency(data.cac ?? 0)}</p>
+              <p className="text-xs text-muted-foreground">Meta: R$ {CAC_META}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-emerald-500/30 bg-emerald-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">LTV</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold">{formatCurrency(data.ltv ?? 0)}</p>
+              <p className="text-xs text-muted-foreground">ARPU × tempo vida</p>
+            </CardContent>
+          </Card>
+          <Card className={cn(
+            'border-2',
+            ratioStatus === 'green' && 'border-green-500 bg-green-500/10',
+            ratioStatus === 'yellow' && 'border-amber-500 bg-amber-500/10',
+            ratioStatus === 'red' && 'border-red-500 bg-red-500/10'
+          )}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">LTV/CAC</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold">{(ratio).toFixed(2)}×</p>
+              <p className="text-xs text-muted-foreground">
+                {ratioStatus === 'green' && '≥3× saudável'}
+                {ratioStatus === 'yellow' && '1–3× atenção'}
+                {ratioStatus === 'red' && '<1× crítico'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Marketing spend</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold">{formatCurrency(data.marketing_spend ?? 0)}</p>
+              <p className="text-xs text-muted-foreground">Total {months} mês(es)</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Novos pagantes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-semibold">{data.new_payers ?? 0}</p>
+              <p className="text-xs text-muted-foreground">Últimos {months} mês(es)</p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function CampaignsTable({ campaigns }: { campaigns: CampaignRow[] }) {
   const totals = campaigns.reduce(
     (acc, c) => ({
@@ -411,8 +512,25 @@ export default function Estrategico() {
           </AarrrCard>
           <AarrrCard title="Retention" icon={Repeat} colorClass="border-amber-500/30 bg-amber-500/5">
             <p>DAU / WAU / MAU: {aarrr.retention?.dau ?? 0} / {aarrr.retention?.wau ?? 0} / {aarrr.retention?.mau ?? 0}</p>
-            <p className="text-xs">DAU/MAU: {(aarrr.retention?.dau_mau_ratio ?? 0).toFixed(2)}</p>
-            <p className="text-xs">Churn 30d: {aarrr.retention?.churn_30d ?? 0} · At Risk: {aarrr.retention?.at_risk ?? 0}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center gap-1 text-xs cursor-help border-b border-dotted border-muted-foreground">
+                    DAU/MAU: {(aarrr.retention?.dau_mau_ratio ?? 0).toFixed(2)}
+                    <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p>Razão entre usuários ativos diários (DAU) e mensais (MAU). Quanto mais próximo de 1, maior a retenção e o engajamento diário.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <p className="text-xs">Churn 30d: {aarrr.retention?.churn_30d ?? 0}{aarrr.retention?.churn_rate != null ? ` · Taxa: ${(Number(aarrr.retention.churn_rate) * 100).toFixed(1)}%` : ''}</p>
+            {(aarrr.retention?.at_risk ?? 0) > 0 && (
+              <Badge variant="destructive" className="animate-pulse mt-1">
+                {aarrr.retention?.at_risk ?? 0} usuários em risco
+              </Badge>
+            )}
           </AarrrCard>
           <AarrrCard title="Referral" icon={Share2} colorClass="border-purple-500/30 bg-purple-500/5">
             <p>Total referrals: {aarrr.referral?.total_referrals ?? 0}</p>
@@ -420,6 +538,9 @@ export default function Estrategico() {
           </AarrrCard>
         </div>
       </section>
+
+      {/* C2) Unit Economics */}
+      <UnitEconomicsSection />
 
       {/* D) Simuladores */}
       {simulators && <SimulatorsSection s={simulators} />}

@@ -945,9 +945,9 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[calc(100%-1.5rem)] sm:max-w-2xl mx-3 sm:mx-auto h-[90vh] max-h-[90dvh] p-0 flex flex-col overflow-hidden">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="flex items-center justify-between">
-            <span>
+        <DialogHeader className={cn("p-6 pb-2", newAsset.type === 'vehicle' && "pr-14 sm:pr-16")}>
+          <DialogTitle className="flex items-center justify-between gap-3">
+            <span className="min-w-0 flex-1">
               {newAsset.type === 'investment' 
                 ? (editingAsset ? 'Editar Investimento' : 'Novo Investimento')
                 : newAsset.type === 'property'
@@ -958,7 +958,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               }
             </span>
             {newAsset.type === 'vehicle' && (
-              <div className="flex items-center gap-2 text-sm font-normal">
+              <div className="flex items-center gap-2 text-sm font-normal shrink-0">
                 <span className={cn(
                   "px-2 py-1 rounded text-xs",
                   currentStep === 'details' ? "bg-primary text-primary-foreground" : "bg-muted"
@@ -1442,14 +1442,15 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
             </div>
 
             {/* Dados da Compra */}
-            <div className="border border-border rounded-xl p-5 space-y-4 bg-card/50">
+            <div className="border border-border rounded-xl p-5 space-y-5 bg-card/50">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 Dados da Compra
               </h3>
-              <div className={`grid grid-cols-1 gap-4 ${newAsset.type === 'vehicle' ? 'sm:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2'}`}>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label htmlFor="purchaseDate">Data da Compra</Label>
+                  <Label htmlFor="purchaseDate" className="text-foreground">Data da Compra</Label>
                   <DatePickerFriendly
                     value={newAsset.purchaseDate}
                     onChange={(date) => setNewAsset({ ...newAsset, purchaseDate: date })}
@@ -1457,18 +1458,23 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purchaseValue">Valor da Compra</Label>
+                  <Label htmlFor="purchaseValue" className="text-foreground">Valor da Compra</Label>
                   <CurrencyInput
                     id="purchaseValue"
                     value={newAsset.purchaseValue}
                     onChange={(value) => setNewAsset({ ...newAsset, purchaseValue: value })}
                     placeholder="0"
+                    className="h-10"
                   />
                 </div>
-                {newAsset.type === 'vehicle' && (
-                  <>
+              </div>
+
+              {newAsset.type === 'vehicle' && (
+                <div className="pt-1 border-t border-border/60">
+                  <p className="text-xs font-medium text-muted-foreground mb-3">Quilometragem e condição</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
                     <div className="space-y-2">
-                      <Label htmlFor="purchaseOdometer">Odômetro na Compra (km)</Label>
+                      <Label htmlFor="purchaseOdometer" className="text-foreground">Odômetro na Compra (km)</Label>
                       <Input
                         id="purchaseOdometer"
                         type="text"
@@ -1480,14 +1486,20 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                         }}
                         placeholder="Ex: 0"
                         disabled={newAsset.isZeroKm}
-                        className="h-9"
+                        className="h-10 bg-muted/30"
                       />
+                      {newAsset.isZeroKm && (
+                        <p className="text-xs text-muted-foreground">Preenchido automaticamente (zero KM)</p>
+                      )}
                     </div>
-                    <div className="space-y-2 flex flex-col justify-end">
-                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2.5 min-h-[40px]">
-                        <Label htmlFor="zeroKm" className="text-sm font-medium text-foreground cursor-pointer shrink-0">
-                          Veículo Zero KM?
-                        </Label>
+                    <div className="space-y-2">
+                      <Label className="text-foreground">Condição na compra</Label>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg border px-4 py-3 min-h-[40px] transition-colors",
+                          newAsset.isZeroKm ? "border-primary/40 bg-primary/5" : "border-border bg-muted/20"
+                        )}
+                      >
                         <Switch
                           id="zeroKm"
                           checked={newAsset.isZeroKm}
@@ -1497,12 +1509,17 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                             purchaseOdometer: checked ? 0 : newAsset.purchaseOdometer,
                           })}
                         />
+                        <Label htmlFor="zeroKm" className="flex-1 cursor-pointer text-sm font-medium text-foreground">
+                          Veículo Zero KM
+                        </Label>
                       </div>
-                      <p className="text-xs text-muted-foreground">Marque se comprou novo (odômetro será 0)</p>
+                      <p className="text-xs text-muted-foreground">
+                        Marque se o veículo era novo de fábrica — o odômetro será definido como 0.
+                      </p>
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Seção de Seguro/Garantia - mostrar para tipos de bens que fazem sentido */}

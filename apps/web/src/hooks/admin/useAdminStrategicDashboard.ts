@@ -64,6 +64,7 @@ export interface AarrrRetention {
   mau?: number;
   dau_mau_ratio?: number;
   churn_30d?: number;
+  churn_rate?: number;
   at_risk?: number;
 }
 
@@ -156,16 +157,16 @@ export function useAdminStrategicDashboard() {
     queryKey: ['admin', 'strategic-dashboard'],
     queryFn: async (): Promise<AdminStrategicDashboardData | null> => {
       try {
-        const { data, error } = await supabase.rpc('get_admin_strategic_dashboard');
+        const { data, error } = await supabase.rpc('get_admin_strategic_dashboard_cached', { p_force_refresh: false });
         if (error) {
-          console.warn('[Estrategico] get_admin_strategic_dashboard RPC failed:', error.message);
+          console.warn('[Estrategico] get_admin_strategic_dashboard_cached RPC failed:', error.message);
           return emptyStrategicData();
         }
         const raw = Array.isArray(data) ? data[0] : data;
         const parsed = (raw as AdminStrategicDashboardData | null) ?? null;
         return parsed ?? emptyStrategicData();
       } catch (e) {
-        console.warn('[Estrategico] get_admin_strategic_dashboard error:', e);
+        console.warn('[Estrategico] get_admin_strategic_dashboard_cached error:', e);
         return emptyStrategicData();
       }
     },

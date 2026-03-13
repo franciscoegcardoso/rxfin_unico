@@ -119,6 +119,8 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const Estrategico = lazy(() => import('./pages/admin/Estrategico'));
 const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
 const AdminArchitecturePage = lazy(() => import('./pages/admin/AdminArchitecturePage'));
+const AdminInfraestrutura = lazy(() => import('./pages/admin/AdminInfraestrutura'));
+const AdminSimuladores = lazy(() => import('./pages/admin/AdminSimuladores'));
 const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
 const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
 import { RaioXChat } from "./components/ai/RaioXChat";
@@ -321,6 +323,7 @@ const App = () => (
                   <Route path="/admin/rollbacks" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRollbacks /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/health" element={<Navigate to="/admin/database-health" replace />} />
                   <Route path="/admin/database-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><DatabaseHealthDashboard /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/infraestrutura" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminInfraestrutura /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />
@@ -333,7 +336,7 @@ const App = () => (
                   <Route path="/admin/api-keys" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><ApiKeysPage /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/roles" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminRolesPage /></Suspense></AdminSecureLayout>} />
                   {/* Legacy redirects */}
-                  <Route path="/admin/simuladores" element={<Navigate to="/admin/paginas" replace />} />
+                  <Route path="/admin/simuladores" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminSimuladores /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin-secure" element={<Navigate to="/admin/audit" replace />} />
                   {/* Welcome Pages - Post-purchase */}
                   <Route path="/bem-vindo/:plan" element={<BemVindo />} />

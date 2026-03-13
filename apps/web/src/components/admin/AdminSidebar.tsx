@@ -23,6 +23,7 @@ import {
   Target,
   Database,
   Server,
+  Boxes,
   KeyRound,
   UserCog,
 } from 'lucide-react';
@@ -56,6 +57,7 @@ const NAV_ITEMS: NavItem[] = [
 
   // Conteúdo
   { label: 'Páginas', href: '/admin/paginas', icon: FileText, group: 'Conteúdo' },
+  { label: 'Simuladores', href: '/admin/simuladores', icon: BarChart3, group: 'Conteúdo' },
   { label: 'Termos', href: '/admin/termos', icon: Scale, group: 'Conteúdo' },
 
   // IA
@@ -67,6 +69,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Deploy', href: '/admin/deploy', icon: Rocket, group: 'Sistema' },
   { label: 'Rollbacks', href: '/admin/rollbacks', icon: RotateCcw, group: 'Sistema' },
   { label: 'Saúde do Banco', href: '/admin/database-health', icon: Database, group: 'Sistema' },
+  { label: 'Infraestrutura', href: '/admin/infraestrutura', icon: Boxes, group: 'Sistema' },
   { label: 'Arquitetura', href: '/admin/architecture', icon: Server, group: 'Sistema' },
   { label: 'API Keys', href: '/admin/api-keys', icon: KeyRound, group: 'Sistema' },
   { label: 'Roles & Acesso', href: '/admin/roles', icon: UserCog, group: 'Sistema' },

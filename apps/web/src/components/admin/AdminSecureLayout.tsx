@@ -9,6 +9,7 @@ import { AdminPendingChangesProvider } from '@/contexts/AdminPendingChangesConte
 import { AdminPendingChangesBar } from '@/components/admin/AdminPendingChangesBar';
 import { AdminSaveConfirmDialog } from '@/components/admin/AdminSaveConfirmDialog';
 import { AdminNavigationGuard } from '@/components/admin/AdminNavigationGuard';
+import { AdminInfraStatusBar } from '@/components/admin/AdminInfraStatusBar';
 
 interface AdminSecureLayoutProps {
   children: React.ReactNode;
@@ -92,6 +93,7 @@ export const AdminSecureLayout: React.FC<AdminSecureLayoutProps> = ({ children }
           </Button>
         </div>
 
+        <AdminInfraStatusBar />
         <AdminPendingChangesBar />
 
         {/* Sidebar + Content */}
