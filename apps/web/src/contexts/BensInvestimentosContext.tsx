@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react';
-import { Asset, InvestmentType } from '@/types/financial';
+import { Asset, AssetType, InvestmentType } from '@/types/financial';
 
 export interface BensInvestimentosContextType {
-  handleOpenAddDialog: (institutionId?: string, investmentType?: InvestmentType) => void;
+  /** Opens AddAssetDialog. Optional defaultAssetType pre-selects the asset type (e.g. 'company', 'intellectual_property', 'obligations'). */
+  handleOpenAddDialog: (institutionId?: string, investmentType?: InvestmentType, defaultAssetType?: AssetType) => void;
   handleEditAsset: (asset: Asset) => void;
   handleDeleteAsset: (assetId: string) => void;
   handleAddSeguro: (assetId: string) => void;

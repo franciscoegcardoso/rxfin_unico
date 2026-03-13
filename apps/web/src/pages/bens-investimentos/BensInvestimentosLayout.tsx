@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useLocation, useSearchParams, Link } from 'react-router-dom';
+import { useLocation, useSearchParams, useNavigate, Link, Outlet } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart, Briefcase } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -56,6 +56,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const { seguros } = useSeguros();
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
   const validTabs = VALID_TABS as readonly string[];
@@ -63,20 +64,17 @@ const BensInvestimentosLayout: React.FC = () => {
     if (pathSegment === 'overview') return 'consolidado';
     if (pathSegment === 'imoveis' || pathSegment === 'veiculos') return 'patrimonio';
     if (pathSegment === 'financiamentos') return 'passivos';
-    if (pathSegment === 'credito') return 'passivos';
     return validTabs.includes(pathSegment) ? pathSegment : 'consolidado';
   })();
+  const currentTab = tabFromUrl;
 
-  const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
-  useEffect(() => {
-    setCurrentTab((prev) => (pathSegment && validTabs.includes(pathSegment as any) ? pathSegment : prev));
-  }, [pathSegment]);
+  // Redirect ?tab= to path for URL-as-source-of-truth and back/forward support
   const tabParam = searchParams.get('tab');
   useEffect(() => {
-    if (tabParam && validTabs.includes(tabParam as any)) {
-      setCurrentTab(tabParam);
+    if (tabParam && validTabs.includes(tabParam as any) && pathSegment !== tabParam) {
+      navigate(`/bens-investimentos/${tabParam}`, { replace: true });
     }
-  }, [tabParam]);
+  }, [tabParam, pathSegment, navigate]);
 
   useEffect(() => {
     document.title = 'Bens e Investimentos | RXFin';
@@ -124,7 +122,8 @@ const BensInvestimentosLayout: React.FC = () => {
   const netWorth = patrimonioData?.net_worth;
 
   // --- Context callbacks ---
-  const handleOpenAddDialog = useCallback((institutionId?: string, investmentType?: InvestmentType) => {
+  const handleOpenAddDialog = useCallback((institutionId?: string, investmentType?: InvestmentType, defaultAssetType?: AssetType) => {
+    if (defaultAssetType != null) setDefaultAssetType(defaultAssetType);
     setEditingAsset(null);
     setIsDialogOpen(true);
   }, []);
@@ -255,7 +254,7 @@ const BensInvestimentosLayout: React.FC = () => {
     }
   };
 
-  const handleTabChange = (value: string) => setCurrentTab(value);
+  const handleTabChange = (value: string) => navigate(`/bens-investimentos/${value}`);
   const activeTabRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     activeTabRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
@@ -526,7 +525,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4" /> Imóveis</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('patrimonio' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/patrimonio')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {imoveis.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -539,7 +538,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Car className="h-4 w-4" /> Veículos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('patrimonio' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/patrimonio')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {veiculosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -552,7 +551,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4" /> Investimentos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('investimentos' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/investimentos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {investimentosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -565,7 +564,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Financiamentos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('passivos' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/passivos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {financiamentosList.slice(0, 3).map((f: { nome?: string; saldo_devedor?: number; progress_pct?: number }, i: number) => (
@@ -581,7 +580,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Seguros</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => setCurrentTab('seguros' as BensTab)}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/seguros')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <p className="text-sm text-muted-foreground">{segurosList.filter((s: { is_active?: boolean }) => s.is_active).length} ativos · {segurosList.filter((s: { is_active?: boolean }) => !s.is_active).length} vencidos</p>
                     </Card>
@@ -947,73 +946,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
-              {currentTab === 'participacoes' && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Building2 className="h-5 w-5 text-primary" />
-                      Participações Societárias
-                    </h2>
-                    <Button
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => {
-                        setDefaultAssetType('company');
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Adicionar participação
-                    </Button>
-                  </div>
-                  <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-                    <CardContent className="flex flex-col items-center justify-center text-center">
-                      <Building2 className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                      <p className="font-medium text-foreground">Em breve</p>
-                      <p className="text-sm text-muted-foreground mt-1 max-w-sm">Participações societárias serão exibidas aqui.</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {currentTab === 'intangiveis' && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Package className="h-5 w-5 text-primary" />
-                      Intangíveis
-                    </h2>
-                    <Button
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => {
-                        setDefaultAssetType('intellectual_property');
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Adicionar intangível
-                    </Button>
-                  </div>
-                  <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-                    <CardContent className="flex flex-col items-center justify-center text-center">
-                      <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                      <p className="font-medium text-foreground">Em breve</p>
-                      <p className="text-sm text-muted-foreground mt-1 max-w-sm">Propriedade intelectual, licenças e direitos contratuais serão exibidos aqui.</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {currentTab === 'historico-ir' && (
-                <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                    <FileBarChart className="h-5 w-5 text-primary" />
-                    Histórico IR
-                  </h2>
-                  <IrHistoricoPatrimonial />
-                </div>
-              )}
+              {(currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'historico-ir') && <Outlet />}
 
               {currentTab === 'seguros' && (
                 <div className="space-y-4">
