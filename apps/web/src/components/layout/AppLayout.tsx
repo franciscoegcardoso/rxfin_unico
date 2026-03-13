@@ -10,6 +10,7 @@ import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
 import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
 import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
+import { OnboardingProgressBanner } from '@/components/shared/OnboardingProgressBanner';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useShell } from '@/design-system/layouts/ShellContext';
 
@@ -70,6 +71,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
           {isDemoMode && <DemoDataBanner inline />}
+          <OnboardingProgressBanner inline />
           <main
             className={`
               w-full max-w-full overflow-x-hidden flex-1 min-w-0
@@ -94,6 +96,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <>
       <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
         <DemoDataBanner />
+        <OnboardingProgressBanner />
         <main
           className={cn(
             'w-full max-w-full overflow-x-hidden flex-1',
