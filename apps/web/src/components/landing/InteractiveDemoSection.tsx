@@ -1,3 +1,4 @@
+// build-trigger: InteractiveDemoSection frame fix v1
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Check } from 'lucide-react';
@@ -81,14 +82,21 @@ const STEP_LABELS = ['Conectar banco', 'IA categoriza', 'Orçamento', 'IR organi
 
 function IPhoneFrame({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`relative mx-auto ${className}`} style={{ width: 320, height: 620 }}>
-      <div className="absolute inset-0 rounded-[44px] bg-[#1a1a1a] border-[3px] border-[#3a3a3a] shadow-2xl shadow-black/60" />
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-[28px] bg-black rounded-full z-10" />
+    <div
+      className={`relative mx-auto w-full max-w-[320px] overflow-visible ${className}`}
+      style={{ aspectRatio: '320/620' }}
+    >
+      {/* Corpo do iPhone — bordas e sombra via style para garantir em produção */}
       <div
-        className="absolute bg-[#0f1a14] overflow-hidden flex flex-col"
+        className="absolute inset-0 bg-[#1a1a1a] shadow-2xl shadow-black/60"
+        style={{ borderRadius: 44, border: '3px solid #3a3a3a' }}
+      />
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90px] h-7 bg-black rounded-full z-10" />
+      <div
+        className="absolute flex flex-col overflow-hidden bg-[#0f1a14]"
         style={{ top: 12, left: 8, right: 8, bottom: 10, borderRadius: 36 }}
       >
-        <div className="flex justify-between items-center px-6 py-2 text-[10px] text-white/60 shrink-0">
+        <div className="flex shrink-0 justify-between items-center px-6 py-2 text-[10px] text-white/60">
           <span>9:41</span>
           <div className="flex gap-1 items-center">
             <span>●●●</span>
@@ -96,11 +104,11 @@ function IPhoneFrame({ children, className = '' }: { children: React.ReactNode; 
             <span>🔋</span>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto min-h-0">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
       </div>
-      <div className="absolute right-[-5px] top-[120px] w-[4px] h-[60px] bg-[#3a3a3a] rounded-r-md" />
-      <div className="absolute left-[-5px] top-[100px] w-[4px] h-[35px] bg-[#3a3a3a] rounded-l-md" />
-      <div className="absolute left-[-5px] top-[145px] w-[4px] h-[35px] bg-[#3a3a3a] rounded-l-md" />
+      <div className="absolute right-[-5px] top-[120px] w-1 h-[60px] bg-[#3a3a3a] rounded-r-md" />
+      <div className="absolute left-[-5px] top-[100px] w-1 h-9 bg-[#3a3a3a] rounded-l-md" />
+      <div className="absolute left-[-5px] top-[145px] w-1 h-9 bg-[#3a3a3a] rounded-l-md" />
     </div>
   );
 }
@@ -161,8 +169,8 @@ export const InteractiveDemoSection: React.FC = () => {
   }, [currentStep]);
 
   return (
-    <section className="bg-[#0d2b20] py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <section className="bg-[#0d2b20] py-16 px-4 sm:px-6 lg:px-8 overflow-visible">
+      <div className="max-w-4xl mx-auto overflow-visible">
         <span className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-1.5 rounded-full mb-6 block text-center">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Simulador interativo — explore cada etapa

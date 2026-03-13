@@ -1,4 +1,4 @@
-// build-trigger: MobileCtaBar fix v5
+// build-trigger: InteractiveDemoSection frame v6
 import React, { lazy, Suspense } from 'react';
 import * as Sentry from '@sentry/react';
 import { Toaster } from "@/components/ui/toaster";
