@@ -1,149 +1,212 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { supabase } from "../../lib/supabase";
+import React, { useState } from 'react';
+import { ScrollView, View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Badge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Divider } from '@/components/ui/Divider';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useTheme } from '@/contexts/ThemeContext';
+import { colors, spacing } from '@/constants/tokens';
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+function Section({
+  title,
+  theme,
+  children,
+}: {
+  title: string;
+  theme: { textMuted: string };
+  children: React.ReactNode;
+}) {
+  return (
+    <View>
+      <Text
+        style={{
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 11,
+          color: theme.textMuted,
+          textTransform: 'uppercase',
+          letterSpacing: 1,
+          marginBottom: spacing[3],
+        }}
+      >
+        {title}
+      </Text>
+      <View style={{ gap: spacing[3] }}>{children}</View>
+    </View>
+  );
+}
 
-  async function handleSignIn() {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
-      Alert.alert("Campos obrigatórios", "Preencha o e-mail e a senha.");
-      return;
-    }
-    setLoading(true);
-    console.log("[LOGIN] Tentando:", trimmedEmail);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
-    setLoading(false);
-    console.log("[LOGIN] Resultado:", error ? error.message : "OK");
-    if (error) {
-      if (error.message.includes("Invalid login credentials")) {
-        Alert.alert("Erro ao entrar", "E-mail ou senha incorretos.");
-      } else {
-        Alert.alert("Erro ao entrar", error.message);
-      }
-    }
-  }
+export default function DesignSystemShowcase() {
+  const { theme, isDark, setMode } = useTheme();
+  const [inputValue, setInputValue] = useState('');
+  const router = useRouter();
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
-    >
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 32 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={{ alignItems: "center", marginBottom: 40 }}>
-            <View style={{ width: 64, height: 64, backgroundColor: "#2563EB", borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>RX</Text>
-            </View>
-            <Text style={{ fontSize: 24, fontWeight: "bold", color: "#1A1A1A" }}>
-              Bem-vindo ao RXFin
-            </Text>
-            <Text style={{ fontSize: 16, color: "#737373", marginTop: 4 }}>
-              Entre na sua conta para continuar
-            </Text>
-          </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+      <ScreenHeader
+        title="Design System v2"
+        subtitle="Fase 1 — Mobile"
+        rightElement={
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={() => setMode(isDark ? 'light' : 'dark')}
+          >
+            {isDark ? '☀️' : '🌙'}
+          </Button>
+        }
+      />
+      <ScrollView
+        contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Section title="Buttons" theme={theme}>
+          <Button variant="primary">Entrar na conta</Button>
+          <Button variant="secondary">Cancelar</Button>
+          <Button variant="outline">Saiba mais</Button>
+          <Button variant="ghost">Pular</Button>
+          <Button variant="destructive">Excluir conta</Button>
+          <Button variant="primary" loading>
+            Carregando...
+          </Button>
+          <Button variant="primary" disabled>
+            Desabilitado
+          </Button>
+        </Section>
 
-          <Text style={{ fontSize: 14, fontWeight: "500", color: "#404040", marginBottom: 6 }}>E-mail</Text>
-          <TextInput
-            style={{ backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: "#1A1A1A", marginBottom: 16 }}
+        <Section title="Cards" theme={theme}>
+          <Card variant="default" padding="md">
+            <Text style={{ color: theme.textPrimary, fontFamily: 'Inter_500Medium' }}>
+              Card padrão
+            </Text>
+            <Text
+              style={{
+                color: theme.textSecondary,
+                marginTop: 4,
+                fontFamily: 'Inter_400Regular',
+                fontSize: 13,
+              }}
+            >
+              Saldo disponível: R$ 12.450,00
+            </Text>
+          </Card>
+          <Card variant="elevated" padding="md">
+            <Text style={{ color: theme.textPrimary, fontFamily: 'Inter_500Medium' }}>
+              Card elevado
+            </Text>
+          </Card>
+          <Card variant="outlined" padding="md">
+            <Text style={{ color: theme.textPrimary, fontFamily: 'Inter_500Medium' }}>
+              Card outline (brand)
+            </Text>
+          </Card>
+        </Section>
+
+        <Section title="Inputs" theme={theme}>
+          <Input
+            label="Email"
             placeholder="seu@email.com"
-            placeholderTextColor="#a3a3a3"
-            value={email}
-            onChangeText={setEmail}
+            value={inputValue}
+            onChangeText={setInputValue}
             keyboardType="email-address"
             autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            editable={!loading}
-            returnKeyType="next"
           />
+          <Input
+            label="Senha"
+            placeholder="••••••••"
+            secureTextEntry
+            error="Senha incorreta"
+          />
+          <Input
+            label="Valor"
+            placeholder="R$ 0,00"
+            hint="Informe o valor do lançamento"
+            keyboardType="numeric"
+          />
+        </Section>
 
-          <Text style={{ fontSize: 14, fontWeight: "500", color: "#404040", marginBottom: 6 }}>Senha</Text>
-          <View style={{ position: "relative", marginBottom: 8 }}>
-            <TextInput
-              style={{ backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: "#1A1A1A", paddingRight: 64 }}
-              placeholder="••••••••"
-              placeholderTextColor="#a3a3a3"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoComplete="password"
-              editable={!loading}
-              returnKeyType="done"
-              onSubmitEditing={handleSignIn}
+        <Section title="Badges" theme={theme}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing[2] }}>
+            <Badge variant="default">Padrão</Badge>
+            <Badge variant="success" dot>
+              Pago
+            </Badge>
+            <Badge variant="warning" dot>
+              Pendente
+            </Badge>
+            <Badge variant="error" dot>
+              Vencido
+            </Badge>
+            <Badge variant="info">Novo</Badge>
+            <Badge variant="brand">Pro</Badge>
+          </View>
+        </Section>
+
+        <Section title="Avatars" theme={theme}>
+          <View style={{ flexDirection: 'row', gap: spacing[3], alignItems: 'flex-end' }}>
+            <Avatar size="xs" name="Francisco Cardoso" />
+            <Avatar size="sm" name="Francisco Cardoso" />
+            <Avatar size="md" name="Francisco Cardoso" />
+            <Avatar size="lg" name="Francisco Cardoso" />
+            <Avatar size="xl" name="Francisco Cardoso" />
+          </View>
+        </Section>
+
+        <Section title="Dividers" theme={theme}>
+          <Divider />
+          <Divider label="ou continue com" />
+        </Section>
+
+        <Section title="Empty State" theme={theme}>
+          <Card variant="default" padding="none">
+            <EmptyState
+              title="Nenhuma transação"
+              description="Suas transações aparecerão aqui quando você conectar seu banco."
+              actionLabel="Conectar banco"
+              onAction={() => {}}
             />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={{ position: "absolute", right: 16, top: 14 }}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: "#2563EB", fontSize: 14, fontWeight: "500" }}>
-                {showPassword ? "Ocultar" : "Mostrar"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </Card>
+        </Section>
 
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/forgot-password")}
-            disabled={loading}
-            activeOpacity={0.7}
-            style={{ alignSelf: "flex-end", marginBottom: 24 }}
+        <Card variant="outlined" padding="md">
+          <Text
+            style={{
+              color: colors.brand.accent,
+              fontFamily: 'Inter_700Bold',
+              fontSize: 16,
+              textAlign: 'center',
+            }}
           >
-            <Text style={{ color: "#2563EB", fontSize: 14, fontWeight: "500" }}>Esqueci minha senha</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSignIn}
-            disabled={loading}
-            style={{ backgroundColor: loading ? "#93C5FD" : "#2563EB", borderRadius: 12, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
-            activeOpacity={0.8}
+            ✅ Fase 1 — Design System Mobile Completo
+          </Text>
+          <Text
+            style={{
+              color: theme.textSecondary,
+              fontFamily: 'Inter_400Regular',
+              fontSize: 13,
+              textAlign: 'center',
+              marginTop: 6,
+            }}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>Entrar</Text>
-            )}
-          </TouchableOpacity>
+            Tokens • ThemeProvider • Inter Font • 8 componentes base
+          </Text>
+        </Card>
 
-          <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 32 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#E5E5E5" }} />
-            <Text style={{ marginHorizontal: 16, color: "#A3A3A3", fontSize: 14 }}>ou</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#E5E5E5" }} />
-          </View>
+        <Button
+          variant="outline"
+          fullWidth
+          onPress={() => router.push('/(auth)/login')}
+        >
+          Fazer login
+        </Button>
 
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/register")}
-            disabled={loading}
-            style={{ borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingVertical: 16, alignItems: "center" }}
-            activeOpacity={0.7}
-          >
-            <Text style={{ color: "#404040", fontWeight: "600", fontSize: 16 }}>Criar uma conta</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+        <View style={{ height: spacing[8] }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }

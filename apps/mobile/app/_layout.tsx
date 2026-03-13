@@ -2,10 +2,19 @@ import "../global.css";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { queryClient, asyncStoragePersister } from "../lib/query-client";
 import { AuthProvider, useAuth } from "../lib/auth-context";
-import { COLORS } from "../lib/constants";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { session, isLoading } = useAuth();
@@ -24,8 +33,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: COLORS.background }}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#1A1A2E" }}>
+        <ActivityIndicator size="large" color="#5C6BC0" />
       </View>
     );
   }
@@ -33,17 +42,54 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AppContent() {
+  const { isDark, theme } = useTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <Stack screenOptions={{ headerShown: false, animation: "fade" }} />
+      <StatusBar style={isDark ? "light" : "dark"} />
+    </View>
+  );
+}
+
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#1A1A2E",
+        }}
+      >
+        <ActivityIndicator color="#5C6BC0" />
+      </View>
+    );
+  }
+
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister: asyncStoragePersister }}
     >
-      <AuthProvider>
-        <AuthGate>
-          <Stack screenOptions={{ headerShown: false, animation: "fade" }} />
-        </AuthGate>
-      </AuthProvider>
+      <ThemeProvider>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <AuthGate>
+              <AppContent />
+            </AuthGate>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ThemeProvider>
     </PersistQueryClientProvider>
   );
 }

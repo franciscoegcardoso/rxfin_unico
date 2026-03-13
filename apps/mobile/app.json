@@ -33,7 +33,9 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-font",
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
