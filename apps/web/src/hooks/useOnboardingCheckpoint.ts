@@ -24,13 +24,23 @@ export function useOnboardingCheckpoint() {
     queryKey: ['onboarding-checkpoint', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('onboarding_phase, onboarding_control_done, onboarding_control_phase')
         .eq('id', user.id)
         .single();
       if (error) throw error;
-      return data as any;
+
+      const { data: stateData } = await supabase
+        .from('onboarding_state')
+        .select('onboarding_phase, onboarding_completed')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      return {
+        ...profileData,
+        onboarding_phase: stateData?.onboarding_phase ?? profileData?.onboarding_phase,
+      } as any;
     },
     enabled: !!user?.id,
     staleTime: 0,

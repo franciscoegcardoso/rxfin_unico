@@ -66,7 +66,7 @@ export const StepPlanejamento: React.FC<StepPlanejamentoProps> = ({ userId, onCo
         entry_type: 'expense',
         value: Number(newValue),
         is_manual_override: true,
-      }, { onConflict: 'user_id,month,item_id' });
+      }, { onConflict: 'user_id,month,item_id,entry_type' });
 
     setSaving(false);
     if (error) {
