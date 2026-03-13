@@ -31,9 +31,10 @@ export function useOnboardingCheckpoint() {
         .single();
       if (error) throw error;
 
+      // onboarding_state é a fonte de verdade para onboarding_phase (RPC advance_onboarding_phase escreve aqui)
       const { data: stateData } = await supabase
         .from('onboarding_state')
-        .select('onboarding_phase, onboarding_completed')
+        .select('onboarding_phase')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -68,11 +69,10 @@ export function useOnboardingCheckpoint() {
 
   const advanceControlPhase = useCallback(async (newPhase: ControlPhase) => {
     if (!user?.id) return;
-    const updates: Record<string, any> = { onboarding_control_phase: newPhase };
-    if (newPhase === 'completed') {
-      updates.onboarding_control_done = true;
+    const { error } = await supabase.rpc('advance_onboarding_control_phase', { new_phase: newPhase });
+    if (error) {
+      console.error('[advanceControlPhase] Failed:', error);
     }
-    await supabase.from('profiles').update(updates).eq('id', user.id);
     queryClient.invalidateQueries({ queryKey: ['onboarding-checkpoint', user.id] });
   }, [user?.id, queryClient]);
 

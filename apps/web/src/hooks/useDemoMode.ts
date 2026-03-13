@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-const DEMO_INACTIVE_PHASES = ['block_b_done', 'block_c_done', 'completed'];
+// Demo desliga assim que o usuário inicia o wizard (fase 'started').
+// 'not_started' = único estado onde dados fictícios fazem sentido.
+const DEMO_INACTIVE_PHASES = ['started', 'block_a_done', 'block_b_done', 'block_c_done', 'completed'];
 
 /**
  * Determines if the app is in "Demo Mode" (showing fictional data).
- * Demo stays active until user completes at least Block B (Patrimônio),
- * preventing empty dashboards after Block A.
+ * Demo is off as soon as user starts the Raio-X wizard (started); only ProgressBanner shows.
  */
 export function useDemoMode() {
   const { user } = useAuth();
