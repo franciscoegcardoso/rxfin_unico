@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingV2Store, type OnboardingPersona } from '@/store/onboardingV2Store';
-import { setUserKVValue } from '@/hooks/useUserKV';
+import { supabase } from '@/integrations/supabase/client';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import {
   Select,
@@ -41,7 +40,6 @@ export interface Step1IdentidadeProps {
 }
 
 export function Step1Identidade({ onContinue }: Step1IdentidadeProps) {
-  const { user } = useAuth();
   const { persona, advanceStep, isSaving } = useOnboardingV2Store();
   const [rendaFaixa, setRendaFaixa] = useState<string>('');
   const [faseVida, setFaseVida] = useState<string>('');
@@ -51,13 +49,22 @@ export function Step1Identidade({ onContinue }: Step1IdentidadeProps) {
   const busy = isSaving || saving;
 
   const handleContinue = async () => {
-    if (!canContinue || !user?.id) return;
+    if (!canContinue) return;
     setSaving(true);
     try {
-      await setUserKVValue(user.id, 'onboarding_identity', {
-        renda_faixa: rendaFaixa,
-        fase_vida: faseVida,
-      });
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        await (supabase as any)
+          .from('user_kv_store')
+          .upsert(
+            {
+              user_id: authUser.id,
+              key: 'onboarding_identity',
+              value: { renda_faixa: rendaFaixa, fase_vida: faseVida },
+            },
+            { onConflict: 'user_id,key' }
+          );
+      }
       await advanceStep(1);
       onContinue();
     } finally {
