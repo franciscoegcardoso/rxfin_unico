@@ -26,6 +26,7 @@ import { FeaturesSection, FeatureItem } from '@/components/landing/FeaturesSecti
 import { SignupBenefitsSection } from '@/components/landing/SignupBenefitsSection';
 import DemoFlow from '@/components/landing/DemoFlow';
 import { PrivacySecuritySection } from '@/components/landing/PrivacySecuritySection';
+import { FounderSection } from '@/components/landing/FounderSection';
 import { TrustBadges } from '@/components/landing/TrustBadges';
 import logoRxFin from '@/assets/Logo_RXFin-10.png';
 
@@ -202,8 +203,11 @@ const LandingPage: React.FC = () => {
 
       <DemoFlow />
 
-      {/* 7. Planos — última seção antes do footer */}
+      {/* 7. Planos */}
       <PricingSection />
+
+      {/* 8. Fundador — última seção acima do rodapé */}
+      <FounderSection />
 
       {/* Footer */}
       <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,12%)] dark:bg-[hsl(161,60%,5%)] text-white">

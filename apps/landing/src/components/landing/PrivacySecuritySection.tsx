@@ -27,8 +27,6 @@ const badges = [
   },
 ];
 
-const chips = ['Open Finance BCB', 'Supabase', 'SSL/TLS 256-bit', 'ISO 27001 ready', 'Zero Knowledge'];
-
 const itemVariant = {
   hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
@@ -86,29 +84,6 @@ export const PrivacySecuritySection: React.FC = () => {
             <p className="text-xs text-slate-500 leading-snug">{item.subtitle}</p>
           </motion.div>
         ))}
-      </div>
-
-      <div className="flex flex-wrap gap-2 justify-center mt-8 pt-6 border-t border-slate-100">
-        {chips.map((chip) => (
-          <span key={chip} className="bg-slate-100 text-slate-500 text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200">
-            {chip}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-10 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-5 text-center sm:text-left max-w-xl mx-auto">
-        <img
-          src="/assets/francisco-cardoso-BucHHWLR.png"
-          alt="Francisco Cardoso"
-          className="w-16 h-16 rounded-full object-cover flex-shrink-0 border-2 border-slate-200 grayscale-[30%]"
-        />
-        <div>
-          <p className="font-semibold text-[#0d2b20]">Francisco Cardoso</p>
-          <p className="text-sm text-slate-500 mt-0.5">Engenheiro de produção · Stone · Kraft Heinz</p>
-          <p className="text-sm text-slate-400 italic mt-1">
-            &quot;A mesma lógica corporativa — aplicada à sua vida financeira.&quot;
-          </p>
-        </div>
       </div>
     </div>
   </section>

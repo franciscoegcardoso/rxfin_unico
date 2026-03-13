@@ -808,7 +808,7 @@ const Inicio: React.FC = () => {
         >
           {showMetasMensais && (
             <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
-              <div  className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
+              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))] shrink-0">
                   <div>
                     <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>
@@ -823,20 +823,41 @@ const Inicio: React.FC = () => {
                     <ChevronRight className="h-3 w-3" />
                   </button>
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col">
                   {categoryGoals.length > 0 ? (
-                    <ul className="list-none p-0 m-0">
-                      {categoryGoals.map((item) => (
-                        <li key={item.category}>
-                          <CategoryGoalItem
-                            category={item.category}
-                            spent={item.spent}
-                            goal={item.goal}
-                            isHidden={isHidden}
-                          />
-                        </li>
-                      ))}
-                    </ul>
+                    <>
+                      <ul className="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
+                        {categoryGoals.map((item) => (
+                          <li key={item.category}>
+                            <CategoryGoalItem
+                              category={item.category}
+                              spent={item.spent}
+                              goal={item.goal}
+                              isHidden={isHidden}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                      {(() => {
+                        const withGoal = categoryGoals.filter((g) => typeof g.goal === "number" && !Number.isNaN(g.goal) && g.goal > 0);
+                        const withinGoal = withGoal.filter((g) => g.spent <= g.goal).length;
+                        const totalSpent = categoryGoals.reduce((s, g) => s + g.spent, 0);
+                        const totalGoal = categoryGoals.reduce((s, g) => s + (typeof g.goal === "number" && !Number.isNaN(g.goal) ? g.goal : 0), 0);
+                        if (withGoal.length === 0) return null;
+                        return (
+                          <div className="mt-3 pt-3 border-t border-[hsl(var(--color-border-subtle))] shrink-0">
+                            <p className="text-[11px] text-[hsl(var(--color-text-tertiary))]">
+                              {withinGoal} de {withGoal.length} categorias dentro da meta
+                              {totalGoal > 0 && !isHidden && (
+                                <span className="ml-1.5 tabular-nums">
+                                  · Total {formatCurrency(totalSpent)} / {formatCurrency(totalGoal)}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </>
                   ) : (
                     <p className="text-sm text-[hsl(var(--color-text-tertiary))] text-center py-4">
                       Nenhuma categoria configurada. Configure em Parâmetros.

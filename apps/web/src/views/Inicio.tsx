@@ -316,19 +316,40 @@ const Inicio: React.FC = () => {
                     </button>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 pt-0 space-y-3 max-h-[300px] overflow-y-auto">
+                <CardContent className="p-6 pt-0 space-y-3 flex flex-col">
                   {categoryGoals.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {categoryGoals.map((item) => (
-                      <CategoryGoalItem
-                        key={item.category}
-                        category={item.category}
-                        spent={item.spent}
-                        goal={item.goal}
-                        isHidden={isHidden}
-                      />
-                    ))}
-                    </div>
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto max-h-[240px] min-h-0">
+                        {categoryGoals.map((item) => (
+                          <CategoryGoalItem
+                            key={item.category}
+                            category={item.category}
+                            spent={item.spent}
+                            goal={item.goal}
+                            isHidden={isHidden}
+                          />
+                        ))}
+                      </div>
+                      {(() => {
+                        const withGoal = categoryGoals.filter((g) => typeof g.goal === 'number' && !Number.isNaN(g.goal) && g.goal > 0);
+                        const withinGoal = withGoal.filter((g) => g.spent <= g.goal).length;
+                        const totalSpent = categoryGoals.reduce((s, g) => s + g.spent, 0);
+                        const totalGoal = categoryGoals.reduce((s, g) => s + (typeof g.goal === 'number' && !Number.isNaN(g.goal) ? g.goal : 0), 0);
+                        if (withGoal.length === 0) return null;
+                        return (
+                          <div className="pt-3 border-t border-border shrink-0">
+                            <p className="text-xs text-muted-foreground">
+                              {withinGoal} de {withGoal.length} categorias dentro da meta
+                              {totalGoal > 0 && !isHidden && (
+                                <span className="ml-1.5 tabular-nums">
+                                  · Total {formatCurrency(totalSpent)} / {formatCurrency(totalGoal)}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-4">
                       Nenhuma categoria configurada. Configure em Parâmetros.
