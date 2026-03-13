@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 
-import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers } from 'lucide-react';
+import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -45,6 +45,7 @@ import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import { IrHistoricoPatrimonial } from '@/components/ir/IrHistoricoPatrimonial';
 
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
@@ -57,7 +58,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
-  const validTabs = ['overview', 'imoveis', 'veiculos', 'investimentos', 'financiamentos', 'seguros'] as const;
+  const validTabs = ['overview', 'imoveis', 'veiculos', 'investimentos', 'financiamentos', 'seguros', 'historico-ir'] as const;
   const tabFromUrl = validTabs.includes(pathSegment as any) ? pathSegment : 'overview';
 
   const [currentTab, setCurrentTab] = useState<string>(() => tabFromUrl);
@@ -511,6 +512,10 @@ const BensInvestimentosLayout: React.FC = () => {
                 <Shield className="h-3.5 w-3.5 shrink-0" />
                 <span>Seguros</span>
               </TabsTrigger>
+              <TabsTrigger ref={currentTab === 'historico-ir' ? activeTabRef : undefined} value="historico-ir" className="flex items-center gap-1.5 text-[10px] sm:text-sm px-2 sm:px-3 py-2 shrink-0">
+                <FileBarChart className="h-3.5 w-3.5 shrink-0" />
+                <span>Histórico IR</span>
+              </TabsTrigger>
             </TabsList>
             </div>
 
@@ -928,6 +933,16 @@ const BensInvestimentosLayout: React.FC = () => {
                   ))}
                     </>
                   )}
+                </div>
+              )}
+
+              {currentTab === 'historico-ir' && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <FileBarChart className="h-5 w-5 text-primary" />
+                    Histórico IR
+                  </h2>
+                  <IrHistoricoPatrimonial />
                 </div>
               )}
 

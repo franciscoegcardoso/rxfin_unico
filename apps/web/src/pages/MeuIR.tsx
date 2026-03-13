@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Bot, History, Settings2, FileText, Shield, ClipboardCheck, Calculator } from 'lucide-react';
+import { Bot, History, Settings2, FileText, Shield, ClipboardCheck, Calculator, LayoutList } from 'lucide-react';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { MeuIRSection } from '@/components/ir-import/MeuIRSection';
 import { IRImportDialog } from '@/components/ir-import/IRImportDialog';
@@ -19,8 +19,11 @@ import { useFiscalOrganizer } from '@/hooks/useFiscalOrganizer';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
+import { IrBensDireitosTab } from '@/components/ir/IrBensDireitosTab';
+import { IrExercicioSummaryCard } from '@/components/ir/IrExercicioSummaryCard';
 
 const MeuIR: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('organizer');
   const [isIRImportOpen, setIsIRImportOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   /** Incrementado após importação bem-sucedida para que MeuIRSection refaça o fetch e exiba a nova declaração sem F5 */
@@ -61,14 +64,33 @@ const MeuIR: React.FC = () => {
             </>
           }
         />
-        <Tabs defaultValue="organizer" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 h-auto p-0 bg-transparent gap-0">
+        <IrExercicioSummaryCard
+          anoExercicio={new Date().getFullYear()}
+          onReconcileClick={() => {
+            setActiveTab('historico');
+            setTimeout(() => document.getElementById('ir-reconcile-banners')?.scrollIntoView({ behavior: 'smooth' }), 150);
+          }}
+          onBensDireitosClick={() => setActiveTab('bens-direitos')}
+          onImportClick={() => {
+            setActiveTab('historico');
+            setIsIRImportOpen(true);
+          }}
+        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-3 h-auto p-0 bg-transparent gap-0">
             <TabsTrigger 
               value="organizer" 
               className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors"
             >
               <Bot className="h-4 w-4" />
               Organizar {new Date().getFullYear()}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="bens-direitos" 
+              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors"
+            >
+              <LayoutList className="h-4 w-4" />
+              Bens e Direitos
             </TabsTrigger>
             <TabsTrigger 
               value="historico" 
@@ -142,6 +164,16 @@ const MeuIR: React.FC = () => {
                 onClearOpenCategory={() => setOpenCategory(null)}
               />
             </CollapsibleModule>
+          </TabsContent>
+
+          <TabsContent value="bens-direitos" className="mt-6">
+            <IrBensDireitosTab
+              onImportIRClick={() => {
+                setActiveTab('historico');
+                setIsIRImportOpen(true);
+              }}
+              onNavigateToReconcile={() => setActiveTab('historico')}
+            />
           </TabsContent>
 
           <TabsContent value="historico" className="mt-6">

@@ -64,7 +64,9 @@ import {
 import { useIRImport, IRImportData, BemDireito } from '@/hooks/useIRImport';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { IRTutorialGuide } from './IRTutorialGuide';
+import { IrReconcileBanner } from '@/components/ir/wizard';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { IRLinkingDialog } from './IRLinkingDialog';
 import { IRComparisonReport } from './IRComparisonReport';
@@ -122,6 +124,8 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
   const [activeTab, setActiveTab] = useState<string>('resumo');
   const [filterTipo, setFilterTipo] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  /** Contagens de bens por ir_import_id (total e pendentes) para os banners de reconciliação */
+  const [reconciliationCounts, setReconciliationCounts] = useState<Record<string, { total: number; pendentes: number }>>({});
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -136,6 +140,49 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
   useEffect(() => {
     fetchImports();
   }, [refreshKey]);
+
+  /** Refetch para atualizar contagens após conclusão da reconciliação. */
+  const [reconciliationRefreshKey, setReconciliationRefreshKey] = useState(0);
+
+  /** Busca contagens de bens (total e pendentes) por ir_import_id a partir de ir_patrimonio_snapshot. */
+  useEffect(() => {
+    if (imports.length === 0) {
+      setReconciliationCounts({});
+      return;
+    }
+    const defaultCounts: Record<string, { total: number; pendentes: number }> = {};
+    imports.forEach((ir) => {
+      const total = ir.bensDireitos?.length ?? 0;
+      defaultCounts[ir.id] = { total, pendentes: total };
+    });
+
+    (async () => {
+      try {
+        const ids = imports.map((ir) => ir.id);
+        const { data, error } = await (supabase as any)
+          .from('ir_patrimonio_snapshot')
+          .select('ir_import_id, reconciliation_status')
+          .in('ir_import_id', ids);
+        if (error) {
+          setReconciliationCounts(defaultCounts);
+          return;
+        }
+        const byImport: Record<string, { total: number; pendentes: number }> = {};
+        imports.forEach((ir) => {
+          byImport[ir.id] = { total: 0, pendentes: 0 };
+        });
+        (data ?? []).forEach((row: { ir_import_id: string; reconciliation_status: string | null }) => {
+          const id = row.ir_import_id;
+          if (!byImport[id]) byImport[id] = { total: 0, pendentes: 0 };
+          byImport[id].total += 1;
+          if (row.reconciliation_status === 'pending') byImport[id].pendentes += 1;
+        });
+        setReconciliationCounts(byImport);
+      } catch {
+        setReconciliationCounts(defaultCounts);
+      }
+    })();
+  }, [imports, reconciliationRefreshKey]);
 
   useEffect(() => {
     if (imports.length > 0 && !expandedYear) {
@@ -314,6 +361,24 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Banners de reconciliação: antes da lista, só para imports com pendentes > 0 */}
+      <div id="ir-reconcile-banners" className="space-y-3">
+      {imports
+        .filter((ir) => (reconciliationCounts[ir.id]?.pendentes ?? 0) > 0)
+        .map((ir) => (
+          <IrReconcileBanner
+            key={ir.id}
+            irImportId={ir.id}
+            anoCalendario={ir.anoCalendario}
+            totalBens={reconciliationCounts[ir.id]!.pendentes}
+            onComplete={() => {
+              fetchImports();
+              setReconciliationRefreshKey((k) => k + 1);
+            }}
+          />
+        ))}
       </div>
 
       {/* Lista de Declarações */}
