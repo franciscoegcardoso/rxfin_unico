@@ -104,7 +104,12 @@ const BensInvestimentosLayout: React.FC = () => {
   const [trashSheetOpen, setTrashSheetOpen] = useState(false);
   const [auditSheetOpen, setAuditSheetOpen] = useState(false);
 
-  const defaultAssetType: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : 'property';
+  const [defaultAssetType, setDefaultAssetType] = useState<AssetType>('property');
+  useEffect(() => {
+    const next: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : currentTab === 'passivos' ? 'obligations' : 'property';
+    setDefaultAssetType(next);
+  }, [currentTab, openAsVehicleOnly]);
+
   const assets = patrimonioData?.assets ?? [];
   const imoveis = assets.filter((a: { type?: string }) => a.type === 'imovel');
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
@@ -875,11 +880,16 @@ const BensInvestimentosLayout: React.FC = () => {
                       <Landmark className="h-5 w-5 text-primary" />
                       Meus Financiamentos
                     </h2>
-                    <Button size="sm" className="gap-1.5" asChild>
-                      <Link to="/bens-investimentos/credito">
-                        <Plus className="h-4 w-4" />
-                        Adicionar financiamento ou consórcio
-                      </Link>
+                    <Button
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setDefaultAssetType('obligations');
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar passivo
                     </Button>
                   </div>
                   {financiamentosList.length === 0 && consorciosList.length === 0 ? (
@@ -890,11 +900,16 @@ const BensInvestimentosLayout: React.FC = () => {
                         </div>
                         <p className="font-medium text-foreground">Nenhum financiamento ou consórcio</p>
                         <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre financiamentos e consórcios para acompanhar parcelas e saldo devedor no patrimônio.</p>
-                        <Button size="sm" className="gap-1.5 mt-4" asChild>
-                          <Link to="/bens-investimentos/credito">
-                            <Plus className="h-4 w-4" />
-                            Adicionar financiamento ou consórcio
-                          </Link>
+                        <Button
+                          size="sm"
+                          className="gap-1.5 mt-4"
+                          onClick={() => {
+                            setDefaultAssetType('obligations');
+                            setIsDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar passivo
                         </Button>
                       </CardContent>
                     </Card>
@@ -934,10 +949,23 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'participacoes' && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    Participações Societárias
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-primary" />
+                      Participações Societárias
+                    </h2>
+                    <Button
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setDefaultAssetType('company');
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar participação
+                    </Button>
+                  </div>
                   <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
                     <CardContent className="flex flex-col items-center justify-center text-center">
                       <Building2 className="h-12 w-12 text-muted-foreground/50 mb-3" />
@@ -950,10 +978,23 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'intangiveis' && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                    <Package className="h-5 w-5 text-primary" />
-                    Intangíveis
-                  </h2>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                      <Package className="h-5 w-5 text-primary" />
+                      Intangíveis
+                    </h2>
+                    <Button
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => {
+                        setDefaultAssetType('intellectual_property');
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar intangível
+                    </Button>
+                  </div>
                   <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
                     <CardContent className="flex flex-col items-center justify-center text-center">
                       <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-3" />

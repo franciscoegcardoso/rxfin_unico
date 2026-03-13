@@ -113,8 +113,9 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
     setIsOpening(true);
     
     // Get connect token from our edge function
-    const connectToken = await getConnectToken(updateItemId);
-    console.log('Got connect token:', !!connectToken);
+    const tokenResult = await getConnectToken(updateItemId);
+    const connectToken = tokenResult?.connectToken ?? null;
+    console.log('Got connect token:', connectToken ? `${connectToken.slice(0, 20)}...` : '(none)');
     
     if (!connectToken) {
       setIsOpening(false);
@@ -132,7 +133,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       setWidgetOpen();
 
       const pluggyConnect = new PluggyConnectCtor({
-        connectToken: connectToken as unknown as string,
+        connectToken,
         includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
