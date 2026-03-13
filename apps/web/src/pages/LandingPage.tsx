@@ -1,4 +1,4 @@
-// build-trigger: InteractiveDemoSection fix v1 -- no-cache
+// build-trigger: InteractiveDemoSection fix v2 -- deploy validation
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
