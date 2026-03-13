@@ -447,38 +447,54 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
     setLinkedExpenses(configs);
   }, []);
 
-  // Criar seguro/garantia vinculado ao ativo
+  // Criar seguro e/ou garantia vinculados ao ativo (pode criar os dois)
   const createLinkedInsurance = async (assetId: string, assetName: string) => {
-    if (!insuranceData.hasInsurance) return;
+    const hasAny = insuranceData.hasInsurance || insuranceData.hasWarranty;
+    if (!hasAny) return;
 
     try {
-      await addSeguro.mutateAsync({
-        nome: insuranceData.insuranceName || `${insuranceData.isWarranty ? 'Garantia' : 'Seguro'} ${assetName}`,
-        tipo: insuranceData.insuranceType,
-        seguradora: insuranceData.isWarranty 
-          ? insuranceData.warrantyStore || 'Fabricante' 
-          : insuranceData.insuranceCompany || 'Não informado',
-        premio_mensal: insuranceData.premiumMonthly,
-        premio_anual: insuranceData.premiumAnnual,
-        valor_cobertura: insuranceData.coverageValue,
-        franquia: insuranceData.franchise,
-        data_inicio: insuranceData.startDate,
-        data_fim: insuranceData.endDate,
-        renovacao_automatica: insuranceData.autoRenew,
-        asset_id: assetId,
-        is_warranty: insuranceData.isWarranty,
-        warranty_extended: insuranceData.warrantyExtended,
-        warranty_extended_months: insuranceData.warrantyExtendedMonths,
-        warranty_store: insuranceData.warrantyStore,
-      });
-      
-      toast.success(
-        insuranceData.isWarranty 
-          ? 'Garantia vinculada ao bem!'
-          : 'Seguro vinculado ao bem!'
-      );
+      if (insuranceData.hasInsurance) {
+        await addSeguro.mutateAsync({
+          nome: insuranceData.insuranceName || `Seguro ${assetName}`,
+          tipo: insuranceData.insuranceType,
+          seguradora: insuranceData.insuranceCompany || 'Não informado',
+          premio_mensal: insuranceData.premiumMonthly,
+          premio_anual: insuranceData.premiumAnnual,
+          valor_cobertura: insuranceData.coverageValue,
+          franquia: insuranceData.franchise,
+          data_inicio: insuranceData.startDate,
+          data_fim: insuranceData.endDate,
+          renovacao_automatica: insuranceData.autoRenew,
+          asset_id: assetId,
+          is_warranty: false,
+          warranty_extended: false,
+          warranty_extended_months: 12,
+          warranty_store: '',
+        });
+        toast.success('Seguro vinculado ao bem!');
+      }
+      if (insuranceData.hasWarranty) {
+        await addSeguro.mutateAsync({
+          nome: insuranceData.warrantyName || `Garantia ${assetName}`,
+          tipo: 'garantia_estendida',
+          seguradora: insuranceData.warrantyStore || 'Fabricante',
+          premio_mensal: 0,
+          premio_anual: insuranceData.warrantyValorPago ?? 0,
+          valor_cobertura: 0,
+          franquia: 0,
+          data_inicio: insuranceData.warrantyStartDate,
+          data_fim: insuranceData.warrantyEndDate,
+          renovacao_automatica: false,
+          asset_id: assetId,
+          is_warranty: true,
+          warranty_extended: insuranceData.warrantyExtended,
+          warranty_extended_months: insuranceData.warrantyExtendedMonths,
+          warranty_store: insuranceData.warrantyStore,
+        });
+        toast.success('Garantia vinculada ao bem!');
+      }
     } catch (error) {
-      console.error('Erro ao criar seguro:', error);
+      console.error('Erro ao criar seguro/garantia:', error);
       toast.error('Erro ao vincular seguro/garantia');
     }
   };
@@ -687,7 +703,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
     }
 
     // Criar seguro/garantia se configurado
-    if (!editingAsset && insuranceData.hasInsurance) {
+    if (!editingAsset && (insuranceData.hasInsurance || insuranceData.hasWarranty)) {
       await createLinkedInsurance(assetId, finalName);
     }
 
@@ -836,7 +852,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
     }
 
     // Criar seguro/garantia se configurado
-    if (!editingAsset && insuranceData.hasInsurance) {
+    if (!editingAsset && (insuranceData.hasInsurance || insuranceData.hasWarranty)) {
       await createLinkedInsurance(assetId, newAsset.name);
     }
 
@@ -915,7 +931,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
       toast.success(newAsset.type === 'investment' ? 'Investimento adicionado!' : 'Bem adicionado com sucesso!');
       
       // Criar seguro/garantia se configurado
-      if (insuranceData.hasInsurance) {
+      if (insuranceData.hasInsurance || insuranceData.hasWarranty) {
         createLinkedInsurance(assetId, finalName);
       }
     }

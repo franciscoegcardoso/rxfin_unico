@@ -12,7 +12,8 @@ import { addYears, format } from 'date-fns';
 
 export interface AssetInsuranceData {
   hasInsurance: boolean;
-  // Campos de seguro
+  hasWarranty: boolean;
+  // Campos de seguro (quando hasInsurance)
   insuranceType: InsuranceType;
   insuranceName: string;
   insuranceCompany: string;
@@ -23,15 +24,20 @@ export interface AssetInsuranceData {
   startDate: string;
   endDate: string;
   autoRenew: boolean;
-  // Campos de garantia
+  // Campos de garantia (quando hasWarranty)
   isWarranty: boolean;
+  warrantyName: string;
+  warrantyStartDate: string;
+  warrantyEndDate: string;
   warrantyExtended: boolean;
   warrantyExtendedMonths: number;
   warrantyStore: string;
+  warrantyValorPago: number;
 }
 
 export const defaultInsuranceData: AssetInsuranceData = {
   hasInsurance: false,
+  hasWarranty: false,
   insuranceType: 'garantia_estendida',
   insuranceName: '',
   insuranceCompany: '',
@@ -43,9 +49,13 @@ export const defaultInsuranceData: AssetInsuranceData = {
   endDate: addYears(new Date(), 1).toISOString().split('T')[0],
   autoRenew: false,
   isWarranty: false,
+  warrantyName: '',
+  warrantyStartDate: new Date().toISOString().split('T')[0],
+  warrantyEndDate: addYears(new Date(), 1).toISOString().split('T')[0],
   warrantyExtended: false,
   warrantyExtendedMonths: 12,
   warrantyStore: '',
+  warrantyValorPago: 0,
 };
 
 interface AssetInsuranceSectionProps {
@@ -88,18 +98,13 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
     });
   };
 
-  // Toggle entre seguro tradicional e garantia de compra
-  const handleWarrantyToggle = (isWarranty: boolean) => {
+  // Toggle "tem garantia" (independente de seguro)
+  const handleHasWarrantyChange = (enabled: boolean) => {
     onChange({
       ...data,
-      isWarranty,
-      insuranceType: isWarranty ? 'garantia_estendida' : getSuggestedInsuranceType(),
-      insuranceName: isWarranty 
-        ? `Garantia ${assetName}` 
-        : `Seguro ${assetName}`,
-      // Garantias normalmente não têm prêmio mensal
-      premiumMonthly: isWarranty ? 0 : data.premiumMonthly,
-      premiumAnnual: isWarranty ? 0 : data.premiumAnnual,
+      hasWarranty: enabled,
+      warrantyName: enabled && !data.warrantyName ? `Garantia ${assetName}` : data.warrantyName,
+      warrantyStartDate: purchaseDate ? format(purchaseDate, 'yyyy-MM-dd') : data.warrantyStartDate,
     });
   };
 
@@ -121,178 +126,172 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
 
   if (compact) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" />
-            <Label className="font-medium">Seguro ou Garantia</Label>
+      <div className="space-y-6">
+        {/* Seguro — toggle independente */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <Label className="font-medium">Tem seguro?</Label>
+            </div>
+            <Switch
+              checked={data.hasInsurance}
+              onCheckedChange={handleHasInsuranceChange}
+            />
           </div>
-          <Switch
-            checked={data.hasInsurance}
-            onCheckedChange={handleHasInsuranceChange}
-          />
+          {data.hasInsurance && (
+            <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+              {!['property', 'vehicle'].includes(assetType) && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Tipo de Seguro</Label>
+                  <Select
+                    value={data.insuranceType}
+                    onValueChange={(v) => onChange({ ...data, insuranceType: v as InsuranceType })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {insuranceTypeOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Seguradora</Label>
+                  <Input
+                    placeholder="Ex: Porto Seguro"
+                    value={data.insuranceCompany}
+                    onChange={(e) => onChange({ ...data, insuranceCompany: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Prêmio Mensal</Label>
+                  <CurrencyInput
+                    value={data.premiumMonthly}
+                    onChange={handlePremiumMonthlyChange}
+                    placeholder="0,00"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Início da Vigência</Label>
+                  <Input
+                    type="date"
+                    value={data.startDate}
+                    onChange={(e) => onChange({ ...data, startDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Fim da Vigência</Label>
+                  <Input
+                    type="date"
+                    value={data.endDate}
+                    onChange={(e) => onChange({ ...data, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Renovação Automática</Label>
+                <Switch
+                  checked={data.autoRenew}
+                  onCheckedChange={(v) => onChange({ ...data, autoRenew: v })}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {data.hasInsurance && (
-          <div className="space-y-4 pl-6 border-l-2 border-primary/20">
-            {/* Toggle: Seguro vs Garantia */}
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => handleWarrantyToggle(false)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors",
-                  !data.isWarranty 
-                    ? "bg-primary/10 border-primary text-primary" 
-                    : "border-border hover:bg-accent"
-                )}
-              >
-                <Shield className="h-4 w-4" />
-                <span className="text-sm font-medium">Seguro</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleWarrantyToggle(true)}
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors",
-                  data.isWarranty 
-                    ? "bg-primary/10 border-primary text-primary" 
-                    : "border-border hover:bg-accent"
-                )}
-              >
-                <ShieldCheck className="h-4 w-4" />
-                <span className="text-sm font-medium">Garantia</span>
-              </button>
+        {/* Garantia — toggle independente */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              <Label className="font-medium">Tem garantia?</Label>
             </div>
-
-            {data.isWarranty ? (
-              // Campos de garantia
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Data Limite da Garantia</Label>
-                    <Input
-                      type="date"
-                      value={data.endDate}
-                      onChange={(e) => onChange({ ...data, endDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Loja/Fabricante</Label>
-                    <Input
-                      placeholder="Ex: Amazon, Samsung..."
-                      value={data.warrantyStore}
-                      onChange={(e) => onChange({ ...data, warrantyStore: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-income" />
-                    <Label className="text-sm">Garantia Estendida Contratada</Label>
-                  </div>
-                  <Switch
-                    checked={data.warrantyExtended}
-                    onCheckedChange={(v) => onChange({ ...data, warrantyExtended: v })}
-                  />
-                </div>
-
-                {data.warrantyExtended && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Meses Adicionais de Garantia</Label>
-                    <Select
-                      value={String(data.warrantyExtendedMonths)}
-                      onValueChange={(v) => onChange({ ...data, warrantyExtendedMonths: parseInt(v) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">6 meses</SelectItem>
-                        <SelectItem value="12">12 meses (1 ano)</SelectItem>
-                        <SelectItem value="24">24 meses (2 anos)</SelectItem>
-                        <SelectItem value="36">36 meses (3 anos)</SelectItem>
-                        <SelectItem value="48">48 meses (4 anos)</SelectItem>
-                        <SelectItem value="60">60 meses (5 anos)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Campos de seguro tradicional
-              <div className="space-y-3">
-                {!['property', 'vehicle'].includes(assetType) && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Tipo de Seguro</Label>
-                    <Select
-                      value={data.insuranceType}
-                      onValueChange={(v) => onChange({ ...data, insuranceType: v as InsuranceType })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {insuranceTypeOptions.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Seguradora</Label>
-                    <Input
-                      placeholder="Ex: Porto Seguro"
-                      value={data.insuranceCompany}
-                      onChange={(e) => onChange({ ...data, insuranceCompany: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Prêmio Mensal</Label>
-                    <CurrencyInput
-                      value={data.premiumMonthly}
-                      onChange={handlePremiumMonthlyChange}
-                      placeholder="0,00"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs">Início da Vigência</Label>
-                    <Input
-                      type="date"
-                      value={data.startDate}
-                      onChange={(e) => onChange({ ...data, startDate: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Fim da Vigência</Label>
-                    <Input
-                      type="date"
-                      value={data.endDate}
-                      onChange={(e) => onChange({ ...data, endDate: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">Renovação Automática</Label>
-                  <Switch
-                    checked={data.autoRenew}
-                    onCheckedChange={(v) => onChange({ ...data, autoRenew: v })}
-                  />
-                </div>
-              </div>
-            )}
+            <Switch
+              checked={data.hasWarranty}
+              onCheckedChange={handleHasWarrantyChange}
+            />
           </div>
-        )}
+          {data.hasWarranty && (
+            <div className="space-y-4 pl-6 border-l-2 border-primary/20">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Nome da Garantia</Label>
+                  <Input
+                    placeholder="Ex: Garantia de fábrica"
+                    value={data.warrantyName}
+                    onChange={(e) => onChange({ ...data, warrantyName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Loja/Fabricante</Label>
+                  <Input
+                    placeholder="Ex: Amazon, Samsung..."
+                    value={data.warrantyStore}
+                    onChange={(e) => onChange({ ...data, warrantyStore: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-xs">Data Início</Label>
+                  <Input
+                    type="date"
+                    value={data.warrantyStartDate}
+                    onChange={(e) => onChange({ ...data, warrantyStartDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Data Limite da Garantia</Label>
+                  <Input
+                    type="date"
+                    value={data.warrantyEndDate}
+                    onChange={(e) => onChange({ ...data, warrantyEndDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-income" />
+                  <Label className="text-sm">Garantia Estendida Contratada</Label>
+                </div>
+                <Switch
+                  checked={data.warrantyExtended}
+                  onCheckedChange={(v) => onChange({ ...data, warrantyExtended: v })}
+                />
+              </div>
+              {data.warrantyExtended && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Meses Adicionais de Garantia</Label>
+                  <Select
+                    value={String(data.warrantyExtendedMonths)}
+                    onValueChange={(v) => onChange({ ...data, warrantyExtendedMonths: parseInt(v) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6">6 meses</SelectItem>
+                      <SelectItem value="12">12 meses (1 ano)</SelectItem>
+                      <SelectItem value="24">24 meses (2 anos)</SelectItem>
+                      <SelectItem value="36">36 meses (3 anos)</SelectItem>
+                      <SelectItem value="48">48 meses (4 anos)</SelectItem>
+                      <SelectItem value="60">60 meses (5 anos)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -301,166 +300,26 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Seguro ou Garantia</CardTitle>
-          </div>
-          <Switch
-            checked={data.hasInsurance}
-            onCheckedChange={handleHasInsuranceChange}
-          />
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" />
+          <CardTitle className="text-base">Seguro e Garantia</CardTitle>
         </div>
         <CardDescription>
-          {data.hasInsurance 
-            ? data.isWarranty 
-              ? 'Configure a garantia de fábrica ou estendida deste bem'
-              : 'Configure o seguro vinculado a este bem'
-            : 'Este bem possui seguro ou garantia?'
-          }
+          Você pode cadastrar seguro, garantia ou os dois para este bem.
         </CardDescription>
       </CardHeader>
-
-      {data.hasInsurance && (
-        <CardContent className="space-y-4">
-          {/* Toggle: Seguro vs Garantia */}
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => handleWarrantyToggle(false)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors",
-                !data.isWarranty 
-                  ? "bg-primary/10 border-primary text-primary" 
-                  : "border-border hover:bg-accent"
-              )}
-            >
-              <Shield className="h-5 w-5" />
-              <div className="text-left">
-                <p className="font-medium">Seguro</p>
-                <p className="text-xs text-muted-foreground">Apólice com seguradora</p>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWarrantyToggle(true)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-colors",
-                data.isWarranty 
-                  ? "bg-primary/10 border-primary text-primary" 
-                  : "border-border hover:bg-accent"
-              )}
-            >
-              <ShieldCheck className="h-5 w-5" />
-              <div className="text-left">
-                <p className="font-medium">Garantia</p>
-                <p className="text-xs text-muted-foreground">Garantia de fábrica/loja</p>
-              </div>
-            </button>
+      <CardContent className="space-y-6">
+        {/* Tem seguro? */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Tem seguro?</Label>
+            <Switch
+              checked={data.hasInsurance}
+              onCheckedChange={handleHasInsuranceChange}
+            />
           </div>
-
-          {data.isWarranty ? (
-            // Campos de garantia
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-accent/50 flex items-start gap-2">
-                <CalendarClock className="h-4 w-4 text-amber-500 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium">Acompanhe sua garantia</p>
-                  <p className="text-muted-foreground text-xs">
-                    Você será alertado quando a garantia estiver próxima de expirar
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Nome da Garantia</Label>
-                  <Input
-                    placeholder="Ex: Garantia Notebook Dell"
-                    value={data.insuranceName}
-                    onChange={(e) => onChange({ ...data, insuranceName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Loja/Fabricante</Label>
-                  <Input
-                    placeholder="Ex: Amazon, Dell, Samsung..."
-                    value={data.warrantyStore}
-                    onChange={(e) => onChange({ ...data, warrantyStore: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Data da Compra</Label>
-                  <Input
-                    type="date"
-                    value={data.startDate}
-                    onChange={(e) => onChange({ ...data, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Data Limite da Garantia</Label>
-                  <Input
-                    type="date"
-                    value={data.endDate}
-                    onChange={(e) => onChange({ ...data, endDate: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg border space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-income" />
-                    <div>
-                      <Label className="font-medium">Garantia Estendida</Label>
-                      <p className="text-xs text-muted-foreground">Contratou garantia adicional?</p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={data.warrantyExtended}
-                    onCheckedChange={(v) => onChange({ ...data, warrantyExtended: v })}
-                  />
-                </div>
-
-                {data.warrantyExtended && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm">Meses Adicionais</Label>
-                      <Select
-                        value={String(data.warrantyExtendedMonths)}
-                        onValueChange={(v) => onChange({ ...data, warrantyExtendedMonths: parseInt(v) })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="6">6 meses</SelectItem>
-                          <SelectItem value="12">12 meses (1 ano)</SelectItem>
-                          <SelectItem value="24">24 meses (2 anos)</SelectItem>
-                          <SelectItem value="36">36 meses (3 anos)</SelectItem>
-                          <SelectItem value="48">48 meses (4 anos)</SelectItem>
-                          <SelectItem value="60">60 meses (5 anos)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Valor Pago</Label>
-                      <CurrencyInput
-                        value={data.premiumAnnual}
-                        onChange={(v) => onChange({ ...data, premiumAnnual: v })}
-                        placeholder="0,00"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            // Campos de seguro tradicional
-            <div className="space-y-4">
+          {data.hasInsurance && (
+            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome do Seguro</Label>
@@ -491,7 +350,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                   </div>
                 )}
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Seguradora</Label>
@@ -499,7 +357,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                     placeholder="Ex: Porto Seguro, Bradesco..."
                     value={data.insuranceCompany}
                     onChange={(e) => onChange({ ...data, insuranceCompany: e.target.value })}
-                    required={!data.isWarranty}
                   />
                 </div>
                 <div className="space-y-2">
@@ -511,7 +368,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Prêmio Mensal</Label>
@@ -530,7 +386,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Franquia</Label>
@@ -541,7 +396,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Início da Vigência</Label>
@@ -560,7 +414,6 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
                   />
                 </div>
               </div>
-
               <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
                 <div>
                   <Label className="font-medium">Renovação Automática</Label>
@@ -575,8 +428,114 @@ export const AssetInsuranceSection: React.FC<AssetInsuranceSectionProps> = ({
               </div>
             </div>
           )}
-        </CardContent>
-      )}
+        </div>
+
+        {/* Tem garantia? */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label className="font-medium">Tem garantia?</Label>
+            <Switch
+              checked={data.hasWarranty}
+              onCheckedChange={handleHasWarrantyChange}
+            />
+          </div>
+          {data.hasWarranty && (
+            <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+              <div className="p-3 rounded-lg bg-accent/50 flex items-start gap-2">
+                <CalendarClock className="h-4 w-4 text-amber-500 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium">Acompanhe sua garantia</p>
+                  <p className="text-muted-foreground text-xs">
+                    Você será alertado quando a garantia estiver próxima de expirar
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome da Garantia</Label>
+                  <Input
+                    placeholder="Ex: Garantia Notebook Dell"
+                    value={data.warrantyName}
+                    onChange={(e) => onChange({ ...data, warrantyName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Loja/Fabricante</Label>
+                  <Input
+                    placeholder="Ex: Amazon, Dell, Samsung..."
+                    value={data.warrantyStore}
+                    onChange={(e) => onChange({ ...data, warrantyStore: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data da Compra</Label>
+                  <Input
+                    type="date"
+                    value={data.warrantyStartDate}
+                    onChange={(e) => onChange({ ...data, warrantyStartDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data Limite da Garantia</Label>
+                  <Input
+                    type="date"
+                    value={data.warrantyEndDate}
+                    onChange={(e) => onChange({ ...data, warrantyEndDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="p-4 rounded-lg border space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-income" />
+                    <div>
+                      <Label className="font-medium">Garantia Estendida</Label>
+                      <p className="text-xs text-muted-foreground">Contratou garantia adicional?</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={data.warrantyExtended}
+                    onCheckedChange={(v) => onChange({ ...data, warrantyExtended: v })}
+                  />
+                </div>
+                {data.warrantyExtended && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Meses Adicionais</Label>
+                      <Select
+                        value={String(data.warrantyExtendedMonths)}
+                        onValueChange={(v) => onChange({ ...data, warrantyExtendedMonths: parseInt(v) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="6">6 meses</SelectItem>
+                          <SelectItem value="12">12 meses (1 ano)</SelectItem>
+                          <SelectItem value="24">24 meses (2 anos)</SelectItem>
+                          <SelectItem value="36">36 meses (3 anos)</SelectItem>
+                          <SelectItem value="48">48 meses (4 anos)</SelectItem>
+                          <SelectItem value="60">60 meses (5 anos)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Valor Pago</Label>
+                      <CurrencyInput
+                        value={data.warrantyValorPago}
+                        onChange={(v) => onChange({ ...data, warrantyValorPago: v })}
+                        placeholder="0,00"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
-};
+}
