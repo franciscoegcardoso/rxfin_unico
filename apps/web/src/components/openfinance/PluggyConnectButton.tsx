@@ -112,11 +112,14 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
     setIsOpening(true);
     
-    // Get connect token from our edge function
+    // Get connect token from our edge function (must be JWT string, not boolean)
     const tokenResult = await getConnectToken(updateItemId);
-    const connectToken = tokenResult?.connectToken ?? null;
-    console.log('Got connect token:', connectToken ? `${connectToken.slice(0, 20)}...` : '(none)');
-    
+    const connectToken: string | null =
+      tokenResult?.connectToken != null && typeof tokenResult.connectToken === 'string'
+        ? tokenResult.connectToken
+        : null;
+    console.log('Got connect token:', !!connectToken);
+
     if (!connectToken) {
       setIsOpening(false);
       return;

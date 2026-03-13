@@ -54,6 +54,8 @@ const PatrimonioTab: React.FC = () => {
   const imoveis = useMemo(() => patrimonioAssets.filter(a => a.type === 'property'), [patrimonioAssets]);
   const veiculos = useMemo(() => patrimonioAssets.filter(a => a.type === 'vehicle'), [patrimonioAssets]);
   const outrosBens = useMemo(() => patrimonioAssets.filter(a => a.type !== 'property' && a.type !== 'vehicle'), [patrimonioAssets]);
+  const imovelCount = imoveis.length;
+  const veiculoCount = veiculos.length;
 
   const renderAssetCard = (asset: Asset) => {
     const isSold = asset.isSold;
@@ -131,7 +133,7 @@ const PatrimonioTab: React.FC = () => {
               <AssetInsuranceBadge assetId={asset.id} assetName={asset.name} showLabel size="md" showUninsured={['property', 'vehicle', 'valuable_objects'].includes(asset.type) && !isSold} />
               {asset.isRentalProperty && !isSold && (
                 <>
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-[hsl(var(--color-text-success))] mt-2">
+                  <span className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                     <Home className="h-3 w-3" />
                     Gera aluguel
                   </span>
@@ -347,9 +349,9 @@ const PatrimonioTab: React.FC = () => {
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <Home className="h-5 w-5 text-primary" />
                   Meus Imóveis
-                  {imovelCollapsed && imoveis.length > 0 && (
+                  {imovelCollapsed && imovelCount > 0 && (
                     <span className="text-sm font-normal text-muted-foreground ml-1">
-                      ({imoveis.length} {imoveis.length === 1 ? 'item' : 'itens'})
+                      ({imovelCount} {imovelCount === 1 ? 'item' : 'itens'})
                     </span>
                   )}
                 </h2>

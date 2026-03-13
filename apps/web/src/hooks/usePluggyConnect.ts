@@ -128,7 +128,12 @@ export function usePluggyConnect() {
         throw new Error(data?.error || 'Failed to get connect token');
       }
 
-      return { connectToken: data.connectToken, cpf: data.cpf || null };
+      const connectToken = data.connectToken;
+      if (typeof connectToken !== 'string') {
+        console.error('pluggy-connect returned connectToken that is not a string:', typeof connectToken);
+        return null;
+      }
+      return { connectToken, cpf: data.cpf || null };
     } catch (error) {
       console.error('Error getting connect token:', error);
       toast({

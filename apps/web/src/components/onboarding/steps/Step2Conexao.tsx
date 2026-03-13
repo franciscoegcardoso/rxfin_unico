@@ -131,14 +131,18 @@ export function Step2Conexao({ onContinue }: Step2ConexaoProps) {
     }
     setIsOpening(true);
     const tokenResult = await getConnectToken();
-    if (!tokenResult?.connectToken) {
+    const connectToken: string | null =
+      tokenResult?.connectToken != null && typeof tokenResult.connectToken === 'string'
+        ? tokenResult.connectToken
+        : null;
+    if (!connectToken) {
       setIsOpening(false);
       return;
     }
     try {
       const PluggyConnectCtor = window.PluggyConnect;
       const pluggyConnect = new PluggyConnectCtor({
-        connectToken: tokenResult.connectToken,
+        connectToken,
         includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
         onSuccess: async (data) => {
           setIsOpening(false);
