@@ -9,7 +9,6 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-route
 import { FinancialProvider } from "@/contexts/FinancialContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { VisibilityProvider } from "@/contexts/VisibilityContext";
-import { TourProvider } from "@/contexts/TourContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { AccountPendingChangesProvider } from "@/contexts/AccountPendingChangesContext";
@@ -18,7 +17,6 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppShell } from "@/design-system/layouts/AppShell";
 // AdminProtectedRoute removed — all admin routes now use AdminSecureLayout (MFA-required)
-import { GuidedTour } from "@/components/tour/GuidedTour";
 import { ImpersonationFloater } from "@/components/admin/ImpersonationFloater";
 import { MagicLinkHandler } from "@/components/auth/MagicLinkHandler";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
@@ -177,8 +175,7 @@ const App = () => (
       <AuthProvider>
         <FinancialProvider>
           <VisibilityProvider>
-            <TourProvider>
-              <ImpersonationProvider>
+            <ImpersonationProvider>
                 <TooltipProvider>
                   <SyncProvider>
                     <Toaster />
@@ -190,7 +187,6 @@ const App = () => (
                   <CanonicalLink />
                   <TrackingProvider>
                   <MagicLinkHandler>
-                    <GuidedTour />
                     <ImpersonationFloater />
                     <CookieConsentBanner />
                     <RaioXChat />
@@ -353,7 +349,6 @@ const App = () => (
                   </SyncProvider>
                 </TooltipProvider>
             </ImpersonationProvider>
-          </TourProvider>
         </VisibilityProvider>
       </FinancialProvider>
     </AuthProvider>

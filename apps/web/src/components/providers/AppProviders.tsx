@@ -5,7 +5,6 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ImpersonationProvider } from '@/contexts/ImpersonationContext'
 import { FinancialProvider } from '@/contexts/FinancialContext'
 import { VisibilityProvider } from '@/contexts/VisibilityContext'
-import { TourProvider } from '@/contexts/TourContext'
 import { TrackingProvider } from '@/contexts/TrackingContext'
 import { SyncProvider } from '@/contexts/SyncContext'
 import { AccountPendingChangesProvider } from '@/contexts/AccountPendingChangesContext'
@@ -22,8 +21,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <ImpersonationProvider>
           <FinancialProvider>
             <VisibilityProvider>
-              <TourProvider>
-                <TrackingProvider>
+              <TrackingProvider>
                   <SyncProvider>
                     <AccountPendingChangesProvider>
                       <AdminPendingChangesProvider>
@@ -32,7 +30,6 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
                     </AccountPendingChangesProvider>
                   </SyncProvider>
                 </TrackingProvider>
-              </TourProvider>
             </VisibilityProvider>
           </FinancialProvider>
         </ImpersonationProvider>

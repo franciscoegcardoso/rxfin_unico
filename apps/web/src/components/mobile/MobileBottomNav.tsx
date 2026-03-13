@@ -98,7 +98,7 @@ export const MobileBottomNav: React.FC = () => {
     }
   };
 
-  const renderNavButton = (item: NavItem, tourId?: string) => {
+  const renderNavButton = (item: NavItem) => {
     const active = isActive(item.path);
     const locked = isLocked(item.path);
     const comingSoon = isComingSoon(item.path);
@@ -110,7 +110,6 @@ export const MobileBottomNav: React.FC = () => {
       <button
         key={item.label}
         onClick={() => handleNavClick(item)}
-        data-tour={tourId}
         className={cn(
           "relative flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors",
           isVisuallyDisabled && !canNavigate
@@ -152,10 +151,7 @@ export const MobileBottomNav: React.FC = () => {
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-t border-border safe-area-pb">
         <div className="flex items-center h-16 px-2">
           {/* First two items */}
-          {navItems.slice(0, 2).map((item) => {
-            const tourId = item.label === 'Início' ? 'nav-inicio' : item.label === 'Patrimônio' ? 'nav-patrimonio' : undefined;
-            return renderNavButton(item, tourId);
-          })}
+          {navItems.slice(0, 2).map((item) => renderNavButton(item))}
 
           {/* Central FAB - inline with other items */}
           <div className="flex-1 flex items-center justify-center">
@@ -168,7 +164,6 @@ export const MobileBottomNav: React.FC = () => {
                   showComingSoonToast({ featureName: 'Ações Rápidas' });
                 }
               }}
-              data-tour="nav-fab"
               className="relative flex flex-col items-center justify-center gap-0.5"
               whileTap={{ scale: 0.95 }}
             >
@@ -192,10 +187,7 @@ export const MobileBottomNav: React.FC = () => {
           </div>
 
           {/* Last two items */}
-          {navItems.slice(2).map((item) => {
-            const tourId = item.label === 'Planejar' ? 'nav-planejar' : undefined;
-            return renderNavButton(item, tourId);
-          })}
+          {navItems.slice(2).map((item) => renderNavButton(item))}
         </div>
       </nav>
 

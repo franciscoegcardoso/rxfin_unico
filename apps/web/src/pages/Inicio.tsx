@@ -6,7 +6,6 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVisibility } from "@/contexts/VisibilityContext";
-import { useTour } from "@/contexts/TourContext";
 import { useFeaturePreferences } from "@/hooks/useFeaturePreferences";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { useDemoUserId } from "@/hooks/useDemoUserId";
@@ -208,7 +207,6 @@ const Inicio: React.FC = () => {
   const { config } = useFinancial();
   const { user } = useAuth();
   const { isHidden } = useVisibility();
-  const { hasCompletedTour, startTour } = useTour();
   const { isFeatureEnabled } = useFeaturePreferences();
   const { isDemoMode } = useDemoMode();
   const demoUserId = useDemoUserId();
@@ -218,7 +216,6 @@ const Inicio: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [firstName, setFirstName] = useState<string>("");
-  const [hasTriggeredTour, setHasTriggeredTour] = useState(false);
 
   const currentMonth = format(new Date(), "yyyy-MM");
   const {
@@ -234,16 +231,6 @@ const Inicio: React.FC = () => {
 
   const displayFirstName =
     dashboardData?.user?.full_name?.split(" ")[0] ?? firstName;
-
-  useEffect(() => {
-    if (!hasCompletedTour && !hasTriggeredTour && user) {
-      const timer = setTimeout(() => {
-        startTour();
-        setHasTriggeredTour(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [hasCompletedTour, hasTriggeredTour, startTour, user]);
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -619,7 +606,7 @@ const Inicio: React.FC = () => {
 
           {/* Cards Receitas, Despesas, Saldo e Lançamentos — logo abaixo da saudação (desktop) */}
           {monthSummary && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" data-tour="metrics-cards">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" >
               <DemoCardWrapper isDemoMode={isDemoMode}>
                 <HeaderMetricCard
                   label="Receitas"
@@ -821,7 +808,7 @@ const Inicio: React.FC = () => {
         >
           {showMetasMensais && (
             <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
-              <div data-tour="category-goals" className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
+              <div  className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))] shrink-0">
                   <div>
                     <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>

@@ -22,7 +22,7 @@ export const ControlOnboardingBanner: React.FC = () => {
       <div className="flex-1 min-w-0">
         <p className="text-sm text-foreground">
           📚 Você ainda não conheceu todos os módulos de controle.
-          Complete o tour para desbloquear a Projeção de 30 Anos.
+          Complete o onboarding de controle para desbloquear a Projeção de 30 Anos.
         </p>
       </div>
       <Button
@@ -31,7 +31,7 @@ export const ControlOnboardingBanner: React.FC = () => {
         className="shrink-0 gap-1 border-blue-300 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
         onClick={() => navigate('/onboarding-controle')}
       >
-        Continuar tour
+        Ir ao onboarding
         <ArrowRight className="h-3.5 w-3.5" />
       </Button>
       <button

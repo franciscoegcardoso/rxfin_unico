@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibility } from '@/contexts/VisibilityContext';
-import { useTour } from '@/contexts/TourContext';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
 import { useDemoMode } from '@/hooks/useDemoMode';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
@@ -92,7 +91,6 @@ const Inicio: React.FC = () => {
   const { config } = useFinancial();
   const { user } = useAuth();
   const { isHidden } = useVisibility();
-  const { hasCompletedTour, startTour } = useTour();
   const { isFeatureEnabled } = useFeaturePreferences();
   const { isDemoMode } = useDemoMode();
   const { currentPhase, controlDone } = useOnboardingCheckpoint();
@@ -100,7 +98,6 @@ const Inicio: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [firstName, setFirstName] = useState<string>('');
-  const [hasTriggeredTour, setHasTriggeredTour] = useState(false);
   
   // Hooks para metas mensais e lançamentos realizados
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
@@ -108,17 +105,6 @@ const Inicio: React.FC = () => {
   
   // Feature flags
   const showMetasMensais = isFeatureEnabled('metas-mensais');
-
-  // Auto-start tour for new users after first load
-  useEffect(() => {
-    if (!hasCompletedTour && !hasTriggeredTour && user) {
-      const timer = setTimeout(() => {
-        startTour();
-        setHasTriggeredTour(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [hasCompletedTour, hasTriggeredTour, startTour, user]);
 
   // Busca nome do usuário
   useEffect(() => {
@@ -296,7 +282,7 @@ const Inicio: React.FC = () => {
         <PackagesSummaryCard />
 
         {/* Main content grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6" data-tour="metrics-cards">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <MonthSummaryCard />
           </DemoCardWrapper>
@@ -314,7 +300,7 @@ const Inicio: React.FC = () => {
         )}>
           {showMetasMensais && (
             <DemoCardWrapper isDemoMode={isDemoMode}>
-              <Card data-tour="category-goals">
+              <Card>
                 <CardHeader className="pb-3 p-6">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-semibold flex items-center gap-2">
