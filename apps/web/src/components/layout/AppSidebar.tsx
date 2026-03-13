@@ -171,9 +171,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     const isActive = isItemActive(item, sectionItems);
     const isVisuallyDisabled = item.isLocked || item.isComingSoon;
     const canNavigate = item.canAccessAsAdmin || !isVisuallyDisabled;
+    // Primeiro nível: mais destaque (text-sm, font-medium, ícone 4). Segundo nível: mais discreto (text-xs, font-normal, ícone 3.5).
+    const isSecondLevel = indent;
 
     const baseClass = cn(
-      'group flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150 min-h-[36px]',
+      'group flex items-center rounded-md transition-all duration-150',
+      isSecondLevel ? 'gap-2 px-3 py-1.5 min-h-[32px] text-xs font-normal' : 'gap-2.5 px-3 py-2 min-h-[36px] text-sm font-medium',
       indent && !isActive && 'ml-3 pl-3 border-l border-border',
       indent && isActive  && 'ml-3 pl-3 border-l-2 border-primary',
       isActive
@@ -182,12 +185,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       isVisuallyDisabled && !item.canAccessAsAdmin && 'opacity-50',
     );
 
+    const iconSizeClass = isSecondLevel ? 'h-3.5 w-3.5 shrink-0' : 'h-4 w-4 shrink-0';
     const inner = (
       <>
         {item.icon && (
           <item.icon
             className={cn(
-              'h-4 w-4 shrink-0',
+              iconSizeClass,
               isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
             )}
           />
@@ -219,7 +223,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                   onClick={(e) => handleItemClick(item, e, path)}
                   aria-current={isActive ? 'page' : undefined}
                 >
-                  {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
+                  {item.icon && <item.icon className={iconSizeClass} />}
                 </a>
               ) : (
                 <button
@@ -227,7 +231,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                   onClick={(e) => handleItemClick(item, e, path)}
                   className={cn(baseClass, 'justify-center px-2 w-full')}
                 >
-                  {item.icon && <item.icon className="h-4 w-4 shrink-0" />}
+                  {item.icon && <item.icon className={iconSizeClass} />}
                 </button>
               )}
             </TooltipTrigger>

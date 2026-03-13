@@ -76,9 +76,44 @@ const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
 
-/** Itens canônicos do grupo Simuladores para o sidebar: garante que a rota aberta tenha sempre um item correspondente e fique marcada. */
+/** Ícones canônicos por path — recuperam ícones quando o banco não retorna (menu principal e itens de seções). */
+const ICON_BY_PATH: Record<string, LucideIcon> = {
+  '/inicio': Home,
+  '/bens-investimentos': PiggyBank,
+  '/lancamentos': Receipt,
+  '/planejamento': Calendar,
+  '/planejamento-anual': CalendarRange,
+  '/meu-ir': FileText,
+  '/gestao-veiculos': Car,
+  '/registro-compras': ShoppingBag,
+  '/recorrentes': Receipt,
+  '/contas': FileText,
+};
+
+/** Ícones canônicos por slug de grupo (seções do sidebar) — recuperam ícones quando o banco não retorna. */
+const SECTION_ICON_BY_SLUG: Record<string, LucideIcon> = {
+  planejamento: CalendarRange,
+  controles: ClipboardList,
+  simuladores: Calculator,
+  configuracoes: Settings2,
+};
+
+/** Ícone para item de menu: usa canônico por path se existir, senão do banco. */
+function getItemIcon(path: string, dbIcon: string | null): LucideIcon {
+  const canonical = ICON_BY_PATH[path];
+  if (canonical) return canonical;
+  return getIconComponent(dbIcon);
+}
+
+/** Ícone para seção do sidebar: usa canônico por slug se existir, senão do banco. */
+function getSectionIcon(slug: string, dbIcon: string | null): LucideIcon {
+  const canonical = SECTION_ICON_BY_SLUG[slug];
+  if (canonical) return canonical;
+  return getIconComponent(dbIcon);
+}
+
+/** Itens canônicos do grupo Simuladores para o sidebar (Hub Simuladores removido do menu). */
 const SIMULATOR_SIDEBAR_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
-  { path: '/simuladores', label: 'Hub Simuladores', icon: Calculator },
   { path: '/simuladores/veiculos/simulador-fipe', label: 'Simulador FIPE', icon: Car },
   { path: '/simuladores/veiculos/simulador-carro-ab', label: 'Comparador Carro A vs B', icon: Car },
   { path: '/simuladores/veiculos/simulador-custo-oportunidade-carro', label: 'Carro vs Alternativas', icon: Car },
@@ -329,7 +364,7 @@ export function useNavMenuPages(): NavMenuData {
       return {
         path: page.path,
         label: page.title,
-        icon: getIconComponent(page.icon),
+        icon: getItemIcon(page.path, page.icon),
         isLocked,
         isComingSoon,
         accessLevel: page.access_level,
@@ -382,7 +417,7 @@ export function useNavMenuPages(): NavMenuData {
         return {
           title: group.name,
           slug: group.slug,
-          icon: getIconComponent(group.icon),
+          icon: getSectionIcon(group.slug, group.icon),
           items: [], // CTA único: sem dropdown; sidebar renderiza como link para /minha-conta
           hasLockedItems: false,
           hasComingSoonItems: false,
@@ -405,7 +440,7 @@ export function useNavMenuPages(): NavMenuData {
           return {
             path: page.path,
             label: page.title,
-            icon: getIconComponent(page.icon),
+            icon: getItemIcon(page.path, page.icon),
             isLocked,
             isComingSoon,
             accessLevel: page.access_level,
@@ -417,7 +452,7 @@ export function useNavMenuPages(): NavMenuData {
       return {
         title: group.name,
         slug: group.slug,
-        icon: getIconComponent(group.icon),
+        icon: getSectionIcon(group.slug, group.icon),
         items,
         hasLockedItems: items.some(item => item.isLocked),
         hasComingSoonItems: items.some(item => item.isComingSoon),
