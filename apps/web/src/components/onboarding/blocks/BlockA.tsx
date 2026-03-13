@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, ArrowLeft, Crown, Fingerprint, Shield, Activity, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
 import { ConquestCard } from '../ConquestCard';
 import { cn } from '@/lib/utils';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -202,12 +202,13 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
                 <span className="text-sm font-medium text-foreground flex-1">{item.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-muted-foreground">R$</span>
-                  <Input
-                    type="number"
-                    className="w-28 h-8 text-right text-sm"
+                  <CurrencyInput
+                    compact
+                    decimalPlaces={0}
                     placeholder="0"
-                    value={incomeValues[item.key] || ''}
-                    onChange={(e) => setIncomeValues(prev => ({ ...prev, [item.key]: Number(e.target.value) || 0 }))}
+                    className="w-28 h-8 text-sm"
+                    value={incomeValues[item.key] ?? 0}
+                    onChange={(val) => setIncomeValues(prev => ({ ...prev, [item.key]: val }))}
                   />
                 </div>
               </div>
@@ -248,12 +249,13 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
                 <span className="text-sm font-medium text-foreground flex-1">{item.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-muted-foreground">R$</span>
-                  <Input
-                    type="number"
-                    className="w-28 h-8 text-right text-sm"
+                  <CurrencyInput
+                    compact
+                    decimalPlaces={0}
                     placeholder="0"
-                    value={expenseValues[item.key] || ''}
-                    onChange={(e) => setExpenseValues(prev => ({ ...prev, [item.key]: Number(e.target.value) || 0 }))}
+                    className="w-28 h-8 text-sm"
+                    value={expenseValues[item.key] ?? 0}
+                    onChange={(val) => setExpenseValues(prev => ({ ...prev, [item.key]: val }))}
                   />
                 </div>
               </div>
