@@ -8,7 +8,9 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { FileBarChart } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   Table,
   TableBody,
@@ -122,7 +124,13 @@ function IrHistoricoPatrimonial() {
   }
 
   if (data.length < 2) {
-    return null;
+    return (
+      <EmptyState
+        icon={<FileBarChart className="h-6 w-6 text-muted-foreground" />}
+        title="Nenhum histórico disponível"
+        description="O histórico de IR será preenchido conforme você cadastra bens, investimentos e realiza declarações."
+      />
+    );
   }
 
   const chartData: ChartPayload[] = data.map((r) => ({

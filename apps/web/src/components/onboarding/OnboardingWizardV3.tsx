@@ -113,6 +113,10 @@ export const OnboardingWizardV3: React.FC = () => {
   }, [blockAIncomeValues, blockAExpenseValues, saveBlockA, saveDraft]);
 
   const handleBlockAComplete = async () => {
+    if (!user?.id) {
+      toast.error('Sessão inválida. Faça login novamente.');
+      return;
+    }
     const ok = await advancePhase('block_a_done');
     if (!ok) return;
     await registerEvent('block_a_completed');
@@ -120,6 +124,10 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockBComplete = async () => {
+    if (!user?.id) {
+      toast.error('Sessão inválida. Faça login novamente.');
+      return;
+    }
     const ok = await advancePhase('block_b_done');
     if (!ok) return;
     await registerEvent('block_b_completed');
@@ -127,6 +135,10 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockCComplete = async () => {
+    if (!user?.id) {
+      toast.error('Sessão inválida. Faça login novamente.');
+      return;
+    }
     const ok = await advancePhase('block_c_done');
     if (!ok) return;
     await registerEvent('block_c_completed');
@@ -134,6 +146,10 @@ export const OnboardingWizardV3: React.FC = () => {
   };
 
   const handleBlockDComplete = async () => {
+    if (!user?.id) {
+      toast.error('Sessão inválida. Faça login novamente.');
+      return;
+    }
     const ok = await advancePhase('completed');
     if (!ok) return;
     await registerEvent('block_d_completed');

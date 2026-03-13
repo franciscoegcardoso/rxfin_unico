@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PageTransition } from './PageTransition';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
@@ -11,8 +11,15 @@ import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
 import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
 import { OnboardingProgressBanner } from '@/components/shared/OnboardingProgressBanner';
+import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
+import { OnboardingSpotlight } from '@/components/OnboardingSpotlight';
+import { OnboardingTransitionModal } from '@/components/OnboardingTransitionModal';
+import { StartRaioXContext } from '@/contexts/StartRaioXContext';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { useStartRaioX } from '@/hooks/useStartRaioX';
 import { useShell } from '@/design-system/layouts/ShellContext';
+
+const DEMO_WELCOME_KEY = 'rxfin_demo_welcome_shown';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -22,10 +29,43 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { insideShell } = useShell();
-  const { isDemoMode } = useDemoMode();
+  const { isDemoMode, isLoading: isDemoModeLoading } = useDemoMode();
   const { needsPhone, currentEmail } = usePhoneCompletion();
   const [phoneCompleted, setPhoneCompleted] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showSpotlight, setShowSpotlight] = useState(false);
+  const [showTransitionModal, setShowTransitionModal] = useState(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const startRaioX = useStartRaioX({
+    onShowTransitionModal: () => setShowTransitionModal(true),
+  });
+  const { handleStartRaioX, raioxPath } = startRaioX;
   useAutoConsolidation();
+
+  const handleConfirmTransition = useCallback(() => {
+    setShowTransitionModal(false);
+    navigate(raioxPath);
+  }, [navigate, raioxPath]);
+
+  useEffect(() => {
+    if (isDemoModeLoading || !isDemoMode) return;
+    try {
+      if (sessionStorage.getItem(DEMO_WELCOME_KEY)) return;
+    } catch {}
+    const t = setTimeout(() => setShowWelcomeModal(true), 800);
+    return () => clearTimeout(t);
+  }, [isDemoMode, isDemoModeLoading]);
+
+  const handleModalDismiss = () => {
+    try {
+      sessionStorage.setItem(DEMO_WELCOME_KEY, 'true');
+    } catch {}
+    setShowWelcomeModal(false);
+    setTimeout(() => setShowSpotlight(true), 500);
+  };
+
+  const handleSpotlightDismiss = () => setShowSpotlight(false);
 
   const showPhoneDialog = needsPhone && !phoneCompleted;
 
@@ -68,9 +108,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   if (insideShell) {
     // Dentro do AppShell: banner de dados fictícios no topo da área de conteúdo (inline), deslocando o conteúdo para baixo pela altura exata do banner.
     return (
-      <>
+      <StartRaioXContext.Provider value={startRaioX}>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
-          {isDemoMode && <DemoDataBanner inline />}
+          {isDemoMode && <DemoDataBanner inline innerRef={bannerRef} />}
           <OnboardingProgressBanner inline />
           <main
             className={`
@@ -83,19 +123,38 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             {content}
           </main>
         </div>
+        {isDemoMode && (
+          <DemoModeWelcomeModal
+            open={showWelcomeModal}
+            onOpenChange={setShowWelcomeModal}
+            onStartRaioX={() => handleStartRaioX('welcome_modal')}
+            onDismiss={handleModalDismiss}
+          />
+        )}
+        {isDemoMode && showSpotlight && (
+          <OnboardingSpotlight
+            targetRef={bannerRef}
+            onDismiss={handleSpotlightDismiss}
+            isMobile={isMobile}
+          />
+        )}
+        <OnboardingTransitionModal
+          isOpen={showTransitionModal}
+          onConfirm={handleConfirmTransition}
+        />
         <PhoneCompletionDialog
           open={showPhoneDialog}
           onComplete={() => setPhoneCompleted(true)}
           currentEmail={currentEmail}
         />
-      </>
+      </StartRaioXContext.Provider>
     );
   }
 
   return (
-    <>
+    <StartRaioXContext.Provider value={startRaioX}>
       <div className="min-h-screen bg-[hsl(var(--color-surface-base))] w-full max-w-full overflow-x-hidden flex flex-col">
-        <DemoDataBanner />
+        <DemoDataBanner innerRef={bannerRef} />
         <OnboardingProgressBanner />
         <main
           className={cn(
@@ -112,12 +171,31 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </footer>
         )}
         {isMobile && <MobileBottomNav />}
+        {isDemoMode && (
+          <DemoModeWelcomeModal
+            open={showWelcomeModal}
+            onOpenChange={setShowWelcomeModal}
+            onStartRaioX={() => handleStartRaioX('welcome_modal')}
+            onDismiss={handleModalDismiss}
+          />
+        )}
+        {isDemoMode && showSpotlight && (
+          <OnboardingSpotlight
+            targetRef={bannerRef}
+            onDismiss={handleSpotlightDismiss}
+            isMobile={isMobile}
+          />
+        )}
+        <OnboardingTransitionModal
+          isOpen={showTransitionModal}
+          onConfirm={handleConfirmTransition}
+        />
         <PhoneCompletionDialog
           open={showPhoneDialog}
           onComplete={() => setPhoneCompleted(true)}
           currentEmail={currentEmail}
         />
       </div>
-    </>
+    </StartRaioXContext.Provider>
   );
 };

@@ -41,7 +41,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentSte
         {/* Node circle */}
         <div className={cn(
           'relative flex items-center justify-center rounded-full border-2 transition-all duration-500',
-          isMobile ? 'h-10 w-10 shrink-0' : 'h-12 w-12',
+          isMobile ? 'h-8 w-8 shrink-0' : 'h-12 w-12',
           isCompleted
             ? 'border-primary bg-primary text-primary-foreground shadow-md'
             : isCurrent
@@ -49,11 +49,11 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentSte
               : 'border-muted bg-muted/50 text-muted-foreground'
         )}>
           {isCompleted ? (
-            <Check className="h-5 w-5" />
+            <Check className={cn(isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
           ) : isLocked ? (
-            <Lock className="h-4 w-4" />
+            <Lock className={cn(isMobile ? 'h-3.5 w-3.5' : 'h-4 w-4')} />
           ) : (
-            <Icon className="h-5 w-5" />
+            <Icon className={cn(isMobile ? 'h-4 w-4' : 'h-5 w-5')} />
           )}
         </div>
 
@@ -82,14 +82,14 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentSte
   };
 
   if (isMobile) {
-    // Vertical layout (reversed: destination on top)
+    // Vertical layout: Identidade (atual) no topo → Patrimônio → Fluxo Real → Domínio Total
     return (
-      <div className="flex flex-col gap-1 py-3 px-2">
-        {[...LEVELS].reverse().map((lvl, i) => (
+      <div className="flex flex-col gap-2 py-2 px-2">
+        {LEVELS.map((lvl, i) => (
           <React.Fragment key={lvl.level}>
             {renderNode(lvl, i)}
             {i < LEVELS.length - 1 && (
-              <div className="ml-5 h-4 w-0.5 bg-border" />
+              <div className="ml-5 h-3 w-0.5 bg-border shrink-0" />
             )}
           </React.Fragment>
         ))}
@@ -97,9 +97,9 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentSte
     );
   }
 
-  // Horizontal layout
+  // Horizontal layout (compact: Identidade → Patrimônio → Fluxo Real → Domínio)
   return (
-    <div className="flex items-center justify-between gap-1 py-4 px-2">
+    <div className="flex items-center justify-between gap-1 px-4 mb-4 py-2">
       {LEVELS.map((lvl, i) => (
         <React.Fragment key={lvl.level}>
           {renderNode(lvl, i)}

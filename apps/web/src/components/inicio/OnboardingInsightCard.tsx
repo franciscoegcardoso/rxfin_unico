@@ -1,8 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useStartRaioX } from '@/hooks/useStartRaioX';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight } from 'lucide-react';
@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 
 export const OnboardingInsightCard: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { handleStartRaioX } = useStartRaioX();
 
   const { data: insight } = useQuery({
     queryKey: ['onboarding-insight', user?.id],
@@ -48,7 +48,7 @@ export const OnboardingInsightCard: React.FC = () => {
               <Button
                 size="sm"
                 className="mt-1 gap-1.5"
-                onClick={() => navigate(insight.cta_route || '/onboarding')}
+                onClick={() => handleStartRaioX('cta_card')}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 {insight.cta_text || 'Começar meu Raio-X'}

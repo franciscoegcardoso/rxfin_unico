@@ -57,7 +57,10 @@ export function useOnboardingCheckpoint() {
     const { error } = await supabase.rpc('advance_onboarding_phase', { new_phase: newPhase });
     if (error) {
       console.error('[advancePhase] Failed:', error);
-      toast.error('Erro ao avançar etapa');
+      // Só exibe toast em falha de avanço explícito (não em 'started' que pode ser chamado ao entrar)
+      if (newPhase !== 'started') {
+        toast.error('Erro ao avançar etapa');
+      }
       return false;
     }
     queryClient.invalidateQueries({ queryKey: ['onboarding-checkpoint', user.id] });

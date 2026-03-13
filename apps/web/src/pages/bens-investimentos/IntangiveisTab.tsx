@@ -1,7 +1,7 @@
 import React from 'react';
 import { Package, Plus, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useBensInvestimentos } from '@/contexts/BensInvestimentosContext';
 
 export default function IntangiveisTab() {
@@ -23,13 +23,13 @@ export default function IntangiveisTab() {
           Adicionar intangível
         </Button>
       </div>
-      <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-        <CardContent className="flex flex-col items-center justify-center text-center">
-          <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-3" />
-          <p className="font-medium text-foreground">Em breve</p>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">Propriedade intelectual, licenças e direitos contratuais serão exibidos aqui.</p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={<Briefcase className="h-6 w-6 text-muted-foreground" />}
+        title="Nenhum intangível cadastrado"
+        description="Adicione propriedade intelectual, licenças e direitos contratuais para acompanhar seu patrimônio."
+        actionLabel="Adicionar intangível"
+        onAction={() => handleOpenAddDialog(undefined, undefined, 'intellectual_property')}
+      />
     </div>
   );
 }

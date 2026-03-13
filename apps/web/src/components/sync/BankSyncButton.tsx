@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -18,6 +19,7 @@ import {
   RefreshCw,
   ArrowRight,
   Info,
+  Link2,
 } from 'lucide-react';
 import { usePluggyBankSync } from '@/hooks/usePluggyBankSync';
 import { cn } from '@/lib/utils';
@@ -188,6 +190,18 @@ const BankSyncDialog: React.FC<BankSyncDialogProps> = ({
   unsyncedCount,
   onSync,
 }) => {
+  const navigate = useNavigate();
+  const hasConnectedBank = coverage.length > 0;
+
+  const handleGoToInstitutions = () => {
+    onOpenChange(false);
+    navigate('/instituicoes-financeiras');
+  };
+
+  const handleCancel = () => {
+    onOpenChange(false);
+  };
+
   // Smart mode: if never synced OR there are pending unsynced transactions, use full load
   const needsFullLoad = hasEverSynced === false || (unsyncedCount !== null && unsyncedCount > 0);
   const recommendedMode: 'full' | 'incremental' = needsFullLoad ? 'full' : 'incremental';
@@ -231,81 +245,105 @@ const BankSyncDialog: React.FC<BankSyncDialogProps> = ({
             Sincronizar Extratos Bancários
           </DialogTitle>
           <DialogDescription>
-            Importa transações das suas contas bancárias conectadas via Open Finance para os lançamentos realizados.
+            {hasConnectedBank
+              ? 'Importa transações das suas contas bancárias conectadas via Open Finance para os lançamentos realizados.'
+              : 'Conecte pelo menos uma conta para importar extratos.'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Coverage info */}
-          {coverage.length > 0 && (
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
-              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Info className="h-3.5 w-3.5" />
-                Contas conectadas
-              </p>
-              <div className="space-y-1.5">
-                {coverage.map((c, i) => (
-                  <div key={i} className="flex items-start justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0 last:pb-0">
-                    <span className="font-medium truncate min-w-0 flex-1">{c.account_name}</span>
-                    <div className="flex flex-col items-end shrink-0 text-xs text-muted-foreground">
-                      <span>{c.tx_count} transações</span>
-                      <span>{formatDateRange(c.min_date, c.max_date)}</span>
+        {/* Sem conta conectada: aviso e CTA para instituições */}
+        {!hasConnectedBank && !syncing && (
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Para importar seus extratos, você precisa ter pelo menos uma conta bancária conectada via Open Finance. Leva menos de 2 minutos.
+            </p>
+            <DialogFooter className="pt-2 flex-col sm:flex-row gap-2">
+              <Button variant="outline" className="w-full sm:w-auto order-2 sm:order-1" onClick={handleCancel}>
+                Cancelar
+              </Button>
+              <Button className="w-full sm:w-auto gap-2 order-1 sm:order-2" onClick={handleGoToInstitutions}>
+                <Link2 className="h-4 w-4" />
+                Ir para Instituições Financeiras
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {hasConnectedBank && (
+        <>
+          <div className="space-y-4">
+            {/* Coverage info */}
+            {coverage.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2.5">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Info className="h-3.5 w-3.5" />
+                  Contas conectadas
+                </p>
+                <div className="space-y-1.5">
+                  {coverage.map((c, i) => (
+                    <div key={i} className="flex items-start justify-between gap-3 text-sm py-1 border-b border-border/40 last:border-0 last:pb-0">
+                      <span className="font-medium truncate min-w-0 flex-1">{c.account_name}</span>
+                      <div className="flex flex-col items-end shrink-0 text-xs text-muted-foreground">
+                        <span>{c.tx_count} transações</span>
+                        <span>{formatDateRange(c.min_date, c.max_date)}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Smart status message */}
-          {!syncing && progress.step !== 'done' && (
-            <div className={cn("flex items-start gap-2.5 p-3 rounded-lg border", status.bgClass)}>
-              {status.icon}
-              <span className="text-sm">{status.text}</span>
-            </div>
-          )}
-
-          {/* Progress */}
-          {syncing && (
-            <div className="space-y-3 p-3 rounded-lg border bg-muted/20">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-                <span className="text-sm font-medium truncate">{progress.stepLabel}</span>
+            {/* Smart status message */}
+            {!syncing && progress.step !== 'done' && (
+              <div className={cn("flex items-start gap-2.5 p-3 rounded-lg border", status.bgClass)}>
+                {status.icon}
+                <span className="text-sm">{status.text}</span>
               </div>
-              <Progress value={progressPercent} className="h-2" />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{progressPercent}%</span>
-                {progress.total > 0 && (
-                  <span>{progress.processed}/{progress.total} transações</span>
+            )}
+
+            {/* Progress */}
+            {syncing && (
+              <div className="space-y-3 p-3 rounded-lg border bg-muted/20">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                  <span className="text-sm font-medium truncate">{progress.stepLabel}</span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{progressPercent}%</span>
+                  {progress.total > 0 && (
+                    <span>{progress.processed}/{progress.total} transações</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Done state */}
+            {!syncing && progress.step === 'done' && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                <span className="text-sm font-medium">{progress.stepLabel}</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-2">
+            {!syncing && (
+              <Button
+                onClick={() => onSync(recommendedMode)}
+                className="w-full gap-2"
+              >
+                {recommendedMode === 'full' ? (
+                  <Download className="h-4 w-4" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Done state */}
-          {!syncing && progress.step === 'done' && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
-              <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-              <span className="text-sm font-medium">{progress.stepLabel}</span>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="pt-2">
-          {!syncing && (
-            <Button
-              onClick={() => onSync(recommendedMode)}
-              className="w-full gap-2"
-            >
-              {recommendedMode === 'full' ? (
-                <Download className="h-4 w-4" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {getButtonLabel()}
-            </Button>
-          )}
-        </DialogFooter>
+                {getButtonLabel()}
+              </Button>
+            )}
+          </DialogFooter>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
