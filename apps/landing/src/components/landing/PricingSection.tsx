@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PlanComparisonModal } from "./PlanComparisonModal";
 
 const plans = [
   {
@@ -61,6 +63,7 @@ const plans = [
 ];
 
 export function PricingSection() {
+  const [compareOpen, setCompareOpen] = useState(false);
   return (
     <section className="py-20 px-4 bg-gray-50" id="precos">
       <div className="max-w-5xl mx-auto">
@@ -151,6 +154,18 @@ export function PricingSection() {
             </div>
           ))}
         </div>
+
+        <div className="flex justify-center mt-8">
+          <button
+            type="button"
+            onClick={() => setCompareOpen(true)}
+            className="text-sm text-muted-foreground hover:text-primary underline underline-offset-4 transition-colors"
+          >
+            Comparar todos os recursos →
+          </button>
+        </div>
+
+        <PlanComparisonModal open={compareOpen} onClose={() => setCompareOpen(false)} />
 
         <p className="text-center text-sm text-muted-foreground mt-8">
           +500 usuários já estão organizando suas finanças com RXFin •{" "}

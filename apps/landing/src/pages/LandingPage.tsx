@@ -188,21 +188,22 @@ const LandingPage: React.FC = () => {
       {/* 2. Simuladores */}
       <SimulatorsSection onSimulatorClick={handleSimulatorClick} onOpenLeadGate={openLeadGate} />
 
-      {/* 3. Preços */}
-      <PricingSection />
-
-      {/* 4. Um Sistema que Funciona */}
+      {/* 3. Um Sistema que Funciona */}
       <TimelineSection />
 
-      {/* 5. Pare de adivinhar + Recursos Complementares + Segurança */}
+      {/* 4. Pare de adivinhar + Recursos Complementares */}
       <FeaturesSection pillars={pillars} complementary={complementary} onFeatureClick={handleFeatureClick} />
+
+      {/* 5. Privacidade e Segurança (inclui bloco do fundador) */}
+      <PrivacySecuritySection />
 
       {/* 6. Ao se cadastrar você pode */}
       <SignupBenefitsSection />
 
       <DemoFlow />
-      {/* 9. Privacidade e Segurança (inclui bloco do fundador) */}
-      <PrivacySecuritySection />
+
+      {/* 7. Planos — última seção antes do footer */}
+      <PricingSection />
 
       {/* Footer */}
       <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,12%)] dark:bg-[hsl(161,60%,5%)] text-white">

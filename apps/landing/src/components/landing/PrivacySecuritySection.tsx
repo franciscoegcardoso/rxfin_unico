@@ -6,26 +6,28 @@ import { useInView } from '@/hooks/useInView';
 
 const badges = [
   {
-    icon: Shield,
-    title: 'Criptografia SSL/TLS',
-    subtitle: 'Ponta a ponta em todas as conexões',
+    icon: Lock,
+    title: 'Criptografia SSL/TLS 256-bit',
+    subtitle: 'Ponta a ponta em todas as conexões e dados em repouso',
   },
   {
     icon: Cloud,
-    title: 'Infraestrutura AWS',
-    subtitle: 'Mesma nuvem dos grandes bancos',
+    title: 'Infraestrutura AWS + Supabase',
+    subtitle: 'Mesma nuvem dos grandes bancos, com backups automáticos',
   },
   {
-    icon: Lock,
-    title: 'Dados Isolados',
-    subtitle: 'Cada usuário, ambiente separado',
+    icon: Shield,
+    title: 'Dados Isolados por Usuário',
+    subtitle: 'Controle de acesso granular — zero compartilhamento entre contas',
   },
   {
     icon: CheckCircle,
     title: 'LGPD Compliant',
-    subtitle: 'Privacidade como premissa',
+    subtitle: 'Open Finance regulamentado pelo Banco Central do Brasil',
   },
 ];
+
+const chips = ['Open Finance BCB', 'Supabase', 'SSL/TLS 256-bit', 'ISO 27001 ready', 'Zero Knowledge'];
 
 const itemVariant = {
   hidden: { opacity: 0, y: 16 },
@@ -87,7 +89,7 @@ export const PrivacySecuritySection: React.FC = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 justify-center mt-8 pt-6 border-t border-slate-100">
-        {['Open Finance BCB', 'AWS', 'Supabase', 'LGPD Compliant', 'SSL/TLS 256-bit'].map((chip) => (
+        {chips.map((chip) => (
           <span key={chip} className="bg-slate-100 text-slate-500 text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200">
             {chip}
           </span>
