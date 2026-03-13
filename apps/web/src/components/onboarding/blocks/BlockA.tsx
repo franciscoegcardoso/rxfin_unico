@@ -28,6 +28,14 @@ interface CategoryItem {
 const formatBRL = (v: number) =>
   v > 0 ? `R$ ${v.toLocaleString('pt-BR')}` : 'R$ 0';
 
+/** Rótulos customizados na tela Suas Receitas (apenas exibição) */
+const INCOME_LABEL_OVERRIDE: Record<string, string> = {
+  Investimentos: 'Renda passiva com investimentos',
+  investimentos: 'Renda passiva com investimentos',
+  Outro: 'Outros',
+  outro: 'Outros',
+};
+
 export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
   const { config, setAccountType } = useFinancial();
   const { user } = useAuth();
@@ -138,26 +146,28 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
             <button
               onClick={() => setAccountType('individual')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
                 config.accountType === 'individual'
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               )}
             >
-              <User className={cn("h-6 w-6", config.accountType === 'individual' ? "text-primary" : "text-muted-foreground")} />
+              <User className={cn("h-6 w-6 shrink-0", config.accountType === 'individual' ? "text-primary" : "text-muted-foreground")} />
               <span className="text-sm font-medium">Individual</span>
+              <span className="text-xs text-muted-foreground">Contas individuais</span>
             </button>
             <button
               onClick={() => setAccountType('shared')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
                 config.accountType === 'shared'
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
               )}
             >
-              <Users className={cn("h-6 w-6", config.accountType === 'shared' ? "text-primary" : "text-muted-foreground")} />
+              <Users className={cn("h-6 w-6 shrink-0", config.accountType === 'shared' ? "text-primary" : "text-muted-foreground")} />
               <span className="text-sm font-medium">Compartilhado</span>
+              <span className="text-xs text-muted-foreground">Divido com outra(s) pessoa(s)</span>
             </button>
           </div>
         </div>
@@ -199,7 +209,9 @@ export const BlockA: React.FC<BlockAProps> = ({ step, onStepChange, onComplete, 
             {incomeItems.map((item) => (
               <div key={item.key} className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border">
                 <span className="text-xl shrink-0">{item.icon}</span>
-                <span className="text-sm font-medium text-foreground flex-1">{item.name}</span>
+                <span className="text-sm font-medium text-foreground flex-1">
+                  {INCOME_LABEL_OVERRIDE[item.name] ?? item.name}
+                </span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-muted-foreground">R$</span>
                   <CurrencyInput
