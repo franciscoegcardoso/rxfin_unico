@@ -20,6 +20,7 @@ import { CibeliaWidget } from '@/components/landing/CibeliaWidget';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProofBar } from '@/components/landing/SocialProofBar';
 import { SimulatorsSection } from '@/components/landing/SimulatorsSection';
+import { PricingSection } from '@/components/landing/PricingSection';
 import { TimelineSection } from '@/components/landing/TimelineSection';
 import { FeaturesSection, FeatureItem } from '@/components/landing/FeaturesSection';
 import { SignupBenefitsSection } from '@/components/landing/SignupBenefitsSection';
@@ -158,6 +159,7 @@ const LandingPage: React.FC = () => {
             <img src={logoRxFin} alt="RXFin" className="h-8" />
             <nav className="hidden md:flex items-center gap-6">
               <a href="#simuladores" className="text-sm text-white/70 hover:text-white transition-colors">Simuladores</a>
+              <a href="#precos" className="text-sm text-white/70 hover:text-white transition-colors">Preços</a>
               <a href="#sistema" className="text-sm text-white/70 hover:text-white transition-colors">Sistema</a>
               <a href="#seguranca" className="text-sm text-white/70 hover:text-white transition-colors">Segurança</a>
             </nav>
@@ -185,6 +187,9 @@ const LandingPage: React.FC = () => {
 
       {/* 2. Simuladores */}
       <SimulatorsSection onSimulatorClick={handleSimulatorClick} onOpenLeadGate={openLeadGate} />
+
+      {/* 3. Preços */}
+      <PricingSection />
 
       {/* 4. Um Sistema que Funciona */}
       <TimelineSection />

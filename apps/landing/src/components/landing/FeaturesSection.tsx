@@ -5,7 +5,6 @@ import { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { SecurityBullets } from './SecurityBullets';
 import { trackMicroCtaClick } from '@/lib/tracking';
 
 export type FeatureItem = {
@@ -173,8 +172,6 @@ export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
         </div>
 
         {/* Bloco D — CTA final */}
-        <SecurityBullets />
-
         <motion.div
           className="mt-12 text-center"
           initial={{ opacity: 0, y: 16 }}
