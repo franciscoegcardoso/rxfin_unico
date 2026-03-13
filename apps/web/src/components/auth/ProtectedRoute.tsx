@@ -154,7 +154,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // Check if user has permission for this route (based on plan hierarchy)
-  if (!hasRoutePermission(location.pathname)) {
+  if (!isInicio && !hasRoutePermission(location.pathname)) {
     const featureName = pageName || ROUTE_FEATURE_NAMES[location.pathname];
     return <ComingSoon featureName={featureName} />;
   }

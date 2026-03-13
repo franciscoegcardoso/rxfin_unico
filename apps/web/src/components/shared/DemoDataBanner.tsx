@@ -48,7 +48,7 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false, 
           <Button
             size="sm"
             variant="secondary"
-            className="font-bold text-xs sm:text-sm gap-1.5 bg-background text-foreground hover:bg-background/90 shadow-md whitespace-nowrap ring-2 ring-white ring-offset-1 ring-offset-red-600 hover:scale-105 transition-transform animate-pulse"
+            className="font-bold text-xs sm:text-sm gap-1.5 bg-background text-foreground hover:bg-background/90 shadow-md whitespace-nowrap ring-2 ring-white ring-offset-1 ring-offset-red-600 hover:scale-105 transition-transform btn-onboarding-cta"
             onClick={() => handleStartRaioX('banner')}
             disabled={isStartingOnboarding}
           >

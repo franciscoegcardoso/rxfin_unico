@@ -47,7 +47,7 @@ export const OnboardingInsightCard: React.FC = () => {
               </p>
               <Button
                 size="sm"
-                className="mt-1 gap-1.5"
+                className="mt-1 gap-1.5 btn-onboarding-cta [animation-delay:2s]"
                 onClick={() => handleStartRaioX('cta_card')}
               >
                 <Sparkles className="h-3.5 w-3.5" />
