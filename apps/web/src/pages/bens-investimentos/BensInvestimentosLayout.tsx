@@ -521,7 +521,9 @@ const BensInvestimentosLayout: React.FC = () => {
 
             <div className="mt-4 space-y-4">
               {currentTab === 'overview' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
+                <>
+                  <IrHistoricoPatrimonial />
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
                   {imoveis.length > 0 && (
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
@@ -590,6 +592,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <p className="text-sm text-muted-foreground text-center py-8 col-span-full">Nenhum dado de patrimônio no momento.</p>
                   )}
                 </div>
+                </>
               )}
 
               {currentTab === 'imoveis' && (

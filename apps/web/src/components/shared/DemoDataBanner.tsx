@@ -28,11 +28,12 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false }
   const navigate = useNavigate();
   const { currentPhase, advancePhase } = useOnboardingCheckpoint();
 
-  const handleRaioXClick = async () => {
-    if (currentPhase === 'not_started') {
-      await advancePhase('started');
-    }
+  const handleRaioXClick = () => {
+    // Navega imediatamente para o usuário não ficar preso se RPC falhar ou travar
     navigate('/onboarding-raio-x');
+    if (currentPhase === 'not_started') {
+      advancePhase('started').catch(() => {});
+    }
   };
 
   useEffect(() => {

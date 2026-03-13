@@ -11,7 +11,7 @@ const PERSONAS: { id: OnboardingPersona; emoji: string; title: string; subtitle:
   { id: 'ir', emoji: '📄', title: 'Preparar meu IR', subtitle: 'Declaração sem stress' },
 ];
 
-export function Step0Persona() {
+export function Step0Persona({ onContinue }: { onContinue?: () => void }) {
   const [selected, setSelected] = useState<OnboardingPersona | null>(null);
   const { setPersona, advanceStep, isSaving } = useOnboardingV2Store();
 
@@ -19,6 +19,7 @@ export function Step0Persona() {
     if (selected == null) return;
     await setPersona(selected);
     await advanceStep(0);
+    onContinue?.();
   };
 
   return (

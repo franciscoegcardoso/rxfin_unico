@@ -5,6 +5,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,9 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { cn } from '@/lib/utils';
 
 export interface IrHistoricoRow {
   ano_calendario: number;
@@ -27,6 +26,9 @@ export interface IrHistoricoRow {
   total_mercado: number | null;
   total_bens: number;
   bens_pendentes: number;
+  bens_vinculados?: number;
+  bens_criados?: number;
+  bens_ignorados?: number;
 }
 
 const formatBRL = (n: number) =>
@@ -39,6 +41,9 @@ function formatBRLShort(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value);
 }
 
+const COLOR_DECLARADO = 'var(--color-text-info, #378ADD)';
+const COLOR_MERCADO = 'var(--color-text-success, #639922)';
+
 interface ChartPayload {
   ano_calendario: number;
   total_declarado: number;
@@ -47,7 +52,15 @@ interface ChartPayload {
   bens_pendentes: number;
 }
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number; color: string }[];
+  label?: string;
+}) {
   if (!active || !payload?.length || label == null) return null;
   const row = payload[0]?.payload as ChartPayload | undefined;
   return (
@@ -70,7 +83,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   );
 }
 
-export function IrHistoricoPatrimonial() {
+function IrHistoricoPatrimonial() {
   const [data, setData] = useState<IrHistoricoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +94,7 @@ export function IrHistoricoPatrimonial() {
     try {
       const { data: rows, error: err } = await (supabase as any)
         .from('ir_historico_patrimonial')
-        .select('ano_calendario, total_declarado, total_mercado, total_bens, bens_pendentes')
+        .select('*')
         .order('ano_calendario', { ascending: true });
       if (err) throw err;
       setData((rows ?? []) as IrHistoricoRow[]);
@@ -97,7 +110,7 @@ export function IrHistoricoPatrimonial() {
   }, [fetchData]);
 
   if (loading) {
-    return <Skeleton className="h-48 w-full rounded-lg" />;
+    return <Skeleton className="h-[220px] w-full rounded-lg" />;
   }
 
   if (error) {
@@ -109,17 +122,7 @@ export function IrHistoricoPatrimonial() {
   }
 
   if (data.length < 2) {
-    return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <p className="font-medium text-foreground">Importe mais de um IR para ver a evolução do patrimônio</p>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            Com pelo menos duas declarações importadas, o gráfico mostrará a evolução do patrimônio declarado e de mercado.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return null;
   }
 
   const chartData: ChartPayload[] = data.map((r) => ({
@@ -130,17 +133,24 @@ export function IrHistoricoPatrimonial() {
     bens_pendentes: r.bens_pendentes ?? 0,
   }));
 
+  const maxAno = Math.max(...data.map((r) => r.ano_calendario));
   const hasMercado = data.some((r) => (r.total_mercado ?? 0) > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mb-6">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Evolução patrimonial</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">Baseado nos IRs importados</p>
+      </div>
+
       <Card>
         <CardContent className="pt-6">
-          <div className="h-[280px] w-full">
+          <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
                 <XAxis
                   dataKey="ano_calendario"
+                  type="category"
                   tick={{ fontSize: 12 }}
                   tickFormatter={(v) => String(v)}
                 />
@@ -150,23 +160,23 @@ export function IrHistoricoPatrimonial() {
                   width={56}
                 />
                 <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ paddingTop: 8 }} />
                 <Line
                   type="monotone"
                   dataKey="total_declarado"
-                  name="Declarado (IR)"
-                  stroke="hsl(var(--primary))"
+                  name="Declarado"
+                  stroke={COLOR_DECLARADO}
                   strokeWidth={2}
-                  dot={{ r: 4, fill: 'hsl(var(--primary))' }}
+                  dot={{ r: 4, fill: COLOR_DECLARADO }}
                 />
                 {hasMercado && (
                   <Line
                     type="monotone"
                     dataKey="total_mercado"
                     name="Mercado"
-                    stroke="hsl(var(--muted-foreground))"
+                    stroke={COLOR_MERCADO}
                     strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={{ r: 4, fill: 'hsl(var(--muted-foreground))' }}
+                    dot={{ r: 4, fill: COLOR_MERCADO }}
                   />
                 )}
               </LineChart>
@@ -179,26 +189,36 @@ export function IrHistoricoPatrimonial() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Ano</TableHead>
-                <TableHead className="text-right">Declarado</TableHead>
-                <TableHead className="text-right">Mercado</TableHead>
-                <TableHead className="text-right">Bens</TableHead>
+              <TableRow className="text-xs">
+                <TableHead className="text-xs">Ano</TableHead>
+                <TableHead className="text-right text-xs">Declarado</TableHead>
+                <TableHead className="text-right text-xs">Mercado</TableHead>
+                <TableHead className="text-right text-xs">Bens</TableHead>
+                <TableHead className="text-right text-xs">Pendentes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((row) => (
-                <TableRow key={row.ano_calendario}>
-                  <TableCell className="font-medium">{row.ano_calendario}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatBRL(row.total_declarado ?? 0)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {row.total_mercado != null && row.total_mercado > 0
-                      ? formatBRL(row.total_mercado)
-                      : '—'}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{row.total_bens ?? 0}</TableCell>
-                </TableRow>
-              ))}
+              {data.map((row) => {
+                const isLatest = row.ano_calendario === maxAno;
+                return (
+                  <TableRow
+                    key={row.ano_calendario}
+                    className={`text-xs ${isLatest ? 'font-medium' : ''}`}
+                  >
+                    <TableCell className="text-xs">{row.ano_calendario}</TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {formatBRL(row.total_declarado ?? 0)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">
+                      {row.total_mercado != null && row.total_mercado > 0
+                        ? formatBRL(row.total_mercado)
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">{row.total_bens ?? 0}</TableCell>
+                    <TableCell className="text-right tabular-nums text-xs">{row.bens_pendentes ?? 0}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -206,3 +226,5 @@ export function IrHistoricoPatrimonial() {
     </div>
   );
 }
+
+export default IrHistoricoPatrimonial;

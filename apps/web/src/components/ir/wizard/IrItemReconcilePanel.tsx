@@ -110,7 +110,7 @@ export function IrItemReconcilePanel({
 
   const handleCreateConfirm = () => {
     handleSave('created', {
-      newAssetName: createName.trim() || suggestion.ir_descricao ?? undefined,
+      newAssetName: (createName.trim() || suggestion.ir_descricao) ?? undefined,
       realValue: createRealValue,
     });
   };

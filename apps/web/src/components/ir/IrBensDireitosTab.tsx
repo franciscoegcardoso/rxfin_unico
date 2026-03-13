@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -24,13 +22,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+
+const truncate = (s: string, max: number) =>
+  s.length <= max ? s : s.slice(0, max) + '…';
 
 export interface IrBemDetalhe {
   ir_item_index: number;
@@ -42,6 +44,8 @@ export interface IrBemDetalhe {
   reconciliation_status: 'pending' | 'linked' | 'created' | 'ignored';
   real_name: string | null;
   real_value: number | null;
+  asset_id: string | null;
+  user_asset_id: string | null;
   delta: number | null;
 }
 
@@ -56,6 +60,7 @@ export interface IrGrupo {
 export interface IrBensDireitos {
   ano_calendario: number;
   import_id: string | null;
+  anos_disponiveis: number[];
   grupos: IrGrupo[];
   totais: {
     total_declarado: number;
@@ -63,18 +68,18 @@ export interface IrBensDireitos {
     delta: number;
     bens_sem_valor_mercado: number;
   };
-  anos_disponiveis: number[];
 }
 
 export interface IrBensDireitosTabProps {
-  /** Callback para abrir importação (ex.: trocar para tab historico e abrir dialog) */
+  anoCalendario?: number;
+  /** Opcional: usado pela página Meu IR para abrir importação (componente usa link /meu-ir se não informado) */
   onImportIRClick?: () => void;
-  /** Callback para ir à reconciliação (ex.: trocar para tab historico onde estão os banners) */
+  /** Opcional: usado pela página Meu IR para ir à reconciliação */
   onNavigateToReconcile?: () => void;
 }
 
-export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: IrBensDireitosTabProps) {
-  const [anoSelecionado, setAnoSelecionado] = useState<number | null>(null);
+function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosTabProps) {
+  const [anoSelecionado, setAnoSelecionado] = useState<number | null>(anoCalendarioProp ?? null);
   const [data, setData] = useState<IrBensDireitos | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -99,46 +104,42 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
     fetchData();
   }, [fetchData]);
 
-  const handlePendingRowClick = (bem: IrBemDetalhe) => {
-    if (bem.reconciliation_status !== 'pending') return;
-    toast('Vincule este bem ao seu patrimônio', {
-      description: 'Conclua a reconciliação na aba Declarações anteriores.',
-      action: onNavigateToReconcile
-        ? { label: 'Ir para reconciliação', onClick: onNavigateToReconcile }
-        : undefined,
-    });
-  };
+  useEffect(() => {
+    if (anoCalendarioProp != null && anoSelecionado !== anoCalendarioProp) {
+      setAnoSelecionado(anoCalendarioProp);
+    }
+  }, [anoCalendarioProp]);
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-48 rounded-md" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-lg" />
+            <Skeleton key={i} className="h-20 rounded-md" />
           ))}
         </div>
-        {[1, 2, 3].map((g) => (
-          <div key={g} className="rounded-lg border overflow-hidden">
-            <Skeleton className="h-12 w-full" />
-            <div className="p-2 space-y-2">
-              {[1, 2, 3, 4].map((r) => (
-                <Skeleton key={r} className="h-10 w-full" />
-              ))}
+        <div className="space-y-2">
+          {[1, 2, 3].map((g) => (
+            <div key={g} className="rounded-md overflow-hidden">
+              <Skeleton className="h-12 w-full" />
+              <div className="p-2 space-y-2">
+                {[1, 2, 3, 4].map((r) => (
+                  <Skeleton key={r} className="h-10 w-full" />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card className="border-destructive/50">
-        <CardContent className="py-6 text-center text-sm text-muted-foreground">
-          {error}
-        </CardContent>
-      </Card>
+      <div className="rounded-md bg-destructive/10 border border-destructive/30 p-4 text-sm text-muted-foreground text-center">
+        {error}
+      </div>
     );
   }
 
@@ -146,32 +147,55 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
     return null;
   }
 
-  const emptyState = data.import_id == null;
-  if (emptyState) {
+  const semImport = data.import_id == null;
+  if (semImport) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-medium mb-2">Nenhuma declaração importada</h3>
-          <p className="text-sm text-muted-foreground mb-6 max-w-md">
-            Importe sua declaração de Imposto de Renda para visualizar bens e direitos por grupo.
-          </p>
-          <Button onClick={onImportIRClick} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Importar IR
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-dashed border-border p-8 text-center">
+        <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+        <p className="text-sm font-medium text-foreground mb-1">Importe seu IR para ver os bens declarados</p>
+        <p className="text-xs text-muted-foreground mb-4">Acesse Meu IR e importe sua declaração.</p>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/meu-ir">Ir para Meu IR</Link>
+        </Button>
+      </div>
     );
   }
 
   const anos = data.anos_disponiveis ?? [];
   const tot = data.totais;
+  const hasBens = (data.grupos?.length ?? 0) > 0 && data.grupos.some((g) => (g.bens?.length ?? 0) > 0);
+
+  if (!hasBens) {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="text-[13px] text-muted-foreground">Ano</label>
+          <Select
+            value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
+            onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Mais recente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__latest__">Mais recente</SelectItem>
+              {anos.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="rounded-lg border border-border p-8 text-center">
+          <p className="text-sm text-muted-foreground">Nenhum bem declarado encontrado para este ano.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <label className="text-sm font-medium text-muted-foreground">Ano</label>
+        <label className="text-[13px] text-muted-foreground">Ano</label>
         <Select
           value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
           onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
@@ -182,54 +206,39 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
           <SelectContent>
             <SelectItem value="__latest__">Mais recente</SelectItem>
             {anos.map((y) => (
-              <SelectItem key={y} value={String(y)}>
-                {y}
-              </SelectItem>
+              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Patrimônio declarado</p>
-            <p className="text-lg font-semibold">{formatBRL(tot.total_declarado)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Valor de mercado</p>
-            <p className={cn("text-lg font-semibold", tot.total_mercado === 0 && "text-muted-foreground")}>
-              {formatBRL(tot.total_mercado)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Variação</p>
-            <p
-              className={cn(
-                "text-lg font-semibold",
-                tot.delta > 0 && "text-green-600",
-                tot.delta < 0 && "text-destructive"
-              )}
-            >
-              {formatBRL(tot.delta)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground mb-1">Sem valor de mercado</p>
-            <p className="text-lg font-semibold">{tot.bens_sem_valor_mercado}</p>
-            {tot.bens_sem_valor_mercado > 0 && (
-              <Badge variant="secondary" className="mt-1 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
-                Atenção
-              </Badge>
+        <div className="rounded-md bg-secondary p-4">
+          <p className="text-[13px] text-muted-foreground mb-1">Total declarado</p>
+          <p className="text-2xl font-medium tabular-nums">{formatBRL(tot.total_declarado)}</p>
+        </div>
+        <div className="rounded-md bg-secondary p-4">
+          <p className="text-[13px] text-muted-foreground mb-1">Total mercado</p>
+          <p className={cn('text-2xl font-medium tabular-nums', (tot.total_mercado ?? 0) === 0 && 'text-muted-foreground')}>
+            {formatBRL(tot.total_mercado ?? 0)}
+          </p>
+        </div>
+        <div className="rounded-md bg-secondary p-4">
+          <p className="text-[13px] text-muted-foreground mb-1">Variação</p>
+          <p
+            className={cn(
+              'text-2xl font-medium tabular-nums',
+              (tot.delta ?? 0) > 0 && 'text-green-600',
+              (tot.delta ?? 0) < 0 && 'text-destructive'
             )}
-          </CardContent>
-        </Card>
+          >
+            {(tot.delta ?? 0) >= 0 ? '+' : ''}{formatBRL(tot.delta ?? 0)}
+          </p>
+        </div>
+        <div className="rounded-md bg-secondary p-4">
+          <p className="text-[13px] text-muted-foreground mb-1">Bens s/ valor mercado</p>
+          <p className="text-2xl font-medium tabular-nums">{tot.bens_sem_valor_mercado ?? 0}</p>
+        </div>
       </div>
 
       <Accordion type="multiple" className="w-full space-y-2">
@@ -240,6 +249,11 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
               <span className="text-muted-foreground font-normal ml-2">
                 {formatBRL(grupo.total_declarado)}
               </span>
+              {(grupo.total_mercado ?? 0) > 0 && (
+                <span className="text-muted-foreground font-normal ml-2">
+                  · Mercado {formatBRL(grupo.total_mercado!)}
+                </span>
+              )}
             </AccordionTrigger>
             <AccordionContent>
               <Table>
@@ -255,51 +269,39 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
                 <TableBody>
                   {grupo.bens?.map((bem) => {
                     const statusLabel =
-                      bem.reconciliation_status === 'linked'
-                        ? 'Vinculado'
-                        : bem.reconciliation_status === 'created'
-                          ? 'Criado'
-                          : bem.reconciliation_status === 'ignored'
-                            ? 'Ignorado'
-                            : 'Pendente';
-                    const isPending = bem.reconciliation_status === 'pending';
+                      bem.reconciliation_status === 'linked' ? 'Vinculado'
+                      : bem.reconciliation_status === 'created' ? 'Criado'
+                      : bem.reconciliation_status === 'ignored' ? 'Ignorado'
+                      : 'Pendente';
+                    const desc = (bem.descricao || bem.discriminacao || '—').trim();
+                    const bemLabel = truncate(desc, 40);
+                    const badgeVariant =
+                      bem.reconciliation_status === 'pending' ? 'outline'
+                      : bem.reconciliation_status === 'linked' ? 'default'
+                      : bem.reconciliation_status === 'created' ? 'secondary'
+                      : 'destructive';
                     return (
-                      <TableRow
-                        key={bem.ir_item_index}
-                        className={cn(isPending && "cursor-pointer hover:bg-muted/60")}
-                        onClick={() => handlePendingRowClick(bem)}
-                      >
-                        <TableCell className="max-w-[200px] truncate" title={bem.descricao || bem.discriminacao}>
-                          {bem.descricao || bem.discriminacao || '—'}
+                      <TableRow key={bem.ir_item_index}>
+                        <TableCell className="max-w-[240px]" title={desc}>
+                          {bemLabel}
                         </TableCell>
-                        <TableCell className="text-right">{formatBRL(bem.situacao_atual)}</TableCell>
-                        <TableCell className="text-right">
-                          {bem.real_value != null ? (
-                            formatBRL(bem.real_value)
-                          ) : (
-                            <span className="text-muted-foreground">
-                              — <Badge variant="outline" className="text-[10px] ml-1">Pendente</Badge>
-                            </span>
-                          )}
+                        <TableCell className="text-right tabular-nums">{formatBRL(bem.situacao_atual)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {bem.real_value != null ? formatBRL(bem.real_value) : '—'}
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "text-right font-medium",
-                            bem.delta != null && bem.delta > 0 && "text-green-600",
-                            bem.delta != null && bem.delta < 0 && "text-destructive"
+                            'text-right tabular-nums font-medium',
+                            bem.delta != null && bem.delta > 0 && 'text-green-600',
+                            bem.delta != null && bem.delta < 0 && 'text-destructive'
                           )}
                         >
-                          {bem.delta != null ? formatBRL(bem.delta) : '—'}
+                          {bem.delta != null
+                            ? `${bem.delta >= 0 ? '+' : ''}${formatBRL(bem.delta)}`
+                            : '—'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Badge
-                            variant={isPending ? 'secondary' : 'default'}
-                            className={cn(
-                              bem.reconciliation_status === 'linked' && "bg-green-600",
-                              bem.reconciliation_status === 'created' && "bg-blue-600",
-                              bem.reconciliation_status === 'ignored' && "bg-muted"
-                            )}
-                          >
+                          <Badge variant={badgeVariant as 'outline' | 'default' | 'secondary' | 'destructive'}>
                             {statusLabel}
                           </Badge>
                         </TableCell>
@@ -315,3 +317,5 @@ export function IrBensDireitosTab({ onImportIRClick, onNavigateToReconcile }: Ir
     </div>
   );
 }
+
+export default IrBensDireitosTab;
