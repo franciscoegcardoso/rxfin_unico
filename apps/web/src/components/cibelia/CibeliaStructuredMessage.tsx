@@ -100,7 +100,7 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
           <div className="flex items-center gap-1.5 mb-1">
             <BarChart2 className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Resumo do período
+              {data.dataTitle ?? 'Resumo do período'}
             </span>
           </div>
           {data.data.map((item, i) => (

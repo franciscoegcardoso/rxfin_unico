@@ -11,16 +11,39 @@ interface CibeliaMessage {
   content: string;
 }
 
+interface QuickReply {
+  label: string;
+  value: string;
+}
+
+const INITIAL_QUICK_REPLIES: QuickReply[] = [
+  { label: 'Esqueci minha senha', value: 'Esqueci minha senha' },
+  { label: 'Não consigo entrar', value: 'Não consigo entrar' },
+  { label: 'Outro problema', value: 'Tenho outro problema de acesso' },
+];
+
 const WELCOME_MESSAGE: CibeliaMessage = {
   role: 'assistant',
-  content:
-    'Oi! Sou a Cibélia 😊 Posso te ajudar aqui na entrada. Com o que você precisa?',
+  content: 'Oi! Sou a Cibélia 😊 Como posso te ajudar aqui na entrada?',
 };
 
 const ERROR_MESSAGE: CibeliaMessage = {
   role: 'assistant',
   content: 'Ops, tive um probleminha. Tenta de novo daqui a pouco? 🙏',
 };
+
+// Extrai quick replies da resposta do assistente (formato "👉 [ Op1 ] [ Op2 ]")
+function extractQuickReplies(content: string): QuickReply[] {
+  const match = content.match(/👉\s*((?:\[[^\]]+\]\s*)+)/);
+  if (!match) return [];
+  const options = [...match[1].matchAll(/\[([^\]]+)\]/g)];
+  return options.map((m) => ({ label: m[1].trim(), value: m[1].trim() }));
+}
+
+// Remove a linha de quick replies do texto visível da mensagem
+function stripQuickRepliesLine(content: string): string {
+  return content.replace(/\n?👉\s*(?:\[[^\]]+\]\s*)+/g, '').trim();
+}
 
 function createSessionId(): string {
   try {
@@ -53,7 +76,6 @@ async function sendToCibelia(
   if (!response.ok) {
     throw new Error(`Erro ${response.status}`);
   }
-
   const data = await response.json();
   return data.content as string;
 }
@@ -62,6 +84,7 @@ export const CibeliaAuthWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasBeenOpened, setHasBeenOpened] = useState(false);
   const [messages, setMessages] = useState<CibeliaMessage[]>([]);
+  const [quickReplies, setQuickReplies] = useState<QuickReply[]>(INITIAL_QUICK_REPLIES);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const sessionIdRef = useRef<string>(createSessionId());
@@ -72,32 +95,47 @@ export const CibeliaAuthWidget: React.FC = () => {
       setHasBeenOpened(true);
       if (messages.length === 0) {
         setMessages([WELCOME_MESSAGE]);
+        // Mantém os quick replies iniciais ao abrir
       }
     }
   }, [isOpen, hasBeenOpened, messages.length]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, quickReplies]);
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || isLoading) return;
 
     const userMessage: CibeliaMessage = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setQuickReplies([]); // limpa quick replies ao enviar
     setIsLoading(true);
 
     try {
       const history = [...messages, userMessage];
       const content = await sendToCibelia(history, sessionIdRef.current);
-      setMessages((prev) => [...prev, { role: 'assistant', content }]);
+
+      // Extrai quick replies da resposta antes de exibir
+      const extracted = extractQuickReplies(content);
+      const displayContent = stripQuickRepliesLine(content);
+
+      setMessages((prev) => [...prev, { role: 'assistant', content: displayContent }]);
+      if (extracted.length > 0) {
+        setQuickReplies(extracted);
+      }
     } catch {
       setMessages((prev) => [...prev, ERROR_MESSAGE]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickReply = (value: string) => {
+    setQuickReplies([]);
+    handleSend(value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -117,6 +155,7 @@ export const CibeliaAuthWidget: React.FC = () => {
             'w-[calc(100vw-24px)] right-3 sm:w-[340px] sm:right-6'
           )}
         >
+          {/* Header */}
           <div className="flex-shrink-0 flex items-center justify-between gap-2 p-3 bg-primary text-primary-foreground rounded-t-2xl">
             <div className="flex items-center gap-2 min-w-0">
               <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 overflow-hidden">
@@ -144,6 +183,7 @@ export const CibeliaAuthWidget: React.FC = () => {
             </Button>
           </div>
 
+          {/* Mensagens */}
           <div
             className="flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0"
             style={{ maxHeight: 480 - 56 - 60 }}
@@ -168,6 +208,8 @@ export const CibeliaAuthWidget: React.FC = () => {
                 </div>
               </div>
             ))}
+
+            {/* Loading dots */}
             {isLoading && (
               <div className="flex mr-auto">
                 <div className="px-3.5 py-2.5 rounded-2xl rounded-tl-sm bg-muted text-foreground flex gap-1">
@@ -177,14 +219,36 @@ export const CibeliaAuthWidget: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Quick Replies */}
+            {quickReplies.length > 0 && !isLoading && (
+              <div className="flex flex-col gap-1.5 mt-1 mr-auto w-full max-w-[85%]">
+                {quickReplies.map((qr) => (
+                  <button
+                    key={qr.value}
+                    type="button"
+                    onClick={() => handleQuickReply(qr.value)}
+                    className="text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:bg-muted active:scale-[0.98] transition-all text-foreground"
+                  >
+                    {qr.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Input */}
           <div className="flex-shrink-0 border-t border-border flex gap-2 p-3 bg-background">
             <Input
-              placeholder="Como posso ajudar?"
+              placeholder="Ou escreva sua dúvida..."
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Limpa quick replies se o usuário começa a digitar manualmente
+                if (quickReplies.length > 0) setQuickReplies([]);
+              }}
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               className="border-0 focus-visible:ring-0 flex-1 min-w-0"
@@ -192,7 +256,7 @@ export const CibeliaAuthWidget: React.FC = () => {
             <Button
               size="icon"
               className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={isLoading || !input.trim()}
               aria-label="Enviar"
             >
