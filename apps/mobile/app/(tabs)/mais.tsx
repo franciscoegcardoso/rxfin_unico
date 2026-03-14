@@ -1,43 +1,67 @@
-import { View, Text, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../lib/auth-context";
+import { View, Text, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { Card } from '@/components/ui/Card';
+import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { Divider } from '@/components/ui/Divider';
+import { useAuth } from '../../lib/auth-context';
+import { useTheme } from '@/contexts/ThemeContext';
+import { colors, spacing, fontSize } from '@/constants/tokens';
 
 export default function MaisScreen() {
+  const { theme } = useTheme();
   const { profile, userPlan, signOut } = useAuth();
 
+  async function handleSignOut() {
+    Alert.alert('Sair', 'Deseja encerrar a sessão?', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: signOut },
+    ]);
+  }
+
   return (
-    <SafeAreaView className="flex-1 bg-neutral-50" edges={["top"]}>
-      <View className="px-5 pt-4 mb-6">
-        <Text className="text-xl font-bold text-neutral-800">Mais</Text>
-      </View>
-      <View className="px-5 gap-3">
-        <View className="bg-white rounded-xl p-4 border border-neutral-100">
-          <Text className="text-base font-semibold text-neutral-800">{profile?.full_name || "Usuário"}</Text>
-          <Text className="text-sm text-neutral-500 mt-0.5">{profile?.email}</Text>
-          <View className="bg-blue-50 self-start px-2.5 py-1 rounded-full mt-2">
-            <Text className="text-xs font-medium text-blue-700">{userPlan?.plan_name || "Free"}</Text>
-          </View>
-        </View>
-        {[
-          { emoji: "⚙️", label: "Configurações", note: "Semana 10" },
-          { emoji: "🏦", label: "Instituições Financeiras", note: "Semana 8" },
-          { emoji: "🚗", label: "Simuladores FIPE", note: "Semana 11" },
-          { emoji: "📄", label: "Meu IR", note: "Semana 12" },
-          { emoji: "💎", label: "Planos", note: "Semana 6" },
-        ].map((item) => (
-          <TouchableOpacity key={item.label} className="bg-white rounded-xl p-4 border border-neutral-100 flex-row items-center" activeOpacity={0.7}>
-            <Text style={{ fontSize: 20 }} className="mr-3">{item.emoji}</Text>
-            <View className="flex-1">
-              <Text className="text-base text-neutral-700">{item.label}</Text>
-              <Text className="text-xs text-neutral-400">{item.note}</Text>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <SafeAreaView edges={['top']}>
+      <ScreenHeader title="Mais" />
+      <View style={{ padding: spacing[4], gap: spacing[4] }}>
+        <Card variant="default" padding="md">
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[3] }}>
+            <Avatar name={profile?.full_name ?? ''} size="lg" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: fontSize.base, fontFamily: 'Inter_600SemiBold', color: theme.textPrimary }}>
+                {profile?.full_name ?? 'Usuário'}
+              </Text>
+              <Text style={{ fontSize: fontSize.sm, color: theme.textSecondary }}>
+                {profile?.email ?? ''}
+              </Text>
             </View>
-            <Text className="text-neutral-300 text-lg">›</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity onPress={signOut} className="bg-white rounded-xl p-4 border border-red-100 items-center mt-4" activeOpacity={0.7}>
-          <Text className="text-red-500 font-medium">Sair da conta</Text>
-        </TouchableOpacity>
+            {userPlan && (
+              <Badge variant={userPlan.plan_slug === 'free' ? 'default' : 'brand'}>
+                {userPlan.plan_name}
+              </Badge>
+            )}
+          </View>
+        </Card>
+
+        <Divider />
+
+        <Pressable onPress={handleSignOut}>
+          <Card variant="default" padding="md">
+            <Text
+              style={{
+                fontSize: fontSize.base,
+                fontFamily: 'Inter_500Medium',
+                color: colors.status.error,
+                textAlign: 'center',
+              }}
+            >
+              Sair da conta
+            </Text>
+          </Card>
+        </Pressable>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }

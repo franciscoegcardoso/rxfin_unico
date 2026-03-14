@@ -47,7 +47,8 @@ export default function DesignSystemShowcase() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <SafeAreaView edges={['top']}>
       <ScreenHeader
         title="Design System v2"
         subtitle="Fase 1 — Mobile"
@@ -207,6 +208,7 @@ export default function DesignSystemShowcase() {
 
         <View style={{ height: spacing[8] }} />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }

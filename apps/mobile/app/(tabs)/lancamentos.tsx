@@ -1,14 +1,160 @@
-import { View, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useAuth } from '../../lib/auth-context';
+import { supabase } from '../../lib/supabase';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useTheme } from '@/contexts/ThemeContext';
+import { colors, spacing, fontSize } from '@/constants/tokens';
+
+const PAGE_SIZE = 20;
+const ITEM_HEIGHT = 72;
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
+
+interface Transaction {
+  id: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  date: string;
+  category_name: string | null;
+}
 
 export default function LancamentosScreen() {
-  return (
-    <SafeAreaView className="flex-1 bg-neutral-50" edges={["top"]}>
-      <View className="flex-1 items-center justify-center px-8">
-        <Text style={{ fontSize: 36, marginBottom: 12 }}>💰</Text>
-        <Text className="text-lg font-semibold text-neutral-700 mb-2">Lançamentos</Text>
-        <Text className="text-sm text-neutral-500 text-center">CRUD de lançamentos será construído na Semana 4.</Text>
+  const { theme } = useTheme();
+  const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } = useInfiniteQuery({
+    queryKey: ['transactions-list', user?.id],
+    queryFn: async ({ pageParam = 0 }) => {
+      const { data: rows, error } = await supabase
+        .from('transactions')
+        .select('id, description, amount, type, date, categories(name)')
+        .eq('user_id', user!.id)
+        .eq('is_deleted', false)
+        .order('date', { ascending: false })
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
+
+      if (error) throw error;
+      return (rows || []).map((t: any) => ({
+        ...t,
+        category_name: t.categories?.name ?? null,
+      })) as Transaction[];
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.flat().length : undefined,
+    enabled: !!user?.id,
+  });
+
+  const allTransactions = data?.pages.flat() ?? [];
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: Transaction; index: number }) => (
+      <View>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: spacing[4],
+            paddingVertical: spacing[3],
+            height: ITEM_HEIGHT,
+          }}
+        >
+          <View style={{ flex: 1, marginRight: spacing[3] }}>
+            <Text
+              style={{ fontSize: fontSize.base, fontFamily: 'Inter_500Medium', color: theme.textPrimary }}
+              numberOfLines={1}
+            >
+              {item.description}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: 2 }}>
+              <Text style={{ fontSize: fontSize.xs, color: theme.textMuted }}>{formatDate(item.date)}</Text>
+              {item.category_name && (
+                <Badge variant="default" size="sm">
+                  {item.category_name}
+                </Badge>
+              )}
+            </View>
+          </View>
+          <Text
+            style={{
+              fontSize: fontSize.base,
+              fontFamily: 'Inter_600SemiBold',
+              color: item.type === 'income' ? colors.finance.income : colors.finance.expense,
+            }}
+          >
+            {item.type === 'income' ? '+' : '-'}
+            {formatCurrency(Math.abs(item.amount))}
+          </Text>
+        </View>
+        <View style={{ height: 1, backgroundColor: theme.border, marginHorizontal: spacing[4] }} />
       </View>
-    </SafeAreaView>
+    ),
+    [theme]
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.bg }}>
+      <SafeAreaView edges={['top']}>
+      <ScreenHeader title="Lançamentos" />
+
+      {isLoading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+        </View>
+      ) : allTransactions.length === 0 ? (
+        <View style={{ flex: 1, padding: spacing[4] }}>
+          <EmptyState
+            title="Nenhum lançamento"
+            description="Seus lançamentos do Open Finance aparecerão aqui."
+          />
+        </View>
+      ) : (
+        <Card variant="default" padding="none" style={{ margin: spacing[4], flex: 1 }}>
+          <FlatList
+            data={allTransactions}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            getItemLayout={(_, index) => ({ length: ITEM_HEIGHT + 1, offset: (ITEM_HEIGHT + 1) * index, index })}
+            onEndReached={() => hasNextPage && fetchNextPage()}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <ActivityIndicator color={colors.brand.primary} style={{ padding: spacing[4] }} />
+              ) : null
+            }
+            windowSize={10}
+            maxToRenderPerBatch={10}
+          />
+        </Card>
+      )}
+      </SafeAreaView>
+    </View>
   );
 }

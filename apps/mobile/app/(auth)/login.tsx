@@ -1,147 +1,167 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
-  Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { supabase } from "../../lib/supabase";
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { supabase } from '../../lib/supabase';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Divider } from '@/components/ui/Divider';
+import { useTheme } from '@/contexts/ThemeContext';
+import { colors, spacing, fontSize } from '@/constants/tokens';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+
+  function validate() {
+    const e: typeof errors = {};
+    if (!email.trim()) e.email = 'E-mail obrigatório';
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'E-mail inválido';
+    if (!password) e.password = 'Senha obrigatória';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
 
   async function handleSignIn() {
-    const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
-      Alert.alert("Campos obrigatórios", "Preencha o e-mail e a senha.");
-      return;
-    }
+    if (!validate()) return;
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
+      email: email.trim().toLowerCase(),
       password,
     });
     setLoading(false);
     if (error) {
-      if (error.message.includes("Invalid login credentials")) {
-        Alert.alert("Erro ao entrar", "E-mail ou senha incorretos.");
-      } else {
-        Alert.alert("Erro ao entrar", error.message);
-      }
+      const msg = error.message.includes('Invalid login credentials')
+        ? 'E-mail ou senha incorretos.'
+        : error.message;
+      Alert.alert('Erro ao entrar', msg);
     }
   }
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1, backgroundColor: "#FAFAFA" }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: theme.bg }}
     >
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+      <View style={{ flex: 1 }}>
+        <SafeAreaView edges={['top', 'bottom']}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 32 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing[6] }}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={{ alignItems: "center", marginBottom: 40 }}>
-            <View style={{ width: 64, height: 64, backgroundColor: "#2563EB", borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <Text style={{ color: "#fff", fontSize: 24, fontWeight: "bold" }}>RX</Text>
+          <View style={{ alignItems: 'center', marginBottom: spacing[10] }}>
+            <View
+              style={{
+                width: 72,
+                height: 72,
+                backgroundColor: colors.brand.primary,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: spacing[4],
+                shadowColor: colors.brand.primary,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.4,
+                shadowRadius: 16,
+                elevation: 8,
+              }}
+            >
+              <Text style={{ color: colors.white, fontSize: 26, fontFamily: 'Inter_700Bold' }}>RX</Text>
             </View>
-            <Text style={{ fontSize: 24, fontWeight: "bold", color: "#1A1A1A" }}>
+            <Text style={{ fontSize: fontSize['2xl'], fontFamily: 'Inter_700Bold', color: theme.textPrimary }}>
               Bem-vindo ao RXFin
             </Text>
-            <Text style={{ fontSize: 16, color: "#737373", marginTop: 4 }}>
+            <Text style={{ fontSize: fontSize.base, color: theme.textSecondary, marginTop: spacing[1] }}>
               Entre na sua conta para continuar
             </Text>
           </View>
 
-          <Text style={{ fontSize: 14, fontWeight: "500", color: "#404040", marginBottom: 6 }}>E-mail</Text>
-          <TextInput
-            style={{ backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: "#1A1A1A", marginBottom: 16 }}
-            placeholder="seu@email.com"
-            placeholderTextColor="#a3a3a3"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            editable={!loading}
-            returnKeyType="next"
-          />
+          <View style={{ gap: spacing[4] }}>
+            <Input
+              label="E-mail"
+              placeholder="seu@email.com"
+              value={email}
+              onChangeText={(t) => {
+                setEmail(t);
+                setErrors((e) => ({ ...e, email: undefined }));
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              error={errors.email}
+              editable={!loading}
+              returnKeyType="next"
+            />
 
-          <Text style={{ fontSize: 14, fontWeight: "500", color: "#404040", marginBottom: 6 }}>Senha</Text>
-          <View style={{ position: "relative", marginBottom: 8 }}>
-            <TextInput
-              style={{ backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: "#1A1A1A", paddingRight: 64 }}
+            <Input
+              label="Senha"
               placeholder="••••••••"
-              placeholderTextColor="#a3a3a3"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => {
+                setPassword(t);
+                setErrors((e) => ({ ...e, password: undefined }));
+              }}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoComplete="password"
+              error={errors.password}
               editable={!loading}
               returnKeyType="done"
               onSubmitEditing={handleSignIn}
+              rightIcon={
+                <Text style={{ color: colors.brand.primary, fontSize: fontSize.sm, fontFamily: 'Inter_500Medium' }}>
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </Text>
+              }
+              onRightIconPress={() => setShowPassword((v) => !v)}
             />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={{ position: "absolute", right: 16, top: 14 }}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: "#2563EB", fontSize: 14, fontWeight: "500" }}>
-                {showPassword ? "Ocultar" : "Mostrar"}
-              </Text>
-            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            onPress={() => router.push("/(auth)/forgot-password")}
+            onPress={() => router.push('/(auth)/forgot-password')}
             disabled={loading}
-            activeOpacity={0.7}
-            style={{ alignSelf: "flex-end", marginBottom: 24 }}
-          >
-            <Text style={{ color: "#2563EB", fontSize: 14, fontWeight: "500" }}>Esqueci minha senha</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleSignIn}
-            disabled={loading}
-            style={{ backgroundColor: loading ? "#93C5FD" : "#2563EB", borderRadius: 12, paddingVertical: 16, alignItems: "center", justifyContent: "center" }}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>Entrar</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 32 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#E5E5E5" }} />
-            <Text style={{ marginHorizontal: 16, color: "#A3A3A3", fontSize: 14 }}>ou</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: "#E5E5E5" }} />
-          </View>
-
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/register")}
-            disabled={loading}
-            style={{ borderWidth: 1, borderColor: "#E5E5E5", borderRadius: 12, paddingVertical: 16, alignItems: "center" }}
+            style={{ alignSelf: 'flex-end', marginTop: spacing[2], marginBottom: spacing[6] }}
             activeOpacity={0.7}
           >
-            <Text style={{ color: "#404040", fontWeight: "600", fontSize: 16 }}>Criar uma conta</Text>
+            <Text style={{ color: colors.brand.primary, fontSize: fontSize.sm, fontFamily: 'Inter_500Medium' }}>
+              Esqueci minha senha
+            </Text>
           </TouchableOpacity>
+
+          <Button variant="primary" size="lg" fullWidth loading={loading} onPress={handleSignIn}>
+            Entrar
+          </Button>
+
+          <Divider label="ou" marginVertical={spacing[6]} />
+
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            disabled={loading}
+            onPress={() => router.push('/(auth)/register')}
+          >
+            Criar uma conta
+          </Button>
+
+          <View style={{ height: spacing[8] }} />
         </ScrollView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
