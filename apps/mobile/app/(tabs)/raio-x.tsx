@@ -7,7 +7,7 @@ export default function RaioXScreen() {
   const { theme } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      <SafeAreaView edges={['top']}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing[8] }}>
         <Text style={{ fontSize: 36, marginBottom: 12 }}>🤖</Text>
         <Text style={{ fontSize: fontSize.lg, fontFamily: 'Inter_600SemiBold', color: theme.textPrimary, marginBottom: spacing[2] }}>
