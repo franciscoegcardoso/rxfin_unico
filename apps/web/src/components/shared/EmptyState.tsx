@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Package } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface EmptyStateProps {
@@ -19,7 +19,7 @@ interface EmptyStateProps {
  * Reference pattern:
  * - Centered layout with icon in muted background
  * - Clear message: "Você ainda não cadastrou nenhum [item]"
- * - CTA button as link: "Adicionar primeiro [item]"
+ * - CTA as solid button with Plus icon: "+ Adicionar [item]"
  */
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
@@ -40,10 +40,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
       {actionLabel && onAction && (
         <Button
-          variant="link"
           onClick={onAction}
-          className="mt-2 text-primary"
+          className="mt-4 gap-2"
         >
+          <Plus className="h-4 w-4" />
           {actionLabel}
         </Button>
       )}
