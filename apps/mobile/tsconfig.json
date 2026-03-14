@@ -5,15 +5,16 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@/components/*": ["./src/components/*"],
       "@/components/ui": ["./src/components/ui/index.ts"],
+      "@/components/ui/*": ["./src/components/ui/*"],
       "@/components/layout": ["./src/components/layout/index.ts"],
+      "@/components/layout/*": ["./src/components/layout/*"],
       "@/contexts/*": ["./src/contexts/*"],
+      "@/constants/*": ["./src/constants/*"],
       "@/hooks/*": ["./src/hooks/*"],
-      "@/lib/*": ["./lib/*"],
       "@/store/*": ["./src/store/*"],
       "@/types/*": ["./src/types/*"],
-      "@/constants/*": ["./src/constants/*"]
+      "@/lib/*": ["./lib/*"]
     }
   },
   "include": [
