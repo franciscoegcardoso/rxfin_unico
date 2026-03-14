@@ -185,13 +185,16 @@ export function CibeliaStructuredMessage({ content, structured, onOptionSelect, 
           {data.nextSteps.map((step, i) => {
             const Icon = getIcon(step.icon);
             return (
-            <div
-              key={i}
-              className="flex items-center gap-2 text-sm text-muted-foreground bg-background rounded-lg px-2.5 py-2 border border-border min-w-0"
-            >
+              <button
+                key={i}
+                type="button"
+                onClick={() => onOptionSelect?.(step.text)}
+                className="flex items-center gap-2 text-sm text-foreground bg-background rounded-lg px-2.5 py-2 border border-border min-w-0 w-full text-left hover:bg-primary/5 hover:border-primary/30 hover:text-primary active:scale-[0.98] transition-all"
+              >
                 <Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
-                <span className="break-words min-w-0">{step.text}</span>
-              </div>
+                <span className="break-words min-w-0 flex-1">{step.text}</span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              </button>
             );
           })}
         </div>

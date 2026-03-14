@@ -614,27 +614,30 @@ export function RaioXChat() {
                     msg.role === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'
                   )}
                 >
-                  <div
-                    className={cn(
-                      'rounded-lg px-3 py-2 text-sm',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
-                    )}
-                  >
-                    {msg.role === 'assistant' && msg.phase === 'financial' && msg.structured ? (
-                      <CibeliaStructuredMessage
-                        content={msg.content}
-                        structured={msg.structured}
-                        onOptionSelect={(value) => sendMessage(value)}
-                        renderOptionsInParent
-                      />
-                    ) : (
-                      <span className="whitespace-pre-wrap">{msg.content}</span>
-                    )}
-                  </div>
+                  {/* Balão de texto: oculto para mensagem isWelcome (exibe apenas chips abaixo) */}
+                  {!msg.isWelcome && (
+                    <div
+                      className={cn(
+                        'rounded-lg px-3 py-2 text-sm',
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground'
+                      )}
+                    >
+                      {msg.role === 'assistant' && msg.phase === 'financial' && msg.structured ? (
+                        <CibeliaStructuredMessage
+                          content={msg.content}
+                          structured={msg.structured}
+                          onOptionSelect={(value) => sendMessage(value)}
+                          renderOptionsInParent
+                        />
+                      ) : (
+                        <span className="whitespace-pre-wrap">{msg.content}</span>
+                      )}
+                    </div>
+                  )}
 
-                  {/* Opções CTA fora do balão (apenas na última mensagem da assistente) */}
+                  {/* Opções CTA fora do balão — apenas na última mensagem da assistente */}
                   {msg.role === 'assistant' &&
                     msg.structured &&
                     i === messages.length - 1 &&
@@ -649,7 +652,7 @@ export function RaioXChat() {
                       );
                     })()}
 
-                  {/* Quick replies iniciais (evita dupla saudação — usuário não digita "oi") */}
+                  {/* Quick replies iniciais (só na mensagem isWelcome, quando é a única no chat) */}
                   {msg.role === 'assistant' && msg.isWelcome && messages.length === 1 && (
                     <div className="mt-2 w-full flex flex-col items-start">
                       <CibeliaOptionButtons options={INITIAL_QUICK_REPLIES} onSelect={(v) => sendMessage(v)} />
