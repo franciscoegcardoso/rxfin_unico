@@ -1,10 +1,13 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import logoRxfinWhite from '@/assets/logo-rxfin-white.png';
 
 export interface OnboardingTransitionModalProps {
   isOpen: boolean;
   onConfirm: () => void;
+  onClose?: () => void;
 }
 
 const JOURNEY_STEPS = [
@@ -14,17 +17,37 @@ const JOURNEY_STEPS = [
   { icon: '👑', step: '4', label: 'Domínio Total', desc: 'Projeção de 30 anos' },
 ];
 
-export function OnboardingTransitionModal({ isOpen, onConfirm }: OnboardingTransitionModalProps) {
+export function OnboardingTransitionModal({ isOpen, onConfirm, onClose }: OnboardingTransitionModalProps) {
   return (
     <Dialog open={isOpen}>
       <DialogContent
         className="max-w-sm mx-auto rounded-2xl p-0 overflow-hidden border-0 shadow-xl"
         hideCloseButton
       >
-        <div className="bg-gradient-to-br from-slate-900 to-green-900 p-8 text-white text-center">
-          <div className="text-5xl mb-3 animate-pulse" aria-hidden>🔬</div>
-          <h2 className="text-xl font-bold">Preparando seu RXFin</h2>
-          <p className="text-green-300 text-sm mt-2">Criando seu espaço personalizado...</p>
+        <div className="relative bg-gradient-to-br from-slate-900 to-green-900 p-8 text-white text-center overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-4 right-4 text-white/40 hover:text-white/90 transition-colors duration-150 p-1 rounded-md hover:bg-white/10 z-10"
+              aria-label="Fechar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          <img src={logoRxfinWhite} alt="RXFin" className="h-8 w-auto mx-auto mb-4 opacity-90" />
+          <h2 className="text-xl font-bold text-white flex items-center justify-center gap-0.5">
+            Preparando seu RXFin
+            <span className="inline-flex gap-0.5 ml-1">
+              <span className="animate-bounce [animation-delay:0ms]" style={{ animationDuration: '1.2s' }}>.</span>
+              <span className="animate-bounce [animation-delay:200ms]" style={{ animationDuration: '1.2s' }}>.</span>
+              <span className="animate-bounce [animation-delay:400ms]" style={{ animationDuration: '1.2s' }}>.</span>
+            </span>
+          </h2>
+          <p className="text-green-300/80 text-sm mt-2">
+            Criando seu espaço personalizado...
+          </p>
         </div>
 
         <div className="p-6 space-y-5 bg-background">

@@ -141,6 +141,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <OnboardingTransitionModal
           isOpen={showTransitionModal}
           onConfirm={handleConfirmTransition}
+          onClose={() => setShowTransitionModal(false)}
         />
         <PhoneCompletionDialog
           open={showPhoneDialog}
@@ -189,6 +190,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <OnboardingTransitionModal
           isOpen={showTransitionModal}
           onConfirm={handleConfirmTransition}
+          onClose={() => setShowTransitionModal(false)}
         />
         <PhoneCompletionDialog
           open={showPhoneDialog}
