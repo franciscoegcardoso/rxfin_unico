@@ -8,7 +8,7 @@ export default function RaioXScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <SafeAreaView edges={['top']}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing[8] }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing[8] }}>
         <Text style={{ fontSize: 36, marginBottom: 12 }}>🤖</Text>
         <Text style={{ fontSize: fontSize.lg, fontFamily: 'Inter_600SemiBold', color: theme.textPrimary, marginBottom: spacing[2] }}>
           Raio-X (IA)
@@ -16,7 +16,7 @@ export default function RaioXScreen() {
         <Text style={{ fontSize: fontSize.sm, color: theme.textSecondary, textAlign: 'center' }}>
           Chat com IA será construído na Semana 7.
         </Text>
-      </View>
+        </View>
       </SafeAreaView>
     </View>
   );

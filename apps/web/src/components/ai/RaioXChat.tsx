@@ -26,7 +26,8 @@ import { useLocation } from 'react-router-dom';
 import { getPageContext, createClientSessionId, buildAiChatBody } from '@/lib/aiChat';
 import { useAIModel } from '@/hooks/useAIModel';
 import { RaioXResultCard } from './RaioXResultCard';
-import { CibeliaStructuredMessage } from '@/components/cibelia/CibeliaStructuredMessage';
+import { CibeliaStructuredMessage, parseCTAOptions, CibeliaOptionButtons } from '@/components/cibelia/CibeliaStructuredMessage';
+import { parseCibeliaResponse } from '@/lib/parseCibeliaResponse';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -59,6 +60,9 @@ const getWelcomeMessage = (firstName: string): Message => ({
   content: `Olá, ${firstName}! 😊\nComo eu posso te ajudar hoje?`,
   isWelcome: true,
 });
+
+/** Quick replies iniciais para evitar dupla saudação (usuário não precisa digitar "oi"). */
+const INITIAL_QUICK_REPLIES = ['Meus gastos', 'Cartão', 'Metas', 'Simuladores'];
 
 export function RaioXChat() {
   const { user } = useAuth();
@@ -277,8 +281,12 @@ export function RaioXChat() {
 
     setInputValue('');
     setLastFailedMessage(null);
+    setIsLoading(true);
     const result = await createSession();
-    if (!result) return;
+    if (!result) {
+      setIsLoading(false);
+      return;
+    }
     const sid = result.sessionId;
     const completed = result.onboardingCompleted;
 
@@ -291,7 +299,6 @@ export function RaioXChat() {
 
     const userMsg: Message = { id: savedUser?.id, role: 'user', content: msg };
     setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
 
     try {
       // Histórico para a API: só mensagens reais (exclui boas-vindas local)
@@ -618,11 +625,34 @@ export function RaioXChat() {
                         content={msg.content}
                         structured={msg.structured}
                         onOptionSelect={(value) => sendMessage(value)}
+                        renderOptionsInParent
                       />
                     ) : (
                       <span className="whitespace-pre-wrap">{msg.content}</span>
                     )}
                   </div>
+
+                  {/* Opções CTA fora do balão (apenas na última mensagem da assistente) */}
+                  {msg.role === 'assistant' &&
+                    msg.structured &&
+                    i === messages.length - 1 &&
+                    !msg.isWelcome && (() => {
+                      const data = parseCibeliaResponse(msg.content, true) as { cta?: string };
+                      const options = data?.cta ? parseCTAOptions(data.cta) : null;
+                      if (!options?.length) return null;
+                      return (
+                        <div className="mt-2 w-full flex flex-col items-start">
+                          <CibeliaOptionButtons options={options} onSelect={(v) => sendMessage(v)} />
+                        </div>
+                      );
+                    })()}
+
+                  {/* Quick replies iniciais (evita dupla saudação — usuário não digita "oi") */}
+                  {msg.role === 'assistant' && msg.isWelcome && messages.length === 1 && (
+                    <div className="mt-2 w-full flex flex-col items-start">
+                      <CibeliaOptionButtons options={INITIAL_QUICK_REPLIES} onSelect={(v) => sendMessage(v)} />
+                    </div>
+                  )}
 
                   {/* Raio-X result card */}
                   {msg.raioXData && (

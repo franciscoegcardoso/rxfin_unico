@@ -16,17 +16,49 @@ import {
   ShoppingCart,
   Home,
   Repeat,
+  ChevronRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { parseCibeliaResponse } from '@/lib/parseCibeliaResponse';
 import type { CibeliaStructuredResponse } from '@/types/cibelia';
 import { cn } from '@/lib/utils';
 
-// Detecta se um texto de CTA contém opções no formato [ Opção ]
-function parseCTAOptions(cta: string): string[] | null {
+/** Detecta se um texto de CTA contém opções no formato [ Opção ]. Exportado para o pai renderizar opções fora do balão. */
+export function parseCTAOptions(cta: string): string[] | null {
   const matches = [...cta.matchAll(/\[([^\]]+)\]/g)];
   if (matches.length < 2) return null; // só parseia se tiver 2+ opções
   return matches.map(m => m[1].trim());
+}
+
+/** Botões de opção para renderizar fora do balão (mesmo estilo: chips ou coluna com chevron). */
+export function CibeliaOptionButtons({
+  options,
+  onSelect,
+}: {
+  options: string[];
+  onSelect: (value: string) => void;
+}) {
+  const isShort = options.every((o) => o.length < 20);
+  return (
+    <div className={cn('flex mt-2', isShort ? 'flex-wrap gap-2' : 'flex-col gap-1.5')}>
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onSelect(opt)}
+          className={cn(
+            'transition-all',
+            isShort
+              ? 'text-sm px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 active:scale-[0.97]'
+              : 'text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 hover:text-primary active:scale-[0.98] text-foreground w-full flex items-center justify-between gap-2'
+          )}
+        >
+          <span>{opt}</span>
+          {!isShort && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -57,7 +89,7 @@ export interface CibeliaStructuredMessageProps {
   onOptionSelect?: (value: string) => void;
 }
 
-export function CibeliaStructuredMessage({ content, structured, onOptionSelect }: CibeliaStructuredMessageProps) {
+export function CibeliaStructuredMessage({ content, structured, onOptionSelect, renderOptionsInParent }: CibeliaStructuredMessageProps) {
   const data = parseCibeliaResponse(content, structured) as CibeliaStructuredResponse;
 
   if (
@@ -165,17 +197,24 @@ export function CibeliaStructuredMessage({ content, structured, onOptionSelect }
 
       {data.cta && (() => {
         const options = parseCTAOptions(data.cta!);
-        if (options && onOptionSelect) {
+        if (options && onOptionSelect && !renderOptionsInParent) {
+          const isShort = options.every((o) => o.length < 20);
           return (
-            <div className="flex flex-col gap-1.5">
+            <div className={cn(isShort ? 'flex flex-wrap gap-2' : 'flex flex-col gap-1.5')}>
               {options.map((opt) => (
                 <button
                   key={opt}
                   type="button"
                   onClick={() => onOptionSelect(opt)}
-                  className="text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:bg-muted active:scale-[0.98] transition-all text-foreground w-full"
+                  className={cn(
+                    'transition-all',
+                    isShort
+                      ? 'text-sm px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 active:scale-[0.97]'
+                      : 'text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:bg-primary/5 hover:border-primary/30 hover:text-primary active:scale-[0.98] text-foreground w-full flex items-center justify-between gap-2'
+                  )}
                 >
-                  {opt}
+                  <span>{opt}</span>
+                  {!isShort && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                 </button>
               ))}
             </div>

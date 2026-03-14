@@ -40,13 +40,17 @@ function formatCurrency(value: number) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  });
 }
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const { user, profile } = useAuth();
   const currentMonth = new Date().toISOString().slice(0, 7);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { data: summary, isLoading: loadingSummary, refetch: refetchSummary } = useQuery<MonthlySummary>({
     queryKey: ['monthly-summary', user?.id, currentMonth],
@@ -101,7 +105,6 @@ export default function DashboardScreen() {
     enabled: !!user?.id,
   });
 
-  const [refreshing, setRefreshing] = useState(false);
   async function handleRefresh() {
     setRefreshing(true);
     await Promise.all([refetchSummary(), refetchRecent()]);
@@ -114,9 +117,12 @@ export default function DashboardScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <SafeAreaView edges={['top']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
@@ -273,7 +279,8 @@ export default function DashboardScreen() {
         </View>
 
         <View style={{ height: spacing[8] }} />
-      </ScrollView>
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </View>
   );

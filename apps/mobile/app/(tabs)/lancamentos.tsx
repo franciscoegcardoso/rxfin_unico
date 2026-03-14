@@ -25,7 +25,10 @@ function formatCurrency(value: number) {
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+  });
 }
 
 interface Transaction {
@@ -122,38 +125,55 @@ export default function LancamentosScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
       <SafeAreaView edges={['top']}>
-      <ScreenHeader title="Lançamentos" />
+        <View style={{ flex: 1 }}>
+          <ScreenHeader title="Lançamentos" />
 
-      {isLoading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={colors.brand.primary} />
+          {isLoading ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color={colors.brand.primary} />
+            </View>
+          ) : allTransactions.length === 0 ? (
+            <View style={{ flex: 1, padding: spacing[4] }}>
+              <EmptyState
+                title="Nenhum lançamento"
+                description="Seus lançamentos do Open Finance aparecerão aqui."
+              />
+            </View>
+          ) : (
+            <Card variant="default" padding="none" style={{ margin: spacing[4], flex: 1 }}>
+              <FlatList
+                data={allTransactions}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                getItemLayout={(_, index) => ({
+                  length: ITEM_HEIGHT + 1,
+                  offset: (ITEM_HEIGHT + 1) * index,
+                  index,
+                })}
+                onEndReached={() => hasNextPage && fetchNextPage()}
+                onEndReachedThreshold={0.3}
+                {...({
+                  refreshControl: (
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={handleRefresh}
+                      tintColor={colors.brand.primary}
+                    />
+                  ),
+                } as any)}
+                ListFooterComponent={
+                  isFetchingNextPage ? (
+                    <ActivityIndicator color={colors.brand.primary} style={{ padding: spacing[4] }} />
+                  ) : null
+                }
+                contentContainerStyle={{ paddingBottom: spacing[8] }}
+                showsVerticalScrollIndicator={false}
+                windowSize={10}
+                maxToRenderPerBatch={10}
+              />
+            </Card>
+          )}
         </View>
-      ) : allTransactions.length === 0 ? (
-        <View style={{ flex: 1, padding: spacing[4] }}>
-          <EmptyState
-            title="Nenhum lançamento"
-            description="Seus lançamentos do Open Finance aparecerão aqui."
-          />
-        </View>
-      ) : (
-        <Card variant="default" padding="none" style={{ margin: spacing[4], flex: 1 }}>
-          <FlatList
-            data={allTransactions}
-            renderItem={renderItem}
-            keyExtractor={(item) => item.id}
-            getItemLayout={(_, index) => ({ length: ITEM_HEIGHT + 1, offset: (ITEM_HEIGHT + 1) * index, index })}
-            onEndReached={() => hasNextPage && fetchNextPage()}
-            onEndReachedThreshold={0.3}
-            ListFooterComponent={
-              isFetchingNextPage ? (
-                <ActivityIndicator color={colors.brand.primary} style={{ padding: spacing[4] }} />
-              ) : null
-            }
-            windowSize={10}
-            maxToRenderPerBatch={10}
-          />
-        </Card>
-      )}
       </SafeAreaView>
     </View>
   );
