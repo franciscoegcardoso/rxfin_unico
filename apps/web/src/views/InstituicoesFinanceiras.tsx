@@ -39,13 +39,12 @@ const InstituicoesFinanceiras: React.FC = () => {
   }, [config.financialInstitutions]);
 
   const handleSelectOpenFinance = useCallback(() => {
-    // Trigger the PluggyConnectButton click programmatically
-    // We'll use a ref approach - find the button and click it
+    setMode('openfinance');
     setTimeout(() => {
       const pluggyBtn = document.querySelector('[data-pluggy-connect-btn]') as HTMLButtonElement;
       if (pluggyBtn) pluggyBtn.click();
-    }, 100);
-  }, []);
+    }, 300);
+  }, [setMode]);
 
   const handleAddManual = useCallback((data: {
     institutionId: string;

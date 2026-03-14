@@ -257,7 +257,15 @@ export const AddInstitutionFlowDialog: React.FC<AddInstitutionFlowDialogProps> =
                         </Badge>
                       </div>
 
-                      <Button size="sm" className="w-full mt-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full mt-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectOpenFinance();
+                        }}
+                      >
                         Conectar via Open Finance
                       </Button>
                     </CardContent>
@@ -313,7 +321,16 @@ export const AddInstitutionFlowDialog: React.FC<AddInstitutionFlowDialogProps> =
                         </div>
                       </div>
 
-                      <Button variant="outline" size="sm" className="w-full mt-auto">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStep('manual-form');
+                        }}
+                      >
                         Adicionar manualmente
                       </Button>
                     </CardContent>

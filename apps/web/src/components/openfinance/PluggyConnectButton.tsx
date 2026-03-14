@@ -184,6 +184,8 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
   return (
     <Button
+      type="button"
+      data-pluggy-connect-btn
       onClick={handleConnect}
       disabled={buttonDisabled}
       variant={variant}

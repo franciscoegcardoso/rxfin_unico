@@ -266,6 +266,7 @@ const App = () => (
                     <Route path="simuladores/planejamento/econograph" element={<EconoGraph />} />
                     <Route path="simuladores/:category/:slug" element={<SimuladorDinamico />} />
                     {/* Rotas migradas — dentro do AppShell (sidebar/bottom nav) */}
+                    <Route path="configuracoes" element={<ConfiguracoesHub />} />
                     <Route path="configuracoes-hub" element={<ConfiguracoesHub />} />
                     <Route path="configuracoes-fiscais" element={<ConfiguracoesFiscais />} />
                     <Route path="instituicoes-financeiras" element={<InstituicoesFinanceiras />} />
@@ -291,7 +292,7 @@ const App = () => (
                     <Route path="meu-ir" element={<MeuIR />} />
                   </Route>
                   {/* Redirects from old routes */}
-                  <Route path="/configuracoes" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
+                  {/* /configuracoes agora renderiza ConfiguracoesHub (opções); mantido redirect legado apenas para /perfil */}
                   <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />
                   <Route path="/minhas-indicacoes" element={<Navigate to="/financeiro/minhas-indicacoes" replace />} />
                   <Route path="/regras-categoria" element={<Navigate to="/parametros?tab=regras" replace />} />

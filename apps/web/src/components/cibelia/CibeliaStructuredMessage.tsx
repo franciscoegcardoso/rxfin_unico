@@ -22,6 +22,13 @@ import { parseCibeliaResponse } from '@/lib/parseCibeliaResponse';
 import type { CibeliaStructuredResponse } from '@/types/cibelia';
 import { cn } from '@/lib/utils';
 
+// Detecta se um texto de CTA contém opções no formato [ Opção ]
+function parseCTAOptions(cta: string): string[] | null {
+  const matches = [...cta.matchAll(/\[([^\]]+)\]/g)];
+  if (matches.length < 2) return null; // só parseia se tiver 2+ opções
+  return matches.map(m => m[1].trim());
+}
+
 const ICON_MAP: Record<string, LucideIcon> = {
   'plus-circle': PlusCircle,
   'tag': Tag,
@@ -47,9 +54,10 @@ function getIcon(name: string): LucideIcon {
 export interface CibeliaStructuredMessageProps {
   content: string;
   structured: boolean;
+  onOptionSelect?: (value: string) => void;
 }
 
-export function CibeliaStructuredMessage({ content, structured }: CibeliaStructuredMessageProps) {
+export function CibeliaStructuredMessage({ content, structured, onOptionSelect }: CibeliaStructuredMessageProps) {
   const data = parseCibeliaResponse(content, structured) as CibeliaStructuredResponse;
 
   if (
@@ -155,12 +163,31 @@ export function CibeliaStructuredMessage({ content, structured }: CibeliaStructu
         </div>
       )}
 
-      {data.cta && (
-        <div className="flex gap-2 items-start text-sm text-primary rounded-xl border p-3 bg-primary/5 border-primary/20">
-          <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden />
-          <p className="leading-relaxed font-medium">{data.cta}</p>
-        </div>
-      )}
+      {data.cta && (() => {
+        const options = parseCTAOptions(data.cta!);
+        if (options && onOptionSelect) {
+          return (
+            <div className="flex flex-col gap-1.5">
+              {options.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onOptionSelect(opt)}
+                  className="text-left text-sm px-3 py-2 rounded-xl border border-border bg-background hover:bg-muted active:scale-[0.98] transition-all text-foreground w-full"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <div className="flex gap-2 items-start text-sm text-primary rounded-xl border p-3 bg-primary/5 border-primary/20">
+            <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden />
+            <p className="leading-relaxed font-medium">{data.cta}</p>
+          </div>
+        );
+      })()}
     </div>
   );
 }

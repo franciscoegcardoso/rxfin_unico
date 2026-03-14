@@ -12,7 +12,6 @@ import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
 import { OnboardingProgressBanner } from '@/components/shared/OnboardingProgressBanner';
 import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
-import { OnboardingSpotlight } from '@/components/OnboardingSpotlight';
 import { OnboardingTransitionModal } from '@/components/OnboardingTransitionModal';
 import { StartRaioXContext } from '@/contexts/StartRaioXContext';
 import { useDemoMode } from '@/hooks/useDemoMode';
@@ -67,7 +66,38 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   const handleSpotlightDismiss = () => setShowSpotlight(false);
 
+  useEffect(() => {
+    if (!showSpotlight) return;
+    const t = setTimeout(() => setShowSpotlight(false), 8000);
+    return () => clearTimeout(t);
+  }, [showSpotlight]);
+
   const showPhoneDialog = needsPhone && !phoneCompleted;
+
+  const spotlightTooltip = isDemoMode && showSpotlight && (
+    <div
+      className="fixed top-[48px] left-0 right-0 z-[9998] flex justify-center pointer-events-none"
+      aria-live="polite"
+    >
+      <div className="pointer-events-auto flex flex-col items-center">
+        <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[10px] border-b-white drop-shadow-md" />
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl px-5 py-3 max-w-xs border border-gray-100 dark:border-gray-800">
+          <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-200 text-center leading-snug">
+            {isMobile
+              ? "Aperte em 'COMEÇAR RAIO-X' para iniciar a sua jornada no RXFin!"
+              : "Clique em 'COMEÇAR SEU RAIO-X FINANCEIRO' para iniciar a sua jornada no RXFin!"}
+          </p>
+          <button
+            type="button"
+            className="mt-2 w-full text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-center"
+            onClick={handleSpotlightDismiss}
+          >
+            Entendido ×
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const errorFallback = (retry: () => void) => (
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
@@ -131,13 +161,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             onDismiss={handleModalDismiss}
           />
         )}
-        {isDemoMode && showSpotlight && (
-          <OnboardingSpotlight
-            targetRef={bannerRef}
-            onDismiss={handleSpotlightDismiss}
-            isMobile={isMobile}
-          />
-        )}
+        {spotlightTooltip}
         <OnboardingTransitionModal
           isOpen={showTransitionModal}
           onConfirm={handleConfirmTransition}
@@ -180,13 +204,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             onDismiss={handleModalDismiss}
           />
         )}
-        {isDemoMode && showSpotlight && (
-          <OnboardingSpotlight
-            targetRef={bannerRef}
-            onDismiss={handleSpotlightDismiss}
-            isMobile={isMobile}
-          />
-        )}
+        {spotlightTooltip}
         <OnboardingTransitionModal
           isOpen={showTransitionModal}
           onConfirm={handleConfirmTransition}

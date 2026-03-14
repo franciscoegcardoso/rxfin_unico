@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown } from 'lucide-react';
+import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -16,10 +16,12 @@ import { AssetInsuranceBadge } from '@/components/bens/AssetInsuranceBadge';
 import { AssetInsuranceReport } from '@/components/bens/AssetInsuranceReport';
 import { EquityEvolutionSection } from '@/components/bens/EquityEvolutionSection';
 import { assetIcons, propertyAdjustmentOptions, monthOptions } from './constants';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const PatrimonioTab: React.FC = () => {
   const { config } = useFinancial();
   const { handleOpenAddDialog, handleEditAsset, handleDeleteAsset, handleAddSeguro, hasActiveInsurance, formatCurrency } = useBensInvestimentos();
+  const isMobile = useIsMobile();
   const [patrimonioViewMode, setPatrimonioViewMode] = useState<'list' | 'cards'>('list');
   const [imovelCollapsed, setImovelCollapsed] = useState(false);
   const [veiculoCollapsed, setVeiculoCollapsed] = useState(false);
@@ -59,11 +61,12 @@ const PatrimonioTab: React.FC = () => {
 
   const renderAssetCard = (asset: Asset) => {
     const isSold = asset.isSold;
-    return (
+    const cardContent = (
       <Card
         key={asset.id}
         className={cn(
           "group hover:shadow-md transition-shadow relative overflow-hidden min-w-0",
+          isMobile && "cursor-pointer",
           isSold && "bg-gradient-to-br from-muted/30 to-muted/10 border-muted-foreground/10 opacity-75"
         )}
       >
@@ -102,24 +105,52 @@ const PatrimonioTab: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className={cn("flex gap-1", isSold && "mt-6")}>
+            <div
+              className={cn("flex flex-wrap items-center gap-1", isSold && "mt-6")}
+              onClick={(e) => e.stopPropagation()}
+              role="group"
+              aria-label="Ações do item"
+            >
+              {!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => handleEditAsset(asset)}
+                >
+                  Ver detalhes
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              )}
               {asset.type === 'property' && <PropertyInsightsDialog property={asset} />}
               {asset.type === 'vehicle' && <VehicleInsightsDialog vehicle={asset} />}
               {(asset.type === 'property' || asset.type === 'vehicle') && !isSold && !hasActiveInsurance(asset.id) && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:hover:text-amber-300"
+                  className={cn("text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 dark:text-amber-400 dark:hover:text-amber-300", !isMobile && "opacity-0 group-hover:opacity-100 transition-opacity")}
                   onClick={() => handleAddSeguro(asset.id)}
                   title="Adicionar Seguro"
                 >
                   <Shield className="h-4 w-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleEditAsset(asset)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(!isMobile && "opacity-0 group-hover:opacity-100 transition-opacity")}
+                onClick={() => handleEditAsset(asset)}
+                title="Editar"
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive" onClick={() => handleDeleteAsset(asset.id)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn("text-destructive hover:text-destructive", !isMobile && "opacity-0 group-hover:opacity-100 transition-opacity")}
+                onClick={() => handleDeleteAsset(asset.id)}
+                title="Excluir"
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -173,6 +204,27 @@ const PatrimonioTab: React.FC = () => {
         </CardContent>
       </Card>
     );
+
+    if (isMobile) {
+      return (
+        <div
+          key={asset.id}
+          role="button"
+          tabIndex={0}
+          onClick={() => handleEditAsset(asset)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleEditAsset(asset);
+            }
+          }}
+          className="outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+        >
+          {cardContent}
+        </div>
+      );
+    }
+    return cardContent;
   };
 
   return (

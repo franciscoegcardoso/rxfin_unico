@@ -614,7 +614,11 @@ export function RaioXChat() {
                     )}
                   >
                     {msg.role === 'assistant' && msg.phase === 'financial' && msg.structured ? (
-                      <CibeliaStructuredMessage content={msg.content} structured={msg.structured} />
+                      <CibeliaStructuredMessage
+                        content={msg.content}
+                        structured={msg.structured}
+                        onOptionSelect={(value) => sendMessage(value)}
+                      />
                     ) : (
                       <span className="whitespace-pre-wrap">{msg.content}</span>
                     )}
