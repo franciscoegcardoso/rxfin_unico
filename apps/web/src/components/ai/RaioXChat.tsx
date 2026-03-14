@@ -273,15 +273,17 @@ export function RaioXChat() {
     const msg = text || inputValue.trim();
     if (!msg || !user?.id) return;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      toast.error('Sessão expirada. Faça login novamente.');
-      return;
-    }
-
     setInputValue('');
     setLastFailedMessage(null);
     setIsLoading(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      setIsLoading(false);
+      return;
+    }
+
     const result = await createSession();
     if (!result) {
       setIsLoading(false);

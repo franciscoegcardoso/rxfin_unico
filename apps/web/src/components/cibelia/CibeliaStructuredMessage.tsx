@@ -87,6 +87,8 @@ export interface CibeliaStructuredMessageProps {
   content: string;
   structured: boolean;
   onOptionSelect?: (value: string) => void;
+  /** Quando true, o pai renderiza as opções CTA fora do balão; este componente não desenha os botões. */
+  renderOptionsInParent?: boolean;
 }
 
 export function CibeliaStructuredMessage({ content, structured, onOptionSelect, renderOptionsInParent }: CibeliaStructuredMessageProps) {
