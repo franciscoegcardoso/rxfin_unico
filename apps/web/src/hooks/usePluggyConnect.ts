@@ -121,10 +121,11 @@ export function usePluggyConnect() {
   ): Promise<{ connectToken: string; cpf: string | null } | null> => {
     setIsLoading(true);
     try {
+      const body: Record<string, string> = {};
+      if (itemId) body.itemId = itemId;
+      if (redirectUrl) body.redirectUrl = redirectUrl;
       const { data, error } = await supabase.functions.invoke('pluggy-connect', {
-        body: (itemId || redirectUrl)
-          ? { ...(itemId && { itemId }), ...(redirectUrl && { redirectUrl }) }
-          : undefined,
+        body: Object.keys(body).length > 0 ? body : undefined,
       });
 
       if (error) throw error;

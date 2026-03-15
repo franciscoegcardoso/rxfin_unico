@@ -9,13 +9,6 @@ const PLUGGY_CONNECT_SCRIPT = 'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/plugg
 
 const SESSION_STORAGE_PENDING_TOKEN = 'pluggy_pending_token';
 
-/** Detecta Safari iOS (não Chrome/Firefox/Opera no iOS) para usar redirect flow em vez de popup. */
-function isMobileSafari(): boolean {
-  if (typeof navigator === 'undefined' || !navigator.userAgent) return false;
-  const ua = navigator.userAgent;
-  return /iP(hone|ad|od)/.test(ua) && /WebKit/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
-}
-
 export interface PluggyConnectButtonProps {
   onSuccess?: () => void;
   updateItemId?: string;
@@ -58,59 +51,12 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const scriptLoadedRef = useRef(false);
-  const hasHandledOAuthReturnRef = useRef(false);
+  const isMobileSafari =
+    typeof navigator !== 'undefined' &&
+    /iP(hone|ad|od)/.test(navigator.userAgent) &&
+    /WebKit/.test(navigator.userAgent) &&
+    !/CriOS|FxiOS|OPiOS|mercury/.test(navigator.userAgent);
   const { toast } = useToast();
-
-  // Retorno OAuth (mobile Safari): URL contém code ou oauth_state_id e temos token em sessionStorage
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const oauthCode = urlParams.get('code') ?? urlParams.get('oauth_state_id');
-    const pendingToken =
-      typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(SESSION_STORAGE_PENDING_TOKEN) : null;
-    if (!oauthCode || !pendingToken || hasHandledOAuthReturnRef.current) return;
-
-    const cleanup = () => {
-      try {
-        sessionStorage.removeItem(SESSION_STORAGE_PENDING_TOKEN);
-      } catch {}
-      const url = new URL(window.location.href);
-      url.searchParams.delete('code');
-      url.searchParams.delete('oauth_state_id');
-      url.searchParams.delete('state');
-      window.history.replaceState({}, '', url.pathname + url.search);
-      hasHandledOAuthReturnRef.current = true;
-    };
-
-    if (!scriptLoadedRef.current || !window.PluggyConnect) return;
-
-    hasHandledOAuthReturnRef.current = true;
-    setWidgetOpen();
-    const PluggyConnectCtor = window.PluggyConnect;
-    const pluggyConnect = new PluggyConnectCtor({
-      connectToken: pendingToken,
-      includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
-      onSuccess: async (data: { item: { id: string } }) => {
-        setWidgetClosed();
-        const success = await saveConnection(data.item.id);
-        if (success && onSuccess) onSuccess();
-        cleanup();
-      },
-      onError: () => {
-        setWidgetClosed();
-        toast({
-          title: 'Erro na conexão',
-          description: 'Ocorreu um erro ao concluir a conexão.',
-          variant: 'destructive',
-        });
-        cleanup();
-      },
-      onClose: () => {
-        setWidgetClosed();
-        cleanup();
-      },
-    });
-    pluggyConnect.init();
-  }, [scriptLoaded, saveConnection, onSuccess, toast]);
 
   useEffect(() => {
     // Load Pluggy Connect script
@@ -150,6 +96,54 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
     };
   }, [toast]);
 
+  // Retomada do fluxo OAuth no Safari iOS após redirect do banco
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasOAuthReturn =
+      urlParams.has('code') ||
+      urlParams.has('oauth_state_id') ||
+      urlParams.has('pluggy_oauth');
+
+    if (!hasOAuthReturn) return;
+
+    const pendingToken = sessionStorage.getItem(SESSION_STORAGE_PENDING_TOKEN);
+    if (!pendingToken || !window.PluggyConnect) return;
+
+    sessionStorage.removeItem(SESSION_STORAGE_PENDING_TOKEN);
+    // Limpar parâmetros OAuth da URL sem recarregar
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+
+    setIsOpening(true);
+    setWidgetOpen();
+
+    const pluggyConnect = new window.PluggyConnect({
+      connectToken: pendingToken,
+      includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
+      onSuccess: async (data) => {
+        setWidgetClosed();
+        setIsOpening(false);
+        const success = await saveConnection(data.item.id);
+        if (success && onSuccess) onSuccess();
+      },
+      onError: (err) => {
+        setWidgetClosed();
+        setIsOpening(false);
+        const message =
+          typeof err === 'object' && err && 'message' in err
+            ? String((err as any).message)
+            : 'Ocorreu um erro ao conectar.';
+        toast({ title: 'Erro na conexão', description: message, variant: 'destructive' });
+      },
+      onClose: () => {
+        setWidgetClosed();
+        setIsOpening(false);
+      },
+    });
+    pluggyConnect.init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleConnect = useCallback(async () => {
     console.log('handleConnect called, scriptLoaded:', scriptLoaded, 'PluggyConnect:', !!window.PluggyConnect);
     
@@ -173,8 +167,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
     setIsOpening(true);
 
-    const mobileSafari = isMobileSafari();
-    const redirectUrl = mobileSafari ? window.location.href : undefined;
+    const redirectUrl = isMobileSafari ? window.location.href : undefined;
 
     // Get connect token from our edge function (must be JWT string, not boolean)
     const tokenResult = await getConnectToken(updateItemId, redirectUrl);
@@ -189,13 +182,6 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       return;
     }
 
-    // Mobile Safari redirect flow: salvar token para recuperar ao voltar do banco
-    if (mobileSafari) {
-      try {
-        sessionStorage.setItem(SESSION_STORAGE_PENDING_TOKEN, connectToken);
-      } catch {}
-    }
-
     try {
       console.log('Initializing Pluggy Connect widget...');
 
@@ -204,11 +190,14 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         throw new Error('Widget de conexão não disponível. Recarregue a página.');
       }
 
+      // No mobile Safari, salvar token antes do redirect OAuth do banco
+      if (isMobileSafari) {
+        sessionStorage.setItem(SESSION_STORAGE_PENDING_TOKEN, connectToken);
+      }
       setWidgetOpen();
-
       const pluggyConnect = new PluggyConnectCtor({
         connectToken,
-        includeSandbox: mobileSafari ? false : import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
+        includeSandbox: isMobileSafari ? false : import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
           setWidgetClosed();
@@ -231,7 +220,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
           });
         },
         onClose: () => {
-          if (!mobileSafari) {
+          if (!isMobileSafari) {
             console.log('Pluggy Connect closed');
             setWidgetClosed();
             setIsOpening(false);
