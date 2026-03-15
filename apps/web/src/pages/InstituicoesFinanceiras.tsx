@@ -11,9 +11,6 @@ import { UserFinancialInstitution } from '@/types/financial';
 import { Building2, CreditCard, Plus, Landmark, Wallet, TrendingUp, Pencil, Database } from 'lucide-react';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useBankingOverview } from '@/hooks/useBankingOverview';
-import { formatCurrency } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { OpenFinanceSection } from '@/components/openfinance/OpenFinanceSection';
 import { InstitutionLogo } from '@/components/shared/InstitutionLogo';
 import { InstitutionManageDialog } from '@/components/instituicoes/InstitutionManageDialog';
@@ -32,7 +29,7 @@ const InstituicoesFinanceiras: React.FC = () => {
   const navigate = useNavigate();
   const [flowDialogOpen, setFlowDialogOpen] = useState(false);
 
-  const hasBankingInstitutions = (bankingOverview?.institutions?.length ?? 0) > 0;
+  const hasBankingInstitutions = (bankingOverview?.connections?.length ?? 0) > 0;
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -107,38 +104,6 @@ const InstituicoesFinanceiras: React.FC = () => {
             </div>
           }
         />
-
-        {/* Banking overview from RPC (Pluggy / Open Finance) */}
-        {!bankingLoading && hasBankingInstitutions && (
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Instituições conectadas</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {bankingOverview!.institutions!.map((inst, i) => (
-                <Card key={i} className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{inst.nome ?? 'Instituição'}</CardTitle>
-                        {inst.tipo && <CardDescription>{inst.tipo}</CardDescription>}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {inst.saldo != null && <p className="font-semibold text-green-700 dark:text-green-400">{formatCurrency(inst.saldo)}</p>}
-                    {inst.ultima_sync && <p className="text-xs text-muted-foreground">Última sync: {format(new Date(inst.ultima_sync), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Button className="gap-2" onClick={() => setFlowDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Conectar nova instituição
-            </Button>
-          </div>
-        )}
 
         {/* Empty state when no banking data from RPC */}
         {!bankingLoading && !hasBankingInstitutions && hasChosen && mode === 'openfinance' && (

@@ -13,6 +13,7 @@ export interface PluggyConnectButtonProps {
   onSuccess?: (itemId?: string) => void;
   onSaving?: () => void;
   updateItemId?: string;
+  selectedConnectorId?: number;
   variant?: 'default' | 'outline' | 'secondary';
   size?: 'default' | 'sm' | 'lg';
   className?: string;
@@ -24,6 +25,7 @@ declare global {
       connectToken: string;
       includeSandbox?: boolean;
       openFinanceParameters?: { cpf?: string };
+      selectedConnectorId?: number;
       onSuccess: (data: { item: { id: string } }) => void;
       onError: (error: { message?: string } | unknown) => void;
       onClose: () => void;
@@ -46,6 +48,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   onSuccess,
   onSaving,
   updateItemId,
+  selectedConnectorId,
   variant = 'default',
   size = 'default',
   className,
@@ -128,6 +131,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         const pluggyConnect = new window.PluggyConnect({
           connectToken: pendingToken,
           includeSandbox: false,
+          ...(selectedConnectorId != null && { selectedConnectorId }),
           onSuccess: async (data) => {
             setWidgetClosed();
             setIsOpening(false);
@@ -272,7 +276,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         variant: 'destructive',
       });
     }
-  }, [scriptLoaded, getConnectToken, saveConnection, onSuccess, updateItemId, toast]);
+  }, [scriptLoaded, getConnectToken, saveConnection, onSuccess, onSaving, updateItemId, selectedConnectorId, toast]);
 
   const buttonDisabled = isLoading || isOpening || !scriptLoaded;
 

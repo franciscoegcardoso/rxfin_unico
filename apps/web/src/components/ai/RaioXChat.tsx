@@ -537,7 +537,9 @@ export function RaioXChat() {
   };
 
   // Evitar duplicata no mobile: só exibir botão flutuante quando logado (em auth pages só CibeliaAuthWidget)
-  if (!user) return null;
+  // Não exibir Cibelia durante o onboarding wizard
+  const isOnboardingRoute = pathname.startsWith('/onboarding');
+  if (!user || isOnboardingRoute) return null;
 
   return (
     <>
