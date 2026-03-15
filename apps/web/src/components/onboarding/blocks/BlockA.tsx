@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { ArrowRight, ArrowLeft, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConquestCard } from '../ConquestCard';
+import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { cn } from '@/lib/utils';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { setUserKVValue } from '@/hooks/useUserKV';
 
 interface BlockAProps {
   step: number;
@@ -89,13 +89,15 @@ export const BlockA: React.FC<BlockAProps> = ({
     controlLevel: null,
   });
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
     try {
+      const { setUserKVValue } = await import('@/hooks/useUserKV');
       await setUserKVValue(user.id, 'onboarding_profile', answers);
     } catch (err) {
-      console.error('[BlockA] Erro ao salvar perfil:', err);
+      console.warn('[BlockA] saveProfileAnswers falhou (não crítico):', err);
     }
   };
 
@@ -210,15 +212,28 @@ export const BlockA: React.FC<BlockAProps> = ({
       const newProfile = { ...profile, [q.key]: value } as ProfileAnswers;
       setProfile(newProfile);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         if (isLast) {
-          saveProfileAnswers(newProfile);
+          setSavingProfile(true);
+          await saveProfileAnswers(newProfile);
+          setSavingProfile(false);
           onStepChange(3);
         } else {
           setQuestionIndex((prev) => prev + 1);
         }
       }, 280);
     };
+
+    if (savingProfile) {
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={56} />
+          <p className="text-sm text-muted-foreground text-center">
+            Identificando seu perfil financeiro...
+          </p>
+        </div>
+      );
+    }
 
     return (
       <div className="max-w-2xl mx-auto py-6">

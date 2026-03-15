@@ -10,6 +10,8 @@ import { BlockA } from './blocks/BlockA';
 import { BlockB } from './blocks/BlockB';
 import { BlockC } from './blocks/BlockC';
 import { BlockD } from './blocks/BlockD';
+import { OnboardingTransition } from './OnboardingTransition';
+import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +34,7 @@ function getActiveBlock(phase: string): ActiveBlock {
 export const OnboardingWizardV3: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentLevel, currentPhase, advancePhase, registerEvent } = useOnboardingCheckpoint();
+  const { currentLevel, currentPhase, advancePhase, registerEvent, isLoading } = useOnboardingCheckpoint();
   const { saveDraft, getDraft, clearDraft } = useOnboardingDraft();
 
   const activeBlock = useMemo(() => getActiveBlock(currentPhase), [currentPhase]);
@@ -40,6 +42,14 @@ export const OnboardingWizardV3: React.FC = () => {
 
   const [step, setStep] = useState(0);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [transition, setTransition] = useState<'block_a' | 'block_b' | 'block_c' | null>(null);
+
+  // Marcar fase 'started' ao abrir o wizard com not_started (evita falha ao avançar para block_a_done)
+  useEffect(() => {
+    if (!isLoading && currentPhase === 'not_started' && user?.id) {
+      advancePhase('started');
+    }
+  }, [currentPhase, isLoading, user?.id, advancePhase]);
 
   // Guard: usuário já completou o Raio-X — evita reabrir o wizard ao acessar /onboarding-raio-x diretamente
   useEffect(() => {
@@ -79,10 +89,7 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    const ok = await advancePhase('block_a_done');
-    if (!ok) return;
-    await registerEvent('block_a_completed');
-    setStep(0);
+    setTransition('block_a');
   };
 
   const handleBlockBComplete = async () => {
@@ -90,10 +97,7 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    const ok = await advancePhase('block_b_done');
-    if (!ok) return;
-    await registerEvent('block_b_completed');
-    setStep(0);
+    setTransition('block_b');
   };
 
   const handleBlockCComplete = async () => {
@@ -101,11 +105,40 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    const ok = await advancePhase('block_c_done');
-    if (!ok) return;
-    await registerEvent('block_c_completed');
-    setStep(0);
+    setTransition('block_c');
   };
+
+  const handleTransitionDone = useCallback(async () => {
+    if (!transition || !user?.id) return;
+
+    const phaseMap = {
+      block_a: 'block_a_done',
+      block_b: 'block_b_done',
+      block_c: 'block_c_done',
+    } as const;
+
+    const eventMap = {
+      block_a: 'block_a_completed',
+      block_b: 'block_b_completed',
+      block_c: 'block_c_completed',
+    };
+
+    if (currentPhase === 'not_started') {
+      await advancePhase('started');
+    }
+
+    const newPhase = phaseMap[transition];
+    const ok = await advancePhase(newPhase);
+
+    setTransition(null);
+
+    if (!ok) {
+      console.error('[OnboardingTransition] advancePhase falhou para:', newPhase);
+    }
+
+    await registerEvent(eventMap[transition]);
+    setStep(0);
+  }, [transition, user?.id, currentPhase, advancePhase, registerEvent]);
 
   const handleBlockDComplete = async () => {
     if (!user?.id) {
@@ -126,8 +159,29 @@ export const OnboardingWizardV3: React.FC = () => {
 
   if (currentPhase === 'completed') return null; // redirect em andamento (evita flash do wizard)
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <RXFinLoadingSpinner size={64} />
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Carregando sua jornada...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Tela de transição entre blocos — sobrepõe tudo */}
+      <AnimatePresence>
+        {transition && (
+          <OnboardingTransition
+            completedPhase={transition}
+            onDone={handleTransitionDone}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-sm border-b border-border/50 px-4 py-2.5">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
