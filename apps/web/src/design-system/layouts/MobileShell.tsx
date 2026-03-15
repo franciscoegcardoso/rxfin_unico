@@ -4,7 +4,9 @@ import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
 import { ThemedLogo } from "@/components/ui/themed-logo";
+import { useOnboardingCheckpoint } from "@/hooks/useOnboardingCheckpoint";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -25,9 +27,13 @@ const shellErrorFallback = (retry: () => void) => (
   </div>
 );
 
+const PROGRESS_PHASES = ['started', 'block_a_done', 'block_b_done', 'block_c_done'];
+
 export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentPhase, isLoading } = useOnboardingCheckpoint();
+  const showBanner = !isLoading && PROGRESS_PHASES.includes(currentPhase);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -46,10 +52,14 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         </button>
       </header>
 
-      {/* Conteúdo: pt-14 para não ficar sob o header fixo; pb = altura do menu + safe-area para nada ficar atrás do menu */}
+      {/* Banner de onboarding: fixo imediatamente abaixo do header */}
+      <OnboardingProgressBanner placement="below-header" />
+
+      {/* Conteúdo: pt-14 ou pt para header+banner; pb = altura do menu + safe-area */}
       <main
         className={cn(
-          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 pt-14 md:pb-0"
+          "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 md:pb-0",
+          showBanner ? "pt-[calc(3.5rem+3rem)]" : "pt-14"
         )}
         style={{
           paddingBottom: "max(5rem, calc(4rem + env(safe-area-inset-bottom)))",

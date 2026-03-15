@@ -1,6 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
 import { SecureConnectionBadge } from "@/components/shared/SecureConnectionBadge";
 
 interface DesktopShellProps {
@@ -18,6 +19,8 @@ export const DesktopShell: React.FC<DesktopShellProps> = () => {
     <div className="flex flex-row flex-1 w-full h-full overflow-hidden">
       <AppSidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Banner sticky no topo da área de conteúdo no desktop */}
+        <OnboardingProgressBanner placement="inline" />
         <div className="flex-1 min-w-0 overflow-y-auto">
           <Outlet />
         </div>

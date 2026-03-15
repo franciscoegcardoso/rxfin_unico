@@ -9,7 +9,6 @@ import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
 import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
-import { OnboardingProgressBanner } from '@/components/shared/OnboardingProgressBanner';
 import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
 import { OnboardingTransitionModal } from '@/components/OnboardingTransitionModal';
 import { StartRaioXContext } from '@/contexts/StartRaioXContext';
@@ -140,7 +139,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       <StartRaioXContext.Provider value={startRaioX}>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
           {isDemoMode && <DemoDataBanner inline innerRef={bannerRef} />}
-          <OnboardingProgressBanner inline />
           <main
             className={`
               w-full max-w-full overflow-x-hidden flex-1 min-w-0
@@ -179,7 +177,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     <StartRaioXContext.Provider value={startRaioX}>
       <div className="min-h-screen bg-[hsl(var(--color-surface-base))] w-full max-w-full overflow-x-hidden flex flex-col">
         <DemoDataBanner innerRef={bannerRef} />
-        <OnboardingProgressBanner />
         <main
           className={cn(
             'w-full max-w-full overflow-x-hidden flex-1',

@@ -21,7 +21,7 @@ const PROGRESS_PHASES: OnboardingPhase[] = [
 
 const PHASE_LABEL: Record<string, string> = {
   started: 'Bloco 1/4 — Perfil financeiro',
-  block_a_done: 'Bloco 2/4 — Patrimônio',
+  block_a_done: 'Bloco 2/4 — Conectar bancos',
   block_b_done: 'Bloco 3/4 — Conectar bancos',
   block_c_done: 'Bloco 4/4 — Metas e sonhos',
 };
@@ -36,10 +36,12 @@ const PHASE_PROGRESS: Record<string, number> = {
 
 interface OnboardingProgressBannerProps {
   inline?: boolean;
+  placement?: 'below-header' | 'inline' | 'fixed-top';
 }
 
 export const OnboardingProgressBanner: React.FC<OnboardingProgressBannerProps> = ({
   inline = false,
+  placement,
 }) => {
   const navigate = useNavigate();
   const { currentPhase, isLoading } = useOnboardingCheckpoint();
@@ -51,9 +53,16 @@ export const OnboardingProgressBanner: React.FC<OnboardingProgressBannerProps> =
   const label = PHASE_LABEL[currentPhase] ?? '';
   const progress = PHASE_PROGRESS[currentPhase] ?? 0;
 
-  const basePlacement = inline
-    ? 'relative z-40 w-full shrink-0'
-    : 'fixed top-14 left-0 right-0 z-40 w-full';
+  let basePlacement: string;
+  if (placement === 'below-header') {
+    basePlacement = 'fixed top-14 left-0 right-0 z-[39] w-full';
+  } else if (placement === 'fixed-top') {
+    basePlacement = 'fixed top-14 left-0 right-0 z-[39] w-full';
+  } else if (inline || placement === 'inline') {
+    basePlacement = 'relative z-40 w-full shrink-0';
+  } else {
+    basePlacement = 'fixed top-14 left-0 right-0 z-40 w-full';
+  }
 
   return (
     <div
