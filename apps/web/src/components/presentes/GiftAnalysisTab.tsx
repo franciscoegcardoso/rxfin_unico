@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -103,6 +104,7 @@ export const GiftAnalysisTab: React.FC<GiftAnalysisTabProps> = ({
   year: initialYear,
   people,
 }) => {
+  const isMobile = useIsMobile();
   const [timelineYear, setTimelineYear] = useState(initialYear);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [detailEvent, setDetailEvent] = useState<TimelineEvent | null>(null);
@@ -309,7 +311,7 @@ export const GiftAnalysisTab: React.FC<GiftAnalysisTabProps> = ({
                 >
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
+                  <YAxis hide={isMobile} tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="planejado" name="planejado" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} opacity={0.8} />
                   <Bar dataKey="realizado" name="realizado" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} opacity={0.9} />

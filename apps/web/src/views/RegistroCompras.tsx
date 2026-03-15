@@ -46,6 +46,7 @@ import { Link } from 'react-router-dom';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, ReferenceLine, Tooltip } from 'recharts';
 
 const formatCurrency = (value: number) => {
@@ -91,8 +92,9 @@ const getPaymentMethodIcon = (method: string | null | undefined) => {
 };
 
 const RegistroCompras: React.FC = () => {
-  const { 
-    items, 
+  const isMobile = useIsMobile();
+  const {
+    items,
     loading, 
     addItem, 
     updateItem, 
@@ -765,7 +767,7 @@ const RegistroCompras: React.FC = () => {
                     <BarChart data={timelineData} barCategoryGap="20%">
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-                      <YAxis tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} width={55} />
+                      <YAxis hide={isMobile} tickFormatter={(v: number) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} width={55} />
                       <Tooltip content={<CustomTooltip />} />
                       <Bar dataKey="realized" stackId="a" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} name="Comprado" />
                       <Bar dataKey="planned" stackId="a" fill="hsl(var(--muted-foreground) / 0.3)" radius={[4, 4, 0, 0]} name="Planejado" />

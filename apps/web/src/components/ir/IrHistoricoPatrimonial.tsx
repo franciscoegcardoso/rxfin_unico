@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   LineChart,
   Line,
@@ -86,6 +87,7 @@ function CustomTooltip({
 }
 
 function IrHistoricoPatrimonial() {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<IrHistoricoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +165,7 @@ function IrHistoricoPatrimonial() {
                   tickFormatter={(v) => String(v)}
                 />
                 <YAxis
+                  hide={isMobile}
                   tickFormatter={(v) => formatBRLShort(v)}
                   tick={{ fontSize: 11 }}
                   width={56}

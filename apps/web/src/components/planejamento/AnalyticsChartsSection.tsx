@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { CardHealthAnalytics } from '@/components/cartao/CardHealthAnalytics';
@@ -321,6 +322,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
   bills, availableCards, cardColorMap, formatCurrency, isHidden,
   transactions, billMonthMap, currentMonth,
 }) => {
+  const isMobile = useIsMobile();
   const now = new Date();
   const cy = now.getFullYear();
   const cm = now.getMonth() + 1;
@@ -684,7 +686,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                   {...premiumXAxis}
                   tick={{ fontSize: 10, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                 />
-                <YAxis hide />
+                <YAxis hide={isMobile} />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload || payload.length === 0) return null;
@@ -781,7 +783,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                       {...premiumXAxis}
                       tick={{ fontSize: 10, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                     />
-                    <YAxis hide />
+                    <YAxis hide={isMobile} />
                     <Tooltip
                       content={({ active, payload, label }) => {
                         if (!active || !payload || payload.length === 0) return null;
@@ -872,7 +874,7 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
                       {...premiumXAxis}
                       tick={{ fontSize: 10, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                     />
-                    <YAxis hide />
+                    <YAxis hide={isMobile} />
                     <Tooltip
                       content={({ active, payload, label }) => {
                         if (!active || !payload || payload.length === 0) return null;

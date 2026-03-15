@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehicleRecord, vehicleExpenseCategoryLabels, vehicleServiceTypeLabels, vehicleFuelTypeLabels } from '@/types/vehicle';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, BarChart, Bar } from 'recharts';
@@ -204,7 +205,7 @@ export const VehicleReports: React.FC<VehicleReportsProps> = ({ records }) => {
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                  <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                  <YAxis hide={isMobile} tick={{ fontSize: 12 }} className="text-muted-foreground" />
                   <Tooltip 
                     formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Total']}
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
@@ -238,7 +239,7 @@ export const VehicleReports: React.FC<VehicleReportsProps> = ({ records }) => {
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                  <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                  <YAxis hide={isMobile} tick={{ fontSize: 12 }} className="text-muted-foreground" />
                   <Tooltip 
                     formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Combustível']}
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
@@ -307,7 +308,7 @@ export const VehicleReports: React.FC<VehicleReportsProps> = ({ records }) => {
                 <BarChart data={expenseBreakdown} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis type="number" tick={{ fontSize: 10 }} />
-                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                  <YAxis hide={isMobile} type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
                   <Tooltip 
                     formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                     contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}

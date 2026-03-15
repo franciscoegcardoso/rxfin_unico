@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,6 +97,7 @@ const formatLastUpdate = (dateStr: string | null): string => {
 };
 
 export const EconomicIndicators: React.FC = () => {
+  const isMobile = useIsMobile();
   const [selectedIndicator, setSelectedIndicator] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('2023-01');
 
@@ -137,7 +139,8 @@ export const EconomicIndicators: React.FC = () => {
           <LineChart data={chartData}>
             <CartesianGrid {...premiumGrid} />
             <XAxis dataKey="date" {...premiumXAxis} />
-            <YAxis 
+            <YAxis
+              hide={isMobile}
               {...premiumYAxis}
               tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
               domain={['auto', 'auto']}

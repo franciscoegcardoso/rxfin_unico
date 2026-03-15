@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ export const IndexHistoryPopover: React.FC<IndexHistoryPopoverProps> = ({
   indexKey,
   children,
 }) => {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const config = INDEX_CONFIG[indexKey];
   
@@ -115,8 +117,8 @@ export const IndexHistoryPopover: React.FC<IndexHistoryPopoverProps> = ({
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis 
-                  hide 
+                <YAxis
+                  hide={isMobile}
                   domain={['dataMin - 1', 'dataMax + 1']}
                 />
                 <RechartsTooltip

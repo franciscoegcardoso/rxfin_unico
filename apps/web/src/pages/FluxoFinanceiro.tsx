@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachWeekOfInterval, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils';
 const MONTH_FORMAT = 'yyyy-MM';
 
 const FluxoFinanceiro: React.FC = () => {
+  const isMobile = useIsMobile();
   const [month, setMonth] = useState(() => format(new Date(), MONTH_FORMAT));
   const { data, isLoading, error, refetch } = useDashboardEnhanced(month);
 
@@ -177,7 +179,7 @@ const FluxoFinanceiro: React.FC = () => {
                   <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="week" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
+                    <YAxis hide={isMobile} tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
                     <Tooltip
                       formatter={(value: number) => formatCurrency(value)}
                       labelFormatter={(label) => `Semana ${label}`}

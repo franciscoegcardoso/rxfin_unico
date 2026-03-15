@@ -61,9 +61,21 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => resolve(null), ONBOARDING_RPC_TIMEOUT_MS);
       });
-      const rpcPromise = supabase.rpc('get_user_profile_settings').then(({ data, error }) => {
-        if (error) return null;
-        return data as { profile?: { onboarding_completed?: boolean | null } | null };
+      const rpcPromise = Promise.all([
+        supabase.rpc('get_user_profile_settings'),
+        user?.id
+          ? supabase
+              .from('onboarding_state')
+              .select('onboarding_phase')
+              .eq('user_id', user.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]).then(([settingsRes, stateRes]) => {
+        if (settingsRes.error) return null;
+        return {
+          ...(settingsRes.data as object),
+          onboarding_phase: stateRes.data?.onboarding_phase ?? (settingsRes.data as any)?.onboarding_phase ?? null,
+        };
       });
       try {
         return await Promise.race([rpcPromise, timeoutPromise]);
@@ -76,17 +88,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     retry: 1,
   });
 
-  const ONBOARDING_IN_PROGRESS_PHASES = [
-    'started',
-    'block_a_done',
-    'block_b_done',
-    'block_c_done',
-    'completed',
-  ];
-  const onboardingPhase = (settingsData as any)?.onboarding_phase ?? '';
+  // Considerar "não redirecionar" se: onboarding concluído OU já está em andamento
+  // (qualquer fase além de not_started significa que o usuário já iniciou)
+  const onboardingPhaseFromDb = (settingsData as any)?.onboarding_phase as string | undefined;
   const onboardingCompleteFromDb =
     settingsData?.profile?.onboarding_completed === true ||
-    ONBOARDING_IN_PROGRESS_PHASES.includes(onboardingPhase);
+    (onboardingPhaseFromDb != null && onboardingPhaseFromDb !== 'not_started');
   const onboardingRpcFailedOrNull = !onboardingCheckPending && needsOnboardingCheck && settingsData == null && !!user?.id;
 
   useEffect(() => {

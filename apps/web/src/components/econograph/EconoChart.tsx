@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   LineChart,
   Line,
@@ -163,6 +164,7 @@ export const EconoChart: React.FC<EconoChartProps> = ({
   onToggleBenchmarks,
   onResetWeights,
 }) => {
+  const isMobile = useIsMobile();
   // Transform data for Recharts
   const chartData = data.labels.map((label, index) => {
     const point: Record<string, string | number> = { date: label };
@@ -272,6 +274,7 @@ export const EconoChart: React.FC<EconoChartProps> = ({
               interval={tickInterval}
             />
             <YAxis
+              hide={isMobile}
               {...premiumYAxis}
               tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
               tickFormatter={(value) => `${value.toFixed(0)}`}

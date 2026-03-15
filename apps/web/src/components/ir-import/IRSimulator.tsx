@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserKV } from '@/hooks/useUserKV';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ const calcularIR = (baseCalculo: number): number => {
 };
 
 export const IRSimulator: React.FC<IRSimulatorProps> = ({ stats }) => {
+  const isMobile = useIsMobile();
   const { value: savedData, setValue: setSavedData } = useUserKV<{
     rendaBrutaAnual: number;
     numDependentes: number;
@@ -337,9 +339,10 @@ export const IRSimulator: React.FC<IRSimulatorProps> = ({ stats }) => {
                       margin={{ top: 5, right: 80, left: 5, bottom: 5 }}
                     >
                       <XAxis type="number" hide />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
+                      <YAxis
+                        hide={isMobile}
+                        type="category"
+                        dataKey="name"
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 11 }}

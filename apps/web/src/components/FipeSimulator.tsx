@@ -1157,8 +1157,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                           })()}
                           height={30}
                         />
-                        <YAxis 
-                          hide
+<YAxis
+                          hide={isMobile}
                           tickFormatter={formatCurrencyShort}
                         />
                         <Tooltip content={<BarTooltip />} wrapperStyle={{ zIndex: 50 }} />
@@ -1231,9 +1231,9 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                         })()}
                         height={30}
                       />
-                      <YAxis 
-                        hide
-                        tickFormatter={formatCurrencyShort}
+<YAxis
+                          hide={isMobile}
+                          tickFormatter={formatCurrencyShort}
                       />
                       <Tooltip 
                         wrapperStyle={{ zIndex: 50 }}

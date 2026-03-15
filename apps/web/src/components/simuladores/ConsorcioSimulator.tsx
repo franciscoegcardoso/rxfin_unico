@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -171,6 +172,7 @@ const SimpleDonut: React.FC<{
 };
 
 export const ConsorcioSimulator: React.FC = () => {
+  const isMobile = useIsMobile();
   // Estado do tipo
   const [selectedType, setSelectedType] = useState<ConsorcioType>('veiculo');
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
@@ -809,8 +811,9 @@ export const ConsorcioSimulator: React.FC = () => {
                         fontSize={10}
                         tickFormatter={(v) => `Ano ${v}`}
                       />
-                      <YAxis 
-                        tickLine={false} 
+                      <YAxis
+                        hide={isMobile}
+                        tickLine={false}
                         axisLine={false}
                         fontSize={10}
                         tickFormatter={(v) => formatCompact(v)}
@@ -888,8 +891,9 @@ export const ConsorcioSimulator: React.FC = () => {
                         fontSize={10}
                         tickFormatter={(v) => `${v}m`}
                       />
-                      <YAxis 
-                        tickLine={false} 
+                      <YAxis
+                        hide={isMobile}
+                        tickLine={false}
                         axisLine={false}
                         fontSize={10}
                         tickFormatter={(v) => formatCompact(v)}

@@ -204,9 +204,10 @@ export const CostDistributionChart: React.FC<CostDistributionChartProps> = ({
         margin={{ top: 5, right: 70, left: marginLeft, bottom: 5 }}
       >
         <XAxis type="number" hide />
-        <YAxis 
-          type="category" 
-          dataKey="name" 
+        <YAxis
+          hide={isMobile}
+          type="category"
+          dataKey="name"
           axisLine={false}
           tickLine={false}
           tick={{ fontSize: isMobile ? 10 : 11, fill: 'hsl(var(--muted-foreground))' }}

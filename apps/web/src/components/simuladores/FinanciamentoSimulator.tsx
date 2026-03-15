@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -186,6 +187,7 @@ const SimpleDonut: React.FC<{
 };
 
 export const FinanciamentoSimulator: React.FC = () => {
+  const isMobile = useIsMobile();
   // Estados principais
   const [tipo, setTipo] = useState<TipoCredito>('veiculo');
   const [valorBem, setValorBem] = useState(DEFAULTS_MERCADO.veiculo.valor);
@@ -700,7 +702,8 @@ export const FinanciamentoSimulator: React.FC = () => {
                         tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                         tickFormatter={(v) => `${v}m`}
                       />
-                      <YAxis 
+                      <YAxis
+                        hide={isMobile}
                         {...premiumYAxis}
                         tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                         tickFormatter={(v) => formatCompact(v)}
@@ -791,7 +794,8 @@ export const FinanciamentoSimulator: React.FC = () => {
                         tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                         tickFormatter={(v) => `${v}m`}
                       />
-                      <YAxis 
+                      <YAxis
+                        hide={isMobile}
                         {...premiumYAxis}
                         tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                         tickFormatter={(v) => formatCompact(v)}

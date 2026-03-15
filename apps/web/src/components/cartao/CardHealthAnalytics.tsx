@@ -7,6 +7,7 @@ import { SectionCard } from '@/components/shared/SectionCard';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { CreditCardBill } from '@/hooks/useCreditCardBills';
 import {
   premiumXAxis,
@@ -88,6 +89,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const CardHealthAnalytics: React.FC<CardHealthAnalyticsProps> = ({ bills, periodFilter }) => {
   const { isHidden } = useVisibility();
+  const isMobile = useIsMobile();
 
   const { monthData, healthScore } = useMemo(() => {
     const monthMap = new Map<string, { paid: number; total: number }>();
@@ -161,7 +163,7 @@ export const CardHealthAnalytics: React.FC<CardHealthAnalyticsProps> = ({ bills,
               dataKey="label"
               tick={{ fontSize: 10, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
             />
-            <YAxis hide />
+            <YAxis hide={isMobile} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }} />
             <Bar dataKey="paid" stackId="bill" fill="hsl(152, 60%, 48%)" radius={[0, 0, 0, 0]} name="Pago" />
             <Bar dataKey="remaining" stackId="bill" fill="hsl(0, 70%, 60%)" radius={[6, 6, 0, 0]} name="Pendente" />

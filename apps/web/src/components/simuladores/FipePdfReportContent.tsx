@@ -4,6 +4,7 @@
  * Inclui rótulos de dados nos gráficos para melhor leitura no PDF.
  */
 import React, { forwardRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   LineChart,
   Line,
@@ -84,6 +85,7 @@ interface FipePdfReportContentProps {
 /** Layout compacto para caber em uma única página A4 ao escalar. */
 export const FipePdfReportContent = forwardRef<HTMLDivElement, FipePdfReportContentProps>(
   function FipePdfReportContent({ data }, ref) {
+    const isMobile = useIsMobile();
     const totalAnnual = data.ownershipItems.reduce((s, i) => s + i.annualValue, 0);
     const ownershipWithPct = data.ownershipItems.map((item) => ({
       ...item,
@@ -269,6 +271,7 @@ export const FipePdfReportContent = forwardRef<HTMLDivElement, FipePdfReportCont
                     interval="preserveStartEnd"
                   />
                   <YAxis
+                    hide={isMobile}
                     tickFormatter={(v) => formatShort(v)}
                     domain={['auto', 'auto']}
                     width={48}
@@ -351,6 +354,7 @@ export const FipePdfReportContent = forwardRef<HTMLDivElement, FipePdfReportCont
                     interval="preserveStartEnd"
                   />
                   <YAxis
+                    hide={isMobile}
                     tickFormatter={(v) => formatShort(v)}
                     width={48}
                     tick={{ fontSize: 10, fill: '#6b7280' }}
@@ -387,6 +391,7 @@ export const FipePdfReportContent = forwardRef<HTMLDivElement, FipePdfReportCont
                     interval="preserveStartEnd"
                   />
                   <YAxis
+                    hide={isMobile}
                     tickFormatter={(v) => formatShort(v)}
                     width={48}
                     tick={{ fontSize: 10, fill: '#6b7280' }}

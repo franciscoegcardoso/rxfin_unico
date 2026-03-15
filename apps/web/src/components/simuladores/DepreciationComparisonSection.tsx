@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, TrendingDown, ArrowRight, Info } from 'lucide-react';
@@ -59,6 +60,7 @@ export const DepreciationComparisonSection: React.FC<DepreciationComparisonSecti
   hasV6ResultA,
   hasV6ResultB,
 }) => {
+  const isMobile = useIsMobile();
   // Calcular dados da tabela com colunas de diferença
   const tableData = useMemo(() => {
     const rows = [
@@ -297,9 +299,9 @@ export const DepreciationComparisonSection: React.FC<DepreciationComparisonSecti
                   {...premiumXAxis}
                   tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                 />
-                <YAxis 
-                  hide
-                  tickFormatter={(v) => formatMoneyShort(v)} 
+                <YAxis
+                  hide={isMobile}
+                  tickFormatter={(v) => formatMoneyShort(v)}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend 

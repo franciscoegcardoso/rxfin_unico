@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -54,6 +55,7 @@ const CustomTooltip = ({ active, payload, label, formatter }: any) => {
 const ensureArray = <T,>(v: unknown): T[] => (Array.isArray(v) ? v : []) as T[];
 
 export function AdminDashboardCharts({ data, loading }: Props) {
+  const isMobile = useIsMobile();
   const [newActiveView, setNewActiveView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
   if (loading || !data) return null;
@@ -95,7 +97,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis hide={isMobile} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip content={<CustomTooltip formatter={formatMonth} />} />
                 <Area type="monotone" dataKey="value" name="Ativos" stroke="hsl(var(--primary))" fill="url(#activeGradient)" strokeWidth={2} />
               </AreaChart>
@@ -127,7 +129,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
               <BarChart data={newActiveData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="label" tickFormatter={newActiveFormatter} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis hide={isMobile} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip content={<CustomTooltip formatter={newActiveFormatter} />} />
                 <Bar dataKey="value" name="Novos" fill="hsl(var(--chart-2, 142 71% 45%))" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -150,7 +152,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
               <BarChart data={monthlyChurn}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis hide={isMobile} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip content={<CustomTooltip formatter={formatMonth} />} />
                 <Bar dataKey="value" name="Churn" fill="hsl(var(--destructive, 0 84% 60%))" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -173,7 +175,7 @@ export function AdminDashboardCharts({ data, loading }: Props) {
               <BarChart data={monthlyReactivated}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis hide={isMobile} className="text-[10px]" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip content={<CustomTooltip formatter={formatMonth} />} />
                 <Bar dataKey="value" name="Reativados" fill="hsl(var(--chart-4, 280 65% 60%))" radius={[4, 4, 0, 0]} />
               </BarChart>

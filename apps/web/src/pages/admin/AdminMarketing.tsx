@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -133,7 +134,7 @@ const AdminMarketing: React.FC = () => {
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                     <XAxis dataKey="name" className="text-xs fill-muted-foreground" />
-                    <YAxis className="text-xs fill-muted-foreground" />
+                    <YAxis hide={isMobile} className="text-xs fill-muted-foreground" />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',

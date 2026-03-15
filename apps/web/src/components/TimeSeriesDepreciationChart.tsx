@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -261,6 +262,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
   consideredModels = [],
   familyName,
 }) => {
+  const isMobile = useIsMobile();
   // State para controlar exibição da projeção (default: false = apenas histórico)
   const [showProjection, setShowProjection] = useState(false);
 
@@ -796,8 +798,8 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                     height={30}
                     interval={0}
                   />
-                  <YAxis 
-                    hide
+                  <YAxis
+                    hide={isMobile}
                     tickFormatter={formatCurrencyShort}
                     domain={[
                       (dataMin: number) => Math.min(dataMin - 5000, metrics.firstPrice * 0.6),

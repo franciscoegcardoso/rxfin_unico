@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +43,7 @@ const formatCurrency = (value: number) => {
 };
 
 export const PropertyInsightsDialog: React.FC<PropertyInsightsDialogProps> = ({ property }) => {
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<string | null>(null);
@@ -335,7 +337,8 @@ export const PropertyInsightsDialog: React.FC<PropertyInsightsDialogProps> = ({ 
                       tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                       interval="preserveStartEnd"
                     />
-                    <YAxis 
+                    <YAxis
+                      hide={isMobile}
                       tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                       {...premiumYAxis}
                       tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}

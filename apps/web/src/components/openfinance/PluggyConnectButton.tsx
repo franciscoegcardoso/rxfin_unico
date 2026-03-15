@@ -23,6 +23,7 @@ declare global {
     PluggyConnect?: new (options: {
       connectToken: string;
       includeSandbox?: boolean;
+      openFinanceParameters?: { cpf?: string };
       onSuccess: (data: { item: { id: string } }) => void;
       onError: (error: { message?: string } | unknown) => void;
       onClose: () => void;
@@ -201,6 +202,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       tokenResult?.connectToken != null && typeof tokenResult.connectToken === 'string'
         ? tokenResult.connectToken
         : null;
+    const cpf = tokenResult?.cpf ?? null;
     console.log('Got connect token:', !!connectToken);
 
     if (!connectToken) {
@@ -224,6 +226,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       const pluggyConnect = new PluggyConnectCtor({
         connectToken,
         includeSandbox: isMobileSafari ? false : import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
+        ...(cpf && { openFinanceParameters: { cpf } }),
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
           setWidgetClosed();

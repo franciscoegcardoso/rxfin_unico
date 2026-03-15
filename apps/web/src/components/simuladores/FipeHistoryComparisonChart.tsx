@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
@@ -43,6 +44,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
   hasHistoryA,
   hasHistoryB,
 }) => {
+  const isMobile = useIsMobile();
   const isLoading = loadingA || loadingB;
 
   const mergedData = useMemo(() => {
@@ -154,6 +156,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                 interval="preserveStartEnd"
               />
               <YAxis
+                hide={isMobile}
                 {...premiumYAxis}
                 tickFormatter={formatBRLCompact}
                 domain={yDomain}

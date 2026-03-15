@@ -108,7 +108,7 @@ export const MonthlyPlanChart: React.FC<MonthlyPlanChartProps> = ({ selectedMont
                   fontSize={11}
                   tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))}
                 />
-                <YAxis dataKey="categoria" type="category" stroke="hsl(var(--muted-foreground))" fontSize={11} width={80} />
+                <YAxis hide={isMobile} dataKey="categoria" type="category" stroke="hsl(var(--muted-foreground))" fontSize={11} width={80} />
                 <Tooltip
                   formatter={(v: number) => (isHidden ? '••••' : `R$ ${v.toLocaleString('pt-BR')}`)}
                   contentStyle={premiumTooltipStyle.contentStyle}
@@ -168,7 +168,7 @@ export const DashboardChartsSection: React.FC = () => {
                 </defs>
                 <CartesianGrid {...premiumGrid} />
                 <XAxis dataKey="month" {...premiumXAxis} />
-                <YAxis {...premiumYAxis} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
+                <YAxis hide={isMobile} {...premiumYAxis} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
                 <Tooltip contentStyle={premiumTooltipStyle.contentStyle} formatter={(v: number) => (isHidden ? '••••' : formatCurrency(v))} />
                 <Area type="monotone" dataKey="receitas" stroke="hsl(var(--income))" strokeWidth={3} fillOpacity={1} fill="url(#colorReceitasExp)" name="Receitas" />
                 <Area type="monotone" dataKey="despesas" stroke="hsl(var(--expense))" strokeWidth={3} fillOpacity={1} fill="url(#colorDespesasExp)" name="Despesas" />
@@ -192,7 +192,7 @@ export const DashboardChartsSection: React.FC = () => {
                 </defs>
                 <CartesianGrid {...premiumGrid} />
                 <XAxis dataKey="month" {...premiumXAxis} />
-                <YAxis {...premiumYAxis} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
+                <YAxis hide={isMobile} {...premiumYAxis} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
                 <Tooltip contentStyle={premiumTooltipStyle.contentStyle} formatter={(v: number) => (isHidden ? '••••' : formatCurrency(v))} />
                 <Area type="monotone" dataKey="receitas" stroke="hsl(var(--income))" strokeWidth={3} fillOpacity={1} fill="url(#colorReceitas)" name="Receitas" />
                 <Area type="monotone" dataKey="despesas" stroke="hsl(var(--expense))" strokeWidth={3} fillOpacity={1} fill="url(#colorDespesas)" name="Despesas" />
@@ -236,7 +236,7 @@ export const DashboardChartsSection: React.FC = () => {
                 <BarChart data={hiddenAnnualPlanData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="mes" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
+                  <YAxis hide={isMobile} stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(v: number) => (isHidden ? '••••' : formatCompactCurrencyUtil(v, false))} />
                   <Tooltip formatter={(v: number) => (isHidden ? '••••' : `R$ ${v.toLocaleString('pt-BR')}`)} contentStyle={premiumTooltipStyle.contentStyle} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Bar dataKey="planejado" fill="hsl(var(--muted))" name="Planejado" radius={[4, 4, 0, 0]} />

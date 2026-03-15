@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -33,6 +34,7 @@ import { ErrorCard } from '@/design-system/components/ErrorCard';
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 const PlanejamentoAnual: React.FC = () => {
+  const isMobile = useIsMobile();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [activeTab, setActiveTab] = useState<'visao-geral' | 'plano-anual' | 'plano-30-anos'>('visao-geral');
@@ -155,7 +157,7 @@ const PlanejamentoAnual: React.FC = () => {
                       <BarChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
+                        <YAxis hide={isMobile} tick={{ fontSize: 12 }} tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : String(v))} />
                         <Tooltip formatter={(value: number) => formatCurrency(value)} />
                         <Legend />
                         <Bar dataKey="receita" name="Receita" fill="hsl(var(--income))" radius={[4, 4, 0, 0]} />

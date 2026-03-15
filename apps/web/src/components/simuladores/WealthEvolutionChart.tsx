@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   AreaChart, 
@@ -138,6 +139,7 @@ export const WealthEvolutionChart: React.FC<WealthEvolutionChartProps> = ({
   compositionData,
   selectedHorizon
 }) => {
+  const isMobile = useIsMobile();
   const finalData = compositionData[compositionData.length - 1];
   
   if (!finalData) return null;
@@ -169,7 +171,7 @@ export const WealthEvolutionChart: React.FC<WealthEvolutionChartProps> = ({
               <AreaChart data={compositionData} margin={{ top: 10, right: 15, left: 15, bottom: 0 }}>
                 <CartesianGrid {...premiumGrid} />
                 <XAxis dataKey="month" {...premiumXAxis} />
-                <YAxis hide tickFormatter={(v: number) => formatMoney(v)} />
+                <YAxis hide={isMobile} tickFormatter={(v: number) => formatMoney(v)} />
                 <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="capitalComRendimento" stackId="1" stroke="hsl(220, 70%, 50%)" fill="hsl(220, 70%, 50%)" fillOpacity={0.6} name="Capital" />
                 <Area type="monotone" dataKey="parcelasComRendimento" stackId="1" stroke="hsl(38, 92%, 50%)" fill="hsl(38, 92%, 50%)" fillOpacity={0.6} name="Parcelas" />
@@ -242,8 +244,8 @@ export const WealthEvolutionChart: React.FC<WealthEvolutionChartProps> = ({
                   interval="preserveStartEnd"
                 />
                 
-                <YAxis 
-                  hide
+<YAxis
+                  hide={isMobile}
                   tickFormatter={formatMoneyCompact}
                 />
               

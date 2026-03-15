@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   AreaChart, 
@@ -83,6 +84,7 @@ export const WealthComparisonChart: React.FC<WealthComparisonChartProps> = ({
   chartData,
   selectedHorizon
 }) => {
+  const isMobile = useIsMobile();
   // Simplify data for display - show key points
   const simplifiedData = chartData.filter((_, index) => {
     // Always show first and last
@@ -147,8 +149,8 @@ export const WealthComparisonChart: React.FC<WealthComparisonChartProps> = ({
                 }}
                 interval="preserveStartEnd"
               />
-              <YAxis 
-                hide
+<YAxis
+                hide={isMobile}
                 tickFormatter={formatMoneyCompact}
               />
               <Tooltip content={<CustomTooltip />} />

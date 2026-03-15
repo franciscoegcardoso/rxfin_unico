@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useVisibility } from '@/contexts/VisibilityContext';
@@ -215,6 +216,7 @@ const calculateAssetValueForYear = (
 };
 
 const PlanejamentoAnual: React.FC = () => {
+  const isMobile = useIsMobile();
   const { config, getMonthlyEntry } = useFinancial();
   const { isHidden } = useVisibility();
   const { lancamentos, getLancamentosByMonth, isMonthConsolidated } = useLancamentosRealizados();
@@ -649,7 +651,8 @@ const PlanejamentoAnual: React.FC = () => {
                     dataKey="year" 
                     {...premiumXAxis}
                   />
-                  <YAxis 
+                  <YAxis
+                    hide={isMobile}
                     tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                     {...premiumYAxis}
                   />
@@ -707,7 +710,8 @@ const PlanejamentoAnual: React.FC = () => {
                     dataKey="year" 
                     {...premiumXAxis}
                   />
-                  <YAxis 
+                  <YAxis
+                    hide={isMobile}
                     tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
                     {...premiumYAxis}
                   />

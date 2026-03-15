@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -77,6 +78,7 @@ export const CarVsTransportChart: React.FC<CarVsTransportChartProps> = ({
   creditType,
   creditInfo,
 }) => {
+  const isMobile = useIsMobile();
   // Estados para configuração do transporte alternativo
   const [transportMode, setTransportMode] = useState<TransportMode>('app');
   const [appDailyCost, setAppDailyCost] = useState(DEFAULT_APP_COST);
@@ -403,8 +405,8 @@ export const CarVsTransportChart: React.FC<CarVsTransportChartProps> = ({
                 tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                 interval={Math.floor(projectionMonths / 8)}
               />
-              <YAxis 
-                hide
+<YAxis
+                hide={isMobile}
                 tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v.toString()}
               />
               <RechartsTooltip 

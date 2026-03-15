@@ -43,7 +43,7 @@ export const OnboardingWizardV3: React.FC = () => {
   const [step, setStep] = useState(0);
   const [draftRestored, setDraftRestored] = useState(false);
   const [transition, setTransition] = useState<'block_a' | 'block_b' | 'block_c' | null>(null);
-  const transitionPhaseRef = useRef<'block_a' | 'block_b' | 'block_c' | null>(null);
+  const pendingTransitionRef = useRef<'block_a' | 'block_b' | 'block_c' | null>(null);
 
   // Marcar fase 'started' ao abrir o wizard com not_started (evita falha ao avançar para block_a_done)
   useEffect(() => {
@@ -90,7 +90,7 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    transitionPhaseRef.current = 'block_a';
+    pendingTransitionRef.current = 'block_a';
     setTransition('block_a');
   };
 
@@ -108,13 +108,17 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    transitionPhaseRef.current = 'block_c';
+    pendingTransitionRef.current = 'block_c';
     setTransition('block_c');
   };
 
   const handleTransitionDone = useCallback(async () => {
-    const phase = transitionPhaseRef.current;
+    const phase = pendingTransitionRef.current;
     if (!phase || !user?.id) return;
+
+    // Limpar imediatamente para evitar double-call
+    pendingTransitionRef.current = null;
+    setTransition(null);
 
     const phaseMap = {
       block_a: 'block_a_done',
@@ -128,24 +132,20 @@ export const OnboardingWizardV3: React.FC = () => {
       block_c: 'block_c_completed',
     };
 
-    transitionPhaseRef.current = null;
-
-    if (currentPhase === 'not_started' || currentPhase === 'started') {
-      // fase já deve estar avançada, mas garantir
+    // Garantir 'started' antes do primeiro avanço
+    if (currentPhase === 'not_started') {
+      await advancePhase('started');
     }
 
-    const newPhase = phaseMap[phase];
-    const ok = await advancePhase(newPhase);
-
-    setTransition(null);
-
+    const ok = await advancePhase(phaseMap[phase]);
     if (!ok) {
-      console.error('[OnboardingTransition] advancePhase falhou para:', newPhase);
+      console.error('[OnboardingTransition] advancePhase falhou para:', phaseMap[phase], '| currentPhase:', currentPhase);
+      // Não travar o usuário — avançar step mesmo assim
     }
 
     await registerEvent(eventMap[phase]);
     setStep(0);
-  }, [user?.id, advancePhase, registerEvent]);
+  }, [user?.id, currentPhase, advancePhase, registerEvent]);
 
   const handleBlockDComplete = async () => {
     if (!user?.id) {
@@ -166,12 +166,24 @@ export const OnboardingWizardV3: React.FC = () => {
 
   if (currentPhase === 'completed') return null; // redirect em andamento (evita flash do wizard)
 
-  if (isLoading || !draftRestored) {
+  // Evita flash de tela branca enquanto o draft não foi restaurado
+  if (!draftRestored) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <RXFinLoadingSpinner size={64} />
         <p className="text-sm text-muted-foreground animate-pulse">
-          {isLoading ? 'Carregando sua jornada...' : 'Retomando de onde você parou...'}
+          Retomando sua jornada...
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <RXFinLoadingSpinner size={64} />
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Carregando sua jornada...
         </p>
       </div>
     );

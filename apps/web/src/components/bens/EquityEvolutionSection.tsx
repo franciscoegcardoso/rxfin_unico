@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useVisibility } from '@/contexts/VisibilityContext';
@@ -170,6 +171,7 @@ interface EquityEvolutionSectionProps {
 }
 
 export const EquityEvolutionSection: React.FC<EquityEvolutionSectionProps> = ({ className }) => {
+  const isMobile = useIsMobile();
   const { config } = useFinancial();
   const { isHidden } = useVisibility();
   const [filterType, setFilterType] = useState<AssetType | 'all'>('all');
@@ -507,7 +509,8 @@ export const EquityEvolutionSection: React.FC<EquityEvolutionSectionProps> = ({ 
                   {...premiumXAxis}
                   interval="preserveStartEnd"
                 />
-                <YAxis 
+                <YAxis
+                  hide={isMobile}
                   {...premiumYAxis}
                   tickFormatter={(value) => {
                     if (isHidden) return '••••';

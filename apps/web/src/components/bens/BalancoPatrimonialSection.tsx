@@ -435,10 +435,11 @@ export const BalancoPatrimonialSection: React.FC = () => {
                   {...premiumXAxis}
                   tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                 />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  width={100} 
+                <YAxis
+                  hide={isMobile}
+                  type="category"
+                  dataKey="name"
+                  width={100}
                   {...premiumYAxis}
                   tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
                 />

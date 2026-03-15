@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -322,6 +323,7 @@ export const DepreciationCurveChart: React.FC<DepreciationCurveChartProps> = ({
   modelName,
   rawDataPoints,
 }) => {
+  const isMobile = useIsMobile();
   // Prepara dados do gráfico com interpolação mensal
   // Começa do ano de fabricação (0km) e vai até 5 anos no futuro
   const chartData = useMemo(() => {
@@ -765,8 +767,8 @@ export const DepreciationCurveChart: React.FC<DepreciationCurveChartProps> = ({
                   }}
                 />
                 
-                <YAxis 
-                  hide
+                <YAxis
+                  hide={isMobile}
                   tickFormatter={formatCurrencyShort}
                 />
                 

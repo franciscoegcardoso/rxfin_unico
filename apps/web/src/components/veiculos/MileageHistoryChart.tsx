@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehicleRecord } from '@/types/vehicle';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -89,6 +90,7 @@ const getInterpolatedOdometer = (
 };
 
 export const MileageHistoryChart: React.FC<MileageHistoryChartProps> = ({ records }) => {
+  const isMobile = useIsMobile();
   // Process records to get odometer readings by vehicle
   const chartData = useMemo(() => {
     if (records.length === 0) return [];
@@ -218,7 +220,7 @@ export const MileageHistoryChart: React.FC<MileageHistoryChartProps> = ({ record
             <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid {...premiumGrid} />
               <XAxis dataKey="month" {...premiumXAxis} />
-              <YAxis tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} {...premiumYAxis} domain={['dataMin - 1000', 'dataMax + 1000']} />
+              <YAxis hide={isMobile} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} {...premiumYAxis} domain={['dataMin - 1000', 'dataMax + 1000']} />
               <Tooltip formatter={(value: number, name: string) => [`${value.toLocaleString('pt-BR')} km`, name]} labelFormatter={(label) => `1º de ${label}`} contentStyle={premiumTooltipStyle.contentStyle} />
               <Legend />
               {vehicleNames.map((name, index) => (
@@ -238,7 +240,8 @@ export const MileageHistoryChart: React.FC<MileageHistoryChartProps> = ({ record
                 dataKey="month" 
                 {...premiumXAxis}
               />
-              <YAxis 
+              <YAxis
+                hide={isMobile}
                 tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
                 {...premiumYAxis}
                 domain={['dataMin - 1000', 'dataMax + 1000']}

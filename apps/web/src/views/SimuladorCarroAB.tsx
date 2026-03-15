@@ -1996,7 +1996,7 @@ const SimuladorCarroAB: React.FC = () => {
                           <BarChart data={costComparisonData} layout="vertical">
                             <CartesianGrid {...premiumGrid} horizontal={true} />
                             <XAxis type="number" tickFormatter={(v) => `R$${(v/1000).toFixed(0)}k`} {...premiumXAxis} />
-                            <YAxis type="category" dataKey="name" {...premiumYAxis} width={60} />
+                            <YAxis hide={isMobile} type="category" dataKey="name" {...premiumYAxis} width={60} />
                             <Tooltip 
                               formatter={(value: number) => formatMoney(value)}
                               contentStyle={premiumTooltipStyle}
