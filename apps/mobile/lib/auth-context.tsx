@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
+import * as LocalAuthentication from "expo-local-authentication";
 import { supabase } from "./supabase";
 
 type Profile = {
@@ -27,6 +28,7 @@ type AuthContextType = {
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  tryBiometricAuth: () => Promise<boolean>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -37,6 +39,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signOut: async () => {},
   refreshProfile: async () => {},
+  tryBiometricAuth: async () => false,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -117,6 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserPlan(null);
   }, []);
 
+  const tryBiometricAuth = useCallback(async (): Promise<boolean> => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) return false;
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Confirme sua identidade para acessar o RXFin",
+        fallbackLabel: "Usar senha",
+        cancelLabel: "Cancelar",
+      });
+      return result.success;
+    } catch {
+      return false;
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -127,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         signOut,
         refreshProfile,
+        tryBiometricAuth,
       }}
     >
       {children}

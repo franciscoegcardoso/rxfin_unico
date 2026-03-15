@@ -1,32 +1,42 @@
 {
   "expo": {
-    "name": "rxfin-mobile",
+    "name": "RXFin",
     "slug": "rxfin-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "rxfin",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1A1A2E"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.rxfin.rxfinmobile",
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.rxfin.mobile",
+      "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Use Face ID para acessar sua conta RXFin com segurança."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1A1A2E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "package": "br.com.rxfin.mobile",
+      "versionCode": 1,
       "predictiveBackGestureEnabled": false,
-      "package": "com.rxfin.rxfinmobile"
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,7 +45,13 @@
       "expo-router",
       "expo-web-browser",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID para acessar sua conta RXFin."
+        }
+      ]
     ],
     "extra": {
       "router": {},

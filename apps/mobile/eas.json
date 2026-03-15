@@ -12,13 +12,29 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "PREENCHER@email.com",
+        "ascAppId": "PREENCHER_APP_STORE_CONNECT_ID",
+        "appleTeamId": "PREENCHER_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
+    }
   }
 }

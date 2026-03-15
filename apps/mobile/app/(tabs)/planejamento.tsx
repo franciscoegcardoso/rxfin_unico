@@ -55,7 +55,7 @@ export default function PlanejamentoScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView edges={['top']}>
         <ScreenHeader title="Planejamento" />
         <ScrollView
           style={{ flex: 1 }}

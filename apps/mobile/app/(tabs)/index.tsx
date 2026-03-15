@@ -61,7 +61,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }}>
-      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <SafeAreaView edges={['top']}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ flexGrow: 1 }}
