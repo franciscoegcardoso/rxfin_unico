@@ -76,7 +76,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     retry: 1,
   });
 
-  const onboardingCompleteFromDb = settingsData?.profile?.onboarding_completed === true;
+  const onboardingCompleteFromDb =
+    settingsData?.profile?.onboarding_completed === true ||
+    (settingsData as any)?.onboarding_phase === 'completed';
   const onboardingRpcFailedOrNull = !onboardingCheckPending && needsOnboardingCheck && settingsData == null && !!user?.id;
 
   useEffect(() => {
@@ -137,6 +139,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       if (onboardingRpcFailedOrNull) {
         // RPC falhou ou deu timeout: não bloquear; cache já foi setado no useEffect
       } else if (!onboardingCompleteFromDb) {
+        // Redireciona para o wizard canônico.
+        // O OnboardingWizardV3 detecta currentPhase === 'completed' e redireciona
+        // de volta para /inicio automaticamente, evitando loop.
         return <Navigate to="/onboarding" replace />;
       }
     }

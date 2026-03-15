@@ -115,11 +115,16 @@ export function usePluggyConnect() {
     }
   }, []);
 
-  const getConnectToken = useCallback(async (itemId?: string): Promise<{ connectToken: string; cpf: string | null } | null> => {
+  const getConnectToken = useCallback(async (
+    itemId?: string,
+    redirectUrl?: string
+  ): Promise<{ connectToken: string; cpf: string | null } | null> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('pluggy-connect', {
-        body: itemId ? { itemId } : undefined,
+        body: (itemId || redirectUrl)
+          ? { ...(itemId && { itemId }), ...(redirectUrl && { redirectUrl }) }
+          : undefined,
       });
 
       if (error) throw error;

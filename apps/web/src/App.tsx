@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FinancialProvider } from "@/contexts/FinancialContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { VisibilityProvider } from "@/contexts/VisibilityContext";
@@ -132,31 +132,8 @@ import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import BemVindo from "./pages/BemVindo";
 import LegalDocument from "./pages/LegalDocument";
-import Onboarding2 from "./pages/Onboarding2";
 import { OnboardingWizardV3 } from "./components/onboarding/OnboardingWizardV3";
-import { OnboardingScreen } from "@/design-system/components/OnboardingScreen";
 import { useAuth } from "@/contexts/AuthContext";
-import { markOnboardingComplete } from "@/services/onboardingPersistence";
-const OnboardingControlPage = lazy(() => import('./pages/OnboardingControlPage'));
-const OnboardingV2Page = lazy(() => import('./pages/OnboardingV2Page'));
-
-const ONBOARDING_CACHE_KEY = 'rxfin-onboarding-done';
-
-function OnboardingRoute() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  return (
-    <OnboardingScreen
-      onComplete={async () => {
-        if (user?.id) {
-          await markOnboardingComplete(user.id);
-        }
-        localStorage.setItem(ONBOARDING_CACHE_KEY, 'true');
-        navigate('/inicio');
-      }}
-    />
-  );
-}
 
 /** Rota "/": landing para não autenticados, redireciona para /inicio se autenticado (rxfin.com.br). MobileCtaBar aqui para garantir inclusão no bundle e na árvore React. */
 function RootRoute() {
@@ -207,11 +184,13 @@ const App = () => (
                   <Route path="/verificar-email" element={<VerificarEmail />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route path="/planos" element={<Navigate to="/financeiro/planos" replace />} />
-                  <Route path="/onboarding2" element={<ProtectedRoute><Onboarding2 /></ProtectedRoute>} />
-                  <Route path="/onboarding-raio-x" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
-                  <Route path="/onboarding-v2" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingV2Page /></Suspense></ProtectedRoute>} />
-                  <Route path="/onboarding" element={<OnboardingRoute />} />
-                  <Route path="/onboarding-controle" element={<ProtectedRoute><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><OnboardingControlPage /></Suspense></ProtectedRoute>} />
+                  {/* Onboarding canônico — wizard completo */}
+                  <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
+                  {/* Legados: redirecionar para o canônico */}
+                  <Route path="/onboarding2" element={<Navigate to="/onboarding" replace />} />
+                  <Route path="/onboarding-v2" element={<Navigate to="/onboarding" replace />} />
+                  <Route path="/onboarding-controle" element={<Navigate to="/onboarding" replace />} />
+                  <Route path="/onboarding-raio-x" element={<Navigate to="/onboarding" replace />} />
                   <Route path="/app" element={<Navigate to="/inicio" replace />} />
                   {/* Authenticated app shell: mobile = bottom nav, desktop = sidebar */}
                   <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>

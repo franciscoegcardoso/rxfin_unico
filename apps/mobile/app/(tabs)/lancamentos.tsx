@@ -35,8 +35,8 @@ interface Transaction {
   id: string;
   description: string;
   amount: number;
-  type: 'income' | 'expense';
-  date: string;
+  transaction_type: 'receita' | 'despesa' | 'credit_expense';
+  transaction_date: string;
   category_name: string | null;
 }
 
@@ -50,16 +50,19 @@ export default function LancamentosScreen() {
     queryFn: async ({ pageParam = 0 }) => {
       const { data: rows, error } = await supabase
         .from('transactions')
-        .select('id, description, amount, type, date, categories(name)')
+        .select('id, description, amount, transaction_type, transaction_date, category_name')
         .eq('user_id', user!.id)
-        .eq('is_deleted', false)
-        .order('date', { ascending: false })
-        .range(pageParam, pageParam + PAGE_SIZE - 1);
+        .order('transaction_date', { ascending: false })
+        .range(pageParam as number, (pageParam as number) + PAGE_SIZE - 1);
 
       if (error) throw error;
       return (rows || []).map((t: any) => ({
-        ...t,
-        category_name: t.categories?.name ?? null,
+        id: t.id,
+        description: t.description,
+        amount: t.amount,
+        transaction_type: t.transaction_type,
+        transaction_date: t.transaction_date,
+        category_name: t.category_name ?? null,
       })) as Transaction[];
     },
     initialPageParam: 0,
@@ -97,7 +100,7 @@ export default function LancamentosScreen() {
               {item.description}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing[2], marginTop: 2 }}>
-              <Text style={{ fontSize: fontSize.xs, color: theme.textMuted }}>{formatDate(item.date)}</Text>
+              <Text style={{ fontSize: fontSize.xs, color: theme.textMuted }}>{formatDate(item.transaction_date)}</Text>
               {item.category_name && (
                 <Badge variant="default" size="sm">
                   {item.category_name}
@@ -109,10 +112,10 @@ export default function LancamentosScreen() {
             style={{
               fontSize: fontSize.base,
               fontFamily: 'Inter_600SemiBold',
-              color: item.type === 'income' ? colors.finance.income : colors.finance.expense,
+              color: item.transaction_type === 'receita' ? colors.finance.income : colors.finance.expense,
             }}
           >
-            {item.type === 'income' ? '+' : '-'}
+            {item.transaction_type === 'receita' ? '+' : '-'}
             {formatCurrency(Math.abs(item.amount))}
           </Text>
         </View>

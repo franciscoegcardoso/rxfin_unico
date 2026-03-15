@@ -14,6 +14,7 @@ import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { useOnboardingRaioXSave } from '@/hooks/useOnboardingRaioXSave';
 import { useAuth } from '@/contexts/AuthContext';
+import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { toast } from 'sonner';
 
 const BLOCK_STEPS = { A: 4, B: 5, C: 5, D: 4 } as const;
@@ -153,6 +154,10 @@ export const OnboardingWizardV3: React.FC = () => {
     const ok = await advancePhase('completed');
     if (!ok) return;
     await registerEvent('block_d_completed');
+    // Sincroniza profiles.onboarding_completed = true para o ProtectedRoute usar como cache
+    await markOnboardingComplete(user.id);
+    // Seta o cache local para evitar query extra no próximo acesso a /inicio
+    localStorage.setItem('rxfin-onboarding-done', 'true');
     await clearDraft();
     toast.success('🎉 Parabéns! Seu Raio-X está completo!');
     navigate('/inicio');

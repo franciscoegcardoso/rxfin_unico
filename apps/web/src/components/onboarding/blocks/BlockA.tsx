@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowLeft, Crown, Fingerprint, Shield, Activity, Users, User } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { ConquestCard } from '../ConquestCard';
@@ -72,6 +72,8 @@ export const BlockA: React.FC<BlockAProps> = ({
   });
 
   const [milestoneData, setMilestoneData] = useState<any>(null);
+  /** Step 0 tem dois sub-passos: 0 = welcome, 1 = escolha tipo de conta (individual/compartilhado). */
+  const [welcomeSubStep, setWelcomeSubStep] = useState<0 | 1>(0);
 
   // Fetch milestone when reaching conquest step
   useEffect(() => {
@@ -81,81 +83,104 @@ export const BlockA: React.FC<BlockAProps> = ({
     }
   }, [step, user?.id]);
 
-  // ─── Step 0: Welcome ─────────────────────────────────────────
+  // ─── Step 0: Welcome (subStep 0) ou Tipo de conta (subStep 1) ───
   if (step === 0) {
+    // Sub-step 0: tela de boas-vindas enxuta + linha de 3 etapas + CTA único
+    if (welcomeSubStep === 0) {
+      const journeySteps = [
+        { num: 1, label: 'Identidade Financeira', short: 'Receitas e despesas' },
+        { num: 2, label: 'Patrimônio Mapeado', short: 'Bens, dívidas e proteções' },
+        { num: 3, label: 'Fluxo e Projeção', short: 'Caixa e visão de 30 anos' },
+      ];
+      return (
+        <div className="max-w-2xl mx-auto py-8 animate-slide-up">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-foreground mb-3">
+              Construa seu Raio-X Financeiro
+            </h1>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Em poucos passos você substitui os dados fictícios pelos seus e passa a ter visão completa da sua saúde financeira.
+            </p>
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border p-6 mb-6">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4 text-center">
+              O que você vai montar nesta jornada
+            </h2>
+            <div className="flex items-stretch gap-2">
+              {journeySteps.map((s, i) => (
+                <div key={s.num} className="flex-1 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm flex items-center justify-center mb-2">
+                    {s.num}
+                  </div>
+                  <p className="text-xs font-medium text-foreground leading-tight">{s.label}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{s.short}</p>
+                  {i < journeySteps.length - 1 && (
+                    <div className="hidden sm:block flex-1 min-h-[2px] w-full max-w-[20px] mx-auto mt-2 bg-border self-center" aria-hidden />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mb-4">⏱️ Cerca de 8 minutos</p>
+
+          <Button variant="hero" size="lg" className="w-full" onClick={() => setWelcomeSubStep(1)}>
+            Começar
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </div>
+      );
+    }
+
+    // Sub-step 1: apenas escolha do tipo de conta (individual / compartilhado)
     return (
       <div className="max-w-2xl mx-auto py-8 animate-slide-up">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-3">
-            Sua Jornada Financeira Começa Aqui
-          </h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Você viu dados fictícios na ferramenta. Agora vamos substituí-los pelos seus dados reais e construir seu Raio-X Financeiro.
-          </p>
-        </div>
-
-        <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-            Ao final desta jornada você terá:
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: Fingerprint, label: 'Identidade Financeira', desc: 'Receitas e despesas mapeadas' },
-              { icon: Shield, label: 'Patrimônio Mapeado', desc: 'Bens, dívidas e proteções' },
-              { icon: Activity, label: 'Fluxo de Caixa Real', desc: 'Cada real rastreado' },
-              { icon: Crown, label: 'Domínio Total', desc: 'Projeção de 30 anos' },
-            ].map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-                <Icon className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">{label}</p>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+        <Button variant="ghost" size="sm" className="mb-4 -ml-1" onClick={() => setWelcomeSubStep(0)}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+        </Button>
         <div className="bg-card rounded-2xl border border-border p-6 mb-6">
           <h2 className="text-lg font-semibold text-foreground mb-2">
             Como você gerencia suas contas?
           </h2>
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            Escolha o perfil que melhor descreve sua situação.
+          </p>
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button
+              type="button"
               onClick={() => setAccountType('individual')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
+                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
                 config.accountType === 'individual'
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
               )}
             >
-              <User className={cn("h-6 w-6 shrink-0", config.accountType === 'individual' ? "text-primary" : "text-muted-foreground")} />
+              <User className={cn('h-6 w-6 shrink-0', config.accountType === 'individual' ? 'text-primary' : 'text-muted-foreground')} />
               <span className="text-sm font-medium">Individual</span>
-              <span className="text-xs text-muted-foreground">Contas individuais</span>
+              <span className="text-xs text-muted-foreground">Só minhas contas</span>
             </button>
             <button
+              type="button"
               onClick={() => setAccountType('shared')}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center",
+                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
                 config.accountType === 'shared'
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
               )}
             >
-              <Users className={cn("h-6 w-6 shrink-0", config.accountType === 'shared' ? "text-primary" : "text-muted-foreground")} />
+              <Users className={cn('h-6 w-6 shrink-0', config.accountType === 'shared' ? 'text-primary' : 'text-muted-foreground')} />
               <span className="text-sm font-medium">Compartilhado</span>
               <span className="text-xs text-muted-foreground">Divido com outra(s) pessoa(s)</span>
             </button>
           </div>
+          <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(1)}>
+            Continuar para receitas e despesas
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
         </div>
-
-        <div className="text-center text-sm text-muted-foreground mb-3">⏱️ ~5 min | 📊 Resultado: Identidade Financeira</div>
-
-        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(1)}>
-          Começar Nível 1: Identidade Financeira
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </Button>
       </div>
     );
   }
