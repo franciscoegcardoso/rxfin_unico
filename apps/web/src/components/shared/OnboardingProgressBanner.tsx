@@ -59,49 +59,64 @@ export const OnboardingProgressBanner: React.FC<OnboardingProgressBannerProps> =
     <div
       className={`
         ${basePlacement}
-        h-8
-        bg-[hsl(var(--color-brand-950))]
-        dark:bg-[hsl(var(--color-brand-900))]
+        min-h-[48px]
+        bg-[hsl(var(--color-brand-950))] dark:bg-[hsl(var(--color-brand-900))]
+        text-white
         flex items-center
-        px-4 md:px-6 lg:px-8
-        gap-3
       `}
     >
-      {/* Ícone */}
-      <Rocket className="h-3.5 w-3.5 shrink-0 text-[hsl(var(--color-brand-300))]" />
+      <div className="w-full max-w-[1800px] mx-auto px-4 py-3 min-h-[48px] flex flex-wrap items-center justify-between gap-3">
 
-      {/* Label de fase */}
-      <span className="text-xs font-medium text-[hsl(var(--color-brand-100))] whitespace-nowrap hidden sm:inline">
-        Raio-X em andamento
-      </span>
-      <span className="text-xs text-[hsl(var(--color-brand-300))] whitespace-nowrap hidden md:inline">
-        · {label}
-      </span>
+        {/* Lado esquerdo: ícone + texto de contexto */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Rocket className="h-4 w-4 shrink-0 text-[hsl(var(--color-brand-300))]" />
+          <div className="min-w-0">
+            {/* Mobile: copy curto direto ao ponto */}
+            <p className="text-sm font-semibold text-white sm:hidden">
+              Raio-X em andamento — {label}
+            </p>
+            {/* Desktop: copy completo com barra de progresso inline */}
+            <div className="hidden sm:flex items-center gap-3">
+              <p className="text-sm font-semibold text-white whitespace-nowrap">
+                Raio-X em andamento
+              </p>
+              <span className="text-xs text-[hsl(var(--color-brand-300))] whitespace-nowrap hidden md:inline">
+                · {label}
+              </span>
+              {/* Barra de progresso */}
+              <div className="w-24 h-1.5 rounded-full bg-[hsl(var(--color-brand-800))]">
+                <div
+                  className="h-full rounded-full bg-[hsl(var(--color-brand-400))] transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <span className="text-xs text-[hsl(var(--color-brand-300))] tabular-nums">
+                {progress}%
+              </span>
+            </div>
+          </div>
+        </div>
 
-      {/* Barra de progresso */}
-      <div className="flex-1 max-w-[120px] h-1.5 rounded-full bg-[hsl(var(--color-brand-800))] hidden sm:block">
-        <div
-          className="h-full rounded-full bg-[hsl(var(--color-brand-400))] transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+        {/* Lado direito: botão CTA */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <Button
+            size="sm"
+            onClick={() => navigate('/onboarding')}
+            className="
+              font-bold text-xs sm:text-sm gap-1.5
+              bg-[hsl(var(--color-brand-600))] hover:bg-[hsl(var(--color-brand-500))]
+              text-white shadow-md
+              whitespace-nowrap
+              hover:scale-105 transition-transform
+            "
+          >
+            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">Continuar meu Raio-X →</span>
+            <span className="sm:hidden">Continuar →</span>
+          </Button>
+        </div>
+
       </div>
-
-      {/* Botão */}
-      <Button
-        size="sm"
-        onClick={() => navigate('/onboarding-raio-x')}
-        className="
-          ml-auto h-6 px-3 text-xs font-semibold gap-1
-          bg-[hsl(var(--color-brand-600))]
-          hover:bg-[hsl(var(--color-brand-500))]
-          text-white
-          shrink-0
-        "
-      >
-        <span className="hidden sm:inline">Continuar Raio-X</span>
-        <span className="sm:hidden">Continuar</span>
-        <ArrowRight className="h-3 w-3" />
-      </Button>
     </div>
   );
 };

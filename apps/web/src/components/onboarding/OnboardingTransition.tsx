@@ -63,6 +63,8 @@ export const OnboardingTransition: React.FC<OnboardingTransitionProps> = ({
   const content = TRANSITION_CONTENT[completedPhase];
   const [lineIndex, setLineIndex] = useState(0);
   const [showNext, setShowNext] = useState(false);
+  const onDoneRef = useRef(onDone);
+  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
 
   // Ciclar pelas linhas de processamento
   useEffect(() => {
