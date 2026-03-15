@@ -628,11 +628,11 @@ const BensInvestimentosLayout: React.FC = () => {
                         return (
                           <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
                             <CardContent className="p-4">
-                              <p className="font-bold truncate">{a.name ?? '—'}</p>
-                              <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
+                              <p className="text-base font-semibold text-foreground truncate">{a.name ?? '—'}</p>
+                              <p className="mt-3 text-2xl font-bold text-primary tabular-nums">{formatCurrency(a.current_value ?? 0)}</p>
                               {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
                               {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>}
-                              {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm text-green-600">Renda: {formatCurrency(a.rental_value)}/mês</p>}
+                              {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">Renda: {formatCurrency(a.rental_value)}/mês</p>}
                               {(a.monthly_cost ?? 0) > 0 && <p className="text-sm text-muted-foreground">Custo: {formatCurrency(a.monthly_cost!)}/mês</p>}
                               {roi != null && <p className="text-xs text-muted-foreground mt-1">ROI: {roi}% a.a.</p>}
                             </CardContent>
@@ -687,8 +687,8 @@ const BensInvestimentosLayout: React.FC = () => {
                       {veiculosList.map((a: { id?: string; name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number }, i: number) => (
                         <Card key={a.id ?? i} className="rounded-[14px] border border-border/80 overflow-hidden">
                           <CardContent className="p-4">
-                            <p className="font-bold truncate">{a.name ?? '—'}</p>
-                            <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(a.current_value ?? 0)}</p>
+                            <p className="text-base font-semibold text-foreground truncate">{a.name ?? '—'}</p>
+                            <p className="mt-3 text-2xl font-bold text-primary tabular-nums">{formatCurrency(a.current_value ?? 0)}</p>
                             {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
                             {a.appreciation_pct != null && (
                               <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>
