@@ -24,8 +24,9 @@
     "gen:types": "supabase gen types typescript --project-id kneaniaifzgqibpajyji > apps/web/src/types/supabase.ts"
   },
   "devDependencies": {
-    "turbo": "^2",
-    "supabase": "^2.76.15"
+    "react-native": "0.83.2",
+    "supabase": "^2.76.15",
+    "turbo": "^2"
   },
   "engines": {
     "node": ">=18"

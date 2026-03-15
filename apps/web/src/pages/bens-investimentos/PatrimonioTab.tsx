@@ -324,7 +324,7 @@ const PatrimonioTab: React.FC = () => {
                               {React.cloneElement(assetIcons[asset.type] as React.ReactElement, { className: "h-4 w-4 sm:h-5 sm:w-5" })}
                             </div>
                             <div className="min-w-0">
-                              <p className={cn("font-medium text-sm sm:text-base truncate", isSold && "text-muted-foreground")}>
+                              <p className={cn("text-base font-semibold text-foreground truncate", isSold && "text-muted-foreground")}>
                                 {asset.name}
                               </p>
                               {isSold && (
