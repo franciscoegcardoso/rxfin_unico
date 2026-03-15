@@ -76,9 +76,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     retry: 1,
   });
 
+  const ONBOARDING_IN_PROGRESS_PHASES = [
+    'started',
+    'block_a_done',
+    'block_b_done',
+    'block_c_done',
+    'completed',
+  ];
+  const onboardingPhase = (settingsData as any)?.onboarding_phase ?? '';
   const onboardingCompleteFromDb =
     settingsData?.profile?.onboarding_completed === true ||
-    (settingsData as any)?.onboarding_phase === 'completed';
+    ONBOARDING_IN_PROGRESS_PHASES.includes(onboardingPhase);
   const onboardingRpcFailedOrNull = !onboardingCheckPending && needsOnboardingCheck && settingsData == null && !!user?.id;
 
   useEffect(() => {

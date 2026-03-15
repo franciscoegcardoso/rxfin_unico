@@ -106,41 +106,62 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
     if (!hasOAuthReturn) return;
 
-    const pendingToken = sessionStorage.getItem(SESSION_STORAGE_PENDING_TOKEN);
-    if (!pendingToken || !window.PluggyConnect) return;
+    const pendingToken = localStorage.getItem(SESSION_STORAGE_PENDING_TOKEN);
+    if (!pendingToken) return;
 
-    sessionStorage.removeItem(SESSION_STORAGE_PENDING_TOKEN);
-    // Limpar parâmetros OAuth da URL sem recarregar
+    // Limpar imediatamente para evitar re-execução em recargas
+    localStorage.removeItem(SESSION_STORAGE_PENDING_TOKEN);
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, '', cleanUrl);
 
-    setIsOpening(true);
-    setWidgetOpen();
+    let attempts = 0;
 
-    const pluggyConnect = new window.PluggyConnect({
-      connectToken: pendingToken,
-      includeSandbox: import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
-      onSuccess: async (data) => {
-        setWidgetClosed();
-        setIsOpening(false);
-        const success = await saveConnection(data.item.id);
-        if (success && onSuccess) onSuccess();
-      },
-      onError: (err) => {
-        setWidgetClosed();
-        setIsOpening(false);
-        const message =
-          typeof err === 'object' && err && 'message' in err
-            ? String((err as any).message)
-            : 'Ocorreu um erro ao conectar.';
-        toast({ title: 'Erro na conexão', description: message, variant: 'destructive' });
-      },
-      onClose: () => {
-        setWidgetClosed();
-        setIsOpening(false);
-      },
-    });
-    pluggyConnect.init();
+    // Aguardar o script da Pluggy carregar (máx 10s) antes de inicializar
+    const waitForPluggyAndInit = () => {
+      if (window.PluggyConnect) {
+        setIsOpening(true);
+        setWidgetOpen();
+
+        const pluggyConnect = new window.PluggyConnect({
+          connectToken: pendingToken,
+          includeSandbox: false,
+          onSuccess: async (data) => {
+            setWidgetClosed();
+            setIsOpening(false);
+            const success = await saveConnection(data.item.id);
+            if (success && onSuccess) onSuccess();
+          },
+          onError: (err) => {
+            setWidgetClosed();
+            setIsOpening(false);
+            const message =
+              typeof err === 'object' && err && 'message' in err
+                ? String((err as any).message)
+                : 'Ocorreu um erro ao conectar.';
+            toast({ title: 'Erro na conexão', description: message, variant: 'destructive' });
+          },
+          onClose: () => {
+            setWidgetClosed();
+            setIsOpening(false);
+          },
+        });
+        pluggyConnect.init();
+        return;
+      }
+      // Script ainda não carregou — tentar de novo em 300ms (máx 10s = ~33 tentativas)
+      attempts++;
+      if (attempts < 33) {
+        setTimeout(waitForPluggyAndInit, 300);
+      } else {
+        toast({
+          title: 'Erro',
+          description: 'Widget de conexão não disponível. Recarregue a página.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    waitForPluggyAndInit();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,9 +211,9 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         throw new Error('Widget de conexão não disponível. Recarregue a página.');
       }
 
-      // No mobile Safari, salvar token antes do redirect OAuth do banco
+      // No mobile Safari, salvar token antes do redirect OAuth do banco (localStorage: compartilhado entre abas)
       if (isMobileSafari) {
-        sessionStorage.setItem(SESSION_STORAGE_PENDING_TOKEN, connectToken);
+        localStorage.setItem(SESSION_STORAGE_PENDING_TOKEN, connectToken);
       }
       setWidgetOpen();
       const pluggyConnect = new PluggyConnectCtor({

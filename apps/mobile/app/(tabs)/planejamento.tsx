@@ -96,9 +96,9 @@ export default function PlanejamentoScreen() {
         <View style={{ flex: 1 }}>
           <ScreenHeader title="Planejamento" />
           <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

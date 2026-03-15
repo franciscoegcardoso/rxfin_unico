@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
@@ -85,12 +85,12 @@ export const OnboardingTransition: React.FC<OnboardingTransitionProps> = ({
     return () => clearTimeout(timer);
   }, [content.durationMs]);
 
-  // Auto-avançar após mostrar "próximo"
+  // Auto-avançar após mostrar "próximo" (ref evita reinício do timer quando onDone muda)
   useEffect(() => {
     if (!showNext) return;
-    const timer = setTimeout(onDone, 1800);
+    const timer = setTimeout(() => onDoneRef.current?.(), 1800);
     return () => clearTimeout(timer);
-  }, [showNext, onDone]);
+  }, [showNext]);
 
   return (
     <motion.div
