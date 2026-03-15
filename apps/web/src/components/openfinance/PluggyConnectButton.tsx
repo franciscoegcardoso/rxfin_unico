@@ -10,7 +10,8 @@ const PLUGGY_CONNECT_SCRIPT = 'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/plugg
 const SESSION_STORAGE_PENDING_TOKEN = 'pluggy_pending_token';
 
 export interface PluggyConnectButtonProps {
-  onSuccess?: () => void;
+  onSuccess?: (itemId?: string) => void;
+  onSaving?: () => void;
   updateItemId?: string;
   variant?: 'default' | 'outline' | 'secondary';
   size?: 'default' | 'sm' | 'lg';
@@ -42,6 +43,7 @@ function setWidgetClosed() {
 
 export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   onSuccess,
+  onSaving,
   updateItemId,
   variant = 'default',
   size = 'default',
@@ -128,8 +130,11 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
           onSuccess: async (data) => {
             setWidgetClosed();
             setIsOpening(false);
-            const success = await saveConnection(data.item.id);
-            if (success && onSuccess) onSuccess();
+            if (onSaving) onSaving();
+            setTimeout(async () => {
+              const success = await saveConnection(data.item.id);
+              if (success && onSuccess) onSuccess(data.item.id);
+            }, 300);
           },
           onError: (err) => {
             setWidgetClosed();
@@ -223,8 +228,11 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
           console.log('Pluggy Connect success:', data);
           setWidgetClosed();
           setIsOpening(false);
-          const success = await saveConnection(data.item.id);
-          if (success && onSuccess) onSuccess();
+          if (onSaving) onSaving();
+          setTimeout(async () => {
+            const success = await saveConnection(data.item.id);
+            if (success && onSuccess) onSuccess(data.item.id);
+          }, 300);
         },
         onError: (err) => {
           console.error('Pluggy Connect error:', err);

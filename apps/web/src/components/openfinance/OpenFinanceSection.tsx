@@ -91,6 +91,9 @@ export const OpenFinanceSection: React.FC = () => {
 
   const [refreshingItems, setRefreshingItems] = useState<Set<string>>(new Set());
   const [reconnectItemId, setReconnectItemId] = useState<string | null>(null);
+  const [justConnectedId, setJustConnectedId] = useState<string | null>(null);
+  const [isSavingConnection, setIsSavingConnection] = useState(false);
+  const [recentlyConnectedIds, setRecentlyConnectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchConnections();
@@ -176,16 +179,17 @@ export const OpenFinanceSection: React.FC = () => {
     await deleteConnection(itemId);
   };
 
-  // Detect newly-connected accounts (connected < 2 min ago, no transactions yet)
+  // Detect newly-connected accounts (reconexões rastreadas localmente ou created_at recente)
   const isNewlyConnected = useCallback(
     (connection: typeof connections[0]) => {
+      if (recentlyConnectedIds.has(connection.item_id)) return true;
       const connAccounts = accountsByConnection[connection.id] || [];
       const hasTx = connAccounts.some((a) => (transactionsByAccount[a.id] || []).length > 0);
       if (hasTx) return false;
       const ageMs = Date.now() - new Date(connection.created_at).getTime();
-      return ageMs < 2 * 60 * 1000; // 2 minutes
+      return ageMs < 5 * 60 * 1000;
     },
-    [accountsByConnection, transactionsByAccount],
+    [accountsByConnection, transactionsByAccount, recentlyConnectedIds],
   );
 
   return (
@@ -193,6 +197,19 @@ export const OpenFinanceSection: React.FC = () => {
       {/* Header */}
       <Card className="border-none bg-gradient-to-br from-primary/10 to-primary/5">
         <CardContent className="p-6">
+          {isSavingConnection && (
+            <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 p-3 flex items-center gap-3 animate-in fade-in duration-300">
+              <Loader2 className="h-4 w-4 text-primary animate-spin shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Registrando conexão…
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Aguarde enquanto configuramos seu banco.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="h-14 w-14 rounded-2xl bg-primary/20 flex items-center justify-center">
@@ -207,9 +224,12 @@ export const OpenFinanceSection: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <PluggyConnectButton
-                onSuccess={() => {
-                  fetchConnections();
-                  fetchAccounts();
+                onSaving={() => setIsSavingConnection(true)}
+                onSuccess={async (itemId) => {
+                  setIsSavingConnection(false);
+                  if (itemId) setRecentlyConnectedIds((prev) => new Set(prev).add(itemId));
+                  await fetchConnections();
+                  await fetchAccounts();
                   fetchTransactions();
                 }}
               />
@@ -329,9 +349,12 @@ export const OpenFinanceSection: React.FC = () => {
             </p>
             <PluggyConnectButton
               className="mt-4"
-              onSuccess={() => {
-                fetchConnections();
-                fetchAccounts();
+              onSaving={() => setIsSavingConnection(true)}
+              onSuccess={async (itemId) => {
+                setIsSavingConnection(false);
+                if (itemId) setRecentlyConnectedIds((prev) => new Set(prev).add(itemId));
+                await fetchConnections();
+                await fetchAccounts();
                 fetchTransactions();
               }}
             />
@@ -355,7 +378,13 @@ export const OpenFinanceSection: React.FC = () => {
             const isProcessing = normalizedStatus === 'syncing' || (!hasError && newlyConnected);
 
             return (
-              <Collapsible key={connection.id}>
+              <Collapsible
+                key={connection.id}
+                defaultOpen={
+                  connections.indexOf(connection) === 0 &&
+                  Date.now() - new Date(connection.created_at).getTime() < 5 * 60 * 1000
+                }
+              >
                 <Card className={cn(isRefreshing && 'animate-pulse')}>
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl group">
@@ -683,13 +712,16 @@ export const OpenFinanceSection: React.FC = () => {
         <PluggyConnectButton
           key={`reconnect-${reconnectItemId}`}
           updateItemId={reconnectItemId}
-          onSuccess={() => {
+          onSaving={() => setIsSavingConnection(true)}
+          onSuccess={(itemId) => {
             setReconnectItemId(null);
+            setIsSavingConnection(false);
+            if (itemId) setRecentlyConnectedIds((prev) => new Set(prev).add(itemId));
             fetchConnections();
             fetchAccounts();
             fetchTransactions();
           }}
-          className="fixed bottom-4 right-4 z-50 shadow-lg"
+          className="hidden"
           variant="default"
           size="lg"
         />

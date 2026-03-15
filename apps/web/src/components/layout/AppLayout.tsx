@@ -8,7 +8,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
 import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
-import { SecureConnectionBadge } from '@/components/shared/SecureConnectionBadge';
 import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
 import { OnboardingProgressBanner } from '@/components/shared/OnboardingProgressBanner';
 import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
@@ -190,11 +189,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         >
           {content}
         </main>
-        {!isMobile && (
-          <footer className="w-full border-t border-[hsl(var(--color-border))] py-2 px-6 flex justify-center bg-[hsl(var(--color-surface-base))]">
-            <SecureConnectionBadge />
-          </footer>
-        )}
         {isMobile && <MobileBottomNav />}
         {isDemoMode && (
           <DemoModeWelcomeModal
