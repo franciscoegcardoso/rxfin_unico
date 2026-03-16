@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Building2, Upload, CheckCircle2, Loader2,
 } from 'lucide-react';
@@ -47,6 +47,24 @@ export const BlockB: React.FC<BlockBProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [milestoneData, setMilestoneData] = useState<unknown>(null);
+
+  useEffect(() => {
+    if (step === 1 && snapshot?.pluggy_connections && connectedBanks.length === 0) {
+      const existing: ConnectedBank[] = snapshot.pluggy_connections.map((conn) => ({
+        item_id: conn.item_id ?? `snapshot-${conn.connector_id}`,
+        connector_id: conn.connector_id,
+        connector_name: conn.connector_name,
+        connector_image_url: conn.connector_image_url ?? null,
+        connector_primary_color: conn.connector_primary_color ?? null,
+        connected_at: conn.created_at,
+        from_snapshot: true,
+      }));
+      if (existing.length > 0) {
+        setConnectedBanks(existing);
+        setConnectedCount(existing.length);
+      }
+    }
+  }, [step, snapshot]);
 
   const handlePluggySaving = () => {
     setSyncMessage('Salvando conexão...');
@@ -185,16 +203,23 @@ export const BlockB: React.FC<BlockBProps> = ({
 
   // ─── Step 1: Conectar via Open Finance ──────────────────────
   if (step === 1) {
+    const connectedConnectorIds = new Set(
+      connectedBanks
+        .map((b) => b.connector_id)
+        .filter((id): id is number => id !== undefined)
+    );
+    const snapshotBanks = connectedBanks.filter((b) => b.from_snapshot);
+    const newlyConnectedBanks = connectedBanks.filter((b) => !b.from_snapshot);
+
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-6">
           <Button variant="outline" size="sm" onClick={() => onStepChange(0)}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Voltar
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           <h2 className="text-xl font-bold text-foreground mb-1">
             Conectar via Open Finance
           </h2>
@@ -203,23 +228,16 @@ export const BlockB: React.FC<BlockBProps> = ({
           </p>
         </div>
 
-        {connectedBanks.length > 0 && (
-          <div className="mb-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
-              Bancos conectados ({connectedBanks.length})
+        {snapshotBanks.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">
+              Já conectados anteriormente
             </p>
-
-            {connectedBanks.map((bank) => {
-              const isLast = bank.item_id === lastConnectedItemId;
-              return (
+            <div className="space-y-2">
+              {snapshotBanks.map((bank) => (
                 <div
                   key={bank.item_id}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-xl border transition-all duration-500',
-                    isLast
-                      ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
-                      : 'border-border bg-card',
-                  )}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card"
                 >
                   <ConnectorLogo
                     imageUrl={bank.connector_image_url}
@@ -227,35 +245,75 @@ export const BlockB: React.FC<BlockBProps> = ({
                     connectorName={bank.connector_name}
                     size="md"
                   />
-
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
                       {bank.connector_name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {isLast ? '✨ Acabou de conectar' : 'Conectado com sucesso'}
+                      Conectado em {new Date(bank.connected_at).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
-
-                  <CheckCircle2
-                    className={cn(
-                      'h-5 w-5 shrink-0 transition-colors',
-                      isLast ? 'text-primary' : 'text-muted-foreground/50',
-                    )}
-                  />
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground/50 shrink-0" />
                 </div>
-              );
-            })}
-
-            <div className="border-t border-border pt-1" />
+              ))}
+            </div>
           </div>
+        )}
+
+        {newlyConnectedBanks.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1 mb-2">
+              Conectados agora
+            </p>
+            <div className="space-y-2">
+              {newlyConnectedBanks.map((bank) => {
+                const isLast = bank.item_id === lastConnectedItemId;
+                return (
+                  <div
+                    key={bank.item_id}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-xl border transition-all duration-500',
+                      isLast
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm'
+                        : 'border-border bg-card',
+                    )}
+                  >
+                    <ConnectorLogo
+                      imageUrl={bank.connector_image_url}
+                      primaryColor={bank.connector_primary_color?.replace('#', '') ?? undefined}
+                      connectorName={bank.connector_name}
+                      size="md"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {bank.connector_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isLast ? '✨ Acabou de conectar' : 'Conectado com sucesso'}
+                      </p>
+                    </div>
+                    <CheckCircle2
+                      className={cn(
+                        'h-5 w-5 shrink-0 transition-colors',
+                        isLast ? 'text-primary' : 'text-muted-foreground/50',
+                      )}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {connectedBanks.length > 0 && (
+          <div className="border-t border-border mb-4" />
         )}
 
         <div
           className={cn(
             'rounded-xl border p-5 mb-5 transition-colors',
             connectedBanks.length > 0
-              ? 'bg-muted/30 border-border/50'
+              ? 'bg-muted/20 border-border/60'
               : 'bg-card border-border',
           )}
         >
@@ -275,22 +333,42 @@ export const BlockB: React.FC<BlockBProps> = ({
               if (itemId && user?.id) {
                 const { data } = await supabase
                   .from('pluggy_connections')
-                  .select('item_id, connector_name, connector_image_url, connector_primary_color')
+                  .select('item_id, connector_id, connector_name, connector_image_url, connector_primary_color')
                   .eq('item_id', itemId)
                   .eq('user_id', user.id)
                   .single();
 
                 if (data) {
-                  const newBank: ConnectedBank = {
-                    item_id: data.item_id,
-                    connector_name: data.connector_name,
-                    connector_image_url: data.connector_image_url,
-                    connector_primary_color: data.connector_primary_color,
-                    connected_at: new Date().toISOString(),
-                  };
-                  setConnectedBanks((prev) => [...prev, newBank]);
-                  setLastConnectedItemId(itemId);
+                  const isDuplicate =
+                    data.connector_id != null && connectedConnectorIds.has(data.connector_id);
 
+                  if (isDuplicate) {
+                    setConnectedBanks((prev) =>
+                      prev.map((b) =>
+                        b.connector_id === data.connector_id
+                          ? {
+                              ...b,
+                              item_id: data.item_id,
+                              from_snapshot: false,
+                              connected_at: new Date().toISOString(),
+                            }
+                          : b,
+                      ),
+                    );
+                  } else {
+                    const newBank: ConnectedBank = {
+                      item_id: data.item_id,
+                      connector_id: data.connector_id ?? undefined,
+                      connector_name: data.connector_name,
+                      connector_image_url: data.connector_image_url ?? null,
+                      connector_primary_color: data.connector_primary_color ?? null,
+                      connected_at: new Date().toISOString(),
+                      from_snapshot: false,
+                    };
+                    setConnectedBanks((prev) => [...prev, newBank]);
+                  }
+
+                  setLastConnectedItemId(data.item_id);
                   setTimeout(() => setLastConnectedItemId(null), 4000);
                 }
               }
@@ -305,11 +383,12 @@ export const BlockB: React.FC<BlockBProps> = ({
         </div>
 
         <div className="flex gap-3">
-          {connectedCount > 0 && (
+          {connectedBanks.length > 0 && (
             <Button
               variant="hero"
               className="flex-1"
               onClick={handleFinishConnections}
+              disabled={isSyncing}
             >
               {isSyncing ? (
                 <>
@@ -325,15 +404,15 @@ export const BlockB: React.FC<BlockBProps> = ({
             </Button>
           )}
           <Button
-            variant={connectedCount > 0 ? 'outline' : 'ghost'}
-            className={connectedCount === 0 ? 'w-full text-muted-foreground' : 'shrink-0'}
+            variant={connectedBanks.length > 0 ? 'outline' : 'ghost'}
+            className={connectedBanks.length === 0 ? 'w-full text-muted-foreground' : 'shrink-0'}
             size="sm"
             onClick={() => {
               onSaveDraft('connection_method', 'later');
               onComplete();
             }}
           >
-            {connectedCount > 0 ? 'Pular restantes' : 'Pular por agora'}
+            {connectedBanks.length > 0 ? 'Pular restantes' : 'Pular por agora'}
           </Button>
         </div>
       </div>

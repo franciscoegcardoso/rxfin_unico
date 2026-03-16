@@ -5,9 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 export interface OnboardingSnapshot {
   pluggy_connections_count: number;
   pluggy_connections: Array<{
+    item_id?: string;
     connector_id: number;
     connector_name: string;
     connector_image_url: string | null;
+    connector_primary_color?: string | null;
     status: string;
     created_at: string;
   }>;

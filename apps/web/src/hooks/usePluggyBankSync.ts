@@ -24,8 +24,6 @@ interface BankTransaction {
   account_id: string;
 }
 
-const BATCH_SIZE = 50;
-
 export function usePluggyBankSync() {
   const { user } = useAuth();
   const { fetchLancamentos } = useLancamentosRealizados();
@@ -36,150 +34,10 @@ export function usePluggyBankSync() {
   const runningRef = useRef(false);
 
   /**
-   * Categorize bank transactions using the same AI edge function used for credit cards
-   */
-  const categorizeWithAI = useCallback(async (
-    transactions: Array<{ description: string; amount: number; date: string }>
-  ): Promise<Array<{ suggestedCategoryId: string; suggestedCategory: string }>> => {
-    try {
-      const response = await supabase.functions.invoke('categorize-transactions', {
-        body: {
-          transactions: transactions.map(t => ({
-            storeName: t.description,
-            value: Math.abs(t.amount),
-            date: t.date,
-          })),
-        },
-      });
-
-      if (response.error) {
-        console.error('AI categorization error:', response.error);
-        throw new Error(response.error.message);
-      }
-
-      const { categorizedTransactions } = response.data;
-      return transactions.map((_, index) => {
-        const cat = categorizedTransactions?.[index];
-        return {
-          suggestedCategoryId: cat?.suggestedCategoryId || 'outros',
-          suggestedCategory: cat?.suggestedCategory || 'Não atribuído',
-        };
-      });
-    } catch (err) {
-      console.error('Error categorizing bank transactions:', err);
-      return transactions.map(() => ({
-        suggestedCategoryId: 'outros',
-        suggestedCategory: 'Não atribuído',
-      }));
-    }
-  }, []);
-
-  /**
-   * Process a batch of bank transactions: categorize + insert into lancamentos_realizados
-   */
-  const processBatch = useCallback(async (
-    batch: BankTransaction[],
-    batchIndex: number,
-    totalBatches: number,
-  ): Promise<number> => {
-    if (batch.length === 0) return 0;
-
-    setProgress(prev => ({
-      ...prev,
-      step: 'categorizing',
-      stepLabel: `Categorizando lote ${batchIndex + 1}/${totalBatches}…`,
-    }));
-
-    // Categorize
-    const categories = await categorizeWithAI(
-      batch.map(tx => ({
-        description: tx.description_raw || tx.description,
-        amount: tx.amount,
-        date: tx.date.split('T')[0],
-      }))
-    );
-
-    setProgress(prev => ({
-      ...prev,
-      step: 'importing',
-      stepLabel: `Importando lote ${batchIndex + 1}/${totalBatches}…`,
-    }));
-
-    // Map to lancamentos_realizados records (sem source_type/source_id legados)
-    const records = batch.map((tx, i) => {
-      const dateOnly = tx.date.split('T')[0];
-      const mesRef = dateOnly.substring(0, 7);
-      const isExpense = tx.type === 'DEBIT';
-      const absValue = Math.abs(tx.amount_in_account_currency || tx.amount);
-
-      return {
-        lancamento: {
-          user_id: user!.id,
-          tipo: isExpense ? 'despesa' : 'receita',
-          categoria: categories[i].suggestedCategory,
-          nome: tx.description_raw || tx.description,
-          valor_previsto: absValue,
-          valor_realizado: absValue,
-          mes_referencia: mesRef,
-          data_vencimento: dateOnly,
-          data_pagamento: dateOnly,
-          forma_pagamento: 'pix',
-          source_type: 'pluggy_bank',
-          source_id: tx.pluggy_transaction_id,
-        },
-        sourceId: tx.pluggy_transaction_id,
-      };
-    });
-
-    // Insert in smaller sub-batches to avoid payload limits
-    const SUB_BATCH = 25;
-    let inserted = 0;
-    for (let j = 0; j < records.length; j += SUB_BATCH) {
-      const chunk = records.slice(j, j + SUB_BATCH);
-      const lancamentos = chunk.map(r => r.lancamento);
-
-      const { data, error } = await supabase
-        .from('lancamentos_realizados_v')
-        .insert(lancamentos)
-        .select('id');
-
-      if (error) {
-        console.error(`Error inserting bank lancamentos (sub-batch ${j / SUB_BATCH + 1}):`, error);
-        // Skip duplicates silently (unique constraint on metadata will catch them)
-        if (error.code === '23505') continue;
-        toast.error(`Erro ao salvar lote: ${error.message}`);
-        continue;
-      }
-
-      // GOVERNANÇA: persist source tracking in lancamento_metadata
-      if (data && data.length > 0) {
-        const metadataRecords = data.map((row: any, idx: number) => ({
-          lancamento_id: row.id,
-          user_id: user!.id,
-          source_type: 'pluggy_bank',
-          source_id: chunk[idx].sourceId,
-        }));
-
-        const { error: metaError } = await supabase
-          .from('lancamento_metadata' as any)
-          .upsert(metadataRecords, { onConflict: 'lancamento_id', ignoreDuplicates: true });
-
-        if (metaError) {
-          console.error('Error inserting lancamento_metadata:', metaError);
-        }
-      }
-
-      inserted += (data?.length || 0);
-    }
-
-    return inserted;
-  }, [user, categorizeWithAI]);
-
-  /**
-   * Full sync: 
-   * 1. Trigger historical-load on edge function (fetches from Pluggy API → pluggy_transactions)
-   * 2. Read unsynced bank transactions from pluggy_transactions
-   * 3. Categorize + insert into lancamentos_realizados
+   * Full sync:
+   * 1. Trigger historical-load or incremental-sync (enqueues async, does not block)
+   * 2. Fetch unsynced bank transactions via RPC
+   * 3. Import in batches via import_pluggy_bank_transactions (atomic in DB)
    */
   const startBankSync = useCallback(async (mode: 'full' | 'incremental' = 'full') => {
     if (!user || runningRef.current) return;
@@ -187,7 +45,6 @@ export function usePluggyBankSync() {
     setSyncing(true);
 
     try {
-      // Step 1: Fetch from Pluggy API
       setProgress({
         step: 'fetching-api',
         stepLabel: mode === 'full'
@@ -197,34 +54,19 @@ export function usePluggyBankSync() {
         processed: 0,
       });
 
-      if (mode === 'full') {
-        // Use the existing historical-load which processes ALL account types
-        let done = false;
-        let jobId: string | null = null;
-        let nextResumePage: Record<string, number> | null = null;
-
-        while (!done) {
-          const { data, error } = await invokePluggySync({
-            action: 'historical-load',
-            jobId,
-            resumePage: nextResumePage,
-          });
-          if (error) throw error;
-          jobId = data?.jobId || jobId;
-          done = data?.done === true;
-          nextResumePage = data?.nextResumePage || null;
-        }
-      } else {
-        // Incremental: last 15 days
-        const { error } = await invokePluggySync({ action: 'incremental-sync' });
+      // Disparar sync na Pluggy (assíncrono — enfileira, não bloqueia)
+      {
+        const action = mode === 'full' ? 'historical-load' : 'incremental-sync';
+        const { error } = await invokePluggySync({ action });
         if (error) throw error;
+        await new Promise(r => setTimeout(r, mode === 'full' ? 3000 : 1500));
       }
 
-      // Step 2: Get unsynced bank transactions
+      // Step 2: buscar transações não sincronizadas
       setProgress(prev => ({
         ...prev,
         step: 'categorizing',
-        stepLabel: 'Processando transações bancárias…',
+        stepLabel: 'Buscando transações bancárias…',
       }));
 
       const { data: unsyncedTxs, error: rpcError } = await supabase
@@ -235,7 +77,7 @@ export function usePluggyBankSync() {
         throw rpcError;
       }
 
-      const txs = (unsyncedTxs || []) as unknown as BankTransaction[];
+      const txs = (unsyncedTxs || []) as BankTransaction[];
 
       if (txs.length === 0) {
         setProgress({
@@ -251,23 +93,36 @@ export function usePluggyBankSync() {
       setProgress(prev => ({
         ...prev,
         total: txs.length,
-        stepLabel: `${txs.length} transações para processar…`,
+        stepLabel: `Importando ${txs.length} transações…`,
       }));
 
-      // Step 3: Process in batches
+      // Step 3: Importar em lotes via RPC (atômica no banco)
+      const RPC_BATCH = 100;
       let totalImported = 0;
-      const totalBatches = Math.ceil(txs.length / BATCH_SIZE);
 
-      for (let i = 0; i < txs.length; i += BATCH_SIZE) {
-        const batch = txs.slice(i, i + BATCH_SIZE);
-        const batchIdx = Math.floor(i / BATCH_SIZE);
-        const imported = await processBatch(batch, batchIdx, totalBatches);
-        totalImported += imported;
+      for (let i = 0; i < txs.length; i += RPC_BATCH) {
+        const batch = txs.slice(i, i + RPC_BATCH);
 
         setProgress(prev => ({
           ...prev,
-          processed: Math.min(i + BATCH_SIZE, txs.length),
+          step: 'importing',
+          stepLabel: `Importando ${Math.min(i + RPC_BATCH, txs.length)}/${txs.length}…`,
+          processed: i,
         }));
+
+        const { data: importResult, error: importError } = await supabase
+          .rpc('import_pluggy_bank_transactions', {
+            p_user_id: user.id,
+            p_transactions: batch as unknown as never,
+          });
+
+        if (importError) {
+          console.error('Error importing batch:', importError);
+          toast.error(`Erro ao importar lote: ${importError.message}`);
+          continue;
+        }
+
+        totalImported += (importResult as { inserted?: number } | null)?.inserted ?? 0;
       }
 
       setProgress({
@@ -279,7 +134,6 @@ export function usePluggyBankSync() {
 
       toast.success(`${totalImported} transações bancárias sincronizadas!`);
       await fetchLancamentos();
-
       return { imported: totalImported };
     } catch (err) {
       console.error('Bank sync error:', err);
@@ -290,11 +144,8 @@ export function usePluggyBankSync() {
       setSyncing(false);
       runningRef.current = false;
     }
-  }, [user, processBatch, fetchLancamentos]);
+  }, [user, fetchLancamentos]);
 
-  /**
-   * Check how many unsynced transactions exist (for showing badge counts)
-   */
   const getUnsyncedCount = useCallback(async (): Promise<number> => {
     if (!user) return 0;
     const { data, error } = await supabase
@@ -303,9 +154,6 @@ export function usePluggyBankSync() {
     return (data || []).length;
   }, [user]);
 
-  /**
-   * Get bank account coverage info
-   */
   const getCoverage = useCallback(async () => {
     if (!user) return [];
     const { data, error } = await supabase
@@ -322,4 +170,3 @@ export function usePluggyBankSync() {
     getCoverage,
   };
 }
-// sync
