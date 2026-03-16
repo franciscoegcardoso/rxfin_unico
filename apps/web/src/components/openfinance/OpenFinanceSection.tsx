@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { mapPluggyStatus } from '@/core/adapters/pluggy-adapter';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +32,7 @@ import {
 import { PluggyConnectButton } from './PluggyConnectButton';
 import { usePluggyConnect } from '@/hooks/usePluggyConnect';
 import { useConnectorStatus } from '@/hooks/useConnectorStatus';
+import { useConnectionsHealth } from '@/hooks/useConnectionsHealth';
 import { ConnectorHealthBadge } from '@/components/connections/ConnectorHealthBadge';
 import {
   AlertDialog,
@@ -95,6 +97,9 @@ export const OpenFinanceSection: React.FC = () => {
     [connections]
   );
   const { statusMap: connectorStatusMap } = useConnectorStatus(connectorIds);
+  const { data: connectionsHealth } = useConnectionsHealth();
+  const healthSummary = connectionsHealth?.health_summary;
+  const healthConnections = connectionsHealth?.connections ?? [];
 
   const accountsByConnection = useMemo(() => {
     const map: Record<string, typeof accounts> = {};
@@ -321,6 +326,48 @@ export const OpenFinanceSection: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Banner: autorização expirada (consent) */}
+      {healthSummary && healthSummary.expired > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-foreground">
+                {healthSummary.expired === 1
+                  ? '1 conexão com autorização expirada. Reconecte para retomar a sincronização.'
+                  : `${healthSummary.expired} conexões com autorização expirada. Reconecte para retomar a sincronização.`}
+              </p>
+            </div>
+            <Button size="sm" variant="destructive" className="gap-1.5 shrink-0" asChild>
+              <Link to="/instituicoes-financeiras">
+                <Link2 className="h-4 w-4" />
+                Reconectar
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Banner: autorização expirando em breve */}
+      {healthSummary && healthSummary.expired === 0 && healthSummary.expiring_soon > 0 && (() => {
+        const expiring = healthConnections.filter((c) => c.consent_expiring_soon && c.consent_days_remaining != null);
+        const first = expiring[0];
+        const days = first?.consent_days_remaining ?? 0;
+        const name = first?.connector_name ?? 'sua instituição';
+        return (
+          <Card className="border-amber-500/40 bg-amber-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-foreground">
+                  Sua conexão com {name} expira em {days} dia{days !== 1 ? 's' : ''}. Renove para não perder a sincronização.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Banner: reconexão necessária (LOGIN_ERROR) */}
       {connections.length > 0 && loginErrorConnections.length > 0 && (

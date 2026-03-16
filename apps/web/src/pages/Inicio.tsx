@@ -48,6 +48,7 @@ import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
 import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
+import { BalanceSummaryCard } from "@/components/inicio/BalanceSummaryCard";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -472,6 +473,7 @@ const Inicio: React.FC = () => {
         <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1">
             {errorBlock}
+            <BalanceSummaryCard />
             <MobileHomeHero
             firstName={displayFirstName}
             saldoLiquido={saldoLiquido}
@@ -541,7 +543,7 @@ const Inicio: React.FC = () => {
       <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone pt-4 pb-5 md:pt-4 md:pb-6 space-y-4 flex-1 w-full max-w-full min-w-0">
           {errorBlock}
-
+          <BalanceSummaryCard />
           {/* Hero único: saudação + saldo + período em um bloco coeso */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}

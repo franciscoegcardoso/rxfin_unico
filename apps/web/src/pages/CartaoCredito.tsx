@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
+import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { formatCurrency } from '@/lib/utils';
@@ -123,6 +124,8 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
+            {/* Visão de fatura consolidada (RPC get_credit_card_bills_detail) */}
+            <CreditCardBillView showSummaryRow />
             {/* A) Cards de resumo — mobile: só Total faturas; sm+: os três */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />

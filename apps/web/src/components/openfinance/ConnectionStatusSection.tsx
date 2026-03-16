@@ -32,7 +32,14 @@ import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { invokePluggySync } from '@/lib/pluggySync';
+import { cn } from '@/lib/utils';
 import type { SyncConnection } from '@/hooks/useSyncStatus';
+
+interface ConnectorHealth {
+  connector_id: number;
+  status: 'ONLINE' | 'UNSTABLE' | 'OFFLINE' | null;
+  changed_at: string | null;
+}
 
 interface SyncLog {
   id: string;
@@ -117,6 +124,7 @@ export const ConnectionStatusSection: React.FC = () => {
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [triggeringItems, setTriggeringItems] = useState<Set<string>>(new Set());
   const [now, setNow] = useState(Date.now());
+  const [connectorHealth, setConnectorHealth] = useState<Map<number, ConnectorHealth>>(new Map());
 
   const syncConnectionsByItemId = React.useMemo(() => {
     const map = new Map<string, SyncConnection>();
@@ -192,6 +200,41 @@ export const ConnectionStatusSection: React.FC = () => {
   }, [logs]);
 
   const errorConnections = syncData?.connections?.filter((c) => c.ui_state === 'error') ?? [];
+
+  const ConnectorHealthDot: React.FC<{ health: ConnectorHealth | undefined }> = ({ health }) => {
+    if (!health?.status || health.status === 'ONLINE') return null;
+
+    const config = {
+      UNSTABLE: {
+        color: 'bg-yellow-400',
+        label: 'Instável',
+        tooltip: 'Conector com instabilidade. Dados podem estar desatualizados.',
+      },
+      OFFLINE: {
+        color: 'bg-red-500',
+        label: 'Offline',
+        tooltip: 'Conector offline. Sincronização indisponível no momento.',
+      },
+    }[health.status];
+
+    if (!config) return null;
+
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1 cursor-default">
+              <span className={cn('inline-block h-2 w-2 rounded-full animate-pulse', config.color)} />
+              <span className="text-[10px] text-muted-foreground">{config.label}</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[220px] text-center">
+            <p className="text-xs">{config.tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
 
   if (connections.length === 0) return null;
 
@@ -298,6 +341,7 @@ export const ConnectionStatusSection: React.FC = () => {
                       {badgeConf.label}
                     </Badge>
                     <SyncStatusBadge itemId={conn.item_id} />
+                    <ConnectorHealthDot health={connectorHealth.get(conn.connector_id)} />
                   </div>
 
                   {/* Right: Actions */}

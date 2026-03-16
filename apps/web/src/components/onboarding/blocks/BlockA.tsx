@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2, Plus, Trash2, CheckCircle2, Circle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,15 @@ interface ProfileAnswers {
   dependents: 'nenhum' | 'um' | 'dois_ou_mais' | null;
   mainGoal: 'reserva' | 'dividas' | 'investir' | 'imovel' | 'outro' | null;
   controlLevel: 'nao_acompanho' | 'as_vezes' | 'controlo_bem' | null;
+}
+
+interface IncomeItem {
+  id: string;
+  name: string;
+  method: string;
+  enabled: boolean;
+  isDefault: boolean;
+  defaultItemId?: string;
 }
 
 const PROFILE_QUESTIONS: Array<{
@@ -103,6 +112,11 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [localAccountType, setLocalAccountType] = useState<'individual' | 'shared'>(() =>
     (config.accountType as 'individual' | 'shared') ?? 'individual'
   );
+  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>([]);
+  const [incomeLoaded, setIncomeLoaded] = useState(false);
+  const [savingIncome, setSavingIncome] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [showAddItem, setShowAddItem] = useState(false);
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
@@ -111,6 +125,61 @@ export const BlockA: React.FC<BlockAProps> = ({
       await setUserKVValue(user.id, 'onboarding_profile', answers);
     } catch (err) {
       console.warn('[BlockA] saveProfileAnswers falhou (não crítico):', err);
+    }
+  };
+
+  const loadDefaultIncomeItems = async () => {
+    if (incomeLoaded) return;
+    try {
+      const { data } = await supabase
+        .from('default_income_items')
+        .select('id, name, method, enabled_by_default, order_index')
+        .eq('is_active', true)
+        .order('order_index');
+
+      if (data) {
+        const isHighIncome = ['de10ka20k', 'acima20k'].includes(profile.incomeRange ?? '');
+        const isBusiness = profile.mainGoal === 'investir' || isHighIncome;
+
+        const items: IncomeItem[] = data.map((d: { id: string; name: string; method?: string; enabled_by_default?: boolean; order_index?: number }) => ({
+          id: crypto.randomUUID(),
+          name: d.name,
+          method: d.method ?? 'Transferência',
+          enabled:
+            (d.enabled_by_default ?? true) &&
+            !(['Pró-labore', 'Dividendos / JCP'].includes(d.name) && !isBusiness),
+          isDefault: true,
+          defaultItemId: d.id,
+        }));
+        setIncomeItems(items);
+      }
+    } catch (err) {
+      console.warn('[BlockA] loadDefaultIncomeItems erro:', err);
+    } finally {
+      setIncomeLoaded(true);
+    }
+  };
+
+  const saveIncomeItems = async (): Promise<boolean> => {
+    if (!user?.id) return false;
+    setSavingIncome(true);
+    try {
+      const enabled = incomeItems.filter((i) => i.enabled);
+      for (const [idx, item] of enabled.entries()) {
+        await supabase.rpc('upsert_user_income_item', {
+          p_user_id: user.id,
+          p_name: item.name,
+          p_method: item.method,
+          p_enabled: true,
+          p_order_index: (idx + 1) * 10,
+        });
+      }
+      return true;
+    } catch (err) {
+      console.warn('[BlockA] saveIncomeItems erro:', err);
+      return false;
+    } finally {
+      setSavingIncome(false);
     }
   };
 
@@ -489,8 +558,193 @@ export const BlockA: React.FC<BlockAProps> = ({
     );
   }
 
-  // ─── Step 3: Conquest Card preliminar baseado no perfil ───────────
+  // ─── Step 3: Cadastro de Receitas ─────────────────────────────────
   if (step === 3) {
+    if (!incomeLoaded) {
+      loadDefaultIncomeItems();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={48} />
+          <p className="text-sm text-muted-foreground">Carregando suas receitas...</p>
+        </div>
+      );
+    }
+
+    const enabledCount = incomeItems.filter((i) => i.enabled).length;
+
+    const handleToggle = (id: string) => {
+      setIncomeItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item))
+      );
+    };
+
+    const handleAddItem = () => {
+      const name = newItemName.trim();
+      if (!name) return;
+      setIncomeItems((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          name,
+          method: 'Pix',
+          enabled: true,
+          isDefault: false,
+        },
+      ]);
+      setNewItemName('');
+      setShowAddItem(false);
+    };
+
+    const handleRemoveCustom = (id: string) => {
+      setIncomeItems((prev) => prev.filter((i) => i.id !== id));
+    };
+
+    const handleContinueIncome = async () => {
+      await saveIncomeItems();
+      onStepChange(4);
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center gap-2 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(2)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+            Suas receitas
+          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            De onde vem o seu dinheiro?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Ative as fontes de renda que se aplicam a você. Você pode ajustar valores depois.
+          </p>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          {incomeItems.map((item) => (
+            <div
+              key={item.id}
+              className={cn(
+                'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer',
+                item.enabled ? 'border-primary bg-primary/5' : 'border-border bg-card opacity-60'
+              )}
+              onClick={() => handleToggle(item.id)}
+            >
+              <div className="shrink-0">
+                {item.enabled ? (
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    'text-sm font-semibold truncate',
+                    item.enabled ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {item.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{item.method}</p>
+              </div>
+              {!item.isDefault && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveCustom(item.id);
+                  }}
+                  className="shrink-0 p-1 text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {showAddItem ? (
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="Nome da receita (ex: Aluguel, Pensão...)"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
+              autoFocus
+              className="flex-1"
+            />
+            <Button size="sm" onClick={handleAddItem} disabled={!newItemName.trim()}>
+              Adicionar
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowAddItem(false);
+                setNewItemName('');
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowAddItem(true)}
+            className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-border hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all mb-4"
+          >
+            <Plus className="h-4 w-4 shrink-0" />
+            <span className="text-sm">Adicionar outra fonte de renda</span>
+          </button>
+        )}
+
+        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{enabledCount}</span>{' '}
+            fonte{enabledCount !== 1 ? 's' : ''} de renda ativa{enabledCount !== 1 ? 's' : ''}. Os
+            valores serão preenchidos após conectar seus bancos.
+          </p>
+        </div>
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          disabled={enabledCount === 0 || savingIncome}
+          onClick={handleContinueIncome}
+        >
+          {savingIncome ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              Continuar <ArrowRight className="ml-2 h-5 w-5" />
+            </>
+          )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 text-muted-foreground"
+          onClick={() => onStepChange(4)}
+        >
+          Pular por agora
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Step 4: Conquest Card preliminar baseado no perfil ───────────
+  if (step === 4) {
     const incomeEstimate: Record<string, number> = {
       ate2k: 1500,
       de2ka5k: 3500,
