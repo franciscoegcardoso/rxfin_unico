@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, User } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
 import { ConquestCard } from '../ConquestCard';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { cn } from '@/lib/utils';
@@ -91,6 +93,14 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [savingProfile, setSavingProfile] = useState(false);
 
+  type AccessLevel = 'full' | 'full_restricted' | 'owner_only';
+  const [partnerName, setPartnerName] = useState('');
+  const [partnerEmail, setPartnerEmail] = useState('');
+  const [hasRxfinAccess, setHasRxfinAccess] = useState<boolean | null>(null);
+  const [accessLevel, setAccessLevel] = useState<AccessLevel>('full');
+  const [savingShared, setSavingShared] = useState(false);
+  const [sharedError, setSharedError] = useState('');
+
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
     try {
@@ -151,53 +161,222 @@ export const BlockA: React.FC<BlockAProps> = ({
 
   // ─── Step 1: Tipo de conta ───────────────────────────────────────
   if (step === 1) {
+    const isShared = config.accountType === 'shared';
+    const canContinue = !isShared
+      || (partnerName.trim().length >= 2 && hasRxfinAccess !== null && !savingShared);
+
+    const handleContinue = async () => {
+      if (!isShared) {
+        onStepChange(2);
+        return;
+      }
+      setSavingShared(true);
+      setSharedError('');
+      try {
+        const { error } = await supabase.rpc('save_onboarding_shared_account', {
+          p_partner_name: partnerName.trim(),
+          p_partner_email: partnerEmail.trim() || null,
+          p_access_level: accessLevel,
+          p_has_rxfin_access: hasRxfinAccess ?? false,
+        });
+        if (error) throw error;
+        onSaveDraft('shared_account', { partnerName, hasRxfinAccess, accessLevel });
+        onStepChange(2);
+      } catch {
+        setSharedError('Erro ao salvar. Tente novamente.');
+      } finally {
+        setSavingShared(false);
+      }
+    };
+
     return (
       <div className="max-w-2xl mx-auto py-8 animate-slide-up">
         <Button variant="ghost" size="sm" className="mb-4 -ml-1" onClick={() => onStepChange(0)}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Button>
-        <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-2">
+
+        <div className="bg-card rounded-2xl border border-border p-6 mb-4">
+          <h2 className="text-lg font-semibold text-foreground mb-1">
             Como você gerencia suas contas?
           </h2>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground mb-5">
             Escolha o perfil que melhor descreve sua situação.
           </p>
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              type="button"
-              onClick={() => setAccountType('individual')}
-              className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
-                config.accountType === 'individual'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              )}
-            >
-              <User className={cn('h-6 w-6 shrink-0', config.accountType === 'individual' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className="text-sm font-medium">Individual</span>
-              <span className="text-xs text-muted-foreground">Só minhas contas</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountType('shared')}
-              className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
-                config.accountType === 'shared'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50'
-              )}
-            >
-              <Users className={cn('h-6 w-6 shrink-0', config.accountType === 'shared' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className="text-sm font-medium">Compartilhado</span>
-              <span className="text-xs text-muted-foreground">Divido com outra(s) pessoa(s)</span>
-            </button>
+
+          {/* Seleção de tipo */}
+          <div className="grid grid-cols-2 gap-3 mb-0">
+            {[
+              { value: 'individual', label: 'Individual', sub: 'Só minhas contas', icon: User },
+              { value: 'shared', label: 'Compartilhado', sub: 'Divido com alguém', icon: Users },
+            ].map(({ value, label, sub, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  setAccountType(value as 'individual' | 'shared');
+                  setSharedError('');
+                }}
+                className={cn(
+                  'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
+                  config.accountType === value
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50'
+                )}
+              >
+                <Icon className={cn('h-6 w-6', config.accountType === value ? 'text-primary' : 'text-muted-foreground')} />
+                <span className="text-sm font-medium">{label}</span>
+                <span className="text-xs text-muted-foreground">{sub}</span>
+              </button>
+            ))}
           </div>
-          <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(2)}>
-            Continuar para perfil financeiro
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+
+          {/* Formulário do parceiro — expande inline ao escolher Compartilhado */}
+          {isShared && (
+            <div className="mt-6 pt-5 border-t border-border space-y-5">
+
+              {/* Nome e e-mail */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Nome do parceiro *
+                  </p>
+                  <Input
+                    placeholder="Ex: Maria Silva"
+                    value={partnerName}
+                    onChange={e => setPartnerName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    E-mail (opcional)
+                  </p>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      type="email"
+                      placeholder="email@exemplo.com"
+                      value={partnerEmail}
+                      onChange={e => setPartnerEmail(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-tight">
+                    Se informado, um convite será enviado após o onboarding.
+                  </p>
+                </div>
+              </div>
+
+              {/* Acesso ao RXFin */}
+              <div>
+                <p className="text-sm font-semibold text-foreground mb-3">
+                  {partnerName.trim() || 'Seu parceiro'} terá acesso ao RXFin?
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: true,  label: 'Sim, terá acesso', icon: Check },
+                    { value: false, label: 'Não, só eu',       icon: Lock  },
+                  ].map(({ value, label, icon: Icon }) => (
+                    <button
+                      key={String(value)}
+                      type="button"
+                      onClick={() => setHasRxfinAccess(value)}
+                      className={cn(
+                        'flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-sm font-medium',
+                        hasRxfinAccess === value
+                          ? 'border-primary bg-primary/5 text-primary'
+                          : 'border-border hover:border-primary/40 text-foreground'
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nível de acesso — só aparece se hasRxfinAccess === true */}
+              {hasRxfinAccess === true && (
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-3">
+                    Qual nível de acesso {partnerName.trim() || 'seu parceiro'} terá?
+                  </p>
+                  <div className="space-y-2">
+                    {([
+                      {
+                        value: 'full' as AccessLevel,
+                        label: 'Acesso integral',
+                        desc: 'Ambos veem tudo — lançamentos, faturas e relatórios.',
+                        icon: Eye,
+                      },
+                      {
+                        value: 'full_restricted' as AccessLevel,
+                        label: 'Integral com restrição',
+                        desc: 'Parceiro não vê detalhes de lançamentos em conta e fatura.',
+                        icon: EyeOff,
+                      },
+                      {
+                        value: 'owner_only' as AccessLevel,
+                        label: 'Somente você vê tudo',
+                        desc: 'Parceiro acessa o RXFin mas sem detalhamento financeiro.',
+                        icon: Lock,
+                      },
+                    ] as const).map(({ value, label, desc, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setAccessLevel(value)}
+                        className={cn(
+                          'w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-start gap-3',
+                          accessLevel === value
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/40 bg-card'
+                        )}
+                      >
+                        <Icon className={cn(
+                          'h-5 w-5 mt-0.5 shrink-0',
+                          accessLevel === value ? 'text-primary' : 'text-muted-foreground'
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                        </div>
+                        {accessLevel === value && (
+                          <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="h-3 w-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {sharedError && (
+                <p className="text-xs text-destructive">{sharedError}</p>
+              )}
+            </div>
+          )}
         </div>
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          disabled={!canContinue}
+          onClick={handleContinue}
+        >
+          {savingShared
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</>
+            : <>Continuar para perfil financeiro <ArrowRight className="ml-2 h-5 w-5" /></>
+          }
+        </Button>
+
+        {isShared && hasRxfinAccess && partnerEmail.trim() && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Um convite será enviado para {partnerEmail} após o onboarding.
+          </p>
+        )}
       </div>
     );
   }
