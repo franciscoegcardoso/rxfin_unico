@@ -782,23 +782,15 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
             showBackButton={false}
             actions={
               <>
-                {!isManual && (
-                  <>
-                    <span className={isMobile ? 'contents' : 'hidden'}>
-                      <BankSyncButton variant="button" className="!px-2 !min-w-0 [&_span]:hidden [&_.badge]:hidden" />
-                    </span>
-                    <span className={!isMobile ? 'contents' : 'hidden'}>
-                      <BankSyncButton variant="button" />
-                    </span>
-                  </>
-                )}
+                {!isManual && <BankSyncButton variant="button" className={isMobile ? '!px-2.5 [&>span.text-sm]:hidden [&>span:not(.animate-spin)]:hidden' : ''} />}
                 <VisibilityToggle />
                 {isMobile && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="min-h-[44px] min-w-[44px]"
+                    className="min-h-[44px] min-w-[44px] touch-manipulation"
                     onClick={() => setAnaliseDialogOpen(true)}
+                    aria-label="Análise dos lançamentos"
                   >
                     <BarChart2 className="h-5 w-5" />
                   </Button>
@@ -873,12 +865,9 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
         </div>
         )}
 
-        {!isManual && (
-          <div className="hidden sm:block">
-            <PluggySyncStatus accountType="BANK" compact />
-          </div>
-        )}
+        {!isManual && <div className="hidden sm:block"><PluggySyncStatus accountType="BANK" compact /></div>}
 
+        {/* Cards resumo do mês — mobile only */}
         {isMobile && (
           <div className="grid grid-cols-2 gap-3 mb-2">
             <div className="rounded-xl border border-border/80 bg-card p-3">

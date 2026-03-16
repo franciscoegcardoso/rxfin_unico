@@ -895,10 +895,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Button
                       size="sm"
                       className="gap-1.5"
-                      onClick={() => {
-                        setDefaultAssetType('obligations');
-                        setIsDialogOpen(true);
-                      }}
+                      onClick={() => handleOpenAddDialog(undefined, undefined, 'obligations', true)}
                     >
                       <Plus className="h-4 w-4" />
                       Adicionar passivo
@@ -915,10 +912,7 @@ const BensInvestimentosLayout: React.FC = () => {
                         <Button
                           size="sm"
                           className="gap-1.5 mt-4"
-                          onClick={() => {
-                            setDefaultAssetType('obligations');
-                            setIsDialogOpen(true);
-                          }}
+                          onClick={() => handleOpenAddDialog(undefined, undefined, 'obligations', true)}
                         >
                           <Plus className="h-4 w-4" />
                           Adicionar passivo

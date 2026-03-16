@@ -100,6 +100,9 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('full');
   const [savingShared, setSavingShared] = useState(false);
   const [sharedError, setSharedError] = useState('');
+  const [localAccountType, setLocalAccountType] = useState<'individual' | 'shared'>(() =>
+    (config.accountType as 'individual' | 'shared') ?? 'individual'
+  );
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
@@ -161,12 +164,12 @@ export const BlockA: React.FC<BlockAProps> = ({
 
   // ─── Step 1: Tipo de conta ───────────────────────────────────────
   if (step === 1) {
-    const isShared = config.accountType === 'shared';
+    const isShared = localAccountType === 'shared';
     const canContinue = !isShared
       || (partnerName.trim().length >= 2 && hasRxfinAccess !== null && !savingShared);
 
     const handleContinue = async () => {
-      if (!isShared) {
+      if (localAccountType === 'individual') {
         onStepChange(2);
         return;
       }
@@ -362,7 +365,7 @@ export const BlockA: React.FC<BlockAProps> = ({
         <Button
           variant="hero"
           size="lg"
-          className="w-full"
+          className="w-full mt-4"
           disabled={!canContinue}
           onClick={handleContinue}
         >

@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart, ArrowLeftRight } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -71,7 +71,7 @@ const EXCLUDED_NAV_GROUP_SLUGS = ['menu-principal', 'administracao'];
 
 // Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos; alertas/notificações acessíveis via sino no top bar; itens removidos do Planejamento)
 // Slugs de páginas que NÃO devem aparecer nos menus
-const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'assinatura', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira'];
+const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'assinatura', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira', 'cartao-credito'];
 
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
@@ -80,7 +80,7 @@ const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'T
 const ICON_BY_PATH: Record<string, LucideIcon> = {
   '/inicio': Home,
   '/bens-investimentos': PiggyBank,
-  '/movimentacoes': Receipt,
+  '/movimentacoes': ArrowLeftRight,
   '/planejamento': Calendar,
   '/planejamento-anual': CalendarRange,
   '/meu-ir': FileText,
@@ -211,7 +211,7 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
-    { path: '/movimentacoes', label: 'Movimentações', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/movimentacoes', label: 'Movimentações', icon: ArrowLeftRight, accessLevel: 'free', canAccessAsAdmin: true },
   ];
 
   const groupedSections: NavMenuSection[] = [

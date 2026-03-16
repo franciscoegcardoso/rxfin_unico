@@ -34,19 +34,23 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
     return result;
   }, [selectedMonth]);
 
+  // Auto-scroll para o mês selecionado no mount e quando muda
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, []);
+  }, [selectedMonth]);
 
-  const chips = (
-    <>
+  const chipsRow = (
+    <div className={
+      isMobile
+        ? 'flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1 -mx-4 px-4'
+        : 'flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0 flex-1 mx-1'
+    }>
       {months.map((m) => {
         const isSelected = m === selectedMonth;
         return (
           <button
             key={m}
             ref={isSelected ? selectedRef : undefined}
-            type="button"
             onClick={() => onMonthChange(m)}
             className={`relative px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
               isSelected
@@ -61,17 +65,15 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
           </button>
         );
       })}
-    </>
+    </div>
   );
 
+  // Mobile: chips edge-to-edge sem setas e sem card border
   if (isMobile) {
-    return (
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1 -mx-4 px-4">
-        {chips}
-      </div>
-    );
+    return chipsRow;
   }
 
+  // Desktop: layout original com setas e card border
   return (
     <div className="flex items-center justify-between bg-card border-2 border-border rounded-xl px-2 py-2 shadow-sm">
       <Button
@@ -84,9 +86,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
         <ChevronLeft className="h-4 w-4" />
       </Button>
 
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0 flex-1 mx-1">
-        {chips}
-      </div>
+      {chipsRow}
 
       <Button
         variant="ghost"
