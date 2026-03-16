@@ -1,11 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { invokePluggySync } from '@/lib/pluggySync';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useLancamentosRealizados } from './useLancamentosRealizados';
 
-interface BankSyncProgress {
+export interface BankSyncProgress {
   step: 'idle' | 'fetching-api' | 'categorizing' | 'importing' | 'done';
   stepLabel: string;
   total: number;
@@ -24,13 +24,46 @@ interface BankTransaction {
   account_id: string;
 }
 
+// Store global para que GlobalSyncIndicator e BankSyncButton compartilhem o mesmo estado
+const initialProgress: BankSyncProgress = { step: 'idle', stepLabel: '', total: 0, processed: 0 };
+const bankSyncStore = {
+  syncing: false,
+  progress: { ...initialProgress },
+  listeners: new Set<() => void>(),
+  _snapshot: null as { syncing: boolean; progress: BankSyncProgress } | null,
+  setSyncing(syncing: boolean) {
+    if (this.syncing === syncing) return;
+    this.syncing = syncing;
+    this._snapshot = { syncing: this.syncing, progress: { ...this.progress } };
+    this.listeners.forEach((f) => f());
+  },
+  setProgress(progress: Partial<BankSyncProgress>) {
+    this.progress = { ...this.progress, ...progress };
+    this._snapshot = { syncing: this.syncing, progress: { ...this.progress } };
+    this.listeners.forEach((f) => f());
+  },
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  },
+  getSnapshot() {
+    if (!this._snapshot) {
+      this._snapshot = { syncing: this.syncing, progress: { ...this.progress } };
+    }
+    return this._snapshot;
+  },
+};
+
 export function usePluggyBankSync() {
   const { user } = useAuth();
   const { fetchLancamentos } = useLancamentosRealizados();
-  const [syncing, setSyncing] = useState(false);
-  const [progress, setProgress] = useState<BankSyncProgress>({
-    step: 'idle', stepLabel: '', total: 0, processed: 0,
-  });
+  const { syncing, progress } = useSyncExternalStore(
+    (l) => bankSyncStore.subscribe(l),
+    () => bankSyncStore.getSnapshot(),
+    () => bankSyncStore.getSnapshot()
+  );
   const runningRef = useRef(false);
 
   const getUnsyncedCount = useCallback(async (): Promise<number> => {
@@ -77,10 +110,10 @@ export function usePluggyBankSync() {
   const startBankSync = useCallback(async (mode: 'full' | 'incremental' = 'full') => {
     if (!user || runningRef.current) return;
     runningRef.current = true;
-    setSyncing(true);
+    bankSyncStore.setSyncing(true);
 
     try {
-      setProgress({
+      bankSyncStore.setProgress({
         step: 'fetching-api',
         stepLabel: mode === 'full'
           ? 'Buscando histórico completo da API…'
@@ -98,11 +131,10 @@ export function usePluggyBankSync() {
       }
 
       // Step 2: buscar transações não sincronizadas
-      setProgress(prev => ({
-        ...prev,
+      bankSyncStore.setProgress({
         step: 'categorizing',
         stepLabel: 'Buscando transações bancárias…',
-      }));
+      });
 
       const { data: unsyncedTxs, error: rpcError } = await supabase
         .rpc('get_unsynced_bank_transactions', { p_user_id: user.id });
@@ -115,12 +147,13 @@ export function usePluggyBankSync() {
       const txs = (unsyncedTxs || []) as BankTransaction[];
 
       if (txs.length === 0) {
-        setProgress({
+        bankSyncStore.setProgress({
           step: 'done',
           stepLabel: 'Nenhuma transação nova encontrada.',
           total: 0,
           processed: 0,
         });
+        setTimeout(() => bankSyncStore.setProgress({ step: 'idle', stepLabel: '' }), 5000);
         const summary = await getImportedSummary();
         if (summary.total_imported > 0) {
           toast.info(`Dados em dia. ${summary.total_imported} transações importadas de ${summary.months_covered} meses.`);
@@ -130,11 +163,10 @@ export function usePluggyBankSync() {
         return { imported: 0 };
       }
 
-      setProgress(prev => ({
-        ...prev,
+      bankSyncStore.setProgress({
         total: txs.length,
         stepLabel: `Importando ${txs.length} transações…`,
-      }));
+      });
 
       // Step 3: Importar em lotes via RPC (atômica no banco)
       const RPC_BATCH = 100;
@@ -143,12 +175,11 @@ export function usePluggyBankSync() {
       for (let i = 0; i < txs.length; i += RPC_BATCH) {
         const batch = txs.slice(i, i + RPC_BATCH);
 
-        setProgress(prev => ({
-          ...prev,
+        bankSyncStore.setProgress({
           step: 'importing',
           stepLabel: `Importando ${Math.min(i + RPC_BATCH, txs.length)}/${txs.length}…`,
-          processed: i,
-        }));
+          processed: Math.min(i + RPC_BATCH, txs.length),
+        });
 
         const { data: importResult, error: importError } = await supabase
           .rpc('import_pluggy_bank_transactions', {
@@ -158,19 +189,21 @@ export function usePluggyBankSync() {
 
         if (importError) {
           console.error('Error importing batch:', importError);
-          toast.error(`Erro ao importar lote: ${importError.message}`);
           continue;
         }
 
         totalImported += (importResult as { inserted?: number } | null)?.inserted ?? 0;
       }
 
-      setProgress({
+      bankSyncStore.setProgress({
         step: 'done',
         stepLabel: `${totalImported} transações importadas com sucesso!`,
         total: txs.length,
         processed: txs.length,
       });
+      setTimeout(() => {
+        bankSyncStore.setProgress({ step: 'idle', stepLabel: '' });
+      }, 5000);
 
       toast.success(`${totalImported} transações bancárias sincronizadas!`);
       await fetchLancamentos();
@@ -178,10 +211,10 @@ export function usePluggyBankSync() {
     } catch (err) {
       console.error('Bank sync error:', err);
       toast.error('Erro na sincronização bancária');
-      setProgress(prev => ({ ...prev, step: 'idle', stepLabel: '' }));
+      bankSyncStore.setProgress({ step: 'idle', stepLabel: '' });
       return { imported: 0 };
     } finally {
-      setSyncing(false);
+      bankSyncStore.setSyncing(false);
       runningRef.current = false;
     }
   }, [user, fetchLancamentos, getImportedSummary]);

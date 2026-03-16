@@ -24,7 +24,10 @@ interface SyncJobProgress {
   bills_linked: number;
 }
 
-export function usePluggyCreditCardSync(autoSync = false) {
+export function usePluggyCreditCardSync(
+  autoSync = false,
+  onProgress?: (imported: number, total: number, cardName: string) => void
+) {
   const { user, session } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [historicalLoading, setHistoricalLoading] = useState(false);
@@ -228,6 +231,15 @@ export function usePluggyCreditCardSync(autoSync = false) {
       let totalImported = 0;
       const BATCH_SIZE = 50;
 
+      // Calcular total esperado para progresso
+      const allUnsyncedCounts = await Promise.all(
+        accounts.map(async (acc) => {
+          const { data } = await supabase.rpc('get_unsynced_pluggy_transactions', { p_account_id: acc.id });
+          return (data || []).length;
+        })
+      );
+      const totalExpected = allUnsyncedCounts.reduce((a, b) => a + b, 0);
+
       for (const account of accounts) {
         // Use the new RPC to get only unsynced transactions
         const { data: unsyncedTxs, error: rpcError } = await supabase
@@ -263,6 +275,9 @@ export function usePluggyCreditCardSync(autoSync = false) {
           const batchLabel = `Lote local ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(unsyncedTxs.length / BATCH_SIZE)}`;
           const imported = await processBatch(batch, account, sortedBills, batchLabel);
           totalImported += imported;
+          if (onProgress) {
+            onProgress(totalImported, totalExpected, account.connector_name);
+          }
         }
       }
 
@@ -281,7 +296,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
     } finally {
       setSyncing(false);
     }
-  }, [user, fetchCreditCardAccounts, processBatch, fetchTransactions]);
+  }, [user, fetchCreditCardAccounts, processBatch, fetchTransactions, onProgress]);
 
   // ─── SYNC CREDIT CARD TRANSACTIONS (kept for backward compat, now delegates to localSync) ───
   const syncCreditCardTransactions = useCallback(async (cardId?: string): Promise<{ imported: number; skipped: number }> => {
@@ -443,8 +458,7 @@ export function usePluggyCreditCardSync(autoSync = false) {
       }
       return { pluggyImported, creditCardImported: syncResult.imported };
     } catch (err) {
-      console.error('Error in incremental sync:', err);
-      toast.error('Erro na sincronização incremental');
+      console.warn('[incrementalSync] Non-fatal error:', err);
       return { pluggyImported: 0, creditCardImported: 0 };
     } finally {
       setSyncing(false);

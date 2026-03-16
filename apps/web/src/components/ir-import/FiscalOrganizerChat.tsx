@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
-import cibeliaAvatar from '@/assets/cibelia.png';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Send, Bot, User, Loader2, Trash2, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ChatMessage } from '@/hooks/useFiscalOrganizer';
 
@@ -44,21 +43,21 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
 
   return (
     <Card className="flex flex-col h-[500px]">
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8 rounded-lg border border-border">
-            <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
-            <AvatarFallback className="rounded-lg bg-primary/10">
-              <Bot className="h-4 w-4 text-primary" />
-            </AvatarFallback>
-          </Avatar>
-          <CardTitle className="text-base">Cibélia</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 py-3 px-4 border-b shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 border border-border">
+            <FileCheck className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <CardTitle className="text-base truncate">Organizador Fiscal</CardTitle>
+            <p className="text-xs text-muted-foreground truncate">Assistente para comprovantes e IR</p>
+          </div>
         </div>
         {messages.length > 0 && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-muted-foreground hover:text-destructive"
+            className="h-8 shrink-0 text-muted-foreground hover:text-destructive"
             onClick={onClearChat}
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -71,17 +70,16 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
         <div className="space-y-4">
           {welcomeMessage && (
             <div className="flex gap-3">
-              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0">
-                <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
+              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0 bg-primary/10">
                 <AvatarFallback className="rounded-lg bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-2 min-w-0">
                 <div className="bg-muted rounded-lg p-3 text-sm">
-                  <p className="font-medium mb-2">Olá, eu sou a Cibélia e estou aqui para te ajudar na organização fiscal.</p>
+                  <p className="font-medium mb-2">Olá! Estou aqui para te ajudar na organização fiscal.</p>
                   <p className="text-muted-foreground">
-                    Posso te ajudar a organizar seus comprovantes fiscais para o Imposto de Renda. Me envie informações sobre recibos médicos, escolares ou de previdência e eu vou:
+                    Envie informações sobre recibos médicos, escolares ou de previdência e eu posso:
                   </p>
                   <ul className="list-disc list-inside text-muted-foreground mt-2 space-y-1">
                     <li>Verificar se são válidos para dedução</li>
@@ -147,8 +145,7 @@ export const FiscalOrganizerChat: React.FC<FiscalOrganizerChatProps> = ({
           
           {isLoading && messages[messages.length - 1]?.role === 'user' && (
             <div className="flex gap-3">
-              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0">
-                <AvatarImage src={cibeliaAvatar} alt="Cibélia" className="object-cover" />
+              <Avatar className="h-8 w-8 rounded-lg border border-border shrink-0 bg-primary/10">
                 <AvatarFallback className="rounded-lg bg-primary/10">
                   <Bot className="h-4 w-4 text-primary" />
                 </AvatarFallback>

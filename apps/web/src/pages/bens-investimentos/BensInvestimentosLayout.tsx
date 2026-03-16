@@ -46,6 +46,7 @@ import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
+import { InvestmentsSection } from '@/components/investments/InvestmentsSection';
 
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
@@ -717,6 +718,11 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'investimentos' && (
                 <div className="space-y-6">
+                  {/* Investimentos Open Finance (Pluggy) */}
+                  <section>
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3">Open Finance</h3>
+                    <InvestmentsSection />
+                  </section>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />

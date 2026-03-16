@@ -4,15 +4,20 @@ import { toast } from 'sonner';
 
 type SyncStep = 'idle' | 'incremental' | 'local-sync' | 'historical' | 'backfill' | 'reconcile' | 'done';
 
-const STEP_LABELS: Record<SyncStep, string> = {
-  idle: '',
-  incremental: 'Buscando transações recentes (15 dias)…',
-  'local-sync': 'Importando transações do banco…',
-  historical: 'Verificando lacunas no histórico…',
-  backfill: 'Vinculando transações às faturas…',
-  reconcile: 'Reconciliando pagamentos de faturas…',
-  done: 'Sincronização concluída!',
-};
+function getStepLabel(s: SyncStep, imported: number, total: number, card: string): string {
+  if (s === 'local-sync') {
+    if (total > 0) return `Importando ${imported}/${total} transações${card ? ` · ${card}` : ''}…`;
+    return 'Importando transações…';
+  }
+  return {
+    idle: '',
+    incremental: 'Buscando transações recentes…',
+    historical: 'Verificando lacunas no histórico…',
+    backfill: 'Vinculando transações às faturas…',
+    reconcile: 'Reconciliando pagamentos…',
+    done: 'Sincronização concluída!',
+  }[s] ?? '';
+}
 
 interface SyncContextValue {
   step: SyncStep;
@@ -20,6 +25,9 @@ interface SyncContextValue {
   progressPercent: number;
   busy: boolean;
   jobProgress: { transactions_saved: number; bills_linked: number } | null;
+  importedCount: number;
+  totalCount: number;
+  currentCard: string;
   startFullSync: () => void;
 }
 
@@ -31,6 +39,9 @@ const FALLBACK: SyncContextValue = {
   progressPercent: 0,
   busy: false,
   jobProgress: null,
+  importedCount: 0,
+  totalCount: 0,
+  currentCard: '',
   startFullSync: () => {},
 };
 
@@ -40,7 +51,17 @@ export const useSyncContext = () => {
 };
 
 export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { syncing, historicalLoading, incrementalSync, historicalLoad, backfillBillIds, localSync, reconcileBills, jobProgress } = usePluggyCreditCardSync();
+  const [importedCount, setImportedCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentCard, setCurrentCard] = useState('');
+  const { syncing, historicalLoading, incrementalSync, historicalLoad, backfillBillIds, localSync, reconcileBills, jobProgress } = usePluggyCreditCardSync(
+    false,
+    (imported, total, cardName) => {
+      setImportedCount(imported);
+      setTotalCount(total);
+      setCurrentCard(cardName);
+    }
+  );
   const [step, setStep] = useState<SyncStep>('idle');
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
@@ -51,6 +72,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (runningRef.current) return;
     runningRef.current = true;
     setRunning(true);
+    setImportedCount(0);
+    setTotalCount(0);
+    setCurrentCard('');
 
     (async () => {
       try {
@@ -84,15 +108,24 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [incrementalSync, localSync, historicalLoad, backfillBillIds, reconcileBills]);
 
   const stepIndex = ['idle', 'incremental', 'local-sync', 'historical', 'backfill', 'reconcile', 'done'].indexOf(step);
-  const progressPercent = step === 'done' ? 100 : step === 'idle' ? 0 : ((stepIndex) / 6) * 100;
+  const progressPercent = step === 'done'
+    ? 100
+    : step === 'idle'
+    ? 0
+    : step === 'local-sync' && totalCount > 0
+    ? 17 + Math.round((importedCount / totalCount) * 16)
+    : Math.round((stepIndex / 6) * 100);
 
   return (
     <SyncContext.Provider value={{
       step,
-      stepLabel: STEP_LABELS[step],
+      stepLabel: getStepLabel(step, importedCount, totalCount, currentCard),
       progressPercent,
       busy,
       jobProgress,
+      importedCount,
+      totalCount,
+      currentCard,
       startFullSync,
     }}>
       {children}

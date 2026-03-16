@@ -117,11 +117,11 @@ const CartaoCredito: React.FC = () => {
 
         {!loading && !error && (
           <>
-            {/* A) Cards de resumo — padrão bens-investimentos */}
+            {/* A) Cards de resumo — mobile: só Total faturas; sm+: os três */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />
-              <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} />
-              <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} />
+              <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} className="hidden sm:block" />
+              <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} className="hidden sm:block" />
             </div>
 
             {/* B) Faturas do mês */}

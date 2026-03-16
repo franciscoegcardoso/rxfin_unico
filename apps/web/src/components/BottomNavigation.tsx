@@ -1,5 +1,5 @@
 import { useLocation, Link } from 'react-router-dom';
-import { Home, Receipt, Calendar, Grid3x3, Plus } from 'lucide-react';
+import { Home, Receipt, Calendar, List, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { QuickActionsSheet } from '@/components/mobile/QuickActionsSheet';
@@ -105,7 +105,7 @@ export function BottomNavigation() {
             className="relative flex flex-1 flex-col items-center justify-center gap-0.5 min-h-[56px] transition-colors duration-150 text-muted-foreground"
             aria-label="Abrir menu completo"
           >
-            <Grid3x3 className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            <List className="h-5 w-5" strokeWidth={1.75} aria-hidden />
             <span className="text-[10px] font-medium">Mais</span>
           </button>
         </div>

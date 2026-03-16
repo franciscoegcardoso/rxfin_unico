@@ -22,6 +22,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { usePluggyBankSync } from '@/hooks/usePluggyBankSync';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface BankSyncButtonProps {
@@ -66,6 +67,8 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
 
   const handleSync = async (mode: 'full' | 'incremental') => {
     await startBankSync(mode);
+    // Fire-and-forget: sincronizar investimentos Open Finance (não bloqueia o fluxo)
+    supabase.functions.invoke('pluggy-sync', { body: { action: 'sync-investments' } }).catch(() => {});
   };
 
   if (variant === 'card') {

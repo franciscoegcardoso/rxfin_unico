@@ -418,12 +418,9 @@ export function useCreditCardTransactions() {
 
       const transactionIds = allInsertedIds;
 
-      toast.success(`${pendingTransactions.length} transações importadas com sucesso!`);
-      await fetchTransactions();
       return { success: true, transactionIds };
     } catch (err) {
-      console.error('Error importing transactions:', err);
-      toast.error('Erro ao importar transações');
+      console.error('[importTransactions] Error:', err);
       return { success: false, transactionIds: [] };
     }
   };

@@ -77,27 +77,29 @@ const MeuIR: React.FC = () => {
           }}
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-auto p-0 bg-transparent gap-0">
+          <TabsList className="w-full grid grid-cols-3 h-auto min-h-[52px] p-0 bg-transparent gap-0">
             <TabsTrigger 
               value="organizer" 
-              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 px-2 sm:px-4 min-h-[52px] text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors text-center leading-tight"
             >
-              <Bot className="h-4 w-4" />
+              <Bot className="h-4 w-4 shrink-0" />
               Organizar {new Date().getFullYear()}
             </TabsTrigger>
             <TabsTrigger 
               value="bens-direitos" 
-              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 px-2 sm:px-4 min-h-[52px] text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors text-center leading-tight"
             >
-              <LayoutList className="h-4 w-4" />
-              Bens e Direitos
+              <LayoutList className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Bens e Direitos</span>
+              <span className="sm:hidden">Bens e Dir.</span>
             </TabsTrigger>
             <TabsTrigger 
               value="historico" 
-              className="flex items-center justify-center gap-2 py-3 px-4 text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors"
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 px-2 sm:px-4 min-h-[52px] text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors text-center leading-tight"
             >
-              <History className="h-4 w-4" />
-              Declarações anteriores
+              <History className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Declarações anteriores</span>
+              <span className="sm:hidden">Decl. anteriores</span>
             </TabsTrigger>
           </TabsList>
 
