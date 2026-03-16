@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Building2, Upload, CheckCircle2, Loader2,
+  TrendingUp, DollarSign, AlertCircle, ChevronRight, Sparkles,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,16 @@ interface ConnectedBank {
   connector_image_url: string | null;
   connector_primary_color: string | null;
   connected_at: string;
+}
+
+interface IncomeValidationItem {
+  id: string;
+  name: string;
+  method: string;
+  enabled: boolean;
+  estimatedValue: number | null;
+  confirmed: boolean;
+  source: 'pluggy' | 'manual';
 }
 
 interface BlockBProps {
@@ -47,6 +58,9 @@ export const BlockB: React.FC<BlockBProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [milestoneData, setMilestoneData] = useState<unknown>(null);
+  const [incomeValidations, setIncomeValidations] = useState<IncomeValidationItem[]>([]);
+  const [validationsLoaded, setValidationsLoaded] = useState(false);
+  const [savingValidations, setSavingValidations] = useState(false);
 
   useEffect(() => {
     if (step === 1 && snapshot?.pluggy_connections && connectedBanks.length === 0) {
@@ -86,7 +100,60 @@ export const BlockB: React.FC<BlockBProps> = ({
       });
       setMilestoneData(data);
     }
-    onStepChange(3); // conquest
+    onStepChange(2); // validação de receitas
+  };
+
+  const loadIncomeValidations = async () => {
+    if (validationsLoaded || !user?.id) return;
+    try {
+      const { data: incomeItems } = await supabase
+        .from('user_income_items')
+        .select('id, name, method, enabled')
+        .eq('user_id', user.id)
+        .eq('enabled', true)
+        .order('order_index');
+
+      if (!incomeItems || incomeItems.length === 0) {
+        setValidationsLoaded(true);
+        return;
+      }
+
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const fromDate = threeMonthsAgo.toISOString().split('T')[0];
+
+      const { data: txns } = await supabase
+        .from('lancamentos_realizados_v')
+        .select('nome, valor_realizado, mes_referencia')
+        .eq('user_id', user.id)
+        .eq('tipo', 'receita')
+        .gte('data_lancamento', fromDate)
+        .order('valor_realizado', { ascending: false })
+        .limit(50);
+
+      const validations: IncomeValidationItem[] = incomeItems.map(item => {
+        const match = txns?.find(tx =>
+          tx.nome?.toLowerCase().includes(item.name.toLowerCase().split(' ')[0].toLowerCase()) ||
+          item.name.toLowerCase().includes(tx.nome?.toLowerCase().split(' ')[0] ?? '')
+        );
+
+        return {
+          id: item.id,
+          name: item.name,
+          method: item.method,
+          enabled: item.enabled,
+          estimatedValue: match ? Math.round(match.valor_realizado) : null,
+          confirmed: false,
+          source: match ? 'pluggy' : 'manual',
+        };
+      });
+
+      setIncomeValidations(validations);
+    } catch (err) {
+      console.warn('[BlockB] loadIncomeValidations erro:', err);
+    } finally {
+      setValidationsLoaded(true);
+    }
   };
 
   // ─── Step 0: Intro ────────────────────────────────────────
@@ -119,7 +186,7 @@ export const BlockB: React.FC<BlockBProps> = ({
               });
               setReconciliationDone(true);
               setConnectedCount(connections.length);
-              onStepChange(3); // conquest
+              onStepChange(4); // conquest
             }}
             onReconfigure={() => {
               setReconciliationDone(true);
@@ -192,7 +259,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           variant="ghost"
           size="sm"
           className="w-full mt-2 text-muted-foreground text-xs"
-          onClick={() => onStepChange(2)}
+          onClick={() => onStepChange(3)}
         >
           <Upload className="h-3.5 w-3.5 mr-1.5" />
           Prefiro fazer upload de extrato
@@ -419,8 +486,205 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 2: Upload de extrato ──────────────────────────────
+  // ─── Step 2: Validação de Receitas por IA ─────────────────
   if (step === 2) {
+    if (!validationsLoaded) {
+      loadIncomeValidations();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={48} />
+          <p className="text-sm text-muted-foreground text-center">
+            IA analisando suas receitas...
+          </p>
+        </div>
+      );
+    }
+
+    if (incomeValidations.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto py-8 text-center">
+          <p className="text-muted-foreground mb-4">
+            Nenhuma fonte de renda configurada ainda.
+          </p>
+          <Button variant="hero" onClick={() => onStepChange(4)}>
+            Continuar <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    const hasRealData = incomeValidations.some(v => v.source === 'pluggy');
+    const confirmedCount = incomeValidations.filter(v => v.confirmed).length;
+
+    const handleToggleConfirm = (id: string) => {
+      setIncomeValidations(prev =>
+        prev.map(v => v.id === id ? { ...v, confirmed: !v.confirmed } : v)
+      );
+    };
+
+    const handleConfirmAll = () => {
+      setIncomeValidations(prev => prev.map(v => ({ ...v, confirmed: true })));
+    };
+
+    const handleContinue = async () => {
+      setSavingValidations(true);
+      try {
+        const confirmed = incomeValidations.filter(v => v.confirmed).length;
+        await supabase.from('ai_onboarding_events').insert({
+          user_id: user?.id,
+          event_type: 'income_validation_confirmed',
+          metadata: {
+            total_items: incomeValidations.length,
+            confirmed_count: confirmed,
+            has_real_data: hasRealData,
+            items: incomeValidations.map(v => ({
+              name: v.name,
+              confirmed: v.confirmed,
+              source: v.source,
+              estimated_value: v.estimatedValue,
+            })),
+          },
+        });
+      } catch (err) {
+        console.warn('[BlockB] saveValidations erro (não crítico):', err);
+      } finally {
+        setSavingValidations(false);
+      }
+      onStepChange(4);
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(1)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium text-primary uppercase tracking-wide">
+              Validação por IA
+            </p>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Confirme suas fontes de renda
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {hasRealData
+              ? 'A IA identificou entradas nos seus extratos. Confirme as que fazem parte da sua renda regular.'
+              : 'Confirme as fontes de renda que você configurou. Os valores serão preenchidos após sincronizar seus bancos.'}
+          </p>
+        </div>
+
+        {hasRealData && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground">
+              <span className="font-semibold">Dados reais detectados</span>
+              {' '}— Baseado nos seus últimos 3 meses de extratos bancários
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-2 mb-4">
+          {incomeValidations.map(item => (
+            <div
+              key={item.id}
+              className={cn(
+                'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer',
+                item.confirmed
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card'
+              )}
+              onClick={() => handleToggleConfirm(item.id)}
+            >
+              <div className="shrink-0">
+                {item.confirmed
+                  ? <CheckCircle2 className="h-5 w-5 text-primary" />
+                  : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/40" />
+                }
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {item.name}
+                  </p>
+                  {item.source === 'pluggy' && (
+                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
+                      detectado
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {item.method}
+                </p>
+              </div>
+
+              <div className="shrink-0 text-right">
+                {item.estimatedValue != null ? (
+                  <p className="text-sm font-semibold text-foreground">
+                    R$ {item.estimatedValue.toLocaleString('pt-BR')}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    A sincronizar
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {confirmedCount < incomeValidations.length && (
+          <button
+            type="button"
+            onClick={handleConfirmAll}
+            className="w-full text-xs text-primary font-medium mb-4 py-2 hover:underline"
+          >
+            Confirmar todas as fontes de renda
+          </button>
+        )}
+
+        {!hasRealData && (
+          <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Conecte seus bancos via Open Finance para que a IA identifique
+              automaticamente os valores reais de cada fonte de renda.
+            </p>
+          </div>
+        )}
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          disabled={savingValidations}
+          onClick={handleContinue}
+        >
+          {savingValidations
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</>
+            : <>Continuar <ArrowRight className="ml-2 h-5 w-5" /></>
+          }
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 text-muted-foreground"
+          onClick={() => onStepChange(4)}
+        >
+          Pular por agora
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Step 3: Upload de extrato ──────────────────────────────
+  if (step === 3) {
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-6">
@@ -469,7 +733,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           <Button
             variant="hero"
             className="flex-1"
-            onClick={handleFinishConnections}
+            onClick={() => onStepChange(4)}
           >
             Concluir importação
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -490,8 +754,8 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 3: Conquest Card ────────────────────────────────
-  if (step === 3) {
+  // ─── Step 4: Conquest Card ────────────────────────────────
+  if (step === 4) {
     const md = milestoneData as { actual_income?: number; actual_expenses?: number; count_transactions?: number } | null;
     const metrics = md
       ? [
