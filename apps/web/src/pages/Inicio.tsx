@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -13,16 +12,11 @@ import { useOnboardingCheckpoint } from "@/hooks/useOnboardingCheckpoint";
 import { supabase } from "@/integrations/supabase/client";
 import { VisibilityToggle } from "@/components/ui/visibility-toggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HeaderMetricCard } from "@/components/shared/HeaderMetricCard";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Target,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
   Receipt,
   Shield,
   BarChart2,
@@ -32,16 +26,20 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BudgetInsightsSummary } from "@/components/inicio/BudgetInsightsSummary";
 import { InsuranceExpirationAlerts } from "@/components/inicio/InsuranceExpirationAlerts";
-import { MobileHomeHero } from "@/components/inicio/MobileHomeHero";
 import { OnboardingInsightCard } from "@/components/inicio/OnboardingInsightCard";
 import { ControlOnboardingBanner } from "@/components/shared/ControlOnboardingBanner";
 import {
-  MonthSummaryCard,
-  ExpensesStatusCard,
   CreditCardSpendingCard,
   BudgetCompositionCard,
   PendingCategorizationCard,
 } from "@/components/inicio/MobileHomeSections";
+import { HomeHeader } from "@/components/inicio/HomeHeader";
+import { InicioKpiBar } from "@/components/inicio/InicioKpiBar";
+import { CashFlowChart } from "@/components/inicio/CashFlowChart";
+import { AcoesImediatas } from "@/components/inicio/AcoesImediatas";
+import { ContasBancarias } from "@/components/inicio/ContasBancarias";
+import { CartaoCreditoInicio } from "@/components/inicio/CartaoCreditoInicio";
+import { useMonthSummary } from "@/hooks/useMonthSummary";
 import { UpcomingEventsCard } from "@/components/inicio/UpcomingEventsCard";
 import { EconomicIndicators } from "@/components/dashboard/EconomicIndicators";
 import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
@@ -49,7 +47,6 @@ import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
 import { useBankingOverview } from "@/hooks/useBankingOverview";
-import { BalanceSummaryCard } from "@/components/inicio/BalanceSummaryCard";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -226,6 +223,7 @@ const Inicio: React.FC = () => {
     error: dashboardError,
   } = useHomeDashboard(currentMonth, effectiveDemoUserId);
 
+  const monthSummaryData = useMonthSummary(currentMonth, effectiveDemoUserId);
   const { data: bankingOverview } = useBankingOverview();
   const recurringPayments = bankingOverview?.recurring_payments ?? [];
   const topRecurringExpenses = useMemo(() => {
@@ -485,20 +483,21 @@ const Inicio: React.FC = () => {
         <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1">
             {errorBlock}
-            <BalanceSummaryCard />
-            <MobileHomeHero
-            firstName={displayFirstName}
-            saldoLiquido={saldoLiquido}
-          />
+            <HomeHeader firstName={displayFirstName} avatarUrl={user?.user_metadata?.avatar_url || user?.user_metadata?.picture || ""} />
+            <InicioKpiBar
+              receitas={monthSummaryData.receitas}
+              despesasSemCartao={monthSummaryData.despesasSemCartao}
+              totalCartao={monthSummaryData.totalCartao}
+              totalDespesas={monthSummaryData.totalDespesas}
+              saldoMensal={monthSummaryData.saldoMensal}
+              totalLancamentos={monthSummaryData.totalLancamentos}
+              lancamentosSemCategoria={monthSummaryData.lancamentosSemCategoria}
+              deltaVsMesAnterior={monthSummaryData.deltaVsMesAnterior}
+              isHidden={isHidden}
+            />
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <MonthSummaryCard />
-          </DemoCardWrapper>
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <ExpensesStatusCard />
-          </DemoCardWrapper>
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <CreditCardSpendingCard />
           </DemoCardWrapper>
@@ -576,262 +575,46 @@ const Inicio: React.FC = () => {
   // ─── Desktop layout ──────────────────────────────────────
   const avatarUrl =
     user?.user_metadata?.avatar_url || user?.user_metadata?.picture || "";
-  const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
-  const isPositiveBalance = saldoLiquido >= 0;
-  const isPositiveVariation = balanceVariation.pct >= 0;
 
   return (
     <AppLayout>
       <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
-        <div className="content-zone pt-4 pb-5 md:pt-4 md:pb-6 space-y-4 flex-1 w-full max-w-full min-w-0">
+        <div className="content-zone pt-0 pb-5 md:pt-0 md:pb-6 flex-1 w-full max-w-full min-w-0">
           {errorBlock}
-          <BalanceSummaryCard />
-          {/* Hero único: saudação + saldo + período em um bloco coeso */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-5 md:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-          >
-            <div className="flex items-center gap-4 min-w-0">
-              <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-[hsl(var(--color-border-subtle))] shrink-0">
-                <AvatarImage src={avatarUrl} alt={displayFirstName} />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
-                  {getInitials(displayFirstName || "U")}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-[hsl(var(--color-text-primary))] truncate">
-                  Olá, {displayFirstName || "Usuário"}! 👋
-                </h1>
-                <p className="text-sm text-[hsl(var(--color-text-secondary))] mt-0.5">
-                  {periodLabel}
-                </p>
-              </div>
-            </div>
-            {dashboardLoading ? (
-              <Skeleton className="h-16 w-48 rounded-lg shrink-0" />
-            ) : (
-              <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
-                <div className="flex flex-col items-end sm:items-end min-w-0">
-                  <p
-                    className={cn(
-                      "font-numeric text-2xl sm:text-3xl font-bold tabular-nums tracking-tight leading-tight",
-                      isPositiveBalance ? "text-[hsl(var(--color-text-success))]" : "text-[hsl(var(--color-text-danger))]"
-                    )}
-                  >
-                    {formatCurrencyFull(saldoLiquido)}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    {isPositiveVariation ? (
-                      <TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))] shrink-0" aria-hidden />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))] shrink-0" aria-hidden />
-                    )}
-                    <span
-                      className={cn(
-                        "text-sm font-numeric tabular-nums",
-                        isPositiveVariation ? "text-[hsl(var(--color-text-success))]" : "text-[hsl(var(--color-text-danger))]"
-                      )}
-                    >
-                      {isPositiveVariation ? "+" : ""}
-                      {balanceVariation.pct.toFixed(1)}%
-                    </span>
-                    <span className="text-xs text-[hsl(var(--color-text-muted))] hidden sm:inline">
-                      {" "}
-                      vs mês anterior
-                    </span>
-                  </div>
-                </div>
-                <VisibilityToggle />
-              </div>
-            )}
-          </motion.div>
-
-          {/* Cards Receitas, Despesas, Saldo e Lançamentos — logo abaixo da saudação (desktop) */}
-          {monthSummary && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 kpi-grid" >
-              <DemoCardWrapper isDemoMode={isDemoMode}>
-                <HeaderMetricCard
-                  label="Receitas"
-                  value={isHidden ? "••••••" : formatCurrency(monthSummary.total_income ?? 0)}
-                  variant="positive"
-                  icon={<TrendingUp className="h-4 w-4" />}
-                />
-              </DemoCardWrapper>
-              <DemoCardWrapper isDemoMode={isDemoMode}>
-                <HeaderMetricCard
-                  label="Despesas"
-                  value={isHidden ? "••••••" : formatCurrency(monthSummary.total_expense ?? 0)}
-                  variant="negative"
-                  icon={<TrendingDown className="h-4 w-4" />}
-                />
-              </DemoCardWrapper>
-              <DemoCardWrapper isDemoMode={isDemoMode}>
-                <HeaderMetricCard
-                  label="Saldo"
-                  value={isHidden ? "••••••" : formatCurrency(monthSummary.balance ?? 0)}
-                  variant={(monthSummary.balance ?? 0) >= 0 ? "positive" : "negative"}
-                  icon={<Wallet className="h-4 w-4" />}
-                />
-              </DemoCardWrapper>
-              <DemoCardWrapper isDemoMode={isDemoMode}>
-                <HeaderMetricCard
-                  label="Lançamentos"
-                  value={String(monthSummary.count_total ?? "—")}
-                  variant="blue"
-                  icon={<Receipt className="h-4 w-4" />}
-                />
-              </DemoCardWrapper>
-            </div>
-          )}
+          <HomeHeader firstName={displayFirstName} avatarUrl={avatarUrl} />
+          <div className="px-4 md:px-5 pt-3 space-y-3">
+            <InicioKpiBar
+              receitas={monthSummaryData.receitas}
+              despesasSemCartao={monthSummaryData.despesasSemCartao}
+              totalCartao={monthSummaryData.totalCartao}
+              totalDespesas={monthSummaryData.totalDespesas}
+              saldoMensal={monthSummaryData.saldoMensal}
+              totalLancamentos={monthSummaryData.totalLancamentos}
+              lancamentosSemCategoria={monthSummaryData.lancamentosSemCategoria}
+              deltaVsMesAnterior={monthSummaryData.deltaVsMesAnterior}
+              isHidden={isHidden}
+            />
 
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
-          {topRecurringExpenses.length > 0 && (
-            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
-                <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Compromissos do mês</h2>
-                <Link to="/compromissos" className="text-sm text-primary hover:underline font-medium">Ver todos</Link>
-              </div>
-              <div className="space-y-2 p-5">
-                {topRecurringExpenses.map((item, i) => (
-                  <div key={item.id ?? i} className="flex items-center justify-between rounded-lg border border-[hsl(var(--color-border-subtle))] p-3">
-                    <span className="font-medium truncate text-[hsl(var(--color-text-primary))]">
-                      {(item.description ?? "").trim() || "Sem nome"}
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
-                        {isHidden ? "••••" : formatCurrency(item.average_amount ?? 0)}
-                      </span>
-                      {item.seen_this_month ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">✓ Pago</span>
-                      ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">A pagar</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3 mt-3">
+            <div className="space-y-3 min-w-0">
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <CashFlowChart />
+              </DemoCardWrapper>
+              <AcoesImediatas />
+              <DemoCardWrapper isDemoMode={isDemoMode}>
+                <BudgetCompositionCard />
+              </DemoCardWrapper>
             </div>
-          )}
-
-          {/* Atalhos em uma única linha compacta */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <UpcomingEventsCard />
+            <div className="space-y-3 flex flex-col">
+              <ContasBancarias />
+              <CartaoCreditoInicio />
+              {!isDemoMode && <EconomicIndicators />}
+            </div>
           </div>
-
-        {/* Evolução e Cartão lado a lado no desktop para reduzir espaços vazios */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {expensesForBars.length > 0 && (
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
-                  <div>
-                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Evolução Mensal</h2>
-                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Despesas por categoria</p>
-                  </div>
-                </div>
-                <div className="space-y-3 p-5">
-                  {expensesForBars.map((row) => {
-                    const pct =
-                      totalExpensesForPct > 0
-                        ? ((row.total ?? 0) / totalExpensesForPct) * 100
-                        : row.pct ?? 0;
-                    const color = getCategoryColor(row.category ?? "");
-                    return (
-                      <div
-                        key={row.category}
-                        className="flex items-center gap-2 sm:gap-3 min-w-0"
-                      >
-                        <span className="w-24 sm:w-32 shrink-0 text-xs sm:text-sm font-medium truncate text-[hsl(var(--color-text-primary))]">
-                          {row.category}
-                        </span>
-                        <div className="flex-1 h-6 rounded-md bg-[hsl(var(--color-surface-raised))] overflow-hidden min-w-0">
-                          <div
-                            className="h-full rounded-md transition-all"
-                            style={{
-                              width: `${Math.min(100, pct)}%`,
-                              backgroundColor: color,
-                            }}
-                          />
-                        </div>
-                        <span className="shrink-0 text-sm text-[hsl(var(--color-text-muted))] tabular-nums whitespace-nowrap">
-                          {isHidden ? "••••" : formatCurrency(row.total ?? 0)} (
-                          {pct.toFixed(1)}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </DemoCardWrapper>
-          )}
-
-          {bills.length > 0 && (
-            <DemoCardWrapper isDemoMode={isDemoMode}>
-              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
-                  <div>
-                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Cartão de Crédito</h2>
-                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Faturas e status</p>
-                  </div>
-                </div>
-              <div className="space-y-2 p-5">
-                {bills.map(
-                  (
-                    bill: {
-                      card_name?: string | null;
-                      status?: string;
-                      total_value?: number;
-                      is_overdue?: boolean;
-                    },
-                    i: number
-                  ) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between rounded-lg border border-[hsl(var(--color-border-subtle))] p-3"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-medium truncate text-[hsl(var(--color-text-primary))]">
-                          {bill.card_name ?? "Cartão"}
-                        </span>
-                        {bill.status === "paid" && (
-                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
-                            Paga
-                          </span>
-                        )}
-                        {bill.status !== "paid" && bill.is_overdue && (
-                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground">
-                            Vencida
-                          </span>
-                        )}
-                        {bill.status !== "paid" && !bill.is_overdue && (
-                          <span className="shrink-0 text-xs px-2 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))]">
-                            Aberta
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-semibold text-[hsl(var(--color-text-primary))]">
-                          {isHidden ? "••••" : formatCurrency(bill.total_value ?? 0)}
-                        </span>
-                        <Link
-                          to="/movimentacoes/cartao-credito"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Ver detalhes →
-                        </Link>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          </DemoCardWrapper>
-        )}
-        </div>
+          </div>
 
         {insuranceAlerts.length > 0 && (
           <Link to="/alertas" className="block">
@@ -860,96 +643,6 @@ const Inicio: React.FC = () => {
           </Link>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <MonthSummaryCard />
-          </DemoCardWrapper>
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <ExpensesStatusCard />
-          </DemoCardWrapper>
-          <DemoCardWrapper isDemoMode={isDemoMode}>
-            <CreditCardSpendingCard />
-          </DemoCardWrapper>
-        </div>
-
-        <div
-          className={cn(
-            "grid gap-4 items-stretch",
-            showMetasMensais ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
-          )}
-        >
-          {showMetasMensais && (
-            <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
-              <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden h-full flex flex-col min-h-0">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[hsl(var(--color-border-subtle))] shrink-0">
-                  <div>
-                    <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Metas do Mês</h2>
-                    <p className="text-[12px] text-[hsl(var(--color-text-tertiary))] mt-0.5">Gasto vs meta por categoria</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/planejamento/metas")}
-                    className="text-xs text-[hsl(var(--color-brand-700))] hover:underline flex items-center gap-1 font-medium"
-                  >
-                    Editar metas
-                    <ChevronRight className="h-3 w-3" />
-                  </button>
-                </div>
-                <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col">
-                  {categoryGoals.length > 0 ? (
-                    <>
-                      <ul className="list-none p-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0">
-                        {categoryGoals.map((item) => (
-                          <li key={item.category}>
-                            <CategoryGoalItem
-                              category={item.category}
-                              spent={item.spent}
-                              goal={item.goal}
-                              isHidden={isHidden}
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                      {(() => {
-                        const withGoal = categoryGoals.filter((g) => typeof g.goal === "number" && !Number.isNaN(g.goal) && g.goal > 0);
-                        const withinGoal = withGoal.filter((g) => g.spent <= g.goal).length;
-                        const totalSpent = categoryGoals.reduce((s, g) => s + g.spent, 0);
-                        const totalGoal = categoryGoals.reduce((s, g) => s + (typeof g.goal === "number" && !Number.isNaN(g.goal) ? g.goal : 0), 0);
-                        if (withGoal.length === 0) return null;
-                        return (
-                          <div className="mt-3 pt-3 border-t border-[hsl(var(--color-border-subtle))] shrink-0">
-                            <p className="text-[11px] text-[hsl(var(--color-text-tertiary))]">
-                              {withinGoal} de {withGoal.length} categorias dentro da meta
-                              {totalGoal > 0 && !isHidden && (
-                                <span className="ml-1.5 tabular-nums">
-                                  · Total {formatCurrency(totalSpent)} / {formatCurrency(totalGoal)}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        );
-                      })()}
-                    </>
-                  ) : (
-                    <p className="text-sm text-[hsl(var(--color-text-tertiary))] text-center py-4">
-                      Nenhuma categoria configurada. Configure em Parâmetros.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </DemoCardWrapper>
-          )}
-
-          <DemoCardWrapper isDemoMode={isDemoMode} className="h-full min-h-0">
-            <BudgetCompositionCard />
-          </DemoCardWrapper>
-        </div>
-
-        <DemoCardWrapper isDemoMode={isDemoMode}>
-          <PendingCategorizationCard />
-        </DemoCardWrapper>
-
-        {!isDemoMode && <EconomicIndicators />}
         <BudgetInsightsSummary />
         </div>
       </div>
