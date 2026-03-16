@@ -16,7 +16,8 @@ import {
   RefreshCw, 
   DollarSign,
   Percent,
-  Calendar
+  Calendar,
+  Activity
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { premiumGrid, premiumXAxis, premiumYAxis, premiumTooltipStyle } from '@/components/charts/premiumChartTheme';
@@ -174,8 +175,8 @@ export const EconomicIndicators: React.FC = () => {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="py-4">
+      <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
+        <CardContent className="p-4">
           <div className="text-center text-muted-foreground">
             <p className="text-sm">Erro ao carregar indicadores</p>
             <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
@@ -189,18 +190,19 @@ export const EconomicIndicators: React.FC = () => {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2 pt-4 px-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-medium">Indicadores Econômicos</CardTitle>
-            {fetchedAt && (
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                Atualizado: {format(new Date(fetchedAt), "dd/MM HH:mm", { locale: ptBR })}
-              </span>
-            )}
-          </div>
+    <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
+      <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between">
+        <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))] flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" />
+          Indicadores Econômicos
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {fetchedAt && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              Atualizado: {format(new Date(fetchedAt), "dd/MM HH:mm", { locale: ptBR })}
+            </span>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -212,7 +214,7 @@ export const EconomicIndicators: React.FC = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="px-4 pb-4">
+      <CardContent className="p-4 pt-0">
         {isLoading ? (
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[...Array(6)].map((_, i) => (

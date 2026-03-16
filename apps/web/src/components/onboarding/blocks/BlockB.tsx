@@ -476,7 +476,7 @@ export const BlockB: React.FC<BlockBProps> = ({
             size="sm"
             onClick={() => {
               onSaveDraft('connection_method', 'later');
-              onComplete();
+              onStepChange(2);
             }}
           >
             {connectedBanks.length > 0 ? 'Pular restantes' : 'Pular por agora'}

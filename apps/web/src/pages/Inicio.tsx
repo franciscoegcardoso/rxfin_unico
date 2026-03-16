@@ -499,6 +499,11 @@ const Inicio: React.FC = () => {
           {showControlBanner && <ControlOnboardingBanner />}
 
           <DemoCardWrapper isDemoMode={isDemoMode}>
+            <CashFlowChart />
+          </DemoCardWrapper>
+          <ContasBancarias />
+
+          <DemoCardWrapper isDemoMode={isDemoMode}>
             <CreditCardSpendingCard />
           </DemoCardWrapper>
 
@@ -555,8 +560,6 @@ const Inicio: React.FC = () => {
             </CardContent>
           </Card>
 
-          <FluxoPlaceholderCard />
-
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <BudgetCompositionCard />
           </DemoCardWrapper>
@@ -607,17 +610,16 @@ const Inicio: React.FC = () => {
             <ContasBancarias />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3 mt-3">
-            <div className="space-y-3 min-w-0">
-              <DemoCardWrapper isDemoMode={isDemoMode}>
-                <BudgetCompositionCard />
-              </DemoCardWrapper>
-              {!isDemoMode && <EconomicIndicators />}
-              <BudgetInsightsSummary />
-            </div>
-            <div className="space-y-3 flex flex-col">
-              <CartaoCreditoInicio />
-            </div>
+          <div className="space-y-3 mt-3 w-full max-w-full min-w-0">
+            <DemoCardWrapper isDemoMode={isDemoMode}>
+              <BudgetCompositionCard />
+            </DemoCardWrapper>
+            {!isDemoMode && <EconomicIndicators />}
+            <BudgetInsightsSummary />
+          </div>
+
+          <div className="mt-3 w-full max-w-full min-w-0">
+            <CartaoCreditoInicio />
           </div>
           </div>
 
