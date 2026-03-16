@@ -10,9 +10,18 @@ import { PluggyConnectButton } from '@/components/openfinance/PluggyConnectButto
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import type { OnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
 import { invalidateOnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
+
+interface ConnectedBank {
+  item_id: string;
+  connector_name: string;
+  connector_image_url: string | null;
+  connector_primary_color: string | null;
+  connected_at: string;
+}
 
 interface BlockBProps {
   step: number;
@@ -32,6 +41,8 @@ export const BlockB: React.FC<BlockBProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [connectedCount, setConnectedCount] = useState(0);
+  const [connectedBanks, setConnectedBanks] = useState<ConnectedBank[]>([]);
+  const [lastConnectedItemId, setLastConnectedItemId] = useState<string | null>(null);
   const [reconciliationDone, setReconciliationDone] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
@@ -192,33 +203,103 @@ export const BlockB: React.FC<BlockBProps> = ({
           </p>
         </div>
 
-        {connectedCount > 0 && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
-            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-sm text-foreground">
-              {connectedCount} banco{connectedCount !== 1 ? 's' : ''} conectado
-              {connectedCount !== 1 ? 's' : ''} com sucesso
+        {connectedBanks.length > 0 && (
+          <div className="mb-4 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
+              Bancos conectados ({connectedBanks.length})
             </p>
+
+            {connectedBanks.map((bank) => {
+              const isLast = bank.item_id === lastConnectedItemId;
+              return (
+                <div
+                  key={bank.item_id}
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-xl border transition-all duration-500',
+                    isLast
+                      ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                      : 'border-border bg-card',
+                  )}
+                >
+                  <ConnectorLogo
+                    imageUrl={bank.connector_image_url}
+                    primaryColor={bank.connector_primary_color?.replace('#', '') ?? undefined}
+                    connectorName={bank.connector_name}
+                    size="md"
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {bank.connector_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isLast ? '✨ Acabou de conectar' : 'Conectado com sucesso'}
+                    </p>
+                  </div>
+
+                  <CheckCircle2
+                    className={cn(
+                      'h-5 w-5 shrink-0 transition-colors',
+                      isLast ? 'text-primary' : 'text-muted-foreground/50',
+                    )}
+                  />
+                </div>
+              );
+            })}
+
+            <div className="border-t border-border pt-1" />
           </div>
         )}
 
-        <div className="bg-card rounded-xl border border-border p-5 mb-5">
+        <div
+          className={cn(
+            'rounded-xl border p-5 mb-5 transition-colors',
+            connectedBanks.length > 0
+              ? 'bg-muted/30 border-border/50'
+              : 'bg-card border-border',
+          )}
+        >
           <p className="text-xs text-muted-foreground mb-3 text-center">
-            🔒 Conexão criptografada · Regulada pelo Banco Central
+            {connectedBanks.length > 0
+              ? '➕ Adicionar outro banco'
+              : '🔒 Conexão criptografada · Regulada pelo Banco Central'}
           </p>
           <PluggyConnectButton
             variant="default"
             size="lg"
             className="w-full"
-            onSuccess={async () => {
+            onSuccess={async (itemId?: string) => {
               setConnectedCount((prev) => prev + 1);
               invalidateOnboardingSnapshot(queryClient, user?.id);
+
+              if (itemId && user?.id) {
+                const { data } = await supabase
+                  .from('pluggy_connections')
+                  .select('item_id, connector_name, connector_image_url, connector_primary_color')
+                  .eq('item_id', itemId)
+                  .eq('user_id', user.id)
+                  .single();
+
+                if (data) {
+                  const newBank: ConnectedBank = {
+                    item_id: data.item_id,
+                    connector_name: data.connector_name,
+                    connector_image_url: data.connector_image_url,
+                    connector_primary_color: data.connector_primary_color,
+                    connected_at: new Date().toISOString(),
+                  };
+                  setConnectedBanks((prev) => [...prev, newBank]);
+                  setLastConnectedItemId(itemId);
+
+                  setTimeout(() => setLastConnectedItemId(null), 4000);
+                }
+              }
             }}
             onSaving={handlePluggySaving}
           />
-          {connectedCount > 0 && (
-            <p className="text-xs text-center text-muted-foreground mt-3">
-              Clique novamente para adicionar mais bancos
+          {connectedBanks.length > 0 && (
+            <p className="text-xs text-center text-muted-foreground mt-2">
+              Cada banco é uma conexão separada
             </p>
           )}
         </div>

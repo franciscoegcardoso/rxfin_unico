@@ -30,9 +30,9 @@ export const DemoDataBanner: React.FC<DemoDataBannerProps> = ({ inline = false, 
   return (
     <div
       ref={innerRef}
-      className={`${basePlacement} min-h-[48px] bg-destructive text-white flex items-center`}
+      className={`${basePlacement} h-[48px] bg-destructive text-white flex items-center`}
     >
-      <div className="w-full max-w-[1800px] mx-auto px-4 py-3 min-h-[48px] flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full max-w-[1800px] mx-auto px-4 h-full flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0 text-white">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <p className="text-sm font-semibold text-left text-white">

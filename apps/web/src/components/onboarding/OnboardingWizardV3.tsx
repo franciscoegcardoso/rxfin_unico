@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemedLogo } from '@/components/ui/themed-logo';
-import { JourneyMap } from './JourneyMap';
+import { JourneyMap, getActiveLevelSubtitle } from './JourneyMap';
 import { LevelBadge } from './LevelBadge';
 import { BlockA } from './blocks/BlockA';
 import { BlockB } from './blocks/BlockB';
@@ -227,13 +227,21 @@ export const OnboardingWizardV3: React.FC = () => {
         </div>
       </header>
 
-      {/* Journey Map */}
+      {/* Journey Map — horizontal stepper */}
       <div className="max-w-4xl mx-auto w-full px-4">
         <JourneyMap
           currentLevel={currentLevel}
           currentStepInBlock={step}
           totalStepsInBlock={totalSteps}
         />
+        {(() => {
+          const subtitle = getActiveLevelSubtitle(currentLevel);
+          return subtitle ? (
+            <p className="text-xs text-muted-foreground text-center mb-4">
+              {subtitle}
+            </p>
+          ) : null;
+        })()}
       </div>
 
       {/* Content */}

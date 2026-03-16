@@ -19,6 +19,9 @@ const PROGRESS_PHASES: OnboardingPhase[] = [
   'block_c_done',
 ];
 
+/** Altura fixa do banner para compensação no MobileShell (pt). */
+export const ONBOARDING_BANNER_HEIGHT_PX = 48;
+
 const PHASE_LABEL: Record<string, string> = {
   started: 'Bloco 1/4 — Perfil financeiro',
   block_a_done: 'Bloco 2/4 — Conectar bancos',
@@ -68,13 +71,13 @@ export const OnboardingProgressBanner: React.FC<OnboardingProgressBannerProps> =
     <div
       className={`
         ${basePlacement}
-        min-h-[48px]
+        h-[48px]
         bg-[hsl(var(--color-brand-950))] dark:bg-[hsl(var(--color-brand-900))]
         text-white
         flex items-center
       `}
     >
-      <div className="w-full max-w-[1800px] mx-auto px-4 py-3 min-h-[48px] flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full max-w-[1800px] mx-auto px-4 h-full flex items-center justify-between gap-3">
 
         {/* Lado esquerdo: ícone + texto de contexto */}
         <div className="flex items-center gap-2 min-w-0">

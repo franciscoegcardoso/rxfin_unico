@@ -34,6 +34,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
   const navigate = useNavigate();
   const { currentPhase, isLoading } = useOnboardingCheckpoint();
   const showBanner = !isLoading && PROGRESS_PHASES.includes(currentPhase);
+  const mainPt = isLoading ? 'pt-[104px]' : showBanner ? 'pt-[104px]' : 'pt-14';
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -59,7 +60,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
       <main
         className={cn(
           "flex-1 w-full overflow-x-hidden overflow-y-auto min-h-0 md:pb-0",
-          showBanner ? "pt-[calc(3.5rem+3rem)]" : "pt-14"
+          mainPt
         )}
         style={{
           paddingBottom: "max(5rem, calc(4rem + env(safe-area-inset-bottom)))",
