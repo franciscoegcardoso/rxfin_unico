@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MonthSelectorProps {
   selectedMonth: string; // format: YYYY-MM
@@ -22,6 +23,9 @@ function addMonths(yearMonth: string, delta: number): string {
 }
 
 export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onMonthChange, activeMonth }) => {
+  const isMobile = useIsMobile();
+  const selectedRef = useRef<HTMLButtonElement>(null);
+
   const months = useMemo(() => {
     const result: string[] = [];
     for (let i = -12; i <= 12; i++) {
@@ -29,6 +33,44 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
     }
     return result;
   }, [selectedMonth]);
+
+  useEffect(() => {
+    selectedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, []);
+
+  const chips = (
+    <>
+      {months.map((m) => {
+        const isSelected = m === selectedMonth;
+        return (
+          <button
+            key={m}
+            ref={isSelected ? selectedRef : undefined}
+            type="button"
+            onClick={() => onMonthChange(m)}
+            className={`relative px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
+              isSelected
+                ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            {formatLabel(m)}
+            {activeMonth && m === activeMonth && m !== selectedMonth && (
+              <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+            )}
+          </button>
+        );
+      })}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-1 -mx-4 px-4">
+        {chips}
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-between bg-card border-2 border-border rounded-xl px-2 py-2 shadow-sm">
@@ -43,25 +85,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonth, onM
       </Button>
 
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0 flex-1 mx-1">
-        {months.map((m) => {
-          const isSelected = m === selectedMonth;
-          return (
-            <button
-              key={m}
-              onClick={() => onMonthChange(m)}
-              className={`relative px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 ${
-                isSelected
-                  ? 'bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {formatLabel(m)}
-              {activeMonth && m === activeMonth && m !== selectedMonth && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-              )}
-            </button>
-          );
-        })}
+        {chips}
       </div>
 
       <Button

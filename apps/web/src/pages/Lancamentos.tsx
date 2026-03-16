@@ -779,12 +779,30 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
           <PageHeader
             icon={ReceiptText}
             title="Lançamentos"
-            subtitle="Gerencie suas entradas e saídas"
             showBackButton={false}
             actions={
               <>
-                {!isManual && <BankSyncButton variant="button" />}
+                {!isManual && (
+                  <>
+                    <span className={isMobile ? 'contents' : 'hidden'}>
+                      <BankSyncButton variant="button" className="!px-2 !min-w-0 [&_span]:hidden [&_.badge]:hidden" />
+                    </span>
+                    <span className={!isMobile ? 'contents' : 'hidden'}>
+                      <BankSyncButton variant="button" />
+                    </span>
+                  </>
+                )}
                 <VisibilityToggle />
+                {isMobile && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="min-h-[44px] min-w-[44px]"
+                    onClick={() => setAnaliseDialogOpen(true)}
+                  >
+                    <BarChart2 className="h-5 w-5" />
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="hero" className="gap-2 min-h-[44px] min-w-[44px] touch-manipulation">
@@ -855,29 +873,52 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
         </div>
         )}
 
-        {!isManual && <PluggySyncStatus accountType="BANK" compact />}
+        {!isManual && (
+          <div className="hidden sm:block">
+            <PluggySyncStatus accountType="BANK" compact />
+          </div>
+        )}
+
+        {isMobile && (
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <div className="rounded-xl border border-border/80 bg-card p-3">
+              <p className="text-xs text-muted-foreground mb-1">Receitas</p>
+              <p className="text-lg font-semibold text-[hsl(var(--color-text-success))]">
+                {isHidden ? '••••' : formatCurrency(totalIncome)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3">
+              <p className="text-xs text-muted-foreground mb-1">Despesas</p>
+              <p className="text-lg font-semibold text-[hsl(var(--color-text-danger))]">
+                {isHidden ? '••••' : formatCurrency(totalExpense)}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Resumo do mês (RPC) — análise dos lançamentos */}
         {rpcSummary != null && (
           <div className="space-y-4">
-            {/* Seção Análise dos lançamentos — abre modal com gráficos */}
-            <Card
-              className="rounded-[14px] border border-border/80 cursor-pointer transition-colors hover:bg-muted/30 hover:border-primary/40"
-              onClick={() => setAnaliseDialogOpen(true)}
-            >
-              <CardContent className="flex flex-row items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                    <BarChart2 className="h-5 w-5 text-primary" />
+            {/* Seção Análise dos lançamentos — abre modal com gráficos (desktop); mobile acessa via ícone no header) */}
+            <div className="hidden sm:block">
+              <Card
+                className="rounded-[14px] border border-border/80 cursor-pointer transition-colors hover:bg-muted/30 hover:border-primary/40"
+                onClick={() => setAnaliseDialogOpen(true)}
+              >
+                <CardContent className="flex flex-row items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                      <BarChart2 className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Análise dos lançamentos</p>
+                      <p className="text-sm text-muted-foreground">Top categorias, formas de pagamento, receita vs despesa e despesas por categoria</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground">Análise dos lançamentos</p>
-                    <p className="text-sm text-muted-foreground">Top categorias, formas de pagamento, receita vs despesa e despesas por categoria</p>
-                  </div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </CardContent>
-            </Card>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Modal: Análise dos lançamentos (gráficos) */}
             <Dialog open={analiseDialogOpen} onOpenChange={setAnaliseDialogOpen}>
@@ -1268,7 +1309,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                     type="button"
                     onClick={() => { setFilterTipo('all'); setFilterCategories(active ? [] : [cat]); }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border truncate max-w-[140px]',
+                      'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                       active
                         ? 'bg-[hsl(var(--color-brand-700))] border-[hsl(var(--color-brand-700))] text-white hover:bg-[hsl(var(--color-brand-600))]'
                         : 'border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-secondary))] hover:border-[hsl(var(--color-brand-400))] hover:text-[hsl(var(--color-brand-700))]'
