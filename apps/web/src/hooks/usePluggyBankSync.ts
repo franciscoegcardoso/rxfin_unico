@@ -33,6 +33,41 @@ export function usePluggyBankSync() {
   });
   const runningRef = useRef(false);
 
+  const getUnsyncedCount = useCallback(async (): Promise<number> => {
+    if (!user) return 0;
+    const { data, error } = await supabase
+      .rpc('get_unsynced_bank_transactions', { p_user_id: user.id });
+    if (error) return 0;
+    return (data || []).length;
+  }, [user]);
+
+  const getCoverage = useCallback(async () => {
+    if (!user) return [];
+    const { data, error } = await supabase
+      .rpc('get_pluggy_bank_date_coverage', { p_user_id: user.id });
+    if (error) return [];
+    return data || [];
+  }, [user]);
+
+  const getImportedSummary = useCallback(async (): Promise<{
+    total_imported: number;
+    min_date: string | null;
+    max_date: string | null;
+    months_covered: number;
+  }> => {
+    if (!user) return { total_imported: 0, min_date: null, max_date: null, months_covered: 0 };
+    const { data, error } = await supabase
+      .rpc('get_imported_bank_summary', { p_user_id: user.id });
+    if (error) return { total_imported: 0, min_date: null, max_date: null, months_covered: 0 };
+    const raw = data as { total_imported?: number; min_date?: string; max_date?: string; months_covered?: number } | null;
+    return {
+      total_imported: raw?.total_imported ?? 0,
+      min_date: raw?.min_date ?? null,
+      max_date: raw?.max_date ?? null,
+      months_covered: raw?.months_covered ?? 0,
+    };
+  }, [user]);
+
   /**
    * Full sync:
    * 1. Trigger historical-load or incremental-sync (enqueues async, does not block)
@@ -86,7 +121,12 @@ export function usePluggyBankSync() {
           total: 0,
           processed: 0,
         });
-        toast.info('Nenhuma transação bancária nova para importar.');
+        const summary = await getImportedSummary();
+        if (summary.total_imported > 0) {
+          toast.info(`Dados em dia. ${summary.total_imported} transações importadas de ${summary.months_covered} meses.`);
+        } else {
+          toast.info('Nenhuma transação disponível para importar. Verifique suas conexões bancárias.');
+        }
         return { imported: 0 };
       }
 
@@ -144,23 +184,7 @@ export function usePluggyBankSync() {
       setSyncing(false);
       runningRef.current = false;
     }
-  }, [user, fetchLancamentos]);
-
-  const getUnsyncedCount = useCallback(async (): Promise<number> => {
-    if (!user) return 0;
-    const { data, error } = await supabase
-      .rpc('get_unsynced_bank_transactions', { p_user_id: user.id });
-    if (error) return 0;
-    return (data || []).length;
-  }, [user]);
-
-  const getCoverage = useCallback(async () => {
-    if (!user) return [];
-    const { data, error } = await supabase
-      .rpc('get_pluggy_bank_date_coverage', { p_user_id: user.id });
-    if (error) return [];
-    return data || [];
-  }, [user]);
+  }, [user, fetchLancamentos, getImportedSummary]);
 
   return {
     syncing,
@@ -168,5 +192,6 @@ export function usePluggyBankSync() {
     startBankSync,
     getUnsyncedCount,
     getCoverage,
+    getImportedSummary,
   };
 }

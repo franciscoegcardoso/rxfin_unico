@@ -112,9 +112,6 @@ export function usePluggyCreditCardSync(autoSync = false) {
       }
     }
 
-      // Track which transactions have authoritative pluggy bill links
-      const hasBillFromPluggy: boolean[] = filteredTxs.map(t => !!t.pluggy_bill_id);
-
       const pending: PendingTransaction[] = filteredTxs.map(t => {
       const desc = t.description || t.description_raw || 'Transação';
       const rawDate = typeof t.date === 'string' ? t.date.split('T')[0] : t.date;
@@ -172,7 +169,6 @@ export function usePluggyCreditCardSync(autoSync = false) {
     const dedupedIndices: number[] = [];
     const dedupedPending: PendingTransaction[] = [];
     const dedupedFilteredTxs: any[] = [];
-    const dedupedHasBillFromPluggy: boolean[] = [];
 
     for (let i = 0; i < pending.length; i++) {
       const p = pending[i];
@@ -184,7 +180,6 @@ export function usePluggyCreditCardSync(autoSync = false) {
       dedupedIndices.push(i);
       dedupedPending.push(p);
       dedupedFilteredTxs.push(filteredTxs[i]);
-      dedupedHasBillFromPluggy.push(hasBillFromPluggy[i]);
     }
 
     if (dedupedPending.length === 0) return 0;
@@ -208,14 +203,10 @@ export function usePluggyCreditCardSync(autoSync = false) {
     if (success && transactionIds.length > 0) {
       for (let j = 0; j < transactionIds.length; j++) {
         const billId = txBillIds[j];
-        const billFromPluggy = dedupedHasBillFromPluggy[j] || false;
-        const updates: Record<string, any> = {};
-        if (billId) updates.credit_card_bill_id = billId;
-        updates.bill_from_pluggy = billFromPluggy;
-        if (Object.keys(updates).length > 0) {
+        if (billId) {
           await supabase
             .from('credit_card_transactions_v')
-            .update(updates)
+            .update({ credit_card_bill_id: billId })
             .eq('id', transactionIds[j]);
         }
       }
@@ -378,7 +369,6 @@ export function usePluggyCreditCardSync(autoSync = false) {
     setJobProgress(null);
     let totalPluggyImported = 0;
     let jobId: string | null = null;
-    let nextResumePage: Record<string, number> | null = null;
 
     try {
       // Check date coverage to determine if historical load is needed
@@ -401,30 +391,14 @@ export function usePluggyCreditCardSync(autoSync = false) {
 
       console.log('[Historical Load] Lacunas detectadas, buscando dados da API...');
 
-      // Loop: call edge function in chunks until done
-      let done = false;
-      while (!done) {
-        const { data, error } = await invokePluggySync({
-          action: 'historical-load',
-          jobId,
-          resumePage: nextResumePage,
-        });
-
-        if (error) throw error;
-
-        totalPluggyImported += data?.totalTransactions || 0;
-        jobId = data?.jobId || jobId;
-        done = data?.done === true;
-        nextResumePage = data?.nextResumePage || null;
-
-        if (jobId && !pollingRef.current) {
-          startPolling(jobId);
-        }
-
-        if (!done) {
-          console.log(`[Historical Load] Chunk done: ${totalPluggyImported} total so far, continuing...`);
-        }
-      }
+      const { data: histData, error: histError } = await invokePluggySync({
+        action: 'historical-load',
+      });
+      if (histError) throw histError;
+      totalPluggyImported = histData?.totalTransactions || 0;
+      jobId = histData?.jobId || null;
+      if (jobId) startPolling(jobId);
+      await new Promise(r => setTimeout(r, 3000));
 
       console.log(`[Historical Load] All done: ${totalPluggyImported} registros da API`);
 

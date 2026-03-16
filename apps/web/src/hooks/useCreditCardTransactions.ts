@@ -373,8 +373,6 @@ export function useCreditCardTransactions() {
             recurring_group_id: recurringGroupId,
             // Auto-applied friendly name from rules
             friendly_name: autoFriendlyName,
-            // Original purchase date from Pluggy metadata
-            purchase_date: t.purchaseDate || null,
           };
         })
       );
@@ -386,13 +384,22 @@ export function useCreditCardTransactions() {
       let allInsertedIds: string[] = [];
 
       if (withPluggyId.length > 0) {
-        const { data: upsertedData, error: upsertError } = await supabase
+        const pluggyIds = withPluggyId.map(t => t.pluggy_transaction_id as string);
+        const { data: existing } = await supabase
           .from('credit_card_transactions_v')
-          .upsert(withPluggyId, { onConflict: 'pluggy_transaction_id', ignoreDuplicates: true })
-          .select('id');
+          .select('pluggy_transaction_id')
+          .in('pluggy_transaction_id', pluggyIds);
+        const existingIds = new Set((existing || []).map((e: { pluggy_transaction_id: string }) => e.pluggy_transaction_id));
+        const newTxs = withPluggyId.filter(t => !existingIds.has(t.pluggy_transaction_id as string));
 
-        if (upsertError) throw upsertError;
-        allInsertedIds.push(...(upsertedData?.map(t => t.id) || []));
+        if (newTxs.length > 0) {
+          const { data: insertedData, error: insertError } = await supabase
+            .from('credit_card_transactions_v')
+            .insert(newTxs)
+            .select('id');
+          if (insertError) throw insertError;
+          allInsertedIds.push(...(insertedData?.map(t => t.id) || []));
+        }
       }
 
       if (withoutPluggyId.length > 0) {

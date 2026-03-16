@@ -33,11 +33,18 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
   variant = 'button',
   className,
 }) => {
-  const { syncing, progress, startBankSync, getUnsyncedCount, getCoverage } = usePluggyBankSync();
+  const { syncing, progress, startBankSync, getUnsyncedCount,
+          getCoverage, getImportedSummary } = usePluggyBankSync();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [unsyncedCount, setUnsyncedCount] = useState<number | null>(null);
   const [coverage, setCoverage] = useState<Array<{ account_name: string; min_date: string; max_date: string; tx_count: number }>>([]);
   const [hasEverSynced, setHasEverSynced] = useState<boolean | null>(null);
+  const [importedSummary, setImportedSummary] = useState<{
+    total_imported: number;
+    min_date: string | null;
+    max_date: string | null;
+    months_covered: number;
+  } | null>(null);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -45,10 +52,12 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
       setUnsyncedCount(count);
       const cov = await getCoverage();
       setCoverage(cov);
-      setHasEverSynced(cov.length > 0);
+      const summary = await getImportedSummary();
+      setImportedSummary(summary);
+      setHasEverSynced(summary.total_imported > 0);
     };
     checkStatus();
-  }, [getUnsyncedCount, getCoverage, syncing]);
+  }, [getUnsyncedCount, getCoverage, getImportedSummary, syncing]);
 
   const progressPercent = progress.total > 0
     ? Math.round((progress.processed / progress.total) * 100)
@@ -77,10 +86,10 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
               <div>
                 <p className="font-medium text-sm">Sincronizar Extratos Bancários</p>
                 <p className="text-xs text-muted-foreground">
-                  {hasEverSynced === false
-                    ? 'Carga inicial pendente'
-                    : coverage.length > 0
-                      ? `${coverage.reduce((s, c) => s + c.tx_count, 0)} transações sincronizadas`
+                  {importedSummary !== null && importedSummary.total_imported === 0
+                    ? 'Histórico não importado — clique para iniciar'
+                    : importedSummary && importedSummary.total_imported > 0
+                      ? `${importedSummary.total_imported} transações em Lançamentos`
                       : 'Importar transações para lançamentos'}
                 </p>
               </div>
@@ -119,6 +128,7 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
           coverage={coverage}
           hasEverSynced={hasEverSynced}
           unsyncedCount={unsyncedCount}
+          importedSummary={importedSummary}
           onSync={handleSync}
         />
       </>
@@ -159,6 +169,7 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
         coverage={coverage}
         hasEverSynced={hasEverSynced}
         unsyncedCount={unsyncedCount}
+        importedSummary={importedSummary}
         onSync={handleSync}
       />
     </>
@@ -166,6 +177,13 @@ export const BankSyncButton: React.FC<BankSyncButtonProps> = ({
 };
 
 // ── Dialog ──
+
+interface ImportedSummary {
+  total_imported: number;
+  min_date: string | null;
+  max_date: string | null;
+  months_covered: number;
+}
 
 interface BankSyncDialogProps {
   open: boolean;
@@ -176,6 +194,7 @@ interface BankSyncDialogProps {
   coverage: Array<{ account_name: string; min_date: string; max_date: string; tx_count: number }>;
   hasEverSynced: boolean | null;
   unsyncedCount: number | null;
+  importedSummary: ImportedSummary | null;
   onSync: (mode: 'full' | 'incremental') => void;
 }
 
@@ -188,10 +207,14 @@ const BankSyncDialog: React.FC<BankSyncDialogProps> = ({
   coverage,
   hasEverSynced,
   unsyncedCount,
+  importedSummary,
   onSync,
 }) => {
   const navigate = useNavigate();
   const hasConnectedBank = coverage.length > 0;
+  const neverImported = importedSummary !== null && importedSummary.total_imported === 0;
+  const needsFullLoad = neverImported || (unsyncedCount !== null && unsyncedCount > 0);
+  const recommendedMode: 'full' | 'incremental' = needsFullLoad ? 'full' : 'incremental';
 
   const handleGoToInstitutions = () => {
     onOpenChange(false);
@@ -202,34 +225,40 @@ const BankSyncDialog: React.FC<BankSyncDialogProps> = ({
     onOpenChange(false);
   };
 
-  // Smart mode: if never synced OR there are pending unsynced transactions, use full load
-  const needsFullLoad = hasEverSynced === false || (unsyncedCount !== null && unsyncedCount > 0);
-  const recommendedMode: 'full' | 'incremental' = needsFullLoad ? 'full' : 'incremental';
-
   const getStatusMessage = () => {
-    if (hasEverSynced === false) {
+    if (neverImported) {
       return {
         icon: <Download className="h-4 w-4 text-primary shrink-0" />,
-        text: 'Nenhuma transação importada ainda. Vamos buscar todo o histórico disponível nas suas contas.',
+        text: 'Histórico ainda não importado. Vamos buscar todas as transações disponíveis.',
         bgClass: 'bg-primary/5 border-primary/20',
       };
     }
     if (unsyncedCount !== null && unsyncedCount > 0) {
       return {
         icon: <Download className="h-4 w-4 text-muted-foreground shrink-0" />,
-        text: `${unsyncedCount} transações pendentes. Vamos importá-las para seus lançamentos.`,
+        text: `${unsyncedCount} novas transações disponíveis para importar.`,
         bgClass: 'bg-muted/50 border-border',
       };
     }
+    const imported = importedSummary?.total_imported ?? 0;
+    const months = importedSummary?.months_covered ?? 0;
+    const minDate = importedSummary?.min_date
+      ? new Date(importedSummary.min_date).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+      : null;
+    const maxDate = importedSummary?.max_date
+      ? new Date(importedSummary.max_date).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+      : null;
     return {
       icon: <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />,
-      text: 'Tudo sincronizado! Você pode buscar as transações mais recentes.',
+      text: imported > 0
+        ? `✅ ${imported} transações em Lançamentos (${months} meses${minDate && maxDate ? ` · ${minDate} a ${maxDate}` : ''}). Clique para buscar atualizações recentes.`
+        : 'Nenhuma transação importada ainda.',
       bgClass: 'bg-primary/5 border-primary/20',
     };
   };
 
   const getButtonLabel = () => {
-    if (hasEverSynced === false) return 'Importar Histórico';
+    if (neverImported) return 'Importar Histórico Completo';
     if (unsyncedCount !== null && unsyncedCount > 0) return `Importar ${unsyncedCount} Transações`;
     return 'Buscar Atualizações';
   };
