@@ -2,10 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
 import { formatBalanceAge, getStaleStatus } from '@/utils/formatBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number, isHidden: boolean) => {
@@ -104,6 +105,13 @@ export const BalanceSummaryCard: React.FC = () => {
                       : 'border-border bg-muted/30'
                   )}
                 >
+                  <ConnectorLogo
+                    imageUrl={acc.connector_image_url}
+                    primaryColor={acc.connector_color}
+                    connectorName={acc.connector_name}
+                    size="sm"
+                    className="shrink-0"
+                  />
                   <span className="font-medium truncate max-w-[120px]" title={acc.connector_name}>
                     {acc.connector_name}
                   </span>
