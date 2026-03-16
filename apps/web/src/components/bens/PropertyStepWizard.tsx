@@ -2,13 +2,16 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Building2, Home, Receipt, Settings, ClipboardCheck, MapPin, Calendar, DollarSign, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { DatePickerFriendly } from '@/components/ui/date-picker-friendly';
-import { PropertyAdjustmentType, RentalExpenseResponsibility, ExpenseResponsible, PropertyMonthlyExpenses } from '@/types/financial';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { PropertyAdjustmentType, RentalExpenseResponsibility, ExpenseResponsible, PropertyMonthlyExpenses, EstadoImovelType, CustoVacanciaItem, CustoProprietarioItem } from '@/types/financial';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -57,6 +60,10 @@ interface PropertyFormData {
   initialValue: number;
   finalValue: number;
   finalDate: Date | undefined;
+  estadoImovel?: EstadoImovelType;
+  diaAluguel?: number;
+  custosVacancia?: CustoVacanciaItem[];
+  custosProprietario?: CustoProprietarioItem[];
 }
 
 interface PropertyStepWizardProps {
@@ -158,11 +165,74 @@ export const PropertyStepProgress: React.FC<{
   );
 };
 
+const ESTADO_IMOVEL_OPTIONS: { value: EstadoImovelType; label: string }[] = [
+  { value: 'alugado', label: 'Alugado — gera receita de aluguel' },
+  { value: 'vago', label: 'Vago — sem inquilino (custos do proprietário)' },
+  { value: 'proprio', label: 'Uso próprio' },
+];
+
+const CATEGORIA_OPTIONS = [
+  { value: 'Moradia', label: 'Moradia' },
+  { value: 'Utilidades', label: 'Utilidades' },
+  { value: 'Impostos', label: 'Impostos' },
+];
+
 // Step 1: Dados Básicos
 export const PropertyStepDados: React.FC<{
   formData: PropertyFormData;
   onFormChange: (data: Partial<PropertyFormData>) => void;
 }> = ({ formData, onFormChange }) => {
+  const estadoImovel = formData.estadoImovel ?? 'proprio';
+  const custosVacancia = formData.custosVacancia ?? [];
+  const custosProprietario = formData.custosProprietario ?? [];
+
+  const handleEstadoChange = (value: EstadoImovelType) => {
+    onFormChange({ estadoImovel: value, isRentalProperty: value === 'alugado' });
+  };
+
+  const addCustoVacancia = (template?: { descricao: string; categoria: string }) => {
+    const newItem: CustoVacanciaItem = {
+      id: crypto.randomUUID(),
+      descricao: template?.descricao ?? '',
+      valor: 0,
+      dia: 5,
+      categoria: template?.categoria ?? 'Utilidades',
+    };
+    onFormChange({ custosVacancia: [...custosVacancia, newItem] });
+  };
+
+  const updateCustoVacancia = (index: number, updates: Partial<CustoVacanciaItem>) => {
+    const next = [...custosVacancia];
+    next[index] = { ...next[index], ...updates };
+    onFormChange({ custosVacancia: next });
+  };
+
+  const removeCustoVacancia = (index: number) => {
+    onFormChange({ custosVacancia: custosVacancia.filter((_, i) => i !== index) });
+  };
+
+  const addCustoProprietario = (template?: { descricao: string; categoria: string }) => {
+    const newItem: CustoProprietarioItem = {
+      id: crypto.randomUUID(),
+      descricao: template?.descricao ?? '',
+      valor: 0,
+      dia: 5,
+      frequencia: 'mensal',
+      categoria: template?.categoria ?? 'Moradia',
+    };
+    onFormChange({ custosProprietario: [...custosProprietario, newItem] });
+  };
+
+  const updateCustoProprietario = (index: number, updates: Partial<CustoProprietarioItem>) => {
+    const next = [...custosProprietario];
+    next[index] = { ...next[index], ...updates };
+    onFormChange({ custosProprietario: next });
+  };
+
+  const removeCustoProprietario = (index: number) => {
+    onFormChange({ custosProprietario: custosProprietario.filter((_, i) => i !== index) });
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -184,6 +254,20 @@ export const PropertyStepDados: React.FC<{
           onChange={(value) => onFormChange({ value })}
           placeholder="0"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Estado atual do imóvel</Label>
+        <Select value={estadoImovel} onValueChange={(v) => handleEstadoChange(v as EstadoImovelType)}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover">
+            {ESTADO_IMOVEL_OPTIONS.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -257,9 +341,96 @@ export const PropertyStepDados: React.FC<{
         </div>
         <Switch
           checked={formData.isRentalProperty}
-          onCheckedChange={(checked) => onFormChange({ isRentalProperty: checked })}
+          onCheckedChange={(checked) => onFormChange({ isRentalProperty: checked, estadoImovel: checked ? 'alugado' : (formData.estadoImovel ?? 'proprio') })}
         />
       </div>
+
+      {estadoImovel === 'vago' && (
+        <Collapsible defaultOpen className="rounded-lg border p-3">
+          <CollapsibleTrigger className="flex w-full items-center justify-between text-left font-medium text-sm">
+            Custos enquanto vago
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3 space-y-3">
+            <p className="text-xs text-muted-foreground">Esses custos ficarão ativos enquanto o imóvel estiver sem inquilino.</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[{ descricao: 'Luz', categoria: 'Utilidades' }, { descricao: 'Água', categoria: 'Utilidades' }, { descricao: 'Condomínio', categoria: 'Moradia' }, { descricao: 'IPTU', categoria: 'Impostos' }, { descricao: 'Gás', categoria: 'Utilidades' }].map((t) => (
+                <button key={t.descricao} type="button" onClick={() => addCustoVacancia(t)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80 border">
+                  <Plus className="h-3 w-3" /> {t.descricao}
+                </button>
+              ))}
+            </div>
+            {custosVacancia.map((item, index) => (
+              <div key={item.id ?? index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 rounded border p-2 bg-background">
+                <Input className="sm:col-span-4" placeholder="Descrição" value={item.descricao} onChange={(e) => updateCustoVacancia(index, { descricao: e.target.value })} />
+                <CurrencyInput className="sm:col-span-2" value={item.valor} onChange={(v) => updateCustoVacancia(index, { valor: v })} placeholder="R$" />
+                <Input type="number" min={1} max={31} className="sm:col-span-2" placeholder="Dia" value={item.dia || ''} onChange={(e) => updateCustoVacancia(index, { dia: Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 5)) })} />
+                <Select value={item.categoria} onValueChange={(v) => updateCustoVacancia(index, { categoria: v })}>
+                  <SelectTrigger className="sm:col-span-3 h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {CATEGORIA_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <div className="sm:col-span-1 flex items-center">
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeCustoVacancia(index)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" className="w-full gap-1" onClick={() => addCustoVacancia()}>
+              <Plus className="h-4 w-4" /> Adicionar custo
+            </Button>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      <Collapsible defaultOpen className="rounded-lg border p-3">
+        <CollapsibleTrigger className="flex w-full items-center justify-between text-left font-medium text-sm">
+          Custos do proprietário
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3 space-y-3">
+          <p className="text-xs text-muted-foreground">Custos fixos independente de ter ou não inquilino.</p>
+          <div className="flex flex-wrap gap-1.5">
+            {[{ descricao: 'Fundo de reserva', categoria: 'Moradia' }, { descricao: 'IPTU', categoria: 'Impostos' }, { descricao: 'Seguro residencial', categoria: 'Moradia' }, { descricao: 'Reforma', categoria: 'Moradia' }].map((t) => (
+              <button key={t.descricao} type="button" onClick={() => addCustoProprietario(t)} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-muted hover:bg-muted/80 border">
+                <Plus className="h-3 w-3" /> {t.descricao}
+              </button>
+            ))}
+          </div>
+          {custosProprietario.map((item, index) => (
+            <div key={item.id ?? index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 rounded border p-2 bg-background">
+              <Input className="sm:col-span-3" placeholder="Descrição" value={item.descricao} onChange={(e) => updateCustoProprietario(index, { descricao: e.target.value })} />
+              <CurrencyInput className="sm:col-span-2" value={item.valor} onChange={(v) => updateCustoProprietario(index, { valor: v })} placeholder="R$" />
+              <Input type="number" min={1} max={31} className="sm:col-span-1" placeholder="Dia" value={item.dia || ''} onChange={(e) => updateCustoProprietario(index, { dia: Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 5)) })} />
+              <Select value={item.frequencia} onValueChange={(v: 'mensal' | 'anual') => updateCustoProprietario(index, { frequencia: v })}>
+                <SelectTrigger className="sm:col-span-2 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="mensal">Mensal</SelectItem>
+                  <SelectItem value="anual">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={item.categoria} onValueChange={(v) => updateCustoProprietario(index, { categoria: v })}>
+                <SelectTrigger className="sm:col-span-3 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {CATEGORIA_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <div className="sm:col-span-1 flex items-center">
+                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => removeCustoProprietario(index)}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" className="w-full gap-1" onClick={() => addCustoProprietario()}>
+            <Plus className="h-4 w-4" /> Adicionar custo
+          </Button>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };
@@ -269,6 +440,7 @@ export const PropertyStepAluguel: React.FC<{
   formData: PropertyFormData;
   onFormChange: (data: Partial<PropertyFormData>) => void;
 }> = ({ formData, onFormChange }) => {
+  const diaAluguel = formData.diaAluguel ?? 5;
   return (
     <div className="space-y-4 p-4 rounded-lg bg-income/5 border border-income/20">
       <h4 className="text-sm font-medium text-income flex items-center gap-2">
@@ -284,6 +456,22 @@ export const PropertyStepAluguel: React.FC<{
           onChange={(value) => onFormChange({ rentalValue: value })}
           placeholder="R$ 0"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="diaAluguel">Dia de recebimento</Label>
+        <Input
+          id="diaAluguel"
+          type="number"
+          min={1}
+          max={31}
+          value={diaAluguel}
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            if (!Number.isNaN(v)) onFormChange({ diaAluguel: Math.min(31, Math.max(1, v)) });
+          }}
+        />
+        <p className="text-xs text-muted-foreground">Dia do mês em que o aluguel é recebido (1-31)</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

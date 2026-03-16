@@ -30,9 +30,9 @@ import { DatePickerFriendly } from '@/components/ui/date-picker-friendly';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { assetTypes, investmentTypes, financialInstitutions } from '@/data/defaultData';
-import { AssetType, PropertyAdjustmentType, FuelType, RentalExpenseResponsibility, ExpenseResponsible, Asset, CompanyValuationType, CompanySector, AssetLinkedExpense, InvestmentType, PropertyMonthlyExpenses, PaymentMethod, CorporatePensionConfig } from '@/types/financial';
+import { AssetType, PropertyAdjustmentType, FuelType, RentalExpenseResponsibility, ExpenseResponsible, Asset, CompanyValuationType, CompanySector, AssetLinkedExpense, InvestmentType, PropertyMonthlyExpenses, PaymentMethod, CorporatePensionConfig, EstadoImovelType, CustoVacanciaItem, CustoProprietarioItem, ReceitaVeiculoItem } from '@/types/financial';
 import { statesList } from '@/data/vehicleBenchmarks';
-import { Building2, Car, TrendingUp, Package, Home, CalendarIcon, TrendingDown, Fuel, ChevronLeft, ChevronRight, Landmark, Plus, Search, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Building2, Car, TrendingUp, Package, Home, CalendarIcon, TrendingDown, Fuel, ChevronLeft, ChevronRight, Landmark, Plus, Search, Loader2, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
 import { PropertyStepProgress, PropertyStepDados, PropertyStepAluguel, PropertyStepDespesas, PropertyStepAjustes, PropertyStepResumo, PropertyStep, getNextPropertyStep, getPrevPropertyStep, isLastPropertyStep, isFirstPropertyStep } from './PropertyStepWizard';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -202,6 +202,14 @@ interface NewAssetForm {
   passivoCredor: string;
   passivoValorTotalDivida: number;
   passivoDataVencimento: Date | undefined;
+  // Imóvel v3: estado, custos vacância/proprietário, dia aluguel
+  estadoImovel: EstadoImovelType;
+  diaAluguel: number;
+  custosVacancia: CustoVacanciaItem[];
+  custosProprietario: CustoProprietarioItem[];
+  // Veículo: receitas
+  hasReceitaVeiculo: boolean;
+  receitasVeiculo: ReceitaVeiculoItem[];
 }
 
 const defaultCorporatePensionConfig: Partial<CorporatePensionConfig> = {
@@ -289,6 +297,12 @@ const initialFormState: NewAssetForm = {
   passivoCredor: '',
   passivoValorTotalDivida: 0,
   passivoDataVencimento: undefined,
+  estadoImovel: 'proprio',
+  diaAluguel: 5,
+  custosVacancia: [],
+  custosProprietario: [],
+  hasReceitaVeiculo: false,
+  receitasVeiculo: [],
 };
 
 /** Title and subtitle when dialog is opened with lockedType from a specific tab */
@@ -487,6 +501,12 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
               passivoCredor: (meta.credor as string) ?? '',
               passivoValorTotalDivida: Number(meta.valorTotalDivida) || 0,
               passivoDataVencimento: meta.dataVencimento ? new Date(meta.dataVencimento as string) : undefined,
+              estadoImovel: (meta.estado_imovel === 'alugado' || meta.estado_imovel === 'vago' || meta.estado_imovel === 'proprio' ? meta.estado_imovel : (editingAsset.isRentalProperty ? 'alugado' : 'proprio')) as EstadoImovelType,
+              diaAluguel: Number(meta.dia_aluguel) || 5,
+              custosVacancia: (Array.isArray(meta.custos_vacancia) ? meta.custos_vacancia : []).map((c: CustoVacanciaItem, i: number) => ({ ...c, id: c.id ?? `v-${i}` })),
+              custosProprietario: (Array.isArray(meta.custos_proprietario) ? meta.custos_proprietario : []).map((c: CustoProprietarioItem, i: number) => ({ ...c, id: c.id ?? `p-${i}` })),
+              receitasVeiculo: (Array.isArray(meta.receitas_veiculo) ? meta.receitas_veiculo : []).map((c: ReceitaVeiculoItem, i: number) => ({ ...c, id: c.id ?? `r-${i}` })),
+              hasReceitaVeiculo: Array.isArray(meta.receitas_veiculo) && meta.receitas_veiculo.length > 0,
             };
           })(),
         });
@@ -697,6 +717,15 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
       metadata.semValidade = newAsset.intangibleNoValidity;
       metadata.geraReceita = newAsset.intangibleGeneratesRevenue;
       if (newAsset.intangibleGeneratesRevenue) metadata.receitaMensal = newAsset.intangibleMonthlyRevenue;
+    }
+    if (newAsset.type === 'property') {
+      metadata.estado_imovel = newAsset.estadoImovel;
+      metadata.dia_aluguel = newAsset.diaAluguel || undefined;
+      if (newAsset.custosVacancia?.length) metadata.custos_vacancia = newAsset.custosVacancia.map(({ id, ...c }) => c);
+      if (newAsset.custosProprietario?.length) metadata.custos_proprietario = newAsset.custosProprietario.map(({ id, ...c }) => c);
+    }
+    if (newAsset.type === 'vehicle' && newAsset.receitasVeiculo?.length) {
+      metadata.receitas_veiculo = newAsset.receitasVeiculo.map(({ id, ...c }) => c);
     }
     if (newAsset.type === 'obligations') {
       metadata.passivoSubtype = newAsset.passivoSubtype;
@@ -1035,20 +1064,60 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
       return;
     }
 
-    // For vehicles at cost step, show summary
+    // For vehicles at cost step: if lockedType save directly (sync via hook); else show summary
     if (newAsset.type === 'vehicle' && currentStep === 'costs') {
+      if (lockedType) {
+        const assetData = buildAssetData();
+        const assetId = editingAsset?.id || crypto.randomUUID();
+        if (editingAsset) {
+          updateAsset(editingAsset.id, { ...assetData, linkExpensesToPlanning: true });
+          toast.success('Veículo atualizado com sucesso!');
+        } else {
+          addAsset({ ...assetData, id: assetId, name: newAsset.name, linkExpensesToPlanning: true } as any);
+          toast.success('Veículo adicionado com sucesso!');
+        }
+        toast.success('Fluxos financeiros vinculados automaticamente ao planejamento.');
+        if (!editingAsset && (insuranceData.hasInsurance || insuranceData.hasWarranty)) {
+          createLinkedInsurance(assetId, newAsset.name);
+        }
+        onOpenChange(false);
+        setPendingAssetData(null);
+        setShowVehicleCostSummary(false);
+        stockQuote.reset();
+        return;
+      }
       handleVehicleSaveWithSummary();
       return;
     }
 
-    // For properties, check if there are expenses to link and show confirmation
+    // For properties: if expenses to link and not lockedType, show confirmation; if lockedType save directly (sync via hook)
     if (newAsset.type === 'property') {
-      const hasExpensesToLink = Object.values(newAsset.propertyMonthlyExpenses).some(v => v > 0) || 
+      const hasExpensesToLink = Object.values(newAsset.propertyMonthlyExpenses).some(v => v > 0) ||
                                  (newAsset.isRentalProperty && newAsset.rentalValue > 0);
-      
-      if (hasExpensesToLink) {
+
+      if (hasExpensesToLink && !lockedType) {
         setPendingAssetData(buildAssetData());
         setShowLinkConfirmDialog(true);
+        return;
+      }
+      if (hasExpensesToLink && lockedType) {
+        const assetData = buildAssetData();
+        const finalName = newAsset.name;
+        const assetId = editingAsset?.id || crypto.randomUUID();
+        if (editingAsset) {
+          updateAsset(editingAsset.id, { ...assetData, name: finalName });
+          toast.success('Imóvel atualizado com sucesso!');
+        } else {
+          addAsset({ ...assetData, id: assetId, name: finalName } as any);
+          toast.success('Imóvel adicionado com sucesso!');
+        }
+        toast.success('Fluxos financeiros vinculados automaticamente ao planejamento.');
+        if (!editingAsset && (insuranceData.hasInsurance || insuranceData.hasWarranty)) {
+          createLinkedInsurance(assetId, finalName);
+        }
+        setPendingAssetData(null);
+        onOpenChange(false);
+        stockQuote.reset();
         return;
       }
     }
@@ -2131,7 +2200,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
             )}
           </div>
           ) : (
-            <div className="py-4">
+            <div className="py-4 space-y-6">
               <VehicleCostReviewStep
                 vehicleValue={newAsset.value}
                 vehicleState={newAsset.vehicleState}
@@ -2142,6 +2211,83 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 onConfigChange={handleLinkedExpensesChange}
                 existingConfigs={editingAsset?.linkedExpenses}
               />
+              {newAsset.type === 'vehicle' && (
+                <div className="rounded-lg border p-4 space-y-3">
+                  <h4 className="text-sm font-medium">Receitas do veículo (opcional)</h4>
+                  <p className="text-xs text-muted-foreground">Registre se o veículo gera receita de forma recorrente.</p>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-accent/50">
+                    <span className="text-sm font-medium">Este veículo gera receita?</span>
+                    <Switch
+                      checked={newAsset.hasReceitaVeiculo}
+                      onCheckedChange={(checked) => setNewAsset(prev => ({ ...prev, hasReceitaVeiculo: checked }))}
+                    />
+                  </div>
+                  {newAsset.hasReceitaVeiculo && (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['Ajuda de custo', 'Reembolso viagem', 'Frete'].map((label) => (
+                          <Button
+                            key={label}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => {
+                              const newItem: ReceitaVeiculoItem = { id: crypto.randomUUID(), descricao: label, valor: 0, frequencia: 'mensal', dia: 5 };
+                              setNewAsset(prev => ({ ...prev, receitasVeiculo: [...(prev.receitasVeiculo ?? []), newItem] }));
+                            }}
+                          >
+                            + {label}
+                          </Button>
+                        ))}
+                      </div>
+                      {(newAsset.receitasVeiculo ?? []).map((item, index) => (
+                        <div key={item.id ?? index} className="grid grid-cols-1 sm:grid-cols-12 gap-2 rounded border p-2 bg-background">
+                          <Input className="sm:col-span-4" placeholder="Descrição" value={item.descricao} onChange={(e) => setNewAsset(prev => {
+                            const next = [...(prev.receitasVeiculo ?? [])];
+                            next[index] = { ...next[index], descricao: e.target.value };
+                            return { ...prev, receitasVeiculo: next };
+                          })} />
+                          <CurrencyInput className="sm:col-span-2" value={item.valor} onChange={(v) => setNewAsset(prev => {
+                            const next = [...(prev.receitasVeiculo ?? [])];
+                            next[index] = { ...next[index], valor: v };
+                            return { ...prev, receitasVeiculo: next };
+                          })} placeholder="R$" />
+                          <Select value={item.frequencia} onValueChange={(v: 'mensal' | 'por_evento') => setNewAsset(prev => {
+                            const next = [...(prev.receitasVeiculo ?? [])];
+                            next[index] = { ...next[index], frequencia: v };
+                            return { ...prev, receitasVeiculo: next };
+                          })}>
+                            <SelectTrigger className="sm:col-span-3 h-9">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover">
+                              <SelectItem value="mensal">Mensal</SelectItem>
+                              <SelectItem value="por_evento">Por evento</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {item.frequencia === 'mensal' && (
+                            <Input type="number" min={1} max={31} className="sm:col-span-2 h-9" placeholder="Dia" value={item.dia ?? ''} onChange={(e) => setNewAsset(prev => {
+                              const next = [...(prev.receitasVeiculo ?? [])];
+                              const d = Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 5));
+                              next[index] = { ...next[index], dia: d };
+                              return { ...prev, receitasVeiculo: next };
+                            })} />
+                          )}
+                          <div className="sm:col-span-1 flex items-center">
+                            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => setNewAsset(prev => ({ ...prev, receitasVeiculo: (prev.receitasVeiculo ?? []).filter((_, i) => i !== index) }))}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" className="w-full gap-1" onClick={() => setNewAsset(prev => ({ ...prev, receitasVeiculo: [...(prev.receitasVeiculo ?? []), { id: crypto.randomUUID(), descricao: '', valor: 0, frequencia: 'mensal', dia: 5 }] }))}>
+                        <Plus className="h-4 w-4" /> Adicionar receita
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>

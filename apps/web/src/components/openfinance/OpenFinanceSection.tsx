@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { PluggyConnectButton } from './PluggyConnectButton';
 import { usePluggyConnect } from '@/hooks/usePluggyConnect';
+import { useConnectorStatus } from '@/hooks/useConnectorStatus';
+import { ConnectorHealthBadge } from '@/components/connections/ConnectorHealthBadge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +82,12 @@ export const OpenFinanceSection: React.FC = () => {
     fetchAccounts();
     fetchTransactions();
   }, [fetchConnections, fetchAccounts, fetchTransactions]);
+
+  const connectorIds = useMemo(
+    () => connections.map((c) => c.connector_id).filter((id): id is number => id != null && Number.isInteger(id)),
+    [connections]
+  );
+  const { statusMap: connectorStatusMap } = useConnectorStatus(connectorIds);
 
   const accountsByConnection = useMemo(() => {
     const map: Record<string, typeof accounts> = {};
@@ -391,8 +399,12 @@ export const OpenFinanceSection: React.FC = () => {
                         />
                       </div>
                     </div>
-                    {/* Ações */}
-                    <div className="flex items-center gap-1">
+                    {/* Status do conector + Ações */}
+                    <div className="flex items-center gap-2">
+                      <ConnectorHealthBadge
+                        connectorId={connection.connector_id}
+                        statusMap={connectorStatusMap}
+                      />
                       {hasError ? (
                         <Button
                           size="sm"

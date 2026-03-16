@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown, ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useBensInvestimentos } from '@/contexts/BensInvestimentosContext';
 import { assetTypes, patrimonioAssetTypes } from '@/data/defaultData';
-import { AssetType, type Asset } from '@/types/financial';
+import { AssetType, type Asset, type EstadoImovelType } from '@/types/financial';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { VehicleInsightsDialog } from '@/components/bens/VehicleInsightsDialog';
@@ -17,9 +18,55 @@ import { AssetInsuranceReport } from '@/components/bens/AssetInsuranceReport';
 import { EquityEvolutionSection } from '@/components/bens/EquityEvolutionSection';
 import { assetIcons, propertyAdjustmentOptions, monthOptions } from './constants';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+type AssetFlowRow = { nome: string; tipo: string; valor: number; flow_origem: string; flow_direction: string; ativo: boolean };
+
+function useAssetFlows(assetId: string) {
+  return useQuery({
+    queryKey: ['asset_flows', assetId],
+    queryFn: async (): Promise<AssetFlowRow[]> => {
+      const { data, error } = await supabase.rpc('get_asset_flows', { p_asset_id: assetId });
+      if (error) return [];
+      return (data ?? []) as AssetFlowRow[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+function AssetFlowBadges({ assetId }: { assetId: string }) {
+  const { data: flows = [] } = useAssetFlows(assetId);
+  const inCount = flows.filter(f => f.flow_direction === 'in' && f.ativo).length;
+  const outCount = flows.filter(f => f.flow_direction === 'out' && f.ativo).length;
+  if (inCount === 0 && outCount === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {inCount > 0 && (
+        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+          <TrendingUp className="h-3 w-3" />
+          {inCount} receita(s) vinculada(s)
+        </span>
+      )}
+      {outCount > 0 && (
+        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border border-orange-200/60 dark:border-orange-800/40">
+          <TrendingDown className="h-3 w-3" />
+          {outCount} custo(s) vinculado(s)
+        </span>
+      )}
+    </div>
+  );
+}
+
+const ESTADO_IMOVEL_OPTIONS: { value: EstadoImovelType; label: string }[] = [
+  { value: 'alugado', label: 'Alugado' },
+  { value: 'vago', label: 'Vago' },
+  { value: 'proprio', label: 'Uso próprio' },
+];
 
 const PatrimonioTab: React.FC = () => {
-  const { config } = useFinancial();
+  const { config, updateAsset } = useFinancial();
   const { handleOpenAddDialog, handleEditAsset, handleDeleteAsset, handleAddSeguro, hasActiveInsurance, formatCurrency } = useBensInvestimentos();
   const isMobile = useIsMobile();
   const [patrimonioViewMode, setPatrimonioViewMode] = useState<'list' | 'cards'>('list');
@@ -122,6 +169,39 @@ const PatrimonioTab: React.FC = () => {
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
+              {asset.type === 'property' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("text-muted-foreground hover:text-foreground", !isMobile && "opacity-0 group-hover:opacity-100 transition-opacity")}
+                      title="Mudar estado"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-3" align="start" onClick={(e) => e.stopPropagation()}>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Estado do imóvel</p>
+                    <Select
+                      value={((asset as { metadata?: { estado_imovel?: string } }).metadata?.estado_imovel) ?? (asset.isRentalProperty ? 'alugado' : 'proprio')}
+                      onValueChange={(value) => {
+                        updateAsset(asset.id, { estado_imovel: value } as Partial<Asset>);
+                      }}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ESTADO_IMOVEL_OPTIONS.map(({ value, label }) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </PopoverContent>
+                </Popover>
+              )}
               {asset.type === 'property' && <PropertyInsightsDialog property={asset} />}
               {asset.type === 'vehicle' && <VehicleInsightsDialog vehicle={asset} />}
               {(asset.type === 'property' || asset.type === 'vehicle') && !isSold && !hasActiveInsurance(asset.id) && (
@@ -160,6 +240,7 @@ const PatrimonioTab: React.FC = () => {
             <p className={cn("mt-3 text-2xl font-bold text-primary tabular-nums truncate", isSold && "text-muted-foreground")}>
               {formatCurrency(isSold && asset.saleValue != null ? asset.saleValue : asset.value)}
             </p>
+            {(asset.type === 'property' || asset.type === 'vehicle') && !isSold && <AssetFlowBadges assetId={asset.id} />}
             <div className="flex flex-wrap gap-2 mt-2">
               <AssetInsuranceBadge assetId={asset.id} assetName={asset.name} showLabel size="md" showUninsured={['property', 'vehicle', 'valuable_objects'].includes(asset.type) && !isSold} />
               {asset.isRentalProperty && !isSold && (

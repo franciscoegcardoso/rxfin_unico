@@ -48,6 +48,7 @@ interface FinancialContextType {
   linkExpenseToAsset: (assetId: string, linkedExpense: AssetLinkedExpense) => void;
   unlinkExpenseFromAsset: (assetId: string, expenseId: string) => void;
   getAssetProjectedExpense: (assetId: string, month: string, expenseType: AssetLinkedExpense['expenseType']) => number;
+  pauseAssetFlows: (assetId: string, paused: boolean, origem?: string) => Promise<unknown>;
   addSharedPerson: (name: string, email?: string) => void;
   updateSharedPerson: (id: string, updates: Partial<SharedPerson>) => void;
   removeSharedPerson: (id: string) => void;
@@ -550,6 +551,20 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return 0;
   };
 
+  const pauseAssetFlows = async (assetId: string, paused: boolean, origem?: string) => {
+    const { data, error } = await supabase.rpc('pause_asset_flows', {
+      p_asset_id: assetId,
+      p_paused: paused,
+      p_origem: origem ?? null,
+    });
+    if (error) {
+      toast.error('Erro ao atualizar fluxos do ativo');
+      return;
+    }
+    toast.success(paused ? 'Recorrências pausadas' : 'Recorrências reativadas');
+    return data;
+  };
+
   // ===== SHARED PERSONS (Supabase) =====
   const addSharedPerson = (name: string, email?: string) => {
     if (sharedPersonsHook.sharedPersons.length >= 5) return;
@@ -759,6 +774,7 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         linkExpenseToAsset,
         unlinkExpenseFromAsset,
         getAssetProjectedExpense,
+        pauseAssetFlows,
         addSharedPerson,
         updateSharedPerson,
         removeSharedPerson,

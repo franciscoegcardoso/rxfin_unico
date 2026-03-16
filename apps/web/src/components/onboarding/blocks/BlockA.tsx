@@ -183,7 +183,7 @@ export const BlockA: React.FC<BlockAProps> = ({
           p_has_rxfin_access: hasRxfinAccess ?? false,
         });
         if (error) throw error;
-        onSaveDraft('shared_account', { partnerName, hasRxfinAccess, accessLevel });
+        onSaveDraft('shared_account', { partnerName, partnerEmail, hasRxfinAccess, accessLevel });
         onStepChange(2);
       } catch {
         setSharedError('Erro ao salvar. Tente novamente.');
@@ -216,7 +216,9 @@ export const BlockA: React.FC<BlockAProps> = ({
                 key={value}
                 type="button"
                 onClick={() => {
-                  setAccountType(value as 'individual' | 'shared');
+                  const v = value as 'individual' | 'shared';
+                  setLocalAccountType(v);
+                  setAccountType(v);
                   setSharedError('');
                 }}
                 className={cn(

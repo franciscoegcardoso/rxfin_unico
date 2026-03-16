@@ -7,6 +7,17 @@ import { toast } from 'sonner';
 
 const QUERY_KEY = 'user-assets';
 
+const callSyncAssetFlows = async (assetId: string) => {
+  try {
+    const { error } = await supabase.rpc('sync_asset_flows', {
+      p_asset_id: assetId,
+    });
+    if (error) console.warn('[sync_asset_flows] erro:', error.message);
+  } catch (e) {
+    console.warn('[sync_asset_flows] exception:', e);
+  }
+};
+
 // Fields stored as top-level columns
 const TOP_LEVEL_FIELDS = ['id', 'user_id', 'name', 'type', 'value', 'description', 'purchase_date', 'purchase_value', 'is_rental_property', 'rental_income_id', 'rental_value', 'metadata', 'created_at', 'updated_at'] as const;
 
@@ -90,9 +101,9 @@ export function useUserAssets() {
       if (error) throw error;
       return (data as any).id as string;
     },
-    onSuccess: () => {
+    onSuccess: (assetId) => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success('Bem/investimento adicionado com sucesso!');
+      if (assetId) callSyncAssetFlows(assetId);
     },
     onError: () => toast.error('Erro ao adicionar bem/investimento'),
   });
@@ -122,9 +133,10 @@ export function useUserAssets() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: [QUERY_KEY] });
-      toast.success('Bem/investimento atualizado com sucesso!');
+      qc.invalidateQueries({ queryKey: ['asset_flows', variables.id] });
+      callSyncAssetFlows(variables.id);
     },
     onError: () => toast.error('Erro ao atualizar bem/investimento'),
   });
@@ -161,4 +173,3 @@ export function useUserAssets() {
     removeAsset,
   };
 }
-// sync

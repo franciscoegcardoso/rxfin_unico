@@ -326,6 +326,37 @@ export interface PropertyMonthlyExpenses {
   manutencaoExtraordinaria: number;
 }
 
+/** Estado do imóvel para formulário e metadata */
+export type EstadoImovelType = 'alugado' | 'vago' | 'proprio';
+
+/** Item de custo de vacância (imóvel vago) — salvo em metadata.custos_vacancia */
+export interface CustoVacanciaItem {
+  id?: string;
+  descricao: string;
+  valor: number;
+  dia: number;
+  categoria: string;
+}
+
+/** Item de custo do proprietário — salvo em metadata.custos_proprietario */
+export interface CustoProprietarioItem {
+  id?: string;
+  descricao: string;
+  valor: number;
+  dia: number;
+  frequencia: 'mensal' | 'anual';
+  categoria: string;
+}
+
+/** Item de receita do veículo — salvo em metadata.receitas_veiculo */
+export interface ReceitaVeiculoItem {
+  id?: string;
+  descricao: string;
+  valor: number;
+  frequencia: 'mensal' | 'por_evento';
+  dia?: number;
+}
+
 export interface Asset {
   id: string;
   name: string;
