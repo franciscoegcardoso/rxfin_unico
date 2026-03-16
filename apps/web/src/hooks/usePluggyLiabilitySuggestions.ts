@@ -5,29 +5,23 @@ import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Row returned by get_pluggy_liability_suggestions RPC (p_status: 'pending').
- * Backend must provide: detect_pluggy_liabilities(), get_pluggy_liability_suggestions(p_status),
- * confirm_pluggy_liability_suggestion(p_id), ignore_pluggy_liability_suggestion(p_id),
- * ignore_all_pluggy_liability_suggestions().
  */
 export interface PluggyLiabilitySuggestion {
   id: string;
-  name: string;
-  type: string;
-  value: number;
-  confidence_pct: number;
-  origin: string;
-  [key: string]: unknown;
-}
-
-function isSuggestionRow(row: unknown): row is PluggyLiabilitySuggestion {
-  if (!row || typeof row !== 'object') return false;
-  const r = row as Record<string, unknown>;
-  return (
-    typeof r.id === 'string' &&
-    typeof r.name === 'string' &&
-    typeof r.type === 'string' &&
-    typeof r.value === 'number'
-  );
+  source_table: string;
+  source_id: string;
+  suggested_name: string;
+  suggested_type: string;
+  suggested_value: number;
+  suggested_creditor: string | null;
+  suggested_monthly_installment: number | null;
+  suggested_due_day: number | null;
+  confidence: number;
+  detection_rule: string | null;
+  status: string;
+  linked_asset_id: string | null;
+  suggested_metadata: Record<string, unknown> | null;
+  created_at: string;
 }
 
 export function usePluggyLiabilitySuggestions() {
@@ -46,8 +40,7 @@ export function usePluggyLiabilitySuggestions() {
         if (error.code === '42883' || error.message?.includes('does not exist')) return [];
         throw error;
       }
-      const rows = Array.isArray(data) ? data : [];
-      return rows.filter(isSuggestionRow);
+      return (data ?? []) as PluggyLiabilitySuggestion[];
     },
     enabled: !!user,
   });
@@ -63,7 +56,7 @@ export function usePluggyLiabilitySuggestions() {
 
   const confirm = useCallback(
     async (id: string) => {
-      const { error } = await supabase.rpc('confirm_pluggy_liability_suggestion', { p_id: id });
+      const { error } = await supabase.rpc('confirm_pluggy_liability', { p_suggestion_id: id });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey });
     },
@@ -72,23 +65,29 @@ export function usePluggyLiabilitySuggestions() {
 
   const ignore = useCallback(
     async (id: string) => {
-      const { error } = await supabase.rpc('ignore_pluggy_liability_suggestion', { p_id: id });
+      const { error } = await supabase.rpc('ignore_pluggy_suggestion', {
+        p_suggestion_id: id,
+        p_snooze: false,
+      });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey });
     },
     [queryClient, queryKey]
   );
 
-  const ignoreAll = useCallback(async () => {
-    const { error } = await supabase.rpc('ignore_all_pluggy_liability_suggestions');
+  const confirmAll = useCallback(async () => {
+    const { error } = await supabase.rpc('confirm_all_pluggy_liabilities');
     if (error) throw error;
     await queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
 
-  const confirmAll = useCallback(async () => {
+  const ignoreAll = useCallback(async () => {
     const list = query.data ?? [];
     for (const s of list) {
-      const { error } = await supabase.rpc('confirm_pluggy_liability_suggestion', { p_id: s.id });
+      const { error } = await supabase.rpc('ignore_pluggy_suggestion', {
+        p_suggestion_id: s.id,
+        p_snooze: false,
+      });
       if (error) throw error;
     }
     await queryClient.invalidateQueries({ queryKey });

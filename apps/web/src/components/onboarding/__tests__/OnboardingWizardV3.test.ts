@@ -12,7 +12,7 @@ function getActiveBlock(phase: string): ActiveBlock {
   }
 }
 
-const BLOCK_STEPS = { A: 4, B: 4, C: 5, D: 4 } as const;
+const BLOCK_STEPS = { A: 6, B: 4, C: 5, D: 4 } as const;
 
 describe('OnboardingWizardV3 logic', () => {
   describe('getActiveBlock', () => {
@@ -42,8 +42,8 @@ describe('OnboardingWizardV3 logic', () => {
   });
 
   describe('BLOCK_STEPS', () => {
-    it('Block A should have 4 steps', () => {
-      expect(BLOCK_STEPS.A).toBe(4);
+    it('Block A should have 6 steps', () => {
+      expect(BLOCK_STEPS.A).toBe(6);
     });
 
     it('Block B should have 4 steps', () => {

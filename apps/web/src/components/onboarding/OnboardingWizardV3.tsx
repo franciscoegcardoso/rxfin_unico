@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { toast } from 'sonner';
 
-const BLOCK_STEPS = { A: 5, B: 4, C: 5, D: 4 } as const;
+const BLOCK_STEPS = { A: 6, B: 4, C: 5, D: 4 } as const;
 
 type ActiveBlock = 'A' | 'B' | 'C' | 'D';
 

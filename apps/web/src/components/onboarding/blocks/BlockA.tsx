@@ -32,6 +32,30 @@ interface IncomeItem {
   defaultItemId?: string;
 }
 
+interface ExpenseCategory {
+  id: string;
+  name: string;
+  icon: string;
+  enabled: boolean;
+  itemCount: number;
+  items: Array<{
+    id: string;
+    name: string;
+    enabled_by_default: boolean;
+  }>;
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'Contas da Casa': '🏠',
+  'Alimentação': '🛒',
+  'Transporte': '🚗',
+  'Lazer': '🎬',
+  'Saúde': '❤️',
+  'Investimentos': '📈',
+  'Pets': '🐾',
+  'Pessoal': '👤',
+};
+
 const PROFILE_QUESTIONS: Array<{
   key: keyof ProfileAnswers;
   question: string;
@@ -117,6 +141,9 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [savingIncome, setSavingIncome] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [showAddItem, setShowAddItem] = useState(false);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [expensesLoaded, setExpensesLoaded] = useState(false);
+  const [savingExpenses, setSavingExpenses] = useState(false);
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
@@ -180,6 +207,78 @@ export const BlockA: React.FC<BlockAProps> = ({
       return false;
     } finally {
       setSavingIncome(false);
+    }
+  };
+
+  const loadDefaultExpenseCategories = async () => {
+    if (expensesLoaded) return;
+    try {
+      const { data } = await supabase
+        .from('default_expense_items')
+        .select('id, category_id, category_name, name, enabled_by_default, order_index')
+        .eq('is_active', true)
+        .order('order_index');
+
+      if (data) {
+        const map = new Map<string, ExpenseCategory>();
+        for (const item of data as Array<{ category_id: string; category_name: string; id: string; name: string; enabled_by_default: boolean; order_index?: number }>) {
+          if (!map.has(item.category_id)) {
+            map.set(item.category_id, {
+              id: item.category_id,
+              name: item.category_name,
+              icon: CATEGORY_ICONS[item.category_name] ?? '📦',
+              enabled: true,
+              itemCount: 0,
+              items: [],
+            });
+          }
+          const cat = map.get(item.category_id)!;
+          cat.items.push({
+            id: item.id,
+            name: item.name,
+            enabled_by_default: item.enabled_by_default,
+          });
+          cat.itemCount++;
+        }
+        setExpenseCategories(Array.from(map.values()));
+      }
+    } catch (err) {
+      console.warn('[BlockA] loadDefaultExpenseCategories erro:', err);
+    } finally {
+      setExpensesLoaded(true);
+    }
+  };
+
+  const saveExpenseCategories = async (): Promise<boolean> => {
+    if (!user?.id) return false;
+    setSavingExpenses(true);
+    try {
+      const enabledCats = expenseCategories.filter((c) => c.enabled);
+      let idx = 0;
+      for (const cat of enabledCats) {
+        for (const item of cat.items) {
+          if (item.enabled_by_default) {
+            await supabase.rpc('upsert_user_expense_item', {
+              p_user_id: user.id,
+              p_name: item.name,
+              p_category_id: cat.id,
+              p_category_name: cat.name,
+              p_expense_type: 'variable',
+              p_is_recurring: false,
+              p_payment_method: 'credit_card',
+              p_enabled: true,
+              p_order_index: (idx + 1) * 10,
+            });
+            idx++;
+          }
+        }
+      }
+      return true;
+    } catch (err) {
+      console.warn('[BlockA] saveExpenseCategories erro:', err);
+      return false;
+    } finally {
+      setSavingExpenses(false);
     }
   };
 
@@ -743,8 +842,132 @@ export const BlockA: React.FC<BlockAProps> = ({
     );
   }
 
-  // ─── Step 4: Conquest Card preliminar baseado no perfil ───────────
+  // ─── Step 4: Configuração de Despesas por Categoria ───────────────
   if (step === 4) {
+    if (!expensesLoaded) {
+      loadDefaultExpenseCategories();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={48} />
+          <p className="text-sm text-muted-foreground">Carregando categorias...</p>
+        </div>
+      );
+    }
+
+    const enabledCount = expenseCategories.filter((c) => c.enabled).length;
+
+    const handleToggleCat = (id: string) => {
+      setExpenseCategories((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
+      );
+    };
+
+    const handleContinue = async () => {
+      await saveExpenseCategories();
+      onStepChange(5);
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center gap-2 mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(3)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+            Suas despesas
+          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Quais categorias fazem parte da sua vida?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Ative as que se aplicam a você.
+            Os valores serão preenchidos após conectar seus bancos.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {expenseCategories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => handleToggleCat(cat.id)}
+              className={cn(
+                'flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left',
+                cat.enabled
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card opacity-60'
+              )}
+            >
+              <span className="text-2xl shrink-0">{cat.icon}</span>
+              <div className="min-w-0">
+                <p
+                  className={cn(
+                    'text-sm font-semibold leading-tight',
+                    cat.enabled ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {cat.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {cat.itemCount} item{cat.itemCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="ml-auto shrink-0">
+                {cat.enabled ? (
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                ) : (
+                  <Circle className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{enabledCount}</span>
+            {' '}categoria{enabledCount !== 1 ? 's' : ''} ativa{enabledCount !== 1 ? 's' : ''}.
+            Você poderá ajustar os itens depois.
+          </p>
+        </div>
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          disabled={savingExpenses}
+          onClick={handleContinue}
+        >
+          {savingExpenses ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              Continuar <ArrowRight className="ml-2 h-5 w-5" />
+            </>
+          )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 text-muted-foreground"
+          onClick={() => onStepChange(5)}
+        >
+          Pular por agora
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Step 5: Conquest Card preliminar baseado no perfil ───────────
+  if (step === 5) {
     const incomeEstimate: Record<string, number> = {
       ate2k: 1500,
       de2ka5k: 3500,
