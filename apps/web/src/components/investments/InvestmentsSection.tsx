@@ -1,6 +1,14 @@
 import React, { useState, useMemo } from 'react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
-import { usePluggyInvestments, type PluggyInvestment, type InvestmentSummary } from '@/hooks/usePluggyInvestments';
+import {
+  usePluggyInvestments,
+  type PluggyInvestment,
+  type InvestmentSummary,
+  type InvestmentSummaryRow,
+  type InvestmentTotals,
+} from '@/hooks/usePluggyInvestments';
 import { formatCurrency } from '@/lib/utils';
 import { formatInvestmentYield, getInvestmentStatusBadge, getDueDateUrgency } from '@/utils/investments';
 import { toast } from 'sonner';
@@ -34,6 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType }> = {
@@ -53,8 +62,25 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType }> = 
   OTHER: { label: 'Outros', icon: Package },
 };
 
+const SUBTYPE_LABELS: Record<string, string> = {
+  CDB: 'CDB',
+  LCA: 'LCA',
+  STOCK: 'Ações',
+  REAL_ESTATE_FUND: 'FIIs',
+  MUTUAL_FUND: 'Fundos',
+  FIXED_INCOME: 'Renda Fixa',
+  ETF: 'ETF',
+  EQUITY: 'Ações',
+};
+
 function getTypeLabel(type: string): string {
   return TYPE_CONFIG[type]?.label ?? type;
+}
+
+function getRowLabel(row: InvestmentSummaryRow): string {
+  const sub = row.investment_subtype && SUBTYPE_LABELS[row.investment_subtype];
+  if (sub) return sub;
+  return getTypeLabel(row.investment_type);
 }
 
 function getTypeIcon(type: string): React.ElementType {
@@ -135,6 +161,8 @@ export const InvestmentsSection: React.FC = () => {
   const {
     investments,
     summary,
+    summaryV2,
+    totals,
     totalBalance,
     totalAmount,
     totalTaxes,
@@ -149,14 +177,16 @@ export const InvestmentsSection: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const latestUpdatedAt = useMemo(() => {
+    if (totals?.oldest_balance_date) return totals.oldest_balance_date;
     const dates = investments
       .map((i) => i.balance_updated_at)
       .filter(Boolean) as string[];
     if (dates.length === 0) return null;
     return dates.sort().reverse()[0];
-  }, [investments]);
+  }, [investments, totals?.oldest_balance_date]);
 
-  const showStaleBanner = hasSyncedData && isStale(latestUpdatedAt);
+  const showStaleBanner = hasSyncedData && (totals?.has_stale_data ?? isStale(latestUpdatedAt));
+  const totalSuspectZero = totals?.suspect_zero_total ?? 0;
 
   const filteredInvestments = useMemo(() => {
     let list = investments;
@@ -262,71 +292,202 @@ export const InvestmentsSection: React.FC = () => {
         </button>
       )}
 
-      {/* Card total */}
+      {/* Card total — v2: bruto, líquido, Δ */}
       <Card className="rounded-[14px] border border-border">
         <CardContent className="p-4 sm:p-5 flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total em investimentos</p>
-            {showBrutoTaxes && (
+            {totals != null ? (
               <>
                 <p className="text-xs text-muted-foreground">
-                  Total bruto: <span className="font-mono tabular-nums">{formatCurrency(totalAmount)}</span>
+                  Valor bruto{' '}
+                  <span className="font-mono tabular-nums font-medium text-foreground">
+                    {formatCurrency(Number(totals.gross_total))}
+                  </span>
+                  {' '}(para conferir com app do banco)
                 </p>
-                {totalTaxes > 0 && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    IR/IOF: <span className="font-mono tabular-nums">-{formatCurrency(totalTaxes)}</span>
+                <p className="text-xs text-muted-foreground">
+                  Valor líquido{' '}
+                  <span className="font-mono tabular-nums font-semibold text-foreground">
+                    {formatCurrency(Number(totals.net_total))}
+                  </span>
+                </p>
+                {Number(totals.gross_net_spread) !== 0 && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <span className="font-mono tabular-nums">Δ {formatCurrency(Math.abs(Number(totals.gross_net_spread)))}</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-muted-foreground cursor-help inline-flex align-middle" aria-label="Explicação">?</span>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          Diferença entre o valor bruto aplicado e o valor líquido estimado. Para Renda Fixa inclui IR estimado. Para Fundos pode refletir diferença de cota.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </p>
                 )}
               </>
+            ) : (
+              <>
+                {showBrutoTaxes && (
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Total bruto: <span className="font-mono tabular-nums">{formatCurrency(totalAmount)}</span>
+                    </p>
+                    {totalTaxes > 0 && (
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        IR/IOF: <span className="font-mono tabular-nums">-{formatCurrency(totalTaxes)}</span>
+                      </p>
+                    )}
+                  </>
+                )}
+                <p className="font-mono text-xl sm:text-2xl font-semibold tabular-nums text-foreground mt-0.5">
+                  Saldo líq.: {formatCurrency(totalBalance)}
+                </p>
+              </>
             )}
-            <p className="font-mono text-xl sm:text-2xl font-semibold tabular-nums text-foreground mt-0.5">
-              Saldo líq.: {formatCurrency(totalBalance)}
-            </p>
           </div>
-          <Badge variant="secondary" className="text-xs font-normal">
-            {getUpdatedLabel(latestUpdatedAt)}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            {totals?.has_stale_data && latestUpdatedAt ? (
+              <Badge variant="outline" className="text-xs font-normal text-amber-600 border-amber-300">
+                Cota com {formatDistanceToNow(new Date(latestUpdatedAt), { addSuffix: true, locale: ptBR })} atrás
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {getUpdatedLabel(latestUpdatedAt)}
+              </Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Grid por tipo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {(summary as InvestmentSummary[]).map((s) => {
-          const Icon = getTypeIcon(s.investment_type);
-          const avgRate = s.avg_fixed_annual_rate ?? s.avg_annual_rate ?? null;
-          const activeC = s.active_count ?? s.count;
-          const showActiveWarning = activeC < s.count && s.count > 0;
-          const totalTaxesVal = s.total_taxes != null ? Number(s.total_taxes) : 0;
-          return (
-            <Card key={s.investment_type} className="rounded-[14px] border border-border">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <Icon className="h-5 w-5 text-primary" />
+      {/* Grid/tabela por classe — v2: Bruto, Líquido, Δ */}
+      {summaryV2.length > 0 ? (
+        <div className="space-y-3">
+          <div className="rounded-[14px] border border-border overflow-hidden">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-muted/40 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div>Classe</div>
+              <div className="text-right">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>Bruto</span>
+                    </TooltipTrigger>
+                    <TooltipContent>Valor nominal aplicado. Use para conferir com o app do seu banco.</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="text-right">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>Líquido</span>
+                    </TooltipTrigger>
+                    <TooltipContent>Valor estimado após IR (Renda Fixa) e ajuste de cota (Fundos).</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="text-right hidden sm:block">Δ IR/Cota</div>
+            </div>
+            {summaryV2.map((row) => {
+              const Icon = getTypeIcon(row.investment_type);
+              const spread = Number(row.gross_net_spread);
+              const showSpread = spread !== 0;
+              const gross = Number(row.gross_balance);
+              const net = Number(row.net_balance);
+              const same = gross === net;
+              return (
+                <div
+                  key={`${row.investment_type}-${row.investment_subtype}`}
+                  className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 border-t border-border items-center"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{getRowLabel(row)}</p>
+                      {row.has_stale_data && row.oldest_balance_date && (
+                        <Badge variant="outline" className="text-[10px] mt-0.5 text-amber-600 border-amber-300">
+                          Cota {formatDistanceToNow(new Date(row.oldest_balance_date), { addSuffix: true, locale: ptBR })} atrás
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right font-mono text-sm tabular-nums">
+                    {formatCurrency(gross)}
+                  </div>
+                  <div className="text-right font-mono text-sm tabular-nums font-medium">
+                    {same ? formatCurrency(net) : formatCurrency(net)}
+                  </div>
+                  <div className="text-right hidden sm:block">
+                    {showSpread ? (
+                      <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                        −{formatCurrency(Math.abs(spread))}
+                        {row.total_taxes != null && Number(row.total_taxes) > 0 ? ' IR est.' : ''}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">{getTypeLabel(s.investment_type)}</p>
-                  <p className="font-mono text-sm font-semibold tabular-nums text-foreground">
-                    {formatCurrency(Number(s.total_balance))}
-                  </p>
-                  {avgRate != null && Number(avgRate) > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Taxa média: {formatPercent(avgRate)}
+              );
+            })}
+          </div>
+          {totalSuspectZero > 0 && (
+            <Alert variant="default" className="mt-4 border-amber-500/50 bg-amber-500/10">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertTitle>
+                {totalSuspectZero} posição{totalSuspectZero > 1 ? 'ões' : ''} a confirmar
+              </AlertTitle>
+              <AlertDescription>
+                A sincronização retornou {totalSuspectZero} ativo
+                {totalSuspectZero > 1 ? 's' : ''} com saldo zero que podem ainda ter posição aberta no seu banco.
+                Verifique diretamente no app da XP e adicione manualmente se necessário.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {(summary as InvestmentSummary[]).map((s) => {
+            const Icon = getTypeIcon(s.investment_type);
+            const avgRate = s.avg_fixed_annual_rate ?? s.avg_annual_rate ?? null;
+            const activeC = s.active_count ?? s.count;
+            const showActiveWarning = activeC < s.count && s.count > 0;
+            const totalTaxesVal = s.total_taxes != null ? Number(s.total_taxes) : 0;
+            return (
+              <Card key={s.investment_type} className="rounded-[14px] border border-border">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground truncate">{getTypeLabel(s.investment_type)}</p>
+                    <p className="font-mono text-sm font-semibold tabular-nums text-foreground">
+                      {formatCurrency(Number(s.total_balance))}
                     </p>
-                  )}
-                  <p className={cn('text-xs', showActiveWarning && 'text-amber-600 dark:text-amber-400')}>
-                    {showActiveWarning ? `${activeC} de ${s.count} ativos` : `${s.count} item${s.count !== 1 ? 's' : ''}`}
-                  </p>
-                  {s.investment_type === 'FIXED_INCOME' && totalTaxesVal > 0 && (
-                    <p className="text-xs text-red-600 dark:text-red-400">
-                      IR/IOF: {formatCurrency(totalTaxesVal)}
+                    {avgRate != null && Number(avgRate) > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Taxa média: {formatPercent(avgRate)}
+                      </p>
+                    )}
+                    <p className={cn('text-xs', showActiveWarning && 'text-amber-600 dark:text-amber-400')}>
+                      {showActiveWarning ? `${activeC} de ${s.count} ativos` : `${s.count} item${s.count !== 1 ? 's' : ''}`}
                     </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                    {s.investment_type === 'FIXED_INCOME' && totalTaxesVal > 0 && (
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        IR/IOF: {formatCurrency(totalTaxesVal)}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Tabela expandível */}
       <Collapsible open={tableOpen} onOpenChange={setTableOpen}>

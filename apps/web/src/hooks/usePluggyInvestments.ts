@@ -62,10 +62,36 @@ export interface InvestmentSummary {
   with_isin_count?: number;
 }
 
+/** Row from get_pluggy_investments_summary_v2 */
+export interface InvestmentSummaryRow {
+  investment_type: string;
+  investment_subtype: string;
+  count: number;
+  gross_balance: number;
+  net_balance: number;
+  gross_net_spread: number;
+  total_taxes: number | null;
+  has_stale_data: boolean;
+  suspect_zero_count: number;
+  oldest_balance_date: string | null;
+}
+
+/** Result of get_investments_totals */
+export interface InvestmentTotals {
+  gross_total: number;
+  net_total: number;
+  gross_net_spread: number;
+  suspect_zero_total: number;
+  has_stale_data: boolean;
+  oldest_balance_date: string | null;
+}
+
 export function usePluggyInvestments() {
   const { user } = useAuth();
   const [investments, setInvestments] = useState<PluggyInvestment[]>([]);
   const [summary, setSummary] = useState<InvestmentSummary[]>([]);
+  const [summaryV2, setSummaryV2] = useState<InvestmentSummaryRow[]>([]);
+  const [totals, setTotals] = useState<InvestmentTotals | null>(null);
   const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,24 +102,48 @@ export function usePluggyInvestments() {
     setLoading(true);
     setError(null);
     try {
-      const { data: invData, error: invErr } = await supabase
+      const invResult = await supabase
         .from('pluggy_investments')
         .select('*')
         .eq('user_id', user.id)
         .is('deleted_at', null)
         .order('balance', { ascending: false });
 
-      if (invErr) throw invErr;
+      if (invResult.error) throw invResult.error;
+      const list = (invResult.data || []) as PluggyInvestment[];
 
-      const { data: summaryData, error: sumErr } = await supabase
-        .rpc('get_pluggy_investments_summary', { p_user_id: user.id });
+      const [summaryV2Result, totalsResult] = await Promise.all([
+        supabase.rpc('get_pluggy_investments_summary_v2', { p_user_id: user.id }),
+        supabase.rpc('get_investments_totals', { p_user_id: user.id }),
+      ]);
 
-      if (sumErr) throw sumErr;
+      const v2Rows = summaryV2Result.error || !summaryV2Result.data
+        ? []
+        : (summaryV2Result.data as InvestmentSummaryRow[]);
+      const tot = totalsResult.error || !totalsResult.data || Array.isArray(totalsResult.data)
+        ? null
+        : (totalsResult.data as InvestmentTotals);
 
-      const list = (invData || []) as PluggyInvestment[];
       setInvestments(list);
-      setSummary((summaryData as InvestmentSummary[]) || []);
-      setTotalBalance(list.reduce((acc, i) => acc + (Number(i.balance) || 0), 0));
+      setSummaryV2(v2Rows);
+      setTotals(tot);
+
+      if (v2Rows.length > 0) {
+        setSummary(v2Rows.map((row) => ({
+          investment_type: row.investment_type,
+          count: row.count,
+          total_balance: row.net_balance,
+          total_taxes: row.total_taxes,
+          currency_code: 'BRL',
+          avg_fixed_annual_rate: null,
+        })));
+        setTotalBalance(tot ? Number(tot.net_total) || 0 : list.reduce((acc, i) => acc + (Number(i.balance) || 0), 0));
+      } else {
+        const legacy = await supabase.rpc('get_pluggy_investments_summary', { p_user_id: user.id });
+        setSummary(!legacy.error && legacy.data ? (legacy.data as InvestmentSummary[]) || [] : []);
+        setTotalBalance(list.reduce((acc, i) => acc + (Number(i.balance) || 0), 0));
+      }
+
       setHasSyncedData(list.length > 0);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -122,6 +172,8 @@ export function usePluggyInvestments() {
   return {
     investments,
     summary,
+    summaryV2,
+    totals,
     totalBalance,
     totalAmount,
     totalTaxes,
