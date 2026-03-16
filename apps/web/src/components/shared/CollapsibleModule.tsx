@@ -78,15 +78,15 @@ const TriggerCard: React.FC<{
           )}
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground truncate">{title}</span>
+              <span className="text-sm font-semibold text-[hsl(var(--color-text-primary))] truncate">{title}</span>
               {count !== undefined && (
-                <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full tabular-nums">
+                <span className="text-[10px] font-medium text-[hsl(var(--color-text-muted))] bg-muted px-1.5 py-0.5 rounded-full tabular-nums">
                   {count}
                 </span>
               )}
             </div>
             {description && (
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
+              <p className="text-xs text-[hsl(var(--color-text-muted))] mt-0.5 truncate">{description}</p>
             )}
           </div>
         </div>
@@ -96,7 +96,7 @@ const TriggerCard: React.FC<{
               {actions}
             </div>
           )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <ChevronRight className="h-4 w-4 text-[hsl(var(--color-text-muted))]" />
         </div>
       </div>
     </CardContent>

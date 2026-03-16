@@ -289,10 +289,10 @@ export function InstallmentPurchasesSection({
 
   if (installmentGroups.length === 0) {
     return (
-      <div className="text-center py-16 text-muted-foreground">
+      <div className="text-center py-16 text-[hsl(var(--color-text-muted))]">
         <CreditCard className="h-10 w-10 mx-auto mb-4 opacity-30" strokeWidth={1.5} />
-        <p className="font-medium text-sm">Nenhuma compra parcelada identificada</p>
-        <p className="text-xs mt-1 text-muted-foreground/70">
+        <p className="font-medium text-sm text-[hsl(var(--color-text-primary))]">Nenhuma compra parcelada identificada</p>
+        <p className="text-xs mt-1 text-[hsl(var(--color-text-muted))]">
           Importe faturas para visualizar os parcelamentos
         </p>
       </div>
@@ -307,10 +307,10 @@ export function InstallmentPurchasesSection({
           <Badge 
             variant="outline" 
             className={cn(
-              "gap-1 text-[9px] font-medium py-0 px-1.5 h-5",
+              "gap-1 text-[10px] font-medium py-0 px-1.5 h-5",
               consolidationStatus.isToday 
                 ? "bg-emerald-50 border-emerald-200/80 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-800/60 dark:text-emerald-400" 
-                : "bg-muted/30 border-border/50 text-muted-foreground"
+                : "bg-muted/30 border-border/50 text-[hsl(var(--color-text-muted))]"
             )}
           >
             <Clock className="h-2.5 w-2.5" strokeWidth={1.5} />
@@ -330,7 +330,7 @@ export function InstallmentPurchasesSection({
               size="sm"
               onClick={handleConsolidate}
               disabled={isConsolidating}
-              className="gap-1 h-6 px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+              className="gap-1 h-6 px-2 text-xs font-medium text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text-primary))]"
             >
               {isConsolidating ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -344,9 +344,9 @@ export function InstallmentPurchasesSection({
       </div>
 
       {/* Compact summary row */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <div className="flex items-center gap-4 text-xs text-[hsl(var(--color-text-muted))]">
         <span><Layers className="h-3 w-3 inline mr-1" strokeWidth={1.5} />{totals.pendingInstallments} parcelas</span>
-        <span className="font-mono tabular-nums">{formatCurrency(totals.totalRemaining)}</span>
+        <span className="font-mono tabular-nums text-[hsl(var(--color-text-primary))]">{formatCurrency(totals.totalRemaining)}</span>
         <span>{totals.pctPaid}% quitado</span>
       </div>
 
@@ -354,12 +354,12 @@ export function InstallmentPurchasesSection({
       {projectionMatrix.length > 0 && filteredMonths.length > 0 && (
         <div className="space-y-0">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-            <p className="text-xs text-muted-foreground">Próximos {filteredMonths.length} meses</p>
-            <div className="flex items-center gap-1 bg-muted/20 border border-border/30 rounded-lg p-0.5">
+            <p className="text-xs text-[hsl(var(--color-text-muted))]">Próximos {filteredMonths.length} meses</p>
+            <div className="flex items-center gap-1 bg-muted/20 border border-[hsl(var(--color-border-subtle))] rounded-lg p-0.5">
               <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted/50" onClick={() => shiftStartMonth(-1)}>
                 <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
               </Button>
-              <span className="text-xs font-medium min-w-[70px] text-center font-mono tabular-nums">
+              <span className="text-xs font-medium min-w-[70px] text-center font-mono tabular-nums text-[hsl(var(--color-text-primary))]">
                 {formatDate(startMonth)}
               </span>
               <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted/50" onClick={() => shiftStartMonth(1)}>
@@ -383,10 +383,10 @@ export function InstallmentPurchasesSection({
                           style={{ tableLayout: 'fixed', width: '100%' }}
                         >
                           <TableHeader>
-                            <TableRow className="border-b border-border/30 hover:bg-transparent">
+                            <TableRow className="border-b border-[hsl(var(--color-border-subtle))] hover:bg-transparent">
                               <TableHead 
                                 className={cn(
-                                  "sticky left-0 bg-card z-10 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest",
+                                  "sticky left-0 bg-card z-10 text-xs font-semibold text-[hsl(var(--color-text-muted))] uppercase tracking-wider",
                                   isMobile ? "py-2.5 px-2" : "py-3"
                                 )}
                                 style={{ width: itemColWidth }}
@@ -397,7 +397,7 @@ export function InstallmentPurchasesSection({
                                 <TableHead 
                                   key={month} 
                                   className={cn(
-                                    "text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-widest",
+                                    "text-center text-xs font-semibold text-[hsl(var(--color-text-muted))] uppercase tracking-wider",
                                     isMobile ? "py-2.5 px-1" : "py-3"
                                   )}
                                   style={{ width: monthColWidth }}
@@ -409,7 +409,7 @@ export function InstallmentPurchasesSection({
                           </TableHeader>
                           <TableBody>
                             {/* Inline bar chart row */}
-                            <TableRow className="hover:bg-transparent border-b border-border/30">
+                            <TableRow className="hover:bg-transparent border-b border-[hsl(var(--color-border-subtle))]">
                               <TableCell 
                                 className={cn(
                                   "sticky left-0 bg-card z-10",
@@ -429,8 +429,8 @@ export function InstallmentPurchasesSection({
                                   >
                                     <div className="flex flex-col items-center justify-end" style={{ height: isMobile ? 60 : 72 }}>
                                       <span className={cn(
-                                        "text-muted-foreground mb-0.5 font-mono tabular-nums",
-                                        isMobile ? "text-[8px]" : "text-[10px]"
+                                        "text-[hsl(var(--color-text-muted))] mb-0.5 font-mono tabular-nums",
+                                        isMobile ? "text-[10px]" : "text-xs"
                                       )}>
                                         {isHidden ? '••' : formatCurrency(value, true)}
                                       </span>
@@ -461,14 +461,14 @@ export function InstallmentPurchasesSection({
                                 >
                                   <div className={cn(isMobile && "leading-tight")}>
                                     <span className={cn(
-                                      isMobile ? "text-[10px] break-words line-clamp-2" : "text-xs",
-                                      "block truncate font-medium"
+                                      "block truncate font-medium text-[hsl(var(--color-text-primary))]",
+                                      isMobile ? "text-[10px] break-words line-clamp-2" : "text-xs"
                                     )}>
                                       {row.storeName}
                                     </span>
                                     <span className={cn(
-                                      "text-muted-foreground font-mono tabular-nums",
-                                      isMobile ? "text-[9px]" : "text-[11px]"
+                                      "text-[hsl(var(--color-text-muted))] font-mono tabular-nums",
+                                      isMobile ? "text-[10px]" : "text-xs"
                                     )}>
                                       ({row.currentInstallment}/{row.totalInstallments})
                                     </span>
@@ -485,22 +485,22 @@ export function InstallmentPurchasesSection({
                                   >
                                     {row.monthlyValues[month] ? (
                                       <span className={cn(
-                                        "font-mono tabular-nums font-medium text-muted-foreground",
-                                        isMobile ? "text-[9px]" : "text-xs"
+                                        "font-mono tabular-nums font-medium text-[hsl(var(--color-text-primary))]",
+                                        isMobile ? "text-[10px]" : "text-xs"
                                       )}>
                                         {formatCurrency(row.monthlyValues[month], isMobile)}
                                       </span>
                                     ) : (
-                                      <span className="text-muted-foreground/20">—</span>
+                                      <span className="text-[hsl(var(--color-text-muted))]/40">—</span>
                                     )}
                                   </TableCell>
                                 ))}
                               </TableRow>
                             ))}
-                            <TableRow className="bg-muted/20 border-t-2 border-border/40 hover:bg-muted/30">
+                            <TableRow className="bg-[hsl(var(--color-surface-sunken))] border-t-2 border-[hsl(var(--color-border-subtle))] hover:bg-muted/30">
                               <TableCell 
                                 className={cn(
-                                  "sticky left-0 bg-muted/20 z-10 font-bold text-[11px] uppercase tracking-wider",
+                                  "sticky left-0 bg-[hsl(var(--color-surface-sunken))] z-10 font-semibold text-xs uppercase tracking-wider text-[hsl(var(--color-text-primary))]",
                                   isMobile ? "py-3 px-2" : "py-3"
                                 )}
                                 style={{ width: itemColWidth }}
@@ -517,8 +517,8 @@ export function InstallmentPurchasesSection({
                                   style={{ width: monthColWidth }}
                                 >
                                   <span className={cn(
-                                    "font-mono font-bold tabular-nums text-foreground",
-                                    isMobile ? "text-[9px]" : "text-xs"
+                                    "font-mono font-semibold tabular-nums text-[hsl(var(--color-text-primary))]",
+                                    isMobile ? "text-[10px]" : "text-xs"
                                   )}>
                                     {formatCurrency(columnSubtotals[month], isMobile)}
                                   </span>

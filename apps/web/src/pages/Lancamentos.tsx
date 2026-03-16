@@ -44,6 +44,7 @@ import { BulkEntryDialog } from '@/components/lancamentos/BulkEntryDialog';
 import { HistoricalEntryDialog } from '@/components/lancamentos/HistoricalEntryDialog';
 import { ImportIncomeDialog } from '@/components/lancamentos/ImportIncomeDialog';
 import { ReceiptCaptureDialog } from '@/components/mobile/ReceiptCaptureDialog';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { BankSyncButton } from '@/components/sync/BankSyncButton';
 import { PluggySyncStatus } from '@/components/sync/PluggySyncStatus';
 import { OutdatedConnectionBanner } from '@/components/sync/OutdatedConnectionBanner';
@@ -1471,61 +1472,31 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
 
           {/* Geral Tab */}
           <TabsContent value="geral" className="space-y-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <Card className="bg-income-light/50">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg gradient-income flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Entradas</p>
-                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-success))] truncate">{formatCurrency(totalEntradas)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-expense-light/50">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg gradient-expense flex items-center justify-center">
-                      <TrendingDown className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Saídas</p>
-                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-danger))] truncate">{formatCurrency(totalSaidas)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${totalEntradas - totalSaidas >= 0 ? 'bg-income/10' : 'bg-expense/10'}`}>
-                      <Wallet className={`h-5 w-5 ${totalEntradas - totalSaidas >= 0 ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Saldo</p>
-                      <p className={`text-base sm:text-xl font-bold truncate ${totalEntradas - totalSaidas >= 0 ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]'}`}>
-                        {formatCurrency(totalEntradas - totalSaidas)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-accent flex items-center justify-center">
-                      <Layers className="h-5 w-5 text-accent-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Transações</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{totalCount}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <HeaderMetricCard
+                label="Receitas"
+                value={formatCurrency(totalEntradas)}
+                variant="positive"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Despesas"
+                value={formatCurrency(totalSaidas)}
+                variant="negative"
+                icon={<TrendingDown className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Saldo"
+                value={formatCurrency(totalEntradas - totalSaidas)}
+                variant={(totalEntradas - totalSaidas) >= 0 ? 'positive' : 'negative'}
+                icon={<Wallet className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Lançamentos"
+                value={String(totalCount)}
+                variant="blue"
+                icon={<Receipt className="h-4 w-4" />}
+              />
             </div>
 
             <RecorrentesSection
@@ -1768,50 +1739,25 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
           {/* Entradas Tab */}
           <TabsContent value="entradas" className="space-y-6">
             {/* Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              <Card className="bg-income-light/50">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg gradient-income flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Total do Mês</p>
-                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-success))] truncate">
-                        {formatCurrency(totalEntradas)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Fontes Ativas</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{enabledIncomes.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-2 lg:col-span-1">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-accent flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-accent-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Transações</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{entradas.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <HeaderMetricCard
+                label="Total do mês"
+                value={formatCurrency(totalEntradas)}
+                variant="positive"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Fontes ativas"
+                value={String(enabledIncomes.length)}
+                variant="neutral"
+                icon={<Calendar className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Lançamentos"
+                value={String(entradas.length)}
+                variant="blue"
+                icon={<Receipt className="h-4 w-4" />}
+              />
             </div>
 
             {/* Contas a Receber */}
@@ -1909,50 +1855,25 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
           {/* Saidas Tab */}
           <TabsContent value="saidas" className="space-y-6">
             {/* Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              <Card className="bg-expense-light/50">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg gradient-expense flex items-center justify-center">
-                      <Wallet className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Total do Mês</p>
-                      <p className="text-base sm:text-xl font-bold text-[hsl(var(--color-text-danger))] truncate">
-                        {formatCurrency(totalSaidas)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-warning/20 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-warning" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Categorias Ativas</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{enabledExpenses.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="col-span-2 lg:col-span-1">
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-muted flex items-center justify-center">
-                      <Wallet className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">Transações</p>
-                      <p className="text-base sm:text-xl font-bold text-foreground">{saidas.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <HeaderMetricCard
+                label="Total do mês"
+                value={formatCurrency(totalSaidas)}
+                variant="negative"
+                icon={<TrendingDown className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Categorias ativas"
+                value={String(enabledExpenses.length)}
+                variant="neutral"
+                icon={<CreditCard className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Lançamentos"
+                value={String(saidas.length)}
+                variant="blue"
+                icon={<Receipt className="h-4 w-4" />}
+              />
             </div>
 
             {/* Contas a Pagar */}
