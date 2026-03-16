@@ -86,6 +86,38 @@ export interface InvestmentTotals {
   oldest_balance_date: string | null;
 }
 
+/** Category label used by PluggyInvestmentsSection */
+export type InvestmentCategory = 'Renda Fixa' | 'Ações' | 'Fundos' | 'FIIs' | 'ETFs' | 'Outros';
+
+export interface InvestmentCategoryData {
+  category: InvestmentCategory;
+  totalBalance: number;
+  items: PluggyInvestment[];
+  allocationPercent: number;
+  avgLast12MonthsRate?: number | null;
+}
+
+const TYPE_TO_CATEGORY: Record<string, InvestmentCategory> = {
+  FIXED_INCOME: 'Renda Fixa',
+  TREASURE: 'Renda Fixa',
+  BOND: 'Renda Fixa',
+  SECURITY: 'Renda Fixa',
+  EQUITY: 'Ações',
+  STOCK: 'Ações',
+  MUTUAL_FUND: 'Fundos',
+  REAL_ESTATE_FUND: 'FIIs',
+  ETF: 'ETFs',
+  PENSION: 'Outros',
+  CRYPTOCURRENCY: 'Outros',
+  COE: 'Outros',
+  LOAN: 'Outros',
+  OTHER: 'Outros',
+};
+
+function getCategoryForType(type: string): InvestmentCategory {
+  return TYPE_TO_CATEGORY[type] ?? 'Outros';
+}
+
 export function usePluggyInvestments() {
   const { user } = useAuth();
   const [investments, setInvestments] = useState<PluggyInvestment[]>([]);
@@ -96,6 +128,11 @@ export function usePluggyInvestments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasSyncedData, setHasSyncedData] = useState(false);
+  const [filters, setFilters] = useState<{ userId: string | null; institution: string | null; category: InvestmentCategory | null }>({
+    userId: null,
+    institution: null,
+    category: null,
+  });
 
   const fetchInvestments = useCallback(async () => {
     if (!user?.id) return;
@@ -169,6 +206,39 @@ export function usePluggyInvestments() {
     [investments]
   );
 
+  const categories = useMemo((): InvestmentCategoryData[] => {
+    const list = investments;
+    const total = totalBalance || 1;
+    const byCategory = new Map<InvestmentCategory, PluggyInvestment[]>();
+    for (const inv of list) {
+      const cat = getCategoryForType(inv.type);
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat)!.push(inv);
+    }
+    const result: InvestmentCategoryData[] = [];
+    byCategory.forEach((items, category) => {
+      const totalBalanceCat = items.reduce((s, i) => s + (Number(i.balance) || 0), 0);
+      const avg12 =
+        items.length > 0
+          ? items.reduce((s, i) => s + (Number(i.last_twelve_months_rate) ?? 0), 0) / items.length
+          : null;
+      result.push({
+        category,
+        totalBalance: totalBalanceCat,
+        items,
+        allocationPercent: (totalBalanceCat / total) * 100,
+        avgLast12MonthsRate: avg12,
+      });
+    });
+    return result.sort((a, b) => b.totalBalance - a.totalBalance);
+  }, [investments, totalBalance]);
+
+  const filterOptions = useMemo(
+    () => ({ users: [] as { value: string; label: string }[], institutions: [] as { value: string; label: string }[], categories: [] as { value: string; label: string }[] }),
+    []
+  );
+  const hasActiveFilters = Boolean(filters.userId || filters.institution || filters.category);
+
   return {
     investments,
     summary,
@@ -179,8 +249,15 @@ export function usePluggyInvestments() {
     totalTaxes,
     activeCount,
     loading,
+    isLoading: loading,
     error,
     hasSyncedData,
     refetch: fetchInvestments,
+    categories,
+    filters,
+    setFilters,
+    filterOptions,
+    hasActiveFilters,
+    allInvestments: investments,
   };
 }
