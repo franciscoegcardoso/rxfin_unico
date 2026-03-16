@@ -8,7 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAutoConsolidation } from '@/hooks/useAutoConsolidation';
 import { usePhoneCompletion } from '@/hooks/usePhoneCompletion';
 import { PhoneCompletionDialog } from '@/components/auth/PhoneCompletionDialog';
-import { DemoDataBanner } from '@/components/shared/DemoDataBanner';
+import { DemoDataBanner, DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX } from '@/components/shared/DemoDataBanner';
 import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
 import { OnboardingTransitionModal } from '@/components/OnboardingTransitionModal';
 import { StartRaioXContext } from '@/contexts/StartRaioXContext';
@@ -183,6 +183,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             'px-4 md:px-6 lg:px-8 pb-6',
             isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
           )}
+          style={{ paddingTop: isDemoMode ? `${DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX}px` : '0px' }}
         >
           {content}
         </main>

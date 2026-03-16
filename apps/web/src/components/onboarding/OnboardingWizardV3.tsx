@@ -14,11 +14,12 @@ import { OnboardingTransition } from './OnboardingTransition';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
+import { useOnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
 import { useAuth } from '@/contexts/AuthContext';
 import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { toast } from 'sonner';
 
-const BLOCK_STEPS = { A: 4, B: 5, C: 5, D: 4 } as const;
+const BLOCK_STEPS = { A: 4, B: 4, C: 5, D: 4 } as const;
 
 type ActiveBlock = 'A' | 'B' | 'C' | 'D';
 
@@ -36,6 +37,7 @@ export const OnboardingWizardV3: React.FC = () => {
   const { user } = useAuth();
   const { currentLevel, currentPhase, advancePhase, registerEvent, isLoading } = useOnboardingCheckpoint();
   const { saveDraft, getDraft, clearDraft } = useOnboardingDraft();
+  const { data: snapshot } = useOnboardingSnapshot();
 
   const activeBlock = useMemo(() => getActiveBlock(currentPhase), [currentPhase]);
   const totalSteps = BLOCK_STEPS[activeBlock];
@@ -99,7 +101,7 @@ export const OnboardingWizardV3: React.FC = () => {
       toast.error('Sessão inválida. Faça login novamente.');
       return;
     }
-    transitionPhaseRef.current = 'block_b';
+    pendingTransitionRef.current = 'block_b';
     setTransition('block_b');
   };
 
@@ -258,6 +260,7 @@ export const OnboardingWizardV3: React.FC = () => {
                 onStepChange={handleStepChange}
                 onComplete={handleBlockBComplete}
                 onSaveDraft={saveDraft}
+                snapshot={snapshot}
               />
             )}
             {activeBlock === 'C' && (
