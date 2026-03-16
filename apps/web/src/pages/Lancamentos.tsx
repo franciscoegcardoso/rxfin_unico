@@ -75,7 +75,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 type LancamentoTipo = 'entrada' | 'saida';
 
-export const Lancamentos: React.FC = () => {
+interface LancamentosProps {
+  embedded?: boolean;
+}
+
+export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) => {
   const { config, updateMonthlyEntry, updateFinancialInstitution } = useFinancial();
   const { isHidden } = useVisibility();
   const { isManual } = useFinanceMode();
@@ -769,7 +773,8 @@ export const Lancamentos: React.FC = () => {
         {/* Outdated Connection Banner */}
         {!isManual && <OutdatedConnectionBanner />}
 
-        {/* Header */}
+        {/* Header — omit when embedded (tab inside Movimentacoes) */}
+        {!embedded && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <PageHeader
             icon={ReceiptText}
@@ -848,6 +853,7 @@ export const Lancamentos: React.FC = () => {
             }
           />
         </div>
+        )}
 
         {!isManual && <PluggySyncStatus accountType="BANK" compact />}
 

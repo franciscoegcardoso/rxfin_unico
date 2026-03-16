@@ -24,7 +24,7 @@ export const EmptyLancamentos: React.FC<EmptyLancamentosProps> = ({ className })
       Registre sua primeira receita ou despesa para começar o controle.
     </p>
     <Link
-      to="/lancamentos/novo"
+      to="/movimentacoes/extrato"
       className="bg-primary text-primary-foreground font-syne font-bold rounded-xl px-6 py-3 hover:bg-primary/90 transition-colors"
     >
       Adicionar lançamento

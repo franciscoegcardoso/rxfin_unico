@@ -80,7 +80,7 @@ const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'T
 const ICON_BY_PATH: Record<string, LucideIcon> = {
   '/inicio': Home,
   '/bens-investimentos': PiggyBank,
-  '/lancamentos': Receipt,
+  '/movimentacoes': Receipt,
   '/planejamento': Calendar,
   '/planejamento-anual': CalendarRange,
   '/meu-ir': FileText,
@@ -211,7 +211,7 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
-    { path: '/lancamentos', label: 'Lançamentos', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/movimentacoes', label: 'Movimentações', icon: Receipt, accessLevel: 'free', canAccessAsAdmin: true },
   ];
 
   const groupedSections: NavMenuSection[] = [
@@ -518,6 +518,12 @@ export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading
  * Hook para verificar se uma página específica está disponível (is_active_users)
  * Returns both the raw availability and whether admin can bypass
  */
+/** Path used for DB lookup: /movimentacoes/* → /movimentacoes so one page covers all tabs. */
+function getAvailabilityPath(path: string): string {
+  if (path === '/movimentacoes' || path.startsWith('/movimentacoes/')) return '/movimentacoes';
+  return path;
+}
+
 export function usePageAvailability(path: string): { 
   isAvailable: boolean; 
   isLoading: boolean; 
@@ -525,14 +531,15 @@ export function usePageAvailability(path: string): {
   canAdminBypass: boolean;
 } {
   const { isAdmin, isLoading: adminLoading } = useIsAdmin();
-  
+  const lookupPath = getAvailabilityPath(path);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['page-availability', path],
+    queryKey: ['page-availability', lookupPath],
     queryFn: async () => {
       const { data: page, error } = await supabase
         .from('pages')
         .select('is_active_users, title')
-        .eq('path', path)
+        .eq('path', lookupPath)
         .maybeSingle();
       
       if (error) throw error;

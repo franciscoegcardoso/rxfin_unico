@@ -93,7 +93,7 @@ export const StepCartao: React.FC<StepCartaoProps> = ({ userId, onComplete }) =>
                       variant="outline"
                       size="sm"
                       className="flex-1 gap-1"
-                      onClick={() => navigate('/cartao-credito')}
+                      onClick={() => navigate('/movimentacoes/cartao-credito')}
                     >
                       <ExternalLink className="h-4 w-4" />
                       Ajustar

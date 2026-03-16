@@ -655,7 +655,7 @@ const LandingPage: React.FC = () => {
                 {[
                   { label: 'Início', to: '/inicio' },
                   { label: 'Simuladores', to: '/simuladores' },
-                  { label: 'Lançamentos', to: '/lancamentos' },
+                  { label: 'Movimentações', to: '/movimentacoes' },
                   { label: 'Investimentos', to: '/investimentos' },
                   { label: 'Meu IR', to: '/meu-ir' },
                   { label: 'Simulador FIPE', to: '/simuladores/veiculos/simulador-fipe' },

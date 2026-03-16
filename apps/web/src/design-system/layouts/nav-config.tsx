@@ -7,10 +7,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-/** Itens da bottom nav (mobile) e sidebar. Estrutura canônica: Início, Bens e Invest., Lançamentos, Simuladores, Minha Conta. */
+/** Itens da bottom nav (mobile) e sidebar. Estrutura canônica: Início, Bens e Invest., Movimentações, Simuladores, Minha Conta. */
 export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: "/inicio", label: "Início", icon: Home },
-  { path: "/lancamentos", label: "Lançamentos", icon: ArrowLeftRight },
+  { path: "/movimentacoes", label: "Movimentações", icon: ArrowLeftRight },
   { path: "/bens-investimentos", label: "Bens e Invest.", icon: TrendingUp },
   { path: "/simuladores", label: "Simuladores", icon: Car },
   { path: "/minha-conta", label: "Minha Conta", icon: User },
@@ -18,7 +18,9 @@ export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
 
 const TITLE_MAP: Record<string, string> = {
   "/inicio": "Início",
-  "/lancamentos": "Lançamentos",
+  "/movimentacoes": "Movimentações",
+  "/movimentacoes/extrato": "Extrato de conta",
+  "/movimentacoes/cartao-credito": "Cartão de Crédito",
   "/bens-investimentos": "Bens e Investimentos",
   "/bens-investimentos/consolidado": "Consolidado",
   "/bens-investimentos/patrimonio": "Patrimônio",
@@ -41,5 +43,6 @@ export function getPageTitle(pathname: string): string {
 
 export function isNavActive(pathname: string, itemPath: string): boolean {
   if (itemPath === "/inicio") return pathname === "/inicio";
+  if (itemPath === "/movimentacoes") return pathname === "/movimentacoes" || pathname.startsWith("/movimentacoes/");
   return pathname === itemPath || pathname.startsWith(itemPath + "/");
 }

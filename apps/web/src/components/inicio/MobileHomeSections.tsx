@@ -46,7 +46,7 @@ export const MonthSummaryCard: React.FC = () => {
     <Card>
       <CardHeader className="pb-2 flex flex-row items-center justify-between p-3 sm:p-4">
         <CardTitle className="text-base">Resumo do Mês</CardTitle>
-        <button onClick={() => navigate('/lancamentos')} className="text-xs text-primary flex items-center gap-0.5">
+        <button onClick={() => navigate('/movimentacoes/extrato')} className="text-xs text-primary flex items-center gap-0.5">
           Ver mais <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>
@@ -154,7 +154,7 @@ export const CreditCardSpendingCard: React.FC = () => {
         <CardTitle className="text-base flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-primary" /> Cartão de Crédito
         </CardTitle>
-        <button onClick={() => navigate('/cartao-credito')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
+        <button onClick={() => navigate('/movimentacoes/cartao-credito')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
           Ver mais <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>
@@ -270,7 +270,7 @@ export const PendingCategorizationCard: React.FC = () => {
         <CardTitle className="text-base flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-warning" /> Categorização Pendente
         </CardTitle>
-        <button onClick={() => navigate('/lancamentos')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
+        <button onClick={() => navigate('/movimentacoes/extrato')} className="text-xs text-primary flex items-center gap-0.5 shrink-0">
           Categorizar <ChevronRight className="h-3 w-3" />
         </button>
       </CardHeader>

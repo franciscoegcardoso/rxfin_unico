@@ -86,7 +86,7 @@ export function RaioXResultCard({ formato, dados, userId, sessionId, onRegisterE
                 </p>
               </div>
             </div>
-            <Button size="sm" onClick={() => navigate('/lancamentos')}>
+            <Button size="sm" onClick={() => navigate('/movimentacoes/extrato')}>
               Cadastrar primeiro gasto
             </Button>
           </CardContent>
@@ -207,7 +207,7 @@ export function RaioXResultCard({ formato, dados, userId, sessionId, onRegisterE
 
         <div className="flex gap-2 flex-wrap">
           {formato === 'concentracao' && (
-            <Button size="sm" variant="outline" onClick={() => navigate('/lancamentos')}>
+            <Button size="sm" variant="outline" onClick={() => navigate('/movimentacoes/extrato')}>
               <BarChart3 className="h-3 w-3 mr-1" /> Ver detalhes por categoria
             </Button>
           )}
@@ -223,7 +223,7 @@ export function RaioXResultCard({ formato, dados, userId, sessionId, onRegisterE
             </>
           )}
           {formato === 'frequencia' && (
-            <Button size="sm" variant="outline" onClick={() => navigate('/lancamentos')}>
+            <Button size="sm" variant="outline" onClick={() => navigate('/movimentacoes/extrato')}>
               Ver todas essas compras
             </Button>
           )}

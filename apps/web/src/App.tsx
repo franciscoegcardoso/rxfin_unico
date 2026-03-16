@@ -32,7 +32,7 @@ import { MobileCtaBar } from "@/components/landing/MobileCtaBar";
 import Inicio from "./pages/Inicio";
 // Dashboard removed - charts moved to Planejamento, indicators to Inicio
 import Parametros from "./pages/Parametros";
-import Lancamentos from "./pages/Lancamentos";
+import MovimentacoesPage from "./pages/MovimentacoesPage";
 
 import BensInvestimentosLayout from "./pages/bens-investimentos/BensInvestimentosLayout";
 import ConsolidadoTab from "./pages/bens-investimentos/ConsolidadoTab";
@@ -47,7 +47,6 @@ import PlanejamentoLayout from "./pages/planejamento/PlanejamentoLayout";
 import VisaoMensalTab from "./pages/Planejamento";
 import MetasTab from "./pages/planejamento/MetasTab";
 import AnalisesTab from "./pages/planejamento/AnalisesTab";
-import CartaoCredito from "./pages/CartaoCredito";
 import PlanejamentoAnual from "./pages/PlanejamentoAnual";
 import Contas from "./pages/Contas";
 import FluxoFinanceiro from "./pages/FluxoFinanceiro";
@@ -197,7 +196,10 @@ const App = () => (
                     <Route path="inicio" element={<Inicio />} />
                     <Route path="dashboard" element={<Navigate to="/inicio" replace />} />
                     <Route path="parametros" element={<Parametros />} />
-                    <Route path="lancamentos" element={<Lancamentos />} />
+                    <Route path="movimentacoes" element={<MovimentacoesPage />} />
+                    <Route path="movimentacoes/extrato" element={<MovimentacoesPage defaultTab="extrato" />} />
+                    <Route path="movimentacoes/cartao-credito" element={<MovimentacoesPage defaultTab="cartao-credito" />} />
+                    <Route path="lancamentos" element={<Navigate to="/movimentacoes/extrato" replace />} />
                     <Route path="contas" element={<Contas />} />
                     <Route path="fluxo-financeiro" element={<FluxoFinanceiro />} />
                     <Route path="bens-investimentos" element={<BensInvestimentosLayout />}>
@@ -212,7 +214,7 @@ const App = () => (
                       <Route path="intangiveis" element={<IntangiveisTab />} />
                       <Route path="historico-ir" element={<HistoricoIrTab />} />
                     </Route>
-                    <Route path="cartao-credito" element={<CartaoCredito />} />
+                    <Route path="cartao-credito" element={<Navigate to="/movimentacoes/cartao-credito" replace />} />
                     <Route path="planejamento" element={<PlanejamentoLayout />}>
                       <Route index element={<Navigate to="visao-mensal" replace />} />
                       <Route path="visao-mensal" element={<VisaoMensalTab />} />
@@ -220,7 +222,7 @@ const App = () => (
                       <Route path="analises" element={<AnalisesTab />} />
                     </Route>
                     <Route path="planejamento-anual" element={<PlanejamentoAnual />} />
-                    <Route path="planejamento-cartao" element={<Navigate to="/cartao-credito" replace />} />
+                    <Route path="planejamento-cartao" element={<Navigate to="/movimentacoes/cartao-credito" replace />} />
                     <Route path="metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
                     <Route path="registro-compras" element={<RegistroCompras />} />
                     <Route path="compras" element={<Navigate to="/registro-compras" replace />} />

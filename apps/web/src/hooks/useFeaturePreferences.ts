@@ -32,7 +32,7 @@ export const AVAILABLE_FEATURES: FeatureDefinition[] = [
     icon: 'ArrowUpDown',
     category: 'financeiro',
     defaultEnabled: true,
-    routes: ['/lancamentos'],
+    routes: ['/movimentacoes'],
   },
   {
     slug: 'gestao-veiculos',

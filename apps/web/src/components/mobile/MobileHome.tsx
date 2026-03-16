@@ -72,7 +72,7 @@ export const MobileHome: React.FC = () => {
           icon={<Wallet className="h-8 w-8" />}
           label="Lançamentos"
           description="Registrar entradas e saídas"
-          onClick={() => navigate('/lancamentos')}
+          onClick={() => navigate('/movimentacoes')}
           variant="income"
         />
 

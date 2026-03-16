@@ -12,7 +12,9 @@ const ONBOARDING_CACHE_KEY = 'rxfin-onboarding-done';
 
 // Map routes to human-readable feature names
 const ROUTE_FEATURE_NAMES: Record<string, string> = {
-  '/lancamentos': 'Lançamentos',
+  '/movimentacoes': 'Movimentações',
+  '/movimentacoes/extrato': 'Movimentações',
+  '/movimentacoes/cartao-credito': 'Cartão de Crédito',
   '/gestao-veiculos': 'Gestão de Veículos',
   '/seguros': 'Seguros',
   '/planejamento': 'Planejamento Mensal',

@@ -49,7 +49,11 @@ type DashboardData = {
   transactions?: TransactionRow[];
 };
 
-const CartaoCredito: React.FC = () => {
+interface CartaoCreditoProps {
+  embedded?: boolean;
+}
+
+const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const currentMonth = format(new Date(), 'yyyy-MM');
   const { data, loading, error } = useCreditCardDashboard(currentMonth);
   const dashboard = data as DashboardData | null;
@@ -98,11 +102,13 @@ const CartaoCredito: React.FC = () => {
     <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
+        {!embedded && (
         <PageHeader
           icon={CreditCard}
           title="Cartão de Crédito"
           subtitle="Faturas, lançamentos e sincronização"
         />
+        )}
         {loading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />

@@ -47,14 +47,14 @@ export const QuickActionsSheet: React.FC<QuickActionsSheetProps> = ({
       icon: TrendingDown,
       label: 'Lançar Despesa',
       description: 'Registrar uma saída de dinheiro',
-      onClick: () => handleAction('/lancamentos?action=despesa&tipo=despesa'),
+      onClick: () => handleAction('/movimentacoes/extrato?action=despesa&tipo=despesa'),
       variant: 'expense',
     },
     {
       icon: TrendingUp,
       label: 'Lançar Receita',
       description: 'Registrar uma entrada de dinheiro',
-      onClick: () => handleAction('/lancamentos?action=receita&tipo=receita'),
+      onClick: () => handleAction('/movimentacoes/extrato?action=receita&tipo=receita'),
       variant: 'income',
     },
     {

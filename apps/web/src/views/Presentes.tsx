@@ -540,7 +540,7 @@ export const Presentes: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/lancamentos')}
+                onClick={() => navigate('/movimentacoes/extrato')}
                 title="Ver lançamento vinculado"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -1400,7 +1400,7 @@ export const Presentes: React.FC = () => {
                     size="sm"
                     onClick={() => {
                       setDetailAssignment(null);
-                      navigate('/lancamentos');
+                      navigate('/movimentacoes/extrato');
                     }}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />

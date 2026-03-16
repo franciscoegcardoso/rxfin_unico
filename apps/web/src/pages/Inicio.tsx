@@ -746,7 +746,7 @@ const Inicio: React.FC = () => {
                           {isHidden ? "••••" : formatCurrency(bill.total_value ?? 0)}
                         </span>
                         <Link
-                          to="/cartao-credito"
+                          to="/movimentacoes/cartao-credito"
                           className="text-xs text-primary hover:underline"
                         >
                           Ver detalhes →

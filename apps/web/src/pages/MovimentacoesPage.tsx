@@ -1,0 +1,65 @@
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Receipt, CreditCard } from 'lucide-react';
+import Lancamentos from './Lancamentos';
+import CartaoCredito from './CartaoCredito';
+import { cn } from '@/lib/utils';
+
+type Tab = 'extrato' | 'cartao-credito';
+
+interface MovimentacoesPageProps {
+  defaultTab?: Tab;
+}
+
+export default function MovimentacoesPage({ defaultTab }: MovimentacoesPageProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const activeTab: Tab = location.pathname.includes('cartao-credito')
+    ? 'cartao-credito'
+    : (defaultTab ?? 'extrato');
+
+  const handleTabChange = (tab: Tab) => {
+    if (tab === 'extrato') {
+      navigate('/movimentacoes/extrato', { replace: true });
+    } else {
+      navigate('/movimentacoes/cartao-credito', { replace: true });
+    }
+  };
+
+  const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
+    { id: 'extrato', label: 'Extrato de conta', icon: Receipt },
+    { id: 'cartao-credito', label: 'Cartão de crédito', icon: CreditCard },
+  ];
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex gap-1 px-4 pt-4 pb-0 border-b border-border bg-background shrink-0">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => handleTabChange(id)}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors',
+              activeTab === id
+                ? 'bg-card text-foreground border border-b-0 border-border -mb-px'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+            )}
+          >
+            <Icon className="w-4 h-4 shrink-0" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-hidden min-h-0">
+        {activeTab === 'extrato' ? (
+          <Lancamentos embedded />
+        ) : (
+          <CartaoCredito embedded />
+        )}
+      </div>
+    </div>
+  );
+}

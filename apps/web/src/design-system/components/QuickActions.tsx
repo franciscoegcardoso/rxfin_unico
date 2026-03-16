@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 const ACTIONS = [
   {
     label: "Lançar",
-    path: "/lancamentos/novo",
+    path: "/movimentacoes/extrato",
     icon: Plus,
   },
   {
     label: "Ver Extrato",
-    path: "/lancamentos",
+    path: "/movimentacoes",
     icon: List,
   },
   {

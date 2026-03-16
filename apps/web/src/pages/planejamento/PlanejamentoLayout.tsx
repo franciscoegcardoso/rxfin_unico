@@ -39,7 +39,7 @@ const PlanejamentoLayout: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
     if (tabParam === 'cartao') {
-      navigate('/cartao-credito', { replace: true });
+      navigate('/movimentacoes/cartao-credito', { replace: true });
     } else if (tabParam && VALID_TABS.includes(tabParam)) {
       navigate(`/planejamento/${tabParam}`, { replace: true });
     }

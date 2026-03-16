@@ -7,7 +7,7 @@ import { MoreMenuSheet } from '@/components/mobile/MoreMenuSheet';
 
 const LEFT_TABS = [
   { label: 'Início', icon: Home, path: '/inicio' },
-  { label: 'Lançamentos', icon: Receipt, path: '/lancamentos' },
+  { label: 'Movimentações', icon: Receipt, path: '/movimentacoes' },
 ];
 
 const RIGHT_TABS = [

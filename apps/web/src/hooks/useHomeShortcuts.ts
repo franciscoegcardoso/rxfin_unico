@@ -15,8 +15,8 @@ export interface ShortcutDefinition {
 
 // All possible shortcut options
 export const ALL_SHORTCUTS: ShortcutDefinition[] = [
-  { slug: 'lancamentos', label: 'Lançamentos', icon: Receipt, path: '/lancamentos', locked: true },
-  { slug: 'cartao-credito', label: 'Cartão', icon: CreditCard, path: '/cartao-credito', locked: true },
+  { slug: 'lancamentos', label: 'Lançamentos', icon: Receipt, path: '/movimentacoes/extrato', locked: true },
+  { slug: 'cartao-credito', label: 'Cartão', icon: CreditCard, path: '/movimentacoes/cartao-credito', locked: true },
   { slug: 'planejamento', label: 'Planejar', icon: CalendarRange, path: '/planejamento' },
   { slug: 'gestao-veiculos', label: 'Veículos', icon: Car, path: '/gestao-veiculos' },
   { slug: 'presentes', label: 'Presentes', icon: Gift, path: '/presentes' },

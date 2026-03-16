@@ -821,7 +821,7 @@ const RegistroCompras: React.FC = () => {
                       Vincular a Lançamento
                     </Label>
                     {saidasDisponiveis.length > 0 && (
-                      <Link to="/lancamentos" className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <Link to="/movimentacoes/extrato" className="text-xs text-primary hover:underline flex items-center gap-1">
                         Ver lançamentos <ExternalLink className="h-3 w-3" />
                       </Link>
                     )}
@@ -845,7 +845,7 @@ const RegistroCompras: React.FC = () => {
                   {saidasDisponiveis.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       Nenhum lançamento de despesa encontrado.{' '}
-                      <Link to="/lancamentos" className="text-primary hover:underline">Registrar lançamento</Link>
+                      <Link to="/movimentacoes/extrato" className="text-primary hover:underline">Registrar lançamento</Link>
                     </p>
                   )}
                   {selectedLancamentoId && selectedLancamentoId !== 'none' && (
