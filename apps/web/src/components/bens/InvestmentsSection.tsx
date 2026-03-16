@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { PluggyInvestmentsSection } from './PluggyInvestmentsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +10,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { financialInstitutions, investmentTypes } from '@/data/defaultData';
 import { Asset, InvestmentType } from '@/types/financial';
-import { 
-  TrendingUp, 
-  Plus, 
-  Building2, 
-  Pencil, 
-  ChevronDown, 
+import { InteractiveTreemap, type TreemapItem } from '@/components/charts/InteractiveTreemap';
+import {
+  TrendingUp,
+  Plus,
+  Building2,
+  Pencil,
+  ChevronDown,
   ChevronUp,
   PiggyBank,
   Landmark,
@@ -25,7 +27,7 @@ import {
   Wallet,
   AlertTriangle,
   Sparkles,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -104,6 +106,7 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   const navigate = useNavigate();
   const [expandedTypes, setExpandedTypes] = useState<Set<InvestmentType>>(new Set());
   const [alertDismissed, setAlertDismissed] = useState(false);
+  const [groupBy, setGroupBy] = useState<'type' | 'institution'>('type');
 
   // Função para verificar se uma instituição existe
   const isValidInstitution = (institutionId: string | undefined): boolean => {
@@ -217,6 +220,71 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   const getInvestmentTypeLabel = (type: InvestmentType) => {
     return investmentTypes.find(t => t.value === type)?.label || 'Outros';
   };
+
+  const treemapData = useMemo((): TreemapItem[] => {
+    return Object.entries(totalsByType)
+      .filter(([, v]) => v > 0)
+      .sort(([, a], [, b]) => b - a)
+      .map(([type, total]) => {
+        const invType = type as InvestmentType;
+        const assetsOfType = investmentsByType[invType] || [];
+        return {
+          id: type,
+          name: getInvestmentTypeLabel(invType),
+          value: total,
+          count: assetsOfType.length,
+          children: assetsOfType.map(a => ({
+            id: a.id,
+            name: a.name || a.investmentTicker || type,
+            value: a.value,
+            count: 1,
+          })),
+        };
+      });
+  }, [totalsByType, investmentsByType]);
+
+  const treemapDataByInstitution = useMemo((): TreemapItem[] => {
+    const byInstitution: Record<string, Asset[]> = {};
+    investments.forEach(inv => {
+      let key: string;
+      const rawKey = inv.investmentInstitutionId;
+      if (rawKey && isValidInstitution(rawKey)) {
+        key = rawKey;
+      } else {
+        const inferredId = inferInstitutionFromName(inv.name);
+        key = inferredId || '__sem_instituicao__';
+      }
+      if (!byInstitution[key]) byInstitution[key] = [];
+      byInstitution[key].push(inv);
+    });
+    const filteredEntries = Object.entries(byInstitution).filter(
+      ([key]) => key !== '__sem_instituicao__' || byInstitution[key].length > 0
+    );
+    const sortedEntries = filteredEntries.sort(([, assetsA], [, assetsB]) => {
+      const totalA = assetsA.reduce((sum, a) => sum + a.value, 0);
+      const totalB = assetsB.reduce((sum, a) => sum + a.value, 0);
+      return totalB - totalA;
+    });
+    return sortedEntries
+      .filter(([key]) => key !== '__sem_instituicao__')
+      .map(([institutionId, assets]) => {
+        const total = assets.reduce((sum, a) => sum + a.value, 0);
+        const name = getInstitutionName(institutionId) || 'Instituição';
+        return {
+          id: institutionId,
+          name,
+          value: total,
+          count: assets.length,
+          children: assets.map(a => ({
+            id: a.id,
+            name: a.name || a.investmentTicker || institutionId,
+            value: a.value,
+            count: 1,
+          })),
+        };
+      });
+  }, [investments]);
+
   // Detectar investimentos órfãos que podem ser auto-vinculados
   const orphanedInvestmentsWithSuggestion = useMemo(() => {
     return investments
@@ -303,148 +371,223 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
       )}
 
       {/* Header com total */}
-      <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Total em Investimentos</p>
-              <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestments)}</p>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      >
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total em Investimentos</p>
+                <p className="text-3xl font-bold text-primary">{formatCurrency(totalInvestments)}</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/instituicoes-financeiras')}
+                className="gap-2"
+              >
+                <Landmark className="h-4 w-4" />
+                Gerenciar Bancos
+              </Button>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => navigate('/instituicoes-financeiras')}
-              className="gap-2"
-            >
-              <Landmark className="h-4 w-4" />
-              Gerenciar Bancos
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      {/* Composição por tipo */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Composição da Carteira</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {Object.entries(totalsByType)
-            .sort(([, a], [, b]) => b - a)
-            .map(([type, total]) => {
-              const investmentType = type as InvestmentType;
-              const percentage = totalInvestments > 0 ? (total / totalInvestments) * 100 : 0;
-              const assetsOfType = investmentsByType[investmentType] || [];
-              const isExpanded = expandedTypes.has(investmentType);
+      {/* Composição da Carteira (treemap) */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
+      >
+        <Card>
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-lg">Composição da Carteira</CardTitle>
+            <div className="flex items-center gap-1 bg-muted rounded-md p-0.5">
+              <Button
+                size="sm"
+                variant={groupBy === 'type' ? 'secondary' : 'ghost'}
+                className="h-6 text-xs px-2"
+                onClick={() => setGroupBy('type')}
+              >
+                Por tipo
+              </Button>
+              <Button
+                size="sm"
+                variant={groupBy === 'institution' ? 'secondary' : 'ghost'}
+                className="h-6 text-xs px-2"
+                onClick={() => setGroupBy('institution')}
+              >
+                Por banco
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const data = groupBy === 'type' ? treemapData : treemapDataByInstitution;
+              return data.length > 0 ? (
+                <InteractiveTreemap
+                  data={data}
+                  formatValue={formatCurrency}
+                  isHidden={false}
+                  height={220}
+                  showLegend={true}
+                  groupSmallItems={true}
+                  smallItemThreshold={4}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum investimento para exibir
+                </p>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      </motion.div>
 
-              return (
-                <div key={type} className="space-y-2">
-                  <button
-                    onClick={() => toggleExpanded(investmentType)}
-                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center text-white",
-                        investmentColors[investmentType]
-                      )}>
-                        {investmentIcons[investmentType]}
+      {/* Alerta de concentração */}
+      {Object.entries(totalsByType).some(
+        ([, v]) => totalInvestments > 0 && v / totalInvestments > 0.6
+      ) && (
+        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Alta concentração detectada — uma classe representa mais de 60% da carteira.
+            Considere diversificar.
+          </span>
+        </div>
+      )}
+
+      {/* Detalhe por tipo (accordion com edit/delete) */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2, ease: 'easeOut' }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Detalhe por tipo</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Object.entries(totalsByType)
+              .sort(([, a], [, b]) => b - a)
+              .map(([type, total]) => {
+                const investmentType = type as InvestmentType;
+                const percentage = totalInvestments > 0 ? (total / totalInvestments) * 100 : 0;
+                const assetsOfType = investmentsByType[investmentType] || [];
+                const isExpanded = expandedTypes.has(investmentType);
+
+                return (
+                  <div key={type} className="space-y-2">
+                    <button
+                      onClick={() => toggleExpanded(investmentType)}
+                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center text-white",
+                          investmentColors[investmentType]
+                        )}>
+                          {investmentIcons[investmentType]}
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium">{getInvestmentTypeLabel(investmentType)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {assetsOfType.length} {assetsOfType.length === 1 ? 'item' : 'itens'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <p className="font-medium">{getInvestmentTypeLabel(investmentType)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {assetsOfType.length} {assetsOfType.length === 1 ? 'item' : 'itens'}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-semibold">{formatCurrency(total)}</p>
+                          <p className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</p>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="font-semibold">{formatCurrency(total)}</p>
-                        <p className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</p>
-                      </div>
-                      {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </button>
+                    </button>
 
-                  <Progress 
-                    value={percentage} 
-                    className={cn("h-2", `[&>div]:${investmentColors[investmentType]}`)}
-                  />
+                    <Progress 
+                      value={percentage} 
+                      className={cn("h-2", `[&>div]:${investmentColors[investmentType]}`)}
+                    />
 
-                  {/* Lista expandida de investimentos do tipo */}
-                  {isExpanded && (
-                    <div className="ml-11 space-y-2 pt-2">
-                      {assetsOfType.map(asset => {
-                        const institutionName = getInstitutionName(asset.investmentInstitutionId);
-                        const assetPercentage = totalInvestments > 0 
-                          ? (asset.value / totalInvestments) * 100 
-                          : 0;
+                    {isExpanded && (
+                      <div className="ml-11 space-y-2 pt-2">
+                        {assetsOfType.map(asset => {
+                          const institutionName = getInstitutionName(asset.investmentInstitutionId);
+                          const assetPercentage = totalInvestments > 0 
+                            ? (asset.value / totalInvestments) * 100 
+                            : 0;
 
-                        return (
-                          <div
-                            key={asset.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">{asset.name}</p>
-                                {asset.investmentTicker && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {asset.investmentTicker}
-                                  </Badge>
-                                )}
+                          return (
+                            <div
+                              key={asset.id}
+                              className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium">{asset.name}</p>
+                                  {asset.investmentTicker && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {asset.investmentTicker}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  {institutionName && (
+                                    <span className="flex items-center gap-1">
+                                      <Landmark className="h-3 w-3" />
+                                      {institutionName}
+                                    </span>
+                                  )}
+                                  {asset.investmentQuantity && (
+                                    <span>• {asset.investmentQuantity} cotas</span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                {institutionName && (
-                                  <span className="flex items-center gap-1">
-                                    <Landmark className="h-3 w-3" />
-                                    {institutionName}
-                                  </span>
-                                )}
-                                {asset.investmentQuantity && (
-                                  <span>• {asset.investmentQuantity} cotas</span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <p className="font-semibold">{formatCurrency(asset.value)}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {assetPercentage.toFixed(1)}% do total
-                                </p>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEditInvestment(asset)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              {onDeleteInvestment && (
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <p className="font-semibold">{formatCurrency(asset.value)}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {assetPercentage.toFixed(1)}% do total
+                                  </p>
+                                </div>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => onDeleteInvestment(asset.id)}
-                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => onEditInvestment(asset)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
-                              )}
+                                {onDeleteInvestment && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onDeleteInvestment(asset.id)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-        </CardContent>
-      </Card>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Lista completa por instituição */}
       <Card>
