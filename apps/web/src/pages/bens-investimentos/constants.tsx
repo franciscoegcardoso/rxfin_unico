@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Home, Car, TrendingUp, Building2, Gem, FileCode2,
+  Home, Car, TrendingUp, TrendingDown, Building2, Gem, FileCode2,
   Scale, CreditCard, ShieldCheck, LayoutDashboard,
   Briefcase, Landmark, Package, FileBarChart
 } from 'lucide-react';
@@ -43,6 +43,7 @@ export const TABS = [
   { id: 'consolidado',   label: 'Visão Geral',    icon: LayoutDashboard },
   { id: 'patrimonio',    label: 'Patrimônio Real', icon: Home            },
   { id: 'investimentos', label: 'Investimentos',   icon: TrendingUp      },
+  { id: 'dividas',      label: 'Dívidas',         icon: TrendingDown    },
   { id: 'participacoes', label: 'Participações',   icon: Building2       },
   { id: 'intangiveis',   label: 'Intangíveis',     icon: Briefcase       },
   { id: 'passivos',      label: 'Passivos',        icon: CreditCard      },
@@ -57,6 +58,7 @@ export const TAB_ASSET_TYPES: Record<BensTab, NewAssetType[]> = {
   'consolidado':   [],
   'patrimonio':    ['property', 'vehicle', 'valuables', 'equipment', 'other'],
   'investimentos': ['investment', 'receivable'],
+  'dividas':       [],
   'participacoes': ['company_stake'],
   'intangiveis':   ['intellectual_property', 'license', 'contract_right'],
   'passivos':      ['financing', 'consortium', 'debt'],

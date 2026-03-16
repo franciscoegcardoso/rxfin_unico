@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { invokePluggySync } from '@/lib/pluggySync';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -95,17 +96,14 @@ export default function Compromissos() {
         {emptyNoSync && !isLoading && (
           <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
             <CardContent className="p-8 text-center">
-              <CalendarClock className="h-12 w-12 mx-auto text-[hsl(var(--color-text-muted))] mb-4" />
+              <CalendarClock className="h-20 w-20 mx-auto text-[hsl(var(--color-text-muted))] mb-4" strokeWidth={1.5} />
               <h2 className="font-semibold text-lg text-[hsl(var(--color-text-primary))] mb-2">
-                Sincronize suas contas
+                Compromissos fixos não disponíveis ainda
               </h2>
-              <p className="text-sm text-[hsl(var(--color-text-muted))] mb-6 max-w-md mx-auto">
-                Sincronize suas contas para detectar compromissos recorrentes automaticamente.
+              <p className="text-sm text-[hsl(var(--color-text-muted))] mb-4 max-w-md mx-auto">
+                Esta funcionalidade detecta automaticamente suas despesas e receitas recorrentes. Ela será ativada quando a sincronização com Open Finance estiver disponível.
               </p>
-              <Button onClick={handleSync} disabled={syncing}>
-                <RefreshCw className={cn('h-4 w-4 mr-2', syncing && 'animate-spin')} />
-                {syncing ? 'Sincronizando…' : 'Sincronizar agora'}
-              </Button>
+              <Badge variant="secondary" className="text-xs">Em breve</Badge>
             </CardContent>
           </Card>
         )}

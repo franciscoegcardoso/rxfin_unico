@@ -4,12 +4,14 @@ import {
   TrendingUp,
   Car,
   User,
+  CalendarClock,
   type LucideIcon,
 } from "lucide-react";
 
-/** Itens da bottom nav (mobile) e sidebar. Estrutura canônica: Início, Bens e Invest., Movimentações, Simuladores, Minha Conta. */
+/** Itens da bottom nav (mobile) e sidebar. Estrutura canônica: Início, Compromissos, Movimentações, Bens e Invest., Simuladores, Minha Conta. */
 export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
   { path: "/inicio", label: "Início", icon: Home },
+  { path: "/compromissos", label: "Compromissos", icon: CalendarClock },
   { path: "/movimentacoes", label: "Movimentações", icon: ArrowLeftRight },
   { path: "/bens-investimentos", label: "Bens e Invest.", icon: TrendingUp },
   { path: "/simuladores", label: "Simuladores", icon: Car },

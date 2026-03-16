@@ -143,6 +143,7 @@ Deno.serve(async (req: Request) => {
     let raioX: Record<string, unknown> = {};
     let cibeliaMemory: Record<string, unknown> = {};
     let cibeliaAlerts: Record<string, unknown> = {};
+    let pluggyContext: Record<string, unknown> = {};
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -153,18 +154,20 @@ Deno.serve(async (req: Request) => {
 
       if (user) {
         const currentMonth = new Date().toISOString().slice(0, 7);
-        const [ctxRes, sumRes, rxRes, memRes, alertsRes] = await Promise.allSettled([
+        const [ctxRes, sumRes, rxRes, memRes, alertsRes, pluggyRes] = await Promise.allSettled([
           supabaseAdmin.rpc('get_ai_user_context',    { p_user_id: user.id }),
           supabaseAdmin.rpc('get_ai_monthly_summary', { p_user_id: user.id, p_month: currentMonth }),
           supabaseAdmin.rpc('get_ai_raio_x_analysis', { p_user_id: user.id, p_month: currentMonth }),
           supabaseAdmin.rpc('get_cibelia_memory',     { p_user_id: user.id }),
           supabaseAdmin.rpc('get_cibelia_alerts',     { p_user_id: user.id, p_limit: 3 }),
+          supabaseAdmin.rpc('get_cibelia_pluggy_context', { p_user_id: user.id }),
         ]);
         userContext    = ctxRes.status    === 'fulfilled' ? (ctxRes.value.data    || {}) : {};
         monthlySummary = sumRes.status    === 'fulfilled' ? (sumRes.value.data    || {}) : {};
         raioX          = rxRes.status     === 'fulfilled' ? (rxRes.value.data     || {}) : {};
         cibeliaMemory  = memRes.status    === 'fulfilled' ? (memRes.value.data    || {}) : {};
         cibeliaAlerts  = alertsRes.status === 'fulfilled' ? (alertsRes.value.data || {}) : {};
+        pluggyContext  = pluggyRes.status === 'fulfilled' ? (pluggyRes.value.data || {}) : {};
         onboardingCompleted = !!(userContext.onboarding_completed);
 
         try {
@@ -188,7 +191,7 @@ Deno.serve(async (req: Request) => {
       case 'access':     systemPrompt = PHASE_ACCESS_PROMPT; break;
       case 'onboarding': systemPrompt = buildOnboardingPrompt(userContext, cibeliaMemory); break;
       case 'financial':
-      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}); break;
+      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}, pluggyContext); break;
     }
 
     if (user && phase === 'financial' && isFirstTurn && (cibeliaAlerts as Record<string,unknown>).count) {

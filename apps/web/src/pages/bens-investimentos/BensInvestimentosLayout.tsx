@@ -43,12 +43,15 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { assetIcons, formatCurrencyBase, TABS, VALID_TABS, type AssetDependencies, type BensTab } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { usePluggyInvestments } from '@/hooks/usePluggyInvestments';
+import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
+import { formatPluggyType } from '@/utils/formatInvestment';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 import { InvestmentsSection } from '@/components/bens/InvestmentsSection';
+import { EndividamentoTab } from '@/components/bens/EndividamentoTab';
 
 /** Mapeamento tipo Pluggy → rótulo para "Meus Investimentos" (alinhado ao usePluggyInvestments) */
 const PLUGGY_TYPE_TO_CATEGORY: Record<string, string> = {
@@ -61,6 +64,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
   const { data: patrimonioData, error: patrimonioError, refetch: refetchPatrimonio } = usePatrimonioOverview();
   const { allInvestments: pluggyInvestments } = usePluggyInvestments();
+  const { data: bensData } = useBensInvestimentos(null);
   const { isHidden } = useVisibility();
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
@@ -126,6 +130,34 @@ const BensInvestimentosLayout: React.FC = () => {
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
   /** Lista unificada: investimentos manuais + Open Finance (Pluggy) para a seção Meus Investimentos */
   const investimentosListMerged = useMemo(() => {
+    if (bensData?.pluggy_investments != null || bensData?.manual_assets != null) {
+      const pluggy = (bensData.pluggy_investments ?? []).map((p: { id: string; name: string; code?: string | null; balance: number | null; amount_original: number | null; profit_pct: number | null; type: string | null }) => ({
+        id: p.id,
+        name: p.name,
+        ticker: p.code ?? undefined,
+        current_value: Number(p.balance) ?? 0,
+        purchase_value: Number(p.amount_original) ?? Number(p.balance) ?? 0,
+        appreciation_pct: p.profit_pct ?? 0,
+        category: formatPluggyType(p.type),
+        _source: 'pluggy' as const,
+      }));
+      const manual = (bensData.manual_assets ?? []).map((a: { id: string; name: string; current_value: number | null; purchase_value: number | null }) => {
+        const cur = Number(a.current_value) ?? 0;
+        const buy = Number(a.purchase_value) ?? cur;
+        const pct = buy > 0 ? ((cur - buy) / buy) * 100 : 0;
+        return {
+          id: a.id,
+          name: a.name,
+          ticker: undefined,
+          current_value: cur,
+          purchase_value: buy,
+          appreciation_pct: pct,
+          category: 'Manual',
+          _source: 'manual' as const,
+        };
+      });
+      return [...pluggy, ...manual];
+    }
     const manual = investimentosList.map((a: Record<string, unknown>) => ({ ...a, _source: 'manual' as const }));
     const pluggy = (pluggyInvestments ?? []).map((p: { name: string; code?: string | null; balance: number; last_twelve_months_rate?: number | null; type: string }) => ({
       name: p.name,
@@ -137,7 +169,7 @@ const BensInvestimentosLayout: React.FC = () => {
       _source: 'pluggy' as const,
     }));
     return [...manual, ...pluggy];
-  }, [investimentosList, pluggyInvestments]);
+  }, [investimentosList, pluggyInvestments, bensData]);
   const veiculosList = useMemo(() => {
     const fromRpc = assets.filter((a: { type?: string }) => a.type === 'vehicle' || a.type === 'veiculo');
     if (fromRpc.length > 0) return fromRpc;
@@ -747,8 +779,19 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
+              {currentTab === 'dividas' && (
+                <div className="space-y-4">
+                  <EndividamentoTab />
+                </div>
+              )}
+
               {currentTab === 'investimentos' && (
                 <div className="space-y-6">
+                  {bensData?.summary?.has_stale_data && (
+                    <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                      Dados podem estar desatualizados
+                    </Badge>
+                  )}
                   <InvestmentsSection
                     onAddInvestment={handleOpenAddDialog}
                     onEditInvestment={handleEditAsset}
@@ -787,14 +830,19 @@ const BensInvestimentosLayout: React.FC = () => {
                         const buy = a.purchase_value ?? cur;
                         return sum + (cur - buy);
                       }, 0);
-                      const donutData = investimentosListMerged.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
-                        const cat = (a as any).category ?? 'Investimentos';
-                        const existing = acc.find((x) => x.name === cat);
-                        const val = a.current_value ?? 0;
-                        if (existing) existing.value += val;
-                        else acc.push({ name: cat, value: val });
-                        return acc;
-                      }, []);
+                      const donutData = bensData?.by_type && bensData.by_type.length > 0
+                        ? bensData.by_type.map((t: { type: string; total: number }) => ({
+                            name: formatPluggyType(t.type),
+                            value: Number(t.total) || 0,
+                          })).filter((d: { value: number }) => d.value > 0)
+                        : investimentosListMerged.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
+                            const cat = (a as any).category ?? 'Investimentos';
+                            const existing = acc.find((x) => x.name === cat);
+                            const val = a.current_value ?? 0;
+                            if (existing) existing.value += val;
+                            else acc.push({ name: cat, value: val });
+                            return acc;
+                          }, []);
                       const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
                       return (
                         <>
@@ -823,21 +871,28 @@ const BensInvestimentosLayout: React.FC = () => {
                               </ResponsiveContainer>
                             </div>
                             <div className="space-y-3">
-                              {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                              {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string; _source?: 'pluggy' | 'manual' }, i: number) => {
                                 const cur = a.current_value ?? 0;
                                 const buy = a.purchase_value ?? cur;
                                 const returnVal = cur - buy;
                                 const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
+                                const source = (a as any)._source;
                                 return (
-                                  <InvestmentCard
-                                    key={(a as any).id ?? `pluggy-${i}`}
-                                    name={a.name ?? '—'}
-                                    ticker={(a as any).ticker}
-                                    currentValue={cur}
-                                    returnPercent={returnPct}
-                                    returnValue={returnVal}
-                                    category={(a as any).category ?? 'Investimentos'}
-                                  />
+                                  <div key={(a as any).id ?? `pluggy-${i}`} className="relative">
+                                    {source && (
+                                      <Badge className={cn('absolute top-2 right-2 text-[10px]', source === 'pluggy' ? 'bg-blue-600 text-white border-0' : 'bg-muted text-muted-foreground')}>
+                                        {source === 'pluggy' ? 'Open Finance' : 'Manual'}
+                                      </Badge>
+                                    )}
+                                    <InvestmentCard
+                                      name={a.name ?? '—'}
+                                      ticker={(a as any).ticker}
+                                      currentValue={cur}
+                                      returnPercent={returnPct}
+                                      returnValue={returnVal}
+                                      category={(a as any).category ?? 'Investimentos'}
+                                    />
+                                  </div>
                                 );
                               })}
                             </div>
@@ -867,6 +922,7 @@ const BensInvestimentosLayout: React.FC = () => {
                                     <th className="text-right p-3 font-medium">Rentab. %</th>
                                     <th className="text-right p-3 font-medium">Rentab. R$</th>
                                     <th className="text-left p-3 font-medium">Categoria</th>
+                                    <th className="text-left p-3 font-medium">Origem</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -894,6 +950,13 @@ const BensInvestimentosLayout: React.FC = () => {
                                         </td>
                                         <td className="p-3">
                                           <span className="text-xs rounded-full bg-primary/10 text-primary px-2 py-1">{(a as any).category ?? 'Investimentos'}</span>
+                                        </td>
+                                        <td className="p-3">
+                                          {(a as any)._source ? (
+                                            <Badge className={(a as any)._source === 'pluggy' ? 'bg-blue-600 text-white border-0 text-[10px]' : 'bg-muted text-muted-foreground text-[10px]'}>
+                                              {(a as any)._source === 'pluggy' ? 'Open Finance' : 'Manual'}
+                                            </Badge>
+                                          ) : '—'}
                                         </td>
                                       </tr>
                                     );
