@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { mapPluggyStatus } from '@/core/adapters/pluggy-adapter';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,12 @@ import { CardBrandIcon } from './CardBrandIcon';
 import { SyncProcessingBanner } from './SyncProcessingBanner';
 import { SyncErrorState } from './SyncErrorState';
 import {
+  formatLastSync,
+  formatNextSync,
+  getConnectionStatusConfig,
+  getConsentExpiryDays,
+} from '@/utils/formatSync';
+import {
   Building2,
   CreditCard,
   Wallet,
@@ -20,6 +26,7 @@ import {
   AlertCircle,
   Loader2,
   Link2,
+  Clock,
 } from 'lucide-react';
 import { PluggyConnectButton } from './PluggyConnectButton';
 import { usePluggyConnect } from '@/hooks/usePluggyConnect';
@@ -180,6 +187,31 @@ export const OpenFinanceSection: React.FC = () => {
     [accountsByConnection, transactionsByAccount, recentlyConnectedIds],
   );
 
+  /** Conexões que precisam de reconexão (LOGIN_ERROR ou legado LOGIN_ERROR/OUTDATED) */
+  const loginErrorConnections = useMemo(
+    () =>
+      connections.filter(
+        (c) =>
+          (c.status === 'ERROR' && c.error_type === 'LOGIN_ERROR') ||
+          c.status === 'LOGIN_ERROR' ||
+          c.status === 'OUTDATED'
+      ),
+    [connections]
+  );
+  const firstLoginErrorItemId = loginErrorConnections[0]?.item_id ?? null;
+  const reconnectBannerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToReconnect = useCallback(() => {
+    if (firstLoginErrorItemId) {
+      setReconnectItemId(firstLoginErrorItemId);
+      reconnectBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Abrir o widget de reconexão após o botão hidden ser montado
+      setTimeout(() => {
+        (document.querySelector('[data-pluggy-reconnect-btn]') as HTMLButtonElement)?.click();
+      }, 150);
+    }
+  }, [firstLoginErrorItemId]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -290,6 +322,31 @@ export const OpenFinanceSection: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Banner: reconexão necessária (LOGIN_ERROR) */}
+      {connections.length > 0 && loginErrorConnections.length > 0 && (
+        <Card ref={reconnectBannerRef} className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <p className="text-sm text-foreground">
+                {loginErrorConnections.length === 1
+                  ? '1 conexão precisa ser reconectada para continuar sincronizando.'
+                  : `${loginErrorConnections.length} conexões precisam ser reconectadas para continuar sincronizando.`}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="gap-1.5 shrink-0"
+              onClick={scrollToReconnect}
+            >
+              <Link2 className="h-4 w-4" />
+              Reconectar agora
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary Cards */}
       {accounts.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -368,6 +425,14 @@ export const OpenFinanceSection: React.FC = () => {
             const hasError = normalizedStatus === 'error' || normalizedStatus === 'expired';
             const newlyConnected = isNewlyConnected(connection);
             const isProcessing = normalizedStatus === 'syncing' || (!hasError && newlyConnected);
+            const statusConfig = getConnectionStatusConfig(
+              connection.status,
+              connection.error_type ?? null
+            );
+            const lastSyncLabel = formatLastSync(connection.last_sync_at);
+            const nextSyncLabel = formatNextSync(connection.next_auto_sync_at ?? null);
+            const consentDays = getConsentExpiryDays(connection.consent_expires_at ?? null);
+            const showConsentWarning = consentDays !== null && consentDays <= 30 && !hasError;
 
             return (
               <Card key={connection.id} className={cn(isRefreshing && 'animate-pulse')}>
@@ -389,14 +454,29 @@ export const OpenFinanceSection: React.FC = () => {
                               Sincronizando…
                             </Badge>
                           )}
-                          {hasError && (
-                            <Badge variant="destructive" className="text-[10px]">Erro</Badge>
+                          {!isProcessing && (
+                            <Badge
+                              variant={statusConfig.color === 'red' ? 'destructive' : 'outline'}
+                              className={cn(
+                                'text-[10px] gap-1',
+                                statusConfig.color === 'green' && 'border-emerald-500/30 text-emerald-700 dark:text-emerald-400 bg-emerald-600/10',
+                                statusConfig.color === 'yellow' && 'border-amber-500/30 text-amber-700 dark:text-amber-400 bg-amber-500/10'
+                              )}
+                            >
+                              {statusConfig.label}
+                            </Badge>
                           )}
                         </div>
-                        <FreshnessIndicator
-                          lastSyncAt={connection.last_sync_at}
-                          status={connection.status}
-                        />
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span>Atualizado {lastSyncLabel}</span>
+                        </div>
+                        {nextSyncLabel && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <RefreshCw className="h-3 w-3 shrink-0" />
+                            <span>Próxima sync: {nextSyncLabel}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {/* Status do conector + Ações */}
@@ -468,22 +548,16 @@ export const OpenFinanceSection: React.FC = () => {
                   </div>
 
                   {/* Alerta de consentimento expirando */}
-                  {!hasError && connection.consent_expires_at && (() => {
-                    const daysUntil = Math.ceil(
-                      (new Date(connection.consent_expires_at).getTime() - Date.now()) / 86400000
-                    );
-                    if (daysUntil > 30) return null;
-                    return (
-                      <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
-                        <p className="text-xs text-muted-foreground">
-                          {daysUntil <= 0
-                            ? 'Consentimento expirado — reconecte para renovar.'
-                            : `Consentimento expira em ${daysUntil} dia${daysUntil > 1 ? 's' : ''}.`}
-                        </p>
-                      </div>
-                    );
-                  })()}
+                  {showConsentWarning && consentDays !== null && (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        {consentDays <= 0
+                          ? 'Consentimento expirado — reconecte para renovar.'
+                          : `Consentimento expira em ${consentDays} dia${consentDays > 1 ? 's' : ''}.`}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Banner de processamento */}
                   {isProcessing && !hasError && (

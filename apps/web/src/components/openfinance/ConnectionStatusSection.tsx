@@ -276,10 +276,22 @@ export const ConnectionStatusSection: React.FC = () => {
                   {/* Center: Status badges */}
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge
-                      variant={conn.status === 'LOGIN_ERROR' || conn.status === 'OUTDATED' ? 'destructive' : 'success'}
+                      variant={
+                        conn.status === 'ERROR' && conn.error_type === 'LOGIN_ERROR'
+                          ? 'destructive'
+                          : conn.status === 'LOGIN_ERROR' || conn.status === 'OUTDATED'
+                            ? 'destructive'
+                            : 'success'
+                      }
                       className="text-[10px] gap-1"
                     >
-                      {conn.status === 'LOGIN_ERROR' ? 'Erro Login' : conn.status === 'OUTDATED' ? 'Expirada' : 'Conectado'}
+                      {conn.status === 'ERROR' && conn.error_type === 'LOGIN_ERROR'
+                        ? 'Reconexão necessária'
+                        : conn.status === 'LOGIN_ERROR'
+                          ? 'Erro Login'
+                          : conn.status === 'OUTDATED'
+                            ? 'Expirada'
+                            : 'Conectado'}
                     </Badge>
                     <Badge variant={badgeConf.variant} className="text-[10px] gap-1">
                       {badgeConf.icon}

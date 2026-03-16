@@ -16,6 +16,7 @@ import type {
 // ─── Status Mapping ───────────────────────────────────────────────────────────
 
 export function mapPluggyStatus(status: string, executionStatus: string | null): ConnectionStatus {
+  if (status === 'ERROR') return 'error';
   if (status === 'LOGIN_ERROR') return 'error';
   if (status === 'OUTDATED') return 'expired';
   if (status === 'UPDATING' || status === 'WAITING_USER_INPUT') return 'syncing';
@@ -24,7 +25,13 @@ export function mapPluggyStatus(status: string, executionStatus: string | null):
   return 'pending';
 }
 
-export function mapPluggyErrorType(status: string, executionStatus: string | null): ConnectionErrorType | null {
+export function mapPluggyErrorType(
+  status: string,
+  executionStatus: string | null,
+  errorType?: string | null
+): ConnectionErrorType | null {
+  if (status === 'ERROR' && errorType === 'LOGIN_ERROR') return 'login_error';
+  if (status === 'ERROR' && errorType === 'USER_INPUT_TIMEOUT') return 'timeout';
   if (status === 'LOGIN_ERROR') return 'login_error';
   if (status === 'OUTDATED' && executionStatus === 'USER_INPUT_TIMEOUT') return 'timeout';
   if (status === 'OUTDATED') return 'provider_error';
@@ -42,6 +49,7 @@ interface PluggyConnectionRow {
   connector_primary_color: string | null;
   status: string;
   execution_status: string | null;
+  error_type?: string | null;
   consent_expires_at: string | null;
   last_sync_at: string | null;
   created_at: string;
@@ -59,7 +67,7 @@ export function toExternalConnection(row: PluggyConnectionRow): ExternalConnecti
     institutionLogoUrl: row.connector_image_url,
     institutionPrimaryColor: row.connector_primary_color,
     status: mapPluggyStatus(row.status, row.execution_status),
-    errorType: mapPluggyErrorType(row.status, row.execution_status),
+    errorType: mapPluggyErrorType(row.status, row.execution_status, row.error_type),
     executionStatus: row.execution_status,
     consentExpiresAt: row.consent_expires_at,
     lastSyncAt: row.last_sync_at,

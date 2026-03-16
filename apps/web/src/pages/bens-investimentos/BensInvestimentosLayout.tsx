@@ -42,6 +42,7 @@ import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { assetIcons, formatCurrencyBase, TABS, VALID_TABS, type AssetDependencies, type BensTab } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
+import { usePluggyInvestments } from '@/hooks/usePluggyInvestments';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
@@ -49,9 +50,17 @@ import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recha
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 import { InvestmentsSection } from '@/components/bens/InvestmentsSection';
 
+/** Mapeamento tipo Pluggy → rótulo para "Meus Investimentos" (alinhado ao usePluggyInvestments) */
+const PLUGGY_TYPE_TO_CATEGORY: Record<string, string> = {
+  FIXED_INCOME: 'Renda Fixa', TREASURE: 'Renda Fixa', BOND: 'Renda Fixa', SECURITY: 'Renda Fixa',
+  EQUITY: 'Ações', STOCK: 'Ações', MUTUAL_FUND: 'Fundos', REAL_ESTATE_FUND: 'FIIs', ETF: 'ETFs',
+  PENSION: 'Outros', CRYPTOCURRENCY: 'Outros', COE: 'Outros', LOAN: 'Outros', OTHER: 'Outros',
+};
+
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
   const { data: patrimonioData, error: patrimonioError, refetch: refetchPatrimonio } = usePatrimonioOverview();
+  const { allInvestments: pluggyInvestments } = usePluggyInvestments();
   const { isHidden } = useVisibility();
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
@@ -115,6 +124,20 @@ const BensInvestimentosLayout: React.FC = () => {
   const assets = patrimonioData?.assets ?? [];
   const imoveis = assets.filter((a: { type?: string }) => a.type === 'imovel');
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
+  /** Lista unificada: investimentos manuais + Open Finance (Pluggy) para a seção Meus Investimentos */
+  const investimentosListMerged = useMemo(() => {
+    const manual = investimentosList.map((a: Record<string, unknown>) => ({ ...a, _source: 'manual' as const }));
+    const pluggy = (pluggyInvestments ?? []).map((p: { name: string; code?: string | null; balance: number; last_twelve_months_rate?: number | null; type: string }) => ({
+      name: p.name,
+      ticker: p.code ?? undefined,
+      current_value: Number(p.balance) ?? 0,
+      purchase_value: Number(p.balance) ?? 0,
+      appreciation_pct: p.last_twelve_months_rate ?? 0,
+      category: PLUGGY_TYPE_TO_CATEGORY[p.type] ?? 'Outros',
+      _source: 'pluggy' as const,
+    }));
+    return [...manual, ...pluggy];
+  }, [investimentosList, pluggyInvestments]);
   const veiculosList = useMemo(() => {
     const fromRpc = assets.filter((a: { type?: string }) => a.type === 'vehicle' || a.type === 'veiculo');
     if (fromRpc.length > 0) return fromRpc;
@@ -743,7 +766,7 @@ const BensInvestimentosLayout: React.FC = () => {
                   </div>
                   {patrimonioError ? (
                     <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />
-                  ) : investimentosList.length === 0 ? (
+                  ) : investimentosListMerged.length === 0 ? (
                     <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
                       <CardContent className="flex flex-col items-center justify-center text-center">
                         <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
@@ -759,12 +782,12 @@ const BensInvestimentosLayout: React.FC = () => {
                     </Card>
                   ) : (
                     (() => {
-                      const totalReturn = investimentosList.reduce((sum: number, a: { current_value?: number; purchase_value?: number }) => {
+                      const totalReturn = investimentosListMerged.reduce((sum: number, a: { current_value?: number; purchase_value?: number }) => {
                         const cur = a.current_value ?? 0;
                         const buy = a.purchase_value ?? cur;
                         return sum + (cur - buy);
                       }, 0);
-                      const donutData = investimentosList.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
+                      const donutData = investimentosListMerged.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
                         const cat = (a as any).category ?? 'Investimentos';
                         const existing = acc.find((x) => x.name === cat);
                         const val = a.current_value ?? 0;
@@ -800,14 +823,14 @@ const BensInvestimentosLayout: React.FC = () => {
                               </ResponsiveContainer>
                             </div>
                             <div className="space-y-3">
-                              {investimentosList.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                              {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
                                 const cur = a.current_value ?? 0;
                                 const buy = a.purchase_value ?? cur;
                                 const returnVal = cur - buy;
                                 const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
                                 return (
                                   <InvestmentCard
-                                    key={i}
+                                    key={(a as any).id ?? `pluggy-${i}`}
                                     name={a.name ?? '—'}
                                     ticker={(a as any).ticker}
                                     currentValue={cur}
@@ -847,14 +870,14 @@ const BensInvestimentosLayout: React.FC = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {investimentosList.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                                  {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
                                     const cur = a.current_value ?? 0;
                                     const buy = a.purchase_value ?? cur;
                                     const returnVal = cur - buy;
                                     const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
                                     return (
                                       <tr
-                                        key={i}
+                                        key={(a as any).id ?? `pluggy-${i}`}
                                         className={cn(
                                           'border-t border-border transition-colors hover:bg-accent/50',
                                           i % 2 === 0 ? 'bg-card' : 'bg-muted/30'

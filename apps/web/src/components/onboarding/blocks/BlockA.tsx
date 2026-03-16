@@ -180,12 +180,13 @@ export const BlockA: React.FC<BlockAProps> = ({
           p_partner_name: partnerName.trim(),
           p_partner_email: partnerEmail.trim() || null,
           p_access_level: accessLevel,
-          p_has_rxfin_access: hasRxfinAccess ?? false,
+          p_has_rxfin_access: Boolean(hasRxfinAccess ?? false),
         });
         if (error) throw error;
         onSaveDraft('shared_account', { partnerName, partnerEmail, hasRxfinAccess, accessLevel });
         onStepChange(2);
-      } catch {
+      } catch (err: unknown) {
+        console.error('[BlockA] save_onboarding_shared_account erro:', err);
         setSharedError('Erro ao salvar. Tente novamente.');
       } finally {
         setSavingShared(false);

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { invokePluggySync } from '@/lib/pluggySync';
 import { useToast } from '@/hooks/use-toast';
 
-interface PluggyConnection {
+export interface PluggyConnection {
   id: string;
   user_id: string;
   item_id: string;
@@ -13,9 +13,11 @@ interface PluggyConnection {
   connector_primary_color: string | null;
   status: string;
   execution_status: string | null;
+  error_type?: string | null;
   last_error_code: string | null;
   consent_expires_at: string | null;
   last_sync_at: string | null;
+  next_auto_sync_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -65,7 +67,11 @@ export function usePluggyConnect() {
     try {
       const { data, error } = await supabase
         .from('pluggy_connections')
-        .select('*')
+        .select(
+          'id, item_id, connector_id, connector_name, connector_image_url, connector_primary_color, ' +
+          'status, execution_status, error_type, last_error_code, ' +
+          'last_sync_at, next_auto_sync_at, consent_expires_at, created_at, updated_at, user_id'
+        )
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
