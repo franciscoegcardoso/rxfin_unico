@@ -123,6 +123,7 @@ const Estrategico = lazy(() => import('./pages/admin/Estrategico'));
 const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
 const AdminArchitecturePage = lazy(() => import('./pages/admin/AdminArchitecturePage'));
 const AdminInfraestrutura = lazy(() => import('./pages/admin/AdminInfraestrutura'));
+const AdminPluggy = lazy(() => import('./pages/admin/AdminPluggy'));
 const AdminSimuladores = lazy(() => import('./pages/admin/AdminSimuladores'));
 const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
 const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
@@ -315,6 +316,7 @@ const App = () => (
                   <Route path="/admin/health" element={<Navigate to="/admin/database-health" replace />} />
                   <Route path="/admin/database-health" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><DatabaseHealthDashboard /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/infraestrutura" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminInfraestrutura /></Suspense></AdminSecureLayout>} />
+                  <Route path="/admin/pluggy" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminPluggy /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/marketing" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AdminMarketing /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-feedback" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIFeedback /></Suspense></AdminSecureLayout>} />
                   <Route path="/admin/ai-metrics" element={<AdminSecureLayout><Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AIMetrics /></Suspense></AdminSecureLayout>} />

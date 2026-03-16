@@ -8,11 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   Users, Crown, FileText, Brain, Kanban, Zap,
   TrendingUp, Activity, Clock, CheckCircle, AlertTriangle,
-  ArrowRight, BarChart3, UserCheck, CreditCard, GitMerge, UserMinus,
+  ArrowRight, BarChart3, UserCheck, CreditCard, GitMerge, UserMinus, Link2,
 } from 'lucide-react';
 import { AdminDashboardCharts } from '@/components/admin/AdminDashboardCharts';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface DashMetrics {
@@ -63,10 +63,32 @@ interface PageSummary {
   page_groups: { name: string } | null;
 }
 
+interface AdminPluggyOverview {
+  connections?: {
+    total: number;
+    active: number;
+    login_errors: number;
+    other_errors: number;
+    stale_over_24h: number;
+    consent_expiring: number;
+  };
+  data?: {
+    transactions: number;
+    investments: number;
+    recurring: number;
+    loans: number;
+    insights_today: number;
+    bills_open: number;
+  };
+  last_nightly_sync?: string | null;
+  health_url?: string;
+}
+
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<DashMetrics | null>(null);
   const [pages, setPages] = useState<PageSummary[]>([]);
   const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [pluggyOverview, setPluggyOverview] = useState<AdminPluggyOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,6 +103,7 @@ export default function AdminDashboard() {
           pagesListSettled,
           metrics30dSettled,
           chartDataSettled,
+          overviewSettled,
         ] = await Promise.allSettled([
           supabase.from('profiles').select('*', { count: 'exact', head: true }),
           supabase.from('pages').select('*', { count: 'exact', head: true }).eq('is_active_users', true),
@@ -90,6 +113,7 @@ export default function AdminDashboard() {
           supabase.from('pages').select('slug, title, path, is_active_users, page_groups(name)').order('order_index'),
           supabase.rpc('get_admin_dashboard_metrics_30d'),
           supabase.rpc('get_admin_dashboard_chart_data'),
+          supabase.rpc('get_admin_overview'),
         ]);
 
         const usersRes = usersSettled.status === 'fulfilled' ? usersSettled.value : null;
@@ -100,6 +124,9 @@ export default function AdminDashboard() {
         const pagesListRes = pagesListSettled.status === 'fulfilled' ? pagesListSettled.value : null;
         const metrics30dRes = metrics30dSettled.status === 'fulfilled' ? metrics30dSettled.value : null;
         const chartDataRes = chartDataSettled.status === 'fulfilled' ? chartDataSettled.value : null;
+        const overviewRes = overviewSettled.status === 'fulfilled' ? overviewSettled.value : null;
+        const overviewData = overviewRes?.data as { pluggy?: AdminPluggyOverview } | null;
+        if (overviewData?.pluggy) setPluggyOverview(overviewData.pluggy);
 
         const m30Raw = metrics30dRes?.data;
         const m30 = (Array.isArray(m30Raw) ? m30Raw[0] : m30Raw) as Record<string, number> | undefined ?? {};
@@ -240,12 +267,14 @@ export default function AdminDashboard() {
 
   const quickLinks = [
     { label: 'Usuários', href: '/admin/usuarios', icon: Users },
+    { label: 'Open Finance', href: '/admin/pluggy', icon: Link2 },
     { label: 'CRM', href: '/admin/crm', icon: Kanban },
     { label: 'Automações', href: '/admin/crm/automations', icon: Zap },
     { label: 'Páginas', href: '/admin/paginas', icon: FileText },
     { label: 'Métricas IA', href: '/admin/ai-metrics', icon: Brain },
     { label: 'Saúde do Banco', href: '/admin/database-health', icon: Activity },
   ];
+  const pluggyAlertCount = (pluggyOverview?.connections?.login_errors ?? 0) + (pluggyOverview?.connections?.stale_over_24h ?? 0);
 
   const pagesByGroup = pages.reduce<Record<string, PageSummary[]>>((acc, p) => {
     const pg = p.page_groups;
@@ -304,6 +333,62 @@ export default function AdminDashboard() {
           <MetricCardGrid cards={engagementCards} title="Engajamento — Últimos 30 dias" icon={TrendingUp} />
           <AdminDashboardCharts data={chartData} loading={loading} />
           <MetricCardGrid cards={operationalCards} title="Operacional" icon={BarChart3} />
+
+          {/* Open Finance (Pluggy) */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-muted-foreground" />
+                  Open Finance
+                </CardTitle>
+                <Link
+                  to="/admin/pluggy"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  Ver detalhes <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pluggyOverview ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm">
+                      <span className={cn(
+                        'font-semibold',
+                        (pluggyOverview.connections?.login_errors ?? 0) > 0 && 'text-destructive animate-pulse'
+                      )}>
+                        {pluggyOverview.connections?.active ?? pluggyOverview.connections?.total ?? 0} conexões ativas
+                      </span>
+                      {(pluggyOverview.connections?.login_errors ?? 0) > 0 && (
+                        <Badge variant="destructive" className="ml-1.5">{(pluggyOverview.connections?.login_errors)} erros login</Badge>
+                      )}
+                      {(pluggyOverview.connections?.stale_over_24h ?? 0) > 0 && (
+                        <Badge className="ml-1.5 bg-amber-500 hover:bg-amber-500">{(pluggyOverview.connections?.stale_over_24h)} sem sync</Badge>
+                      )}
+                      {(pluggyOverview.connections?.consent_expiring ?? 0) > 0 && (
+                        <span className="text-xs text-muted-foreground ml-1.5">· {pluggyOverview.connections.consent_expiring} expiram em breve</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Dados: {pluggyOverview.data?.transactions ?? 0} transações · {pluggyOverview.data?.investments ?? 0} investimentos · {pluggyOverview.data?.recurring ?? 0} recorrentes
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {pluggyOverview.last_nightly_sync ? (
+                      <span>Última sync: {formatDistanceToNow(new Date(pluggyOverview.last_nightly_sync), { addSuffix: true, locale: ptBR })}</span>
+                    ) : (
+                      <span>Última sync: —</span>
+                    )}
+                    <span>insights hoje: {pluggyOverview.data?.insights_today ?? 0}</span>
+                  </div>
+                </>
+              ) : (
+                <Skeleton className="h-16 w-full" />
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
 
@@ -321,10 +406,15 @@ export default function AdminDashboard() {
               <Link
                 key={link.href}
                 to={link.href}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors text-center"
+                className="relative flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors text-center"
               >
                 <link.icon className="h-5 w-5 text-muted-foreground" />
                 <span className="text-xs font-medium text-foreground">{link.label}</span>
+                {link.href === '/admin/pluggy' && pluggyAlertCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px]">
+                    {pluggyAlertCount}
+                  </Badge>
+                )}
               </Link>
             ))}
           </div>

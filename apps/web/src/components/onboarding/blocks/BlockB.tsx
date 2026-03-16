@@ -34,6 +34,27 @@ interface IncomeValidationItem {
   source: 'pluggy' | 'manual';
 }
 
+interface ExpenseValidationCategory {
+  id: string;
+  name: string;
+  icon: string;
+  enabled: boolean;
+  itemCount: number;
+  confirmedByAI: boolean;
+  detectedAmount: number | null;
+}
+
+const EXPENSE_CATEGORY_ICONS: Record<string, string> = {
+  'Contas da Casa': '🏠',
+  'Alimentação': '🛒',
+  'Transporte': '🚗',
+  'Lazer': '🎬',
+  'Saúde': '❤️',
+  'Investimentos': '📈',
+  'Pets': '🐾',
+  'Pessoal': '👤',
+};
+
 interface BlockBProps {
   step: number;
   onStepChange: (step: number) => void;
@@ -61,6 +82,9 @@ export const BlockB: React.FC<BlockBProps> = ({
   const [incomeValidations, setIncomeValidations] = useState<IncomeValidationItem[]>([]);
   const [validationsLoaded, setValidationsLoaded] = useState(false);
   const [savingValidations, setSavingValidations] = useState(false);
+  const [expenseValidations, setExpenseValidations] = useState<ExpenseValidationCategory[]>([]);
+  const [expenseValidationsLoaded, setExpenseValidationsLoaded] = useState(false);
+  const [savingExpenseValidations, setSavingExpenseValidations] = useState(false);
 
   useEffect(() => {
     if (step === 1 && snapshot?.pluggy_connections && connectedBanks.length === 0) {
@@ -156,6 +180,69 @@ export const BlockB: React.FC<BlockBProps> = ({
     }
   };
 
+  const loadExpenseValidations = async () => {
+    if (expenseValidationsLoaded || !user?.id) return;
+    try {
+      const { data: expenseItems } = await supabase
+        .from('user_expense_items')
+        .select('category_id, category_name')
+        .eq('user_id', user.id)
+        .eq('enabled', true);
+
+      if (!expenseItems || expenseItems.length === 0) {
+        setExpenseValidationsLoaded(true);
+        return;
+      }
+
+      const categoryMap = new Map<string, { name: string; count: number }>();
+      for (const item of expenseItems as Array<{ category_id: string; category_name: string }>) {
+        if (!categoryMap.has(item.category_id)) {
+          categoryMap.set(item.category_id, { name: item.category_name, count: 0 });
+        }
+        categoryMap.get(item.category_id)!.count++;
+      }
+
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const fromDate = threeMonthsAgo.toISOString().split('T')[0];
+
+      const { data: txns } = await supabase
+        .from('lancamentos_realizados_v')
+        .select('categoria, valor_realizado, mes_referencia')
+        .eq('user_id', user.id)
+        .eq('tipo', 'despesa')
+        .gte('data_lancamento', fromDate)
+        .order('valor_realizado', { ascending: false })
+        .limit(100);
+
+      const validations: ExpenseValidationCategory[] = Array.from(categoryMap.entries()).map(([id, { name, count }]) => {
+        const matchingTxns = (txns as Array<{ categoria?: string | null; valor_realizado?: number }> | null)?.filter(tx =>
+          tx.categoria?.toLowerCase().includes(name.toLowerCase().split(' ')[0].toLowerCase()) ||
+          name.toLowerCase().includes(tx.categoria?.toLowerCase().split(' ')[0] ?? '')
+        ) ?? [];
+
+        const totalAmount = matchingTxns.reduce((sum, tx) => sum + (tx.valor_realizado || 0), 0);
+        const avgMonthly = matchingTxns.length > 0 ? Math.round(totalAmount / 3) : null;
+
+        return {
+          id,
+          name,
+          icon: EXPENSE_CATEGORY_ICONS[name] ?? '📦',
+          enabled: true,
+          itemCount: count,
+          confirmedByAI: matchingTxns.length > 0,
+          detectedAmount: avgMonthly,
+        };
+      });
+
+      setExpenseValidations(validations);
+    } catch (err) {
+      console.warn('[BlockB] loadExpenseValidations erro:', err);
+    } finally {
+      setExpenseValidationsLoaded(true);
+    }
+  };
+
   // ─── Step 0: Intro ────────────────────────────────────────
   if (step === 0) {
     const hasExistingConnections =
@@ -186,7 +273,7 @@ export const BlockB: React.FC<BlockBProps> = ({
               });
               setReconciliationDone(true);
               setConnectedCount(connections.length);
-              onStepChange(4); // conquest
+              onStepChange(5); // conquest
             }}
             onReconfigure={() => {
               setReconciliationDone(true);
@@ -259,7 +346,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           variant="ghost"
           size="sm"
           className="w-full mt-2 text-muted-foreground text-xs"
-          onClick={() => onStepChange(3)}
+          onClick={() => onStepChange(4)}
         >
           <Upload className="h-3.5 w-3.5 mr-1.5" />
           Prefiro fazer upload de extrato
@@ -506,7 +593,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           <p className="text-muted-foreground mb-4">
             Nenhuma fonte de renda configurada ainda.
           </p>
-          <Button variant="hero" onClick={() => onStepChange(4)}>
+          <Button variant="hero" onClick={() => onStepChange(3)}>
             Continuar <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
@@ -547,10 +634,10 @@ export const BlockB: React.FC<BlockBProps> = ({
         });
       } catch (err) {
         console.warn('[BlockB] saveValidations erro (não crítico):', err);
-      } finally {
-        setSavingValidations(false);
+} finally {
+      setSavingValidations(false);
       }
-      onStepChange(4);
+      onStepChange(3);
     };
 
     return (
@@ -675,7 +762,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           variant="ghost"
           size="sm"
           className="w-full mt-2 text-muted-foreground"
-          onClick={() => onStepChange(4)}
+          onClick={() => onStepChange(3)}
         >
           Pular por agora
         </Button>
@@ -683,12 +770,211 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 3: Upload de extrato ──────────────────────────────
+  // ─── Step 3: Validação de Despesas por IA ─────────────────
   if (step === 3) {
+    if (!expenseValidationsLoaded) {
+      loadExpenseValidations();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={48} />
+          <p className="text-sm text-muted-foreground text-center">
+            IA analisando suas despesas...
+          </p>
+        </div>
+      );
+    }
+
+    if (expenseValidations.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto py-8 text-center">
+          <p className="text-muted-foreground mb-4">
+            Nenhuma categoria de despesa configurada ainda.
+          </p>
+          <Button variant="hero" onClick={() => onStepChange(5)}>
+            Continuar <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    const hasRealData = expenseValidations.some(v => v.confirmedByAI);
+    const enabledCount = expenseValidations.filter(v => v.enabled).length;
+
+    const handleToggleExpenseCat = (id: string) => {
+      setExpenseValidations(prev =>
+        prev.map(v => v.id === id ? { ...v, enabled: !v.enabled } : v)
+      );
+    };
+
+    const handleConfirmAllExpenses = () => {
+      setExpenseValidations(prev => prev.map(v => ({ ...v, enabled: true })));
+    };
+
+    const handleContinueExpenses = async () => {
+      setSavingExpenseValidations(true);
+      try {
+        await supabase.from('ai_onboarding_events').insert({
+          user_id: user?.id,
+          event_type: 'expense_validation_confirmed',
+          metadata: {
+            total_categories: expenseValidations.length,
+            enabled_count: enabledCount,
+            has_real_data: hasRealData,
+            categories: expenseValidations.map(v => ({
+              name: v.name,
+              enabled: v.enabled,
+              confirmed_by_ai: v.confirmedByAI,
+              detected_amount: v.detectedAmount,
+            })),
+          },
+        });
+      } catch (err) {
+        console.warn('[BlockB] saveExpenseValidations erro (não crítico):', err);
+      } finally {
+        setSavingExpenseValidations(false);
+      }
+      onStepChange(5);
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(2)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium text-primary uppercase tracking-wide">
+              Validação por IA
+            </p>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Confirme suas categorias de gasto
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {hasRealData
+              ? 'A IA identificou gastos nos seus extratos. Confirme as categorias da sua vida financeira.'
+              : 'Confirme as categorias que fazem parte do seu cotidiano. Os valores serão preenchidos após sincronizar seus bancos.'}
+          </p>
+        </div>
+
+        {hasRealData && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground">
+              <span className="font-semibold">Gastos reais detectados</span>
+              {' '}— Baseado nos seus últimos 3 meses de extratos
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {expenseValidations.map(cat => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => handleToggleExpenseCat(cat.id)}
+              className={cn(
+                'flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left',
+                cat.enabled
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card opacity-60'
+              )}
+            >
+              <span className="text-xl shrink-0 mt-0.5">{cat.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 flex-wrap">
+                  <p className={cn(
+                    'text-sm font-semibold leading-tight',
+                    cat.enabled ? 'text-foreground' : 'text-muted-foreground'
+                  )}>
+                    {cat.name}
+                  </p>
+                  {cat.confirmedByAI && (
+                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1 py-0.5 rounded-full shrink-0">
+                      detectado
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {cat.detectedAmount != null
+                    ? `~R$ ${cat.detectedAmount.toLocaleString('pt-BR')}/mês`
+                    : `${cat.itemCount} item${cat.itemCount !== 1 ? 's' : ''}`
+                  }
+                </p>
+              </div>
+              <div className="shrink-0 mt-0.5">
+                {cat.enabled
+                  ? <CheckCircle2 className="h-4 w-4 text-primary" />
+                  : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40" />
+                }
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {enabledCount < expenseValidations.length && (
+          <button
+            type="button"
+            onClick={handleConfirmAllExpenses}
+            className="w-full text-xs text-primary font-medium mb-4 py-2 hover:underline"
+          >
+            Confirmar todas as categorias
+          </button>
+        )}
+
+        {!hasRealData && (
+          <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Conecte seus bancos via Open Finance para que a IA identifique
+              automaticamente os valores reais de cada categoria.
+            </p>
+          </div>
+        )}
+
+        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{enabledCount}</span>
+            {' '}categoria{enabledCount !== 1 ? 's' : ''} ativa{enabledCount !== 1 ? 's' : ''} no seu perfil.
+          </p>
+        </div>
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          disabled={savingExpenseValidations}
+          onClick={handleContinueExpenses}
+        >
+          {savingExpenseValidations
+            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</>
+            : <>Continuar <ArrowRight className="ml-2 h-5 w-5" /></>
+        }
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 text-muted-foreground"
+          onClick={() => onStepChange(5)}
+        >
+          Pular por agora
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Step 4: Upload de extrato ──────────────────────────────
+  if (step === 4) {
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-6">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(0)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(3)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
@@ -733,7 +1019,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           <Button
             variant="hero"
             className="flex-1"
-            onClick={() => onStepChange(4)}
+            onClick={() => onStepChange(5)}
           >
             Concluir importação
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -754,8 +1040,8 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 4: Conquest Card ────────────────────────────────
-  if (step === 4) {
+  // ─── Step 5: Conquest Card ────────────────────────────────
+  if (step === 5) {
     const md = milestoneData as { actual_income?: number; actual_expenses?: number; count_transactions?: number } | null;
     const metrics = md
       ? [

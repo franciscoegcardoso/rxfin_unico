@@ -1,5 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
@@ -124,14 +125,20 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
+            {/* Header: resumo do mês atual — sempre a primeira informação */}
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Dados do mês atual · {format(new Date(currentMonth + '-01'), 'MMMM yyyy', { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />
+                <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} className="hidden sm:block" />
+                <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} className="hidden sm:block" />
+              </div>
+            </div>
+
             {/* Visão de fatura consolidada (RPC get_credit_card_bills_detail) */}
             <CreditCardBillView showSummaryRow />
-            {/* A) Cards de resumo — mobile: só Total faturas; sm+: os três */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />
-              <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} className="hidden sm:block" />
-              <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} className="hidden sm:block" />
-            </div>
 
             {/* B) Faturas do mês */}
             {bills.length > 0 && (
