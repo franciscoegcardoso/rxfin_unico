@@ -4,7 +4,6 @@ import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
-import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { cn } from '@/lib/utils';
 
 const formatCurrency = (value: number, isHidden: boolean) => {
@@ -53,8 +52,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
       )
       .reduce((s, a) => s + (a.balance ?? 0), 0);
 
-  const displayAccounts = (data?.accounts ?? []).filter((a) => a.type === 'BANK');
-
   return (
     <header
       className={cn(
@@ -100,61 +97,31 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap sm:justify-end">
+      <div className="flex items-center sm:justify-end">
         {isLoading && !data ? (
-          <div className="h-10 w-48 bg-[hsl(var(--color-surface-sunken))] rounded animate-pulse" />
+          <div className="h-10 w-40 bg-[hsl(var(--color-surface-sunken))] rounded animate-pulse" />
         ) : (
-          <>
-            <div className="flex flex-col items-end min-w-0">
-              <p
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 400,
-                  color: 'hsl(var(--color-text-secondary))',
-                }}
-              >
-                Saldo em contas
-              </p>
-              <p
-                className="tabular-nums mt-0.5"
-                style={{
-                  fontSize: '22px',
-                  fontWeight: 800,
-                  color: 'hsl(var(--color-text-primary))',
-                }}
-              >
-                {formatCurrency(totalChecking, isHidden)}
-              </p>
-            </div>
-            {displayAccounts.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 justify-end">
-                {displayAccounts.map((acc) => (
-                  <div
-                    key={acc.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-sunken))] px-2 py-1.5"
-                  >
-                    <ConnectorLogo
-                      imageUrl={acc.connector_image_url}
-                      primaryColor={acc.connector_color}
-                      connectorName={acc.connector_name}
-                      size="sm"
-                      className="shrink-0"
-                    />
-                    <span
-                      className="truncate max-w-[90px] tabular-nums"
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 400,
-                        color: acc.connector_color ?? 'hsl(var(--color-text-primary))',
-                      }}
-                    >
-                      {formatCurrency(acc.balance ?? 0, isHidden)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
+          <div className="flex flex-col items-end min-w-0">
+            <p
+              style={{
+                fontSize: '10px',
+                fontWeight: 400,
+                color: 'hsl(var(--color-text-secondary))',
+              }}
+            >
+              Saldo em contas
+            </p>
+            <p
+              className="tabular-nums mt-0.5"
+              style={{
+                fontSize: '22px',
+                fontWeight: 800,
+                color: 'hsl(var(--color-text-primary))',
+              }}
+            >
+              {formatCurrency(totalChecking, isHidden)}
+            </p>
+          </div>
         )}
       </div>
     </header>

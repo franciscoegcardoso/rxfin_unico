@@ -598,20 +598,25 @@ const Inicio: React.FC = () => {
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
 
+          <DemoCardWrapper isDemoMode={isDemoMode} className="mt-3">
+            <CashFlowChart />
+          </DemoCardWrapper>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+            <AcoesImediatas />
+            <ContasBancarias />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3 mt-3">
             <div className="space-y-3 min-w-0">
               <DemoCardWrapper isDemoMode={isDemoMode}>
-                <CashFlowChart />
-              </DemoCardWrapper>
-              <AcoesImediatas />
-              <DemoCardWrapper isDemoMode={isDemoMode}>
                 <BudgetCompositionCard />
               </DemoCardWrapper>
+              {!isDemoMode && <EconomicIndicators />}
+              <BudgetInsightsSummary />
             </div>
             <div className="space-y-3 flex flex-col">
-              <ContasBancarias />
               <CartaoCreditoInicio />
-              {!isDemoMode && <EconomicIndicators />}
             </div>
           </div>
           </div>
@@ -643,7 +648,6 @@ const Inicio: React.FC = () => {
           </Link>
         )}
 
-        <BudgetInsightsSummary />
         </div>
       </div>
     </AppLayout>
