@@ -68,10 +68,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { LancamentoDetailDialog } from '@/components/lancamentos/LancamentoDetailDialog';
 import { MarkAsPaidLancamentoDialog } from '@/components/lancamentos/MarkAsPaidLancamentoDialog';
 import { LancamentoFriendlyNameDialog } from '@/components/lancamentos/LancamentoFriendlyNameDialog';
+import { RecurringBadge } from '@/components/lancamentos/RecurringBadge';
 import { applyLancamentoFriendlyNameRule } from '@/utils/lancamentoFriendlyNameRules';
 import { cn, formatCurrency } from '@/lib/utils';
 import { LancamentoForm } from '@/design-system/components/LancamentoForm';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRecurringBadges } from '@/hooks/useRecurringBadges';
 
 type LancamentoTipo = 'entrada' | 'saida';
 
@@ -122,6 +124,14 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const { items: purchaseItems, markAsPurchased, getItemsByStatus, addItem: addPurchaseItem } = usePurchaseRegistry();
   const { addSeguro } = useSeguros();
   const { getSourceInfo, sourceMap } = useTransactionSourceMap();
+  const pluggyTransactionIds = useMemo(
+    () =>
+      lancamentos
+        .filter((l) => l.source_type === 'pluggy_bank' && l.source_id)
+        .map((l) => l.source_id as string),
+    [lancamentos]
+  );
+  const { badgeMap } = useRecurringBadges(pluggyTransactionIds);
   const { bills } = useCreditCardBills();
   const { getReconciliation, billPaymentIds } = useBillPaymentReconciliation(lancamentos, bills);
   const pendingPurchases = getItemsByStatus('pending');
@@ -1660,7 +1670,12 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                 <Receipt className="h-5 w-5" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-[hsl(var(--color-text-primary))] font-medium truncate">{item.friendly_name || item.nome}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-[hsl(var(--color-text-primary))] font-medium truncate">{item.friendly_name || item.nome}</p>
+                                  {item.source_id && badgeMap[item.source_id] && (
+                                    <RecurringBadge info={badgeMap[item.source_id]} />
+                                  )}
+                                </div>
                                 <p className="text-xs text-[hsl(var(--color-text-muted))] mt-0.5">
                                   {item.data_pagamento
                                     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
@@ -1716,6 +1731,9 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                     <span className="badge-warning inline-flex items-center gap-1 shrink-0">
                                       <AlertCircle className="h-3 w-3" /> Pgto. Fatura
                                     </span>
+                                  )}
+                                  {item.source_id && badgeMap[item.source_id] && (
+                                    <RecurringBadge info={badgeMap[item.source_id]} />
                                   )}
                                 </div>
                               </td>
@@ -1847,9 +1865,14 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                       <div className="w-1 self-stretch rounded-full shrink-0 min-h-[24px] bg-income" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm text-foreground truncate">
-                            {item.friendly_name || item.nome}
-                          </p>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <p className="font-medium text-sm text-foreground truncate">
+                              {item.friendly_name || item.nome}
+                            </p>
+                            {item.source_id && badgeMap[item.source_id] && (
+                              <RecurringBadge info={badgeMap[item.source_id]} />
+                            )}
+                          </div>
                           <p className="font-bold text-sm text-[hsl(var(--color-text-success))] whitespace-nowrap shrink-0 text-right tabular-nums">
                             + {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                           </p>
@@ -2000,6 +2023,9 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                 <AlertCircle className="h-3 w-3" />
                                 Pgto. Fatura
                               </span>
+                            )}
+                            {item.source_id && badgeMap[item.source_id] && (
+                              <RecurringBadge info={badgeMap[item.source_id]} />
                             )}
                           </div>
                           <p className="font-bold text-sm text-[hsl(var(--color-text-danger))] whitespace-nowrap shrink-0 text-right tabular-nums">

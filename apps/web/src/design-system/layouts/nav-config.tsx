@@ -18,6 +18,7 @@ export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
 
 const TITLE_MAP: Record<string, string> = {
   "/inicio": "Início",
+  "/compromissos": "Compromissos Fixos",
   "/movimentacoes": "Movimentações",
   "/movimentacoes/extrato": "Extrato de conta",
   "/movimentacoes/cartao-credito": "Cartão de Crédito",

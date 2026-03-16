@@ -16,10 +16,21 @@ export interface BankingAccount {
   ultima_atualizacao?: string | null;
 }
 
+/** Item de compromisso recorrente retornado por get_banking_overview (recurring_payments). */
+export interface RecurringPaymentOverviewItem {
+  id?: string;
+  description?: string;
+  average_amount?: number;
+  seen_this_month?: boolean;
+  type?: string;
+  [key: string]: unknown;
+}
+
 export interface BankingOverviewData {
   institutions?: BankingInstitution[];
   accounts?: BankingAccount[];
   connections?: unknown[];
+  recurring_payments?: RecurringPaymentOverviewItem[];
 }
 
 export function useBankingOverview() {

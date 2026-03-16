@@ -89,6 +89,15 @@ export interface InvestmentTotals {
 /** Category label used by PluggyInvestmentsSection */
 export type InvestmentCategory = 'Renda Fixa' | 'Ações' | 'Fundos' | 'FIIs' | 'ETFs' | 'Outros';
 
+/** Summary by display category (aggregated from summaryV2 rows). */
+export interface SummaryByCategory {
+  gross_balance: number;
+  net_balance: number;
+  gross_net_spread: number;
+  has_stale_data: boolean;
+  suspect_zero_count: number;
+}
+
 export interface InvestmentCategoryData {
   category: InvestmentCategory;
   totalBalance: number;
@@ -239,6 +248,30 @@ export function usePluggyInvestments() {
   );
   const hasActiveFilters = Boolean(filters.userId || filters.institution || filters.category);
 
+  /** Aggregate summaryV2 by display category for Bruto/Líquido/Δ and stale/suspect. */
+  const summaryByCategory = useMemo((): Record<InvestmentCategory, SummaryByCategory> => {
+    const acc = new Map<InvestmentCategory, SummaryByCategory>();
+    const init = (cat: InvestmentCategory): SummaryByCategory => ({
+      gross_balance: 0,
+      net_balance: 0,
+      gross_net_spread: 0,
+      has_stale_data: false,
+      suspect_zero_count: 0,
+    });
+    for (const row of summaryV2) {
+      const cat = getCategoryForType(row.investment_type) as InvestmentCategory;
+      const cur = acc.get(cat) ?? init(cat);
+      acc.set(cat, {
+        gross_balance: cur.gross_balance + Number(row.gross_balance ?? 0),
+        net_balance: cur.net_balance + Number(row.net_balance ?? 0),
+        gross_net_spread: cur.gross_net_spread + Number(row.gross_net_spread ?? 0),
+        has_stale_data: cur.has_stale_data || Boolean(row.has_stale_data),
+        suspect_zero_count: cur.suspect_zero_count + Number(row.suspect_zero_count ?? 0),
+      });
+    }
+    return Object.fromEntries(acc) as Record<InvestmentCategory, SummaryByCategory>;
+  }, [summaryV2]);
+
   return {
     investments,
     summary,
@@ -259,5 +292,6 @@ export function usePluggyInvestments() {
     filterOptions,
     hasActiveFilters,
     allInvestments: investments,
+    summaryByCategory,
   };
 }

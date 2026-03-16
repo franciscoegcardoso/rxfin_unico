@@ -5,7 +5,7 @@ import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useImpersonation } from '@/contexts/ImpersonationContext';
 import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
-import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart, ArrowLeftRight } from 'lucide-react';
+import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, CalendarClock, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart, ArrowLeftRight } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 
 export interface NavPage {
@@ -79,6 +79,7 @@ const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'T
 /** Ícones canônicos por path — recuperam ícones quando o banco não retorna (menu principal e itens de seções). */
 const ICON_BY_PATH: Record<string, LucideIcon> = {
   '/inicio': Home,
+  '/compromissos': CalendarClock,
   '/bens-investimentos': PiggyBank,
   '/movimentacoes': ArrowLeftRight,
   '/planejamento': Calendar,
@@ -210,6 +211,7 @@ function isPageHiddenFromMenu(page: { slug: string; title: string }): boolean {
 function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: NavMenuSection[] } {
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/compromissos', label: 'Compromissos Fixos', icon: CalendarClock, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/movimentacoes', label: 'Movimentações', icon: ArrowLeftRight, accessLevel: 'free', canAccessAsAdmin: true },
   ];
@@ -372,7 +374,21 @@ export function useNavMenuPages(): NavMenuData {
         canAccessAsAdmin: effectiveAdmin,
       };
     });
-  
+
+  // Injetar "Compromissos Fixos" entre Início e o próximo item (Fase 2 Pluggy), se ainda não estiver no menu
+  const compromissosItem: NavMenuItem = {
+    path: '/compromissos',
+    label: 'Compromissos Fixos',
+    icon: CalendarClock,
+    accessLevel: 'free',
+    canAccessAsAdmin: effectiveAdmin,
+  };
+  if (!mainItems.some(m => m.path === '/compromissos')) {
+    const inicioIdx = mainItems.findIndex(m => m.path === '/inicio');
+    const insertAt = inicioIdx >= 0 ? inicioIdx + 1 : 0;
+    mainItems.splice(insertAt, 0, compromissosItem);
+  }
+
   // Paths already in main nav must not appear again in dropdowns (evita duplicata no menu)
   const mainPathsSet = new Set(mainItems.map(m => m.path));
 

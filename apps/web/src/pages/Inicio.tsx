@@ -48,6 +48,7 @@ import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
 import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
+import { useBankingOverview } from "@/hooks/useBankingOverview";
 import { BalanceSummaryCard } from "@/components/inicio/BalanceSummaryCard";
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
@@ -224,6 +225,17 @@ const Inicio: React.FC = () => {
     loading: dashboardLoading,
     error: dashboardError,
   } = useHomeDashboard(currentMonth, effectiveDemoUserId);
+
+  const { data: bankingOverview } = useBankingOverview();
+  const recurringPayments = bankingOverview?.recurring_payments ?? [];
+  const topRecurringExpenses = useMemo(() => {
+    const expenses = recurringPayments.filter(
+      (p) => (p.type ?? "expense") === "expense" || !p.type
+    );
+    return [...expenses]
+      .sort((a, b) => (b.average_amount ?? 0) - (a.average_amount ?? 0))
+      .slice(0, 5);
+  }, [recurringPayments]);
 
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
   const { lancamentos } = useLancamentosRealizados();
@@ -491,6 +503,36 @@ const Inicio: React.FC = () => {
             <CreditCardSpendingCard />
           </DemoCardWrapper>
 
+          {topRecurringExpenses.length > 0 && (
+            <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
+              <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between">
+                <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))]">Compromissos do mês</CardTitle>
+                <Link to="/compromissos" className="text-sm text-primary hover:underline font-medium">Ver todos</Link>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <ul className="space-y-2">
+                  {topRecurringExpenses.map((item, i) => (
+                    <li key={item.id ?? i} className="flex items-center justify-between gap-2 py-1.5 border-b border-[hsl(var(--color-border-subtle))] last:border-0">
+                      <span className="text-sm font-medium text-[hsl(var(--color-text-primary))] truncate min-w-0">
+                        {(item.description ?? "").trim() || "Sem nome"}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs tabular-nums text-[hsl(var(--color-text-muted))]">
+                          {isHidden ? "••••" : formatCurrency(item.average_amount ?? 0)}
+                        </span>
+                        {item.seen_this_month ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">✓ Pago</span>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">A pagar</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
           <InsuranceExpirationAlerts />
           <UpcomingEventsCard />
 
@@ -646,6 +688,34 @@ const Inicio: React.FC = () => {
 
           {isDemoMode && <OnboardingInsightCard />}
           {showControlBanner && <ControlOnboardingBanner />}
+
+          {topRecurringExpenses.length > 0 && (
+            <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[hsl(var(--color-border-subtle))]">
+                <h2 className="text-[14px] font-semibold text-[hsl(var(--color-text-primary))]">Compromissos do mês</h2>
+                <Link to="/compromissos" className="text-sm text-primary hover:underline font-medium">Ver todos</Link>
+              </div>
+              <div className="space-y-2 p-5">
+                {topRecurringExpenses.map((item, i) => (
+                  <div key={item.id ?? i} className="flex items-center justify-between rounded-lg border border-[hsl(var(--color-border-subtle))] p-3">
+                    <span className="font-medium truncate text-[hsl(var(--color-text-primary))]">
+                      {(item.description ?? "").trim() || "Sem nome"}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
+                        {isHidden ? "••••" : formatCurrency(item.average_amount ?? 0)}
+                      </span>
+                      {item.seen_this_month ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">✓ Pago</span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">A pagar</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Atalhos em uma única linha compacta */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -18,7 +18,9 @@ import {
   User,
   TreesIcon,
   PieChartIcon,
+  Info,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePluggyInvestments, InvestmentCategoryData, InvestmentCategory } from '@/hooks/usePluggyInvestments';
@@ -49,7 +51,7 @@ const categoryConfig: Record<InvestmentCategory, { icon: React.ReactNode; color:
 
 
 export const PluggyInvestmentsSection: React.FC = () => {
-  const { categories, totalBalance, isLoading, refetch, investments, filters, setFilters, filterOptions, hasActiveFilters, allInvestments } = usePluggyInvestments();
+  const { categories, totalBalance, totals, summaryByCategory, isLoading, refetch, investments, filters, setFilters, filterOptions, hasActiveFilters, allInvestments } = usePluggyInvestments();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [chartType, setChartType] = useState<'treemap' | 'pie'>('treemap');
@@ -94,7 +96,54 @@ export const PluggyInvestmentsSection: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm text-muted-foreground">Open Finance — Investimentos</p>
-              <p className="text-3xl font-bold text-primary">{formatCurrency(totalBalance)}</p>
+              {totals != null ? (
+                <TooltipProvider>
+                  <div className="space-y-0.5 mt-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] text-muted-foreground">Valor bruto</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex text-muted-foreground hover:text-foreground cursor-help">
+                            <Info className="h-3.5 w-3.5" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[240px]">
+                          Valor nominal aplicado. Use para comparar com o app do seu banco.
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <p className="text-xl font-bold text-primary">{formatCurrency(totals.gross_total)}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[11px] text-muted-foreground">Valor líquido</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex text-muted-foreground hover:text-foreground cursor-help">
+                            <Info className="h-3.5 w-3.5" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[240px]">
+                          Estimativa após IR (Renda Fixa) e ajuste de cota (Fundos).
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <p className="text-xl font-bold text-primary">{formatCurrency(totals.net_total)}</p>
+                    {totals.gross_net_spread > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="text-sm text-muted-foreground border-t border-primary/20 pt-1 mt-1">
+                            Δ {formatCurrency(totals.gross_net_spread)} <span className="text-[11px]">(IR est. + lag de cota)</span>
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[280px]">
+                          Diferença entre valor bruto e líquido. Para Renda Fixa inclui IR estimado. Para Fundos pode refletir diferença de cota com o banco.
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </TooltipProvider>
+              ) : (
+                <p className="text-3xl font-bold text-primary">{formatCurrency(totalBalance)}</p>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
                 {investments.length} ativos{hasActiveFilters ? ` (de ${allInvestments.length})` : ' sincronizados'}
               </p>
@@ -293,6 +342,9 @@ export const PluggyInvestmentsSection: React.FC = () => {
       {categories.map(cat => {
         const config = categoryConfig[cat.category];
         const isExpanded = expandedCategories.has(cat.category);
+        const summaryRow = summaryByCategory[cat.category];
+        const showGrossNet = summaryRow && summaryRow.gross_net_spread > 0;
+        const deltaLabel = cat.category === 'Renda Fixa' ? 'IR est.' : cat.category === 'Fundos' ? 'lag de cota' : '';
 
         return (
           <Card key={cat.category}>
@@ -307,7 +359,14 @@ export const PluggyInvestmentsSection: React.FC = () => {
                       {config.icon}
                     </div>
                     <div>
-                      <CardTitle className="text-base">{cat.category}</CardTitle>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-base">{cat.category}</CardTitle>
+                        {summaryRow?.has_stale_data && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40">
+                            Cota desatualizada
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {cat.items.length} {cat.items.length === 1 ? 'ativo' : 'ativos'}
                       </p>
@@ -315,8 +374,20 @@ export const PluggyInvestmentsSection: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <p className="font-semibold text-lg">{formatCurrency(cat.totalBalance)}</p>
-                      <div className="flex items-center gap-2 justify-end">
+                      {showGrossNet && summaryRow ? (
+                        <>
+                          <p className="text-[11px] text-muted-foreground">Bruto</p>
+                          <p className="font-semibold text-sm">{formatCurrency(summaryRow.gross_balance)}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">Líq.</p>
+                          <p className="font-semibold text-sm">{formatCurrency(summaryRow.net_balance)}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            (−{formatCurrency(summaryRow.gross_net_spread)} {deltaLabel})
+                          </p>
+                        </>
+                      ) : (
+                        <p className="font-semibold text-lg">{formatCurrency(cat.totalBalance)}</p>
+                      )}
+                      <div className="flex items-center gap-2 justify-end mt-1">
                         <Badge variant="secondary" className="text-xs">
                           {cat.allocationPercent.toFixed(1)}%
                         </Badge>
@@ -397,6 +468,16 @@ export const PluggyInvestmentsSection: React.FC = () => {
           </Card>
         );
       })}
+
+      {/* Alerta global de posições suspeitas */}
+      {totals != null && totals.suspect_zero_total > 0 && (
+        <div className="rounded-lg p-3 mt-3 text-[13px] bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-400/50">
+          <strong>{totals.suspect_zero_total} posição{totals.suspect_zero_total > 1 ? 'ões' : ''} a confirmar</strong>
+          {' '}— A sincronização retornou {totals.suspect_zero_total} ativo{totals.suspect_zero_total > 1 ? 's' : ''} com
+          saldo zero que podem ainda ter posição aberta no seu banco. Verifique diretamente no
+          app da XP e adicione manualmente se necessário.
+        </div>
+      )}
     </div>
   );
 };
