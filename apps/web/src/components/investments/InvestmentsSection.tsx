@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePluggyInvestments, type PluggyInvestment, type InvestmentSummary } from '@/hooks/usePluggyInvestments';
 import { formatCurrency } from '@/lib/utils';
+import { formatInvestmentYield, getInvestmentStatusBadge, getDueDateUrgency } from '@/utils/investments';
 import { toast } from 'sonner';
 import {
   TrendingUp,
@@ -19,7 +20,7 @@ import {
   AlertTriangle,
   LineChart,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,6 +28,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType }> = {
@@ -34,6 +41,7 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType }> = 
   FIXED_INCOME: { label: 'Renda Fixa', icon: ShieldCheck },
   TREASURE: { label: 'Tesouro Direto', icon: Landmark },
   STOCK: { label: 'Ações', icon: BarChart2 },
+  EQUITY: { label: 'Ações', icon: BarChart2 },
   ETF: { label: 'ETF', icon: PieChart },
   PENSION: { label: 'Previdência', icon: Umbrella },
   REAL_ESTATE_FUND: { label: 'FIIs', icon: Building2 },
@@ -92,10 +100,53 @@ function isStale(isoDate: string | null): boolean {
   return min == null || min > 24 * 60;
 }
 
+/** Rentabilidade para exibição na tabela por tipo. */
+function getRendimentoDisplay(inv: PluggyInvestment): { text: string; className: string } {
+  const yieldStr = formatInvestmentYield({
+    rate: inv.rate,
+    rate_type: inv.rate_type,
+    fixed_annual_rate: inv.fixed_annual_rate,
+    annual_rate: inv.annual_rate,
+  });
+  if (yieldStr) {
+    return { text: yieldStr, className: 'text-foreground' };
+  }
+  const twelve = inv.last_twelve_months_rate;
+  if ((inv.type === 'EQUITY' || inv.type === 'ETF') && twelve != null) {
+    const n = Number(twelve);
+    const cls = n >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+    const sign = n >= 0 ? '+' : '';
+    return { text: `12m: ${sign}${new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}%`, className: cls };
+  }
+  const one = inv.last_month_rate;
+  if (inv.type === 'MUTUAL_FUND' && one != null) {
+    const n = Number(one);
+    const cls = n >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+    const sign = n >= 0 ? '+' : '';
+    return { text: `1m: ${sign}${new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}%`, className: cls };
+  }
+  return { text: '—', className: 'text-muted-foreground' };
+}
+
+type SortKey = 'balance' | 'due_date';
+type StatusFilter = 'all' | 'ACTIVE' | 'PENDING' | 'TOTAL_WITHDRAWAL';
+
 export const InvestmentsSection: React.FC = () => {
-  const { investments, summary, totalBalance, loading, error, hasSyncedData, refetch } = usePluggyInvestments();
+  const {
+    investments,
+    summary,
+    totalBalance,
+    totalAmount,
+    totalTaxes,
+    loading,
+    error,
+    hasSyncedData,
+    refetch,
+  } = usePluggyInvestments();
   const [syncing, setSyncing] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>('balance');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const latestUpdatedAt = useMemo(() => {
     const dates = investments
@@ -106,6 +157,32 @@ export const InvestmentsSection: React.FC = () => {
   }, [investments]);
 
   const showStaleBanner = hasSyncedData && isStale(latestUpdatedAt);
+
+  const filteredInvestments = useMemo(() => {
+    let list = investments;
+    if (statusFilter === 'ACTIVE') {
+      list = list.filter((i) => i.status === 'ACTIVE' || i.status === null);
+    } else if (statusFilter === 'PENDING') {
+      list = list.filter((i) => i.status === 'PENDING');
+    } else if (statusFilter === 'TOTAL_WITHDRAWAL') {
+      list = list.filter((i) => i.status === 'TOTAL_WITHDRAWAL');
+    }
+    return [...list].sort((a, b) => {
+      if (sortKey === 'due_date') {
+        const da = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const db = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return da - db;
+      }
+      return (Number(b.balance) || 0) - (Number(a.balance) || 0);
+    });
+  }, [investments, statusFilter, sortKey]);
+
+  const statusCounts = useMemo(() => {
+    const active = investments.filter((i) => i.status === 'ACTIVE' || i.status === null).length;
+    const pending = investments.filter((i) => i.status === 'PENDING').length;
+    const closed = investments.filter((i) => i.status === 'TOTAL_WITHDRAWAL').length;
+    return { active, pending, closed };
+  }, [investments]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -170,6 +247,8 @@ export const InvestmentsSection: React.FC = () => {
     );
   }
 
+  const showBrutoTaxes = totalAmount > totalBalance || totalTaxes > 0;
+
   return (
     <div className="space-y-4">
       {showStaleBanner && (
@@ -185,11 +264,23 @@ export const InvestmentsSection: React.FC = () => {
 
       {/* Card total */}
       <Card className="rounded-[14px] border border-border">
-        <CardContent className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
+        <CardContent className="p-4 sm:p-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Total em investimentos</p>
+            {showBrutoTaxes && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Total bruto: <span className="font-mono tabular-nums">{formatCurrency(totalAmount)}</span>
+                </p>
+                {totalTaxes > 0 && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    IR/IOF: <span className="font-mono tabular-nums">-{formatCurrency(totalTaxes)}</span>
+                  </p>
+                )}
+              </>
+            )}
             <p className="font-mono text-xl sm:text-2xl font-semibold tabular-nums text-foreground mt-0.5">
-              {formatCurrency(totalBalance)}
+              Saldo líq.: {formatCurrency(totalBalance)}
             </p>
           </div>
           <Badge variant="secondary" className="text-xs font-normal">
@@ -202,6 +293,10 @@ export const InvestmentsSection: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {(summary as InvestmentSummary[]).map((s) => {
           const Icon = getTypeIcon(s.investment_type);
+          const avgRate = s.avg_fixed_annual_rate ?? s.avg_annual_rate ?? null;
+          const activeC = s.active_count ?? s.count;
+          const showActiveWarning = activeC < s.count && s.count > 0;
+          const totalTaxesVal = s.total_taxes != null ? Number(s.total_taxes) : 0;
           return (
             <Card key={s.investment_type} className="rounded-[14px] border border-border">
               <CardContent className="p-4 flex items-center gap-3">
@@ -213,7 +308,19 @@ export const InvestmentsSection: React.FC = () => {
                   <p className="font-mono text-sm font-semibold tabular-nums text-foreground">
                     {formatCurrency(Number(s.total_balance))}
                   </p>
-                  <p className="text-xs text-muted-foreground">{s.count} item{s.count !== 1 ? 's' : ''}</p>
+                  {avgRate != null && Number(avgRate) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Taxa média: {formatPercent(avgRate)}
+                    </p>
+                  )}
+                  <p className={cn('text-xs', showActiveWarning && 'text-amber-600 dark:text-amber-400')}>
+                    {showActiveWarning ? `${activeC} de ${s.count} ativos` : `${s.count} item${s.count !== 1 ? 's' : ''}`}
+                  </p>
+                  {s.investment_type === 'FIXED_INCOME' && totalTaxesVal > 0 && (
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      IR/IOF: {formatCurrency(totalTaxesVal)}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -238,37 +345,185 @@ export const InvestmentsSection: React.FC = () => {
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent>
+            {/* Filtro de status e ordenação */}
+            <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-t border-border bg-muted/30">
+              <span className="text-xs font-medium text-muted-foreground">Status:</span>
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  variant={statusFilter === 'all' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setStatusFilter('all')}
+                >
+                  Todos
+                </Button>
+                {statusCounts.active > 0 && (
+                  <Button
+                    variant={statusFilter === 'ACTIVE' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setStatusFilter('ACTIVE')}
+                  >
+                    Ativos ({statusCounts.active})
+                  </Button>
+                )}
+                {statusCounts.pending > 0 && (
+                  <Button
+                    variant={statusFilter === 'PENDING' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setStatusFilter('PENDING')}
+                  >
+                    Pendentes ({statusCounts.pending})
+                  </Button>
+                )}
+                {statusCounts.closed > 0 && (
+                  <Button
+                    variant={statusFilter === 'TOTAL_WITHDRAWAL' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setStatusFilter('TOTAL_WITHDRAWAL')}
+                  >
+                    Encerrados ({statusCounts.closed})
+                  </Button>
+                )}
+              </div>
+              <span className="text-xs font-medium text-muted-foreground ml-2">Ordenar:</span>
+              <Button
+                variant={sortKey === 'balance' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSortKey('balance')}
+              >
+                Saldo
+              </Button>
+              <Button
+                variant={sortKey === 'due_date' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setSortKey('due_date')}
+              >
+                Vencimento
+              </Button>
+            </div>
             <div className="overflow-x-auto border-t border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wider">
-                    <th className="text-left p-3 font-medium">Nome</th>
-                    <th className="text-left p-3 font-medium">Tipo</th>
-                    <th className="text-left p-3 font-medium">Emissor</th>
-                    <th className="text-right p-3 font-medium">Taxa (% a.a.)</th>
-                    <th className="text-right p-3 font-medium">Vencimento</th>
-                    <th className="text-right p-3 font-medium">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(investments as PluggyInvestment[]).map((inv) => (
-                    <tr key={inv.id} className="border-t border-border/50">
-                      <td className="p-3 font-medium text-foreground truncate max-w-[140px]">{inv.name}</td>
-                      <td className="p-3 text-muted-foreground">{getTypeLabel(inv.type)}</td>
-                      <td className="p-3 text-muted-foreground truncate max-w-[100px]">{inv.issuer ?? '—'}</td>
-                      <td className="p-3 text-right font-mono tabular-nums text-muted-foreground">
-                        {formatPercent(inv.fixed_annual_rate ?? inv.rate)}
-                      </td>
-                      <td className="p-3 text-right font-mono tabular-nums text-muted-foreground">
-                        {formatDueDate(inv.due_date)}
-                      </td>
-                      <td className="p-3 text-right font-mono font-medium tabular-nums text-foreground">
-                        {formatCurrency(Number(inv.balance))}
-                      </td>
+              <TooltipProvider>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-muted/50 text-muted-foreground text-xs uppercase tracking-wider">
+                      <th className="text-left p-3 font-medium">Nome</th>
+                      <th className="text-left p-3 font-medium">Tipo</th>
+                      <th className="text-left p-3 font-medium">Emissor</th>
+                      <th className="text-right p-3 font-medium">Rendimento</th>
+                      <th className="text-right p-3 font-medium">Vencimento</th>
+                      <th className="text-right p-3 font-medium">Saldo</th>
+                      <th className="text-right p-3 font-medium">IR/IOF</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredInvestments.map((inv) => {
+                      const statusBadge = getInvestmentStatusBadge(inv.status);
+                      const urgency = getDueDateUrgency(inv.due_date);
+                      const rend = getRendimentoDisplay(inv);
+                      const invTaxes = (inv.taxes ?? 0) + (inv.taxes2 ?? 0);
+                      const showTaxesCol = inv.type === 'FIXED_INCOME';
+                      return (
+                        <tr key={inv.id} className="border-t border-border/50">
+                          <td className="p-3 max-w-[180px]">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-medium text-foreground truncate">
+                                  {inv.marketing_name ?? inv.name}
+                                </span>
+                                {statusBadge && (
+                                  <Badge
+                                    variant={statusBadge.variant === 'success' ? 'default' : statusBadge.variant === 'warning' ? 'secondary' : 'outline'}
+                                    className={cn(
+                                      'text-[10px]',
+                                      statusBadge.variant === 'success' && 'bg-green-600',
+                                      statusBadge.variant === 'warning' && 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
+                                      statusBadge.variant === 'neutral' && 'bg-muted text-muted-foreground'
+                                    )}
+                                  >
+                                    {statusBadge.label}
+                                  </Badge>
+                                )}
+                              </div>
+                              {inv.code && (
+                                <span className="font-mono text-xs text-muted-foreground">{inv.code}</span>
+                              )}
+                              {inv.isin ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-[10px] text-muted-foreground cursor-help truncate block">ISIN: {inv.isin}</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="font-mono text-xs">{inv.isin}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="p-3 text-muted-foreground">{getTypeLabel(inv.type)}</td>
+                          <td className="p-3 text-muted-foreground truncate max-w-[100px]">{inv.issuer ?? '—'}</td>
+                          <td className={cn('p-3 text-right font-mono tabular-nums text-xs', rend.className)}>
+                            {rend.text}
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="font-mono tabular-nums text-muted-foreground">
+                                {formatDueDate(inv.due_date)}
+                              </span>
+                              {urgency && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'text-[10px]',
+                                    urgency.variant === 'danger' && 'border-red-500/50 text-red-600 dark:text-red-400',
+                                    urgency.variant === 'warning' && 'border-amber-500/50 text-amber-600 dark:text-amber-400'
+                                  )}
+                                >
+                                  {urgency.label}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex flex-col items-end">
+                              <span className="font-mono font-medium tabular-nums text-foreground">
+                                {formatCurrency(Number(inv.balance))}
+                              </span>
+                              {inv.amount_original != null && Number(inv.amount_original) !== Number(inv.balance) && (
+                                <span className="text-xs text-muted-foreground">Investido: {formatCurrency(Number(inv.amount_original))}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-right">
+                            {showTaxesCol ? (
+                              invTaxes > 0 ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="font-mono text-xs tabular-nums text-red-600 dark:text-red-400 cursor-help">
+                                      {formatCurrency(invTaxes)}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Imposto de Renda estimado sobre o rendimento</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </TooltipProvider>
             </div>
           </CollapsibleContent>
         </Card>

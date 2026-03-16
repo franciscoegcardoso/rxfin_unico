@@ -88,6 +88,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [openAsVehicleOnly, setOpenAsVehicleOnly] = useState(false);
+  const [dialogLockedType, setDialogLockedType] = useState(false);
 
   // Delete state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -105,6 +106,7 @@ const BensInvestimentosLayout: React.FC = () => {
 
   const [defaultAssetType, setDefaultAssetType] = useState<AssetType>('property');
   useEffect(() => {
+    if (currentTab === 'participacoes' || currentTab === 'intangiveis') return;
     const next: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : currentTab === 'passivos' ? 'obligations' : 'property';
     setDefaultAssetType(next);
   }, [currentTab, openAsVehicleOnly]);
@@ -123,8 +125,9 @@ const BensInvestimentosLayout: React.FC = () => {
   const netWorth = patrimonioData?.net_worth;
 
   // --- Context callbacks ---
-  const handleOpenAddDialog = useCallback((institutionId?: string, investmentType?: InvestmentType, defaultAssetType?: AssetType) => {
+  const handleOpenAddDialog = useCallback((institutionId?: string, investmentType?: InvestmentType, defaultAssetType?: AssetType, lockedType?: boolean) => {
     if (defaultAssetType != null) setDefaultAssetType(defaultAssetType);
+    setDialogLockedType(lockedType ?? false);
     setEditingAsset(null);
     setIsDialogOpen(true);
   }, []);
@@ -487,12 +490,16 @@ const BensInvestimentosLayout: React.FC = () => {
           <AddAssetDialog
             open={isDialogOpen}
             onOpenChange={(open) => {
-              if (!open) setOpenAsVehicleOnly(false);
+              if (!open) {
+                setOpenAsVehicleOnly(false);
+                setDialogLockedType(false);
+              }
               setIsDialogOpen(open);
             }}
             editingAsset={editingAsset}
             defaultType={defaultAssetType}
             vehicleOnly={openAsVehicleOnly}
+            lockedType={dialogLockedType}
           />
 
           {/* Tab Navigation — overflow-x em mobile, ativa sempre visível */}

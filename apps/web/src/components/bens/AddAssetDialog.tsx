@@ -118,6 +118,15 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+const formatCnpjDisplay = (value: string): string => {
+  const nums = value.replace(/\D/g, '').slice(0, 14);
+  if (nums.length <= 2) return nums;
+  if (nums.length <= 5) return `${nums.slice(0, 2)}.${nums.slice(2)}`;
+  if (nums.length <= 8) return `${nums.slice(0, 2)}.${nums.slice(2, 5)}.${nums.slice(5)}`;
+  if (nums.length <= 12) return `${nums.slice(0, 2)}.${nums.slice(2, 5)}.${nums.slice(5, 8)}/${nums.slice(8)}`;
+  return `${nums.slice(0, 2)}.${nums.slice(2, 5)}.${nums.slice(5, 8)}/${nums.slice(8, 12)}-${nums.slice(12)}`;
+};
+
 interface NewAssetForm {
   name: string;
   type: AssetType;
@@ -162,6 +171,7 @@ interface NewAssetForm {
   companyAnnualProfit: number;
   companyCashPosition: number;
   companyCalculatedValue: number;
+  companyCnpj: string;
   // Campos para investimentos
   investmentType: InvestmentType;
   investmentInstitutionId: string;
@@ -171,6 +181,27 @@ interface NewAssetForm {
   // Campos para previdência corporativa
   isCorporatePension: boolean;
   corporatePensionConfig: Partial<CorporatePensionConfig>;
+  // Intangíveis (lockedType): validade, receita
+  intangibleValidityDate: Date | undefined;
+  intangibleNoValidity: boolean;
+  intangibleGeneratesRevenue: boolean;
+  intangibleMonthlyRevenue: number;
+  // Passivos (lockedType): subtipo e campos
+  passivoSubtype: 'financing' | 'consortium' | 'debt';
+  passivoParcelaMensal: number;
+  passivoDataInicio: Date | undefined;
+  passivoBanco: string;
+  passivoValorTotalFinanciado: number;
+  passivoTotalParcelas: number;
+  passivoParcelasPagas: number;
+  passivoTaxaJuros: number;
+  passivoAdministradora: string;
+  passivoValorBem: number;
+  passivoContemplado: boolean;
+  passivoDataContemplacao: Date | undefined;
+  passivoCredor: string;
+  passivoValorTotalDivida: number;
+  passivoDataVencimento: Date | undefined;
 }
 
 const defaultCorporatePensionConfig: Partial<CorporatePensionConfig> = {
@@ -229,6 +260,7 @@ const initialFormState: NewAssetForm = {
   companyAnnualProfit: 0,
   companyCashPosition: 0,
   companyCalculatedValue: 0,
+  companyCnpj: '',
   // Investimentos defaults
   investmentType: 'renda_fixa',
   investmentInstitutionId: '',
@@ -238,7 +270,44 @@ const initialFormState: NewAssetForm = {
   // Previdência corporativa defaults
   isCorporatePension: false,
   corporatePensionConfig: { ...defaultCorporatePensionConfig },
+  intangibleValidityDate: undefined,
+  intangibleNoValidity: true,
+  intangibleGeneratesRevenue: false,
+  intangibleMonthlyRevenue: 0,
+  passivoSubtype: 'debt',
+  passivoParcelaMensal: 0,
+  passivoDataInicio: undefined,
+  passivoBanco: '',
+  passivoValorTotalFinanciado: 0,
+  passivoTotalParcelas: 0,
+  passivoParcelasPagas: 0,
+  passivoTaxaJuros: 0,
+  passivoAdministradora: '',
+  passivoValorBem: 0,
+  passivoContemplado: false,
+  passivoDataContemplacao: undefined,
+  passivoCredor: '',
+  passivoValorTotalDivida: 0,
+  passivoDataVencimento: undefined,
 };
+
+/** Title and subtitle when dialog is opened with lockedType from a specific tab */
+function getDialogMeta(type: string, passivoSubtype?: string): { title: string; subtitle: string } {
+  if (type === 'obligations' && passivoSubtype === 'financing') return { title: 'Novo Financiamento', subtitle: 'Financiamento de imóvel, veículo ou outros bens' };
+  if (type === 'obligations' && passivoSubtype === 'consortium') return { title: 'Novo Consórcio', subtitle: 'Consórcio em andamento no seu nome' };
+  const map: Record<string, { title: string; subtitle: string }> = {
+    company: { title: 'Nova Participação', subtitle: 'Cadastre uma empresa ou participação societária' },
+    intellectual_property: { title: 'Nova Propriedade Intelectual', subtitle: 'Patentes, marcas registradas e direitos autorais' },
+    licenses_software: { title: 'Nova Licença / Software', subtitle: 'Licenças e softwares com valor patrimonial' },
+    contract_right: { title: 'Novo Direito Contratual', subtitle: 'Direitos contratuais e valores a receber' },
+    rights: { title: 'Novo Direito Contratual', subtitle: 'Direitos contratuais e valores a receber' },
+    financing: { title: 'Novo Financiamento', subtitle: 'Financiamento de imóvel, veículo ou outros bens' },
+    consortium: { title: 'Novo Consórcio', subtitle: 'Consórcio em andamento no seu nome' },
+    obligations: { title: 'Nova Dívida / Obrigação', subtitle: 'Dívidas e compromissos financeiros a pagar' },
+    debt: { title: 'Nova Dívida / Obrigação', subtitle: 'Dívidas e compromissos financeiros a pagar' },
+  };
+  return map[type] ?? { title: 'Novo Bem', subtitle: 'Cadastre um novo item ao seu patrimônio' };
+}
 
 interface AddAssetDialogProps {
   open: boolean;
@@ -247,6 +316,8 @@ interface AddAssetDialogProps {
   defaultType?: AssetType; // To open directly in investment mode
   /** When true, title is "Adicionar novo veículo" and Tipo field is hidden (type is vehicle) */
   vehicleOnly?: boolean;
+  /** When true, Tipo selector is hidden and title/subtitle use context-specific text from defaultType */
+  lockedType?: boolean;
 }
 
 export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
@@ -255,6 +326,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
   editingAsset,
   defaultType = 'property',
   vehicleOnly = false,
+  lockedType = false,
 }) => {
   const { config, addAsset, updateAsset } = useFinancial();
   const { addMultipleContas } = useContasPagarReceber();
@@ -376,6 +448,10 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           companyAnnualProfit: editingAsset.companyAnnualProfit || 0,
           companyCashPosition: editingAsset.companyCashPosition || 0,
           companyCalculatedValue: editingAsset.companyCalculatedValue || 0,
+          companyCnpj: (() => {
+            const raw = (editingAsset as { metadata?: { companyCnpj?: string; cnpj?: string } }).metadata?.companyCnpj ?? (editingAsset as { metadata?: { cnpj?: string } }).metadata?.cnpj ?? '';
+            return typeof raw === 'string' && raw.length > 0 ? formatCnpjDisplay(raw) : '';
+          })(),
           // Investment fields
           investmentType: editingAsset.investmentType || 'renda_fixa',
           investmentInstitutionId: editingAsset.investmentInstitutionId || '',
@@ -385,6 +461,34 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           // Corporate pension fields
           isCorporatePension: editingAsset.isCorporatePension || false,
           corporatePensionConfig: editingAsset.corporatePensionConfig || { ...defaultCorporatePensionConfig },
+          ...((): Partial<NewAssetForm> => {
+            const meta = (editingAsset as { metadata?: Record<string, unknown> }).metadata;
+            if (!meta) return {};
+            const companySetor = meta.setor as string | undefined;
+            const sectorKeys = ['technology', 'services', 'retail', 'industry', 'finance', 'health', 'agribusiness', 'construction', 'education', 'other'];
+            return {
+              ...(companySetor && sectorKeys.includes(companySetor) ? { companySector: companySetor as CompanySector } : {}),
+              intangibleValidityDate: (meta.dataValidade ?? meta.intangibleValidityDate) ? new Date((meta.dataValidade ?? meta.intangibleValidityDate) as string) : undefined,
+              intangibleNoValidity: (meta.semValidade ?? meta.intangibleNoValidity) as boolean ?? true,
+              intangibleGeneratesRevenue: (meta.geraReceita ?? meta.intangibleGeneratesRevenue) as boolean ?? false,
+              intangibleMonthlyRevenue: Number(meta.receitaMensal ?? meta.intangibleMonthlyRevenue) || 0,
+              passivoSubtype: (meta.passivoSubtype as 'financing' | 'consortium' | 'debt') || 'debt',
+              passivoParcelaMensal: Number(meta.parcelaMensal) || 0,
+              passivoDataInicio: meta.dataInicio ? new Date(meta.dataInicio as string) : undefined,
+              passivoBanco: (meta.banco as string) ?? '',
+              passivoValorTotalFinanciado: Number(meta.valorTotalFinanciado) || 0,
+              passivoTotalParcelas: Number(meta.totalParcelas) || 0,
+              passivoParcelasPagas: Number(meta.parcelasPagas) || 0,
+              passivoTaxaJuros: Number(meta.taxaJuros) || 0,
+              passivoAdministradora: (meta.administradora as string) ?? '',
+              passivoValorBem: Number(meta.valorBem) || 0,
+              passivoContemplado: (meta.contemplado as boolean) ?? false,
+              passivoDataContemplacao: meta.dataContemplacao ? new Date(meta.dataContemplacao as string) : undefined,
+              passivoCredor: (meta.credor as string) ?? '',
+              passivoValorTotalDivida: Number(meta.valorTotalDivida) || 0,
+              passivoDataVencimento: meta.dataVencimento ? new Date(meta.dataVencimento as string) : undefined,
+            };
+          })(),
         });
         setLinkedExpenses(editingAsset.linkedExpenses || []);
         
@@ -398,7 +502,11 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           });
         }
       } else {
-        setNewAsset({ ...initialFormState, type: defaultType });
+        setNewAsset({
+          ...initialFormState,
+          type: defaultType,
+          ...(defaultType === 'obligations' ? { passivoSubtype: 'financing' as const } : {}),
+        });
         setLinkedExpenses([]);
         setInsuranceData(defaultInsuranceData);
         fipe.reset();
@@ -525,7 +633,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
   };
 
   const buildAssetData = () => {
-    return {
+    const result = {
       name: newAsset.name,
       type: newAsset.type,
       value: newAsset.value,
@@ -579,6 +687,38 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
       investmentQuantity: newAsset.type === 'investment' && newAsset.investmentQuantity > 0 ? newAsset.investmentQuantity : undefined,
       investmentAveragePrice: newAsset.type === 'investment' && newAsset.investmentAveragePrice > 0 ? newAsset.investmentAveragePrice : undefined,
     };
+    const metadata: Record<string, unknown> = {};
+    if (newAsset.type === 'company') {
+      if (newAsset.companyCnpj?.replace(/\D/g, '').length === 14) metadata.cnpj = newAsset.companyCnpj.replace(/\D/g, '');
+      if (newAsset.companySector) metadata.setor = newAsset.companySector;
+    }
+    if ((['intellectual_property', 'licenses_software', 'rights'] as const).includes(newAsset.type)) {
+      if (!newAsset.intangibleNoValidity && newAsset.intangibleValidityDate) metadata.dataValidade = format(newAsset.intangibleValidityDate, 'yyyy-MM-dd');
+      metadata.semValidade = newAsset.intangibleNoValidity;
+      metadata.geraReceita = newAsset.intangibleGeneratesRevenue;
+      if (newAsset.intangibleGeneratesRevenue) metadata.receitaMensal = newAsset.intangibleMonthlyRevenue;
+    }
+    if (newAsset.type === 'obligations') {
+      metadata.passivoSubtype = newAsset.passivoSubtype;
+      metadata.parcelaMensal = newAsset.passivoParcelaMensal || undefined;
+      metadata.dataInicio = newAsset.passivoDataInicio ? format(newAsset.passivoDataInicio, 'yyyy-MM-dd') : undefined;
+      metadata.banco = newAsset.passivoBanco || undefined;
+      metadata.valorTotalFinanciado = newAsset.passivoValorTotalFinanciado || undefined;
+      metadata.totalParcelas = newAsset.passivoTotalParcelas || undefined;
+      metadata.parcelasPagas = newAsset.passivoParcelasPagas || undefined;
+      metadata.taxaJuros = newAsset.passivoTaxaJuros || undefined;
+      metadata.administradora = newAsset.passivoAdministradora || undefined;
+      metadata.valorBem = newAsset.passivoValorBem || undefined;
+      metadata.contemplado = newAsset.passivoContemplado || undefined;
+      metadata.dataContemplacao = newAsset.passivoContemplado && newAsset.passivoDataContemplacao ? format(newAsset.passivoDataContemplacao, 'yyyy-MM-dd') : undefined;
+      metadata.credor = newAsset.passivoCredor || undefined;
+      metadata.valorTotalDivida = newAsset.passivoValorTotalDivida || undefined;
+      metadata.dataVencimento = newAsset.passivoDataVencimento ? format(newAsset.passivoDataVencimento, 'yyyy-MM-dd') : undefined;
+    }
+    if (Object.keys(metadata).length > 0) {
+      (result as Record<string, unknown>).metadata = metadata;
+    }
+    return result;
   };
 
   // Generate contas a pagar/receber for property income and expenses
@@ -948,13 +1088,15 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
         <DialogHeader className={cn("p-6 pb-2", newAsset.type === 'vehicle' && "pr-14 sm:pr-16")}>
           <DialogTitle className="flex items-center justify-between gap-3">
             <span className="min-w-0 flex-1">
-              {newAsset.type === 'investment' 
-                ? (editingAsset ? 'Editar Investimento' : 'Novo Investimento')
-                : newAsset.type === 'property'
-                  ? (editingAsset ? 'Editar Imóvel' : 'Novo Imóvel')
-                  : newAsset.type === 'vehicle' && vehicleOnly
-                    ? (editingAsset ? 'Editar veículo' : 'Adicionar novo veículo')
-                    : (editingAsset ? 'Editar Bem' : 'Novo Bem')
+              {lockedType
+                ? (editingAsset ? `Editar ${getDialogMeta(newAsset.type, newAsset.type === 'obligations' ? newAsset.passivoSubtype : undefined).title.replace(/^Nov[oa]\s+/, '')}` : getDialogMeta(newAsset.type, newAsset.type === 'obligations' ? newAsset.passivoSubtype : undefined).title)
+                : newAsset.type === 'investment'
+                  ? (editingAsset ? 'Editar Investimento' : 'Novo Investimento')
+                  : newAsset.type === 'property'
+                    ? (editingAsset ? 'Editar Imóvel' : 'Novo Imóvel')
+                    : newAsset.type === 'vehicle' && vehicleOnly
+                      ? (editingAsset ? 'Editar veículo' : 'Adicionar novo veículo')
+                      : (editingAsset ? 'Editar Bem' : 'Novo Bem')
               }
             </span>
             {newAsset.type === 'vehicle' && (
@@ -976,14 +1118,16 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
             )}
           </DialogTitle>
           <DialogDescription>
-            {newAsset.type === 'investment' 
-              ? (editingAsset ? 'Altere os dados do investimento' : 'Cadastre um novo investimento na sua carteira')
-              : newAsset.type === 'property'
-                ? 'Preencha as informações do imóvel'
-                : (currentStep === 'details' 
-                    ? (editingAsset ? 'Altere os dados do veículo' : vehicleOnly ? 'Cadastre um novo veículo no seu patrimônio.' : 'Cadastre um novo item ao seu patrimônio')
-                    : 'Configure os custos do veículo para vinculação ao planejamento'
-                  )
+            {lockedType
+              ? getDialogMeta(newAsset.type, newAsset.type === 'obligations' ? newAsset.passivoSubtype : undefined).subtitle
+              : newAsset.type === 'investment'
+                ? (editingAsset ? 'Altere os dados do investimento' : 'Cadastre um novo investimento na sua carteira')
+                : newAsset.type === 'property'
+                  ? 'Preencha as informações do imóvel'
+                  : (currentStep === 'details'
+                      ? (editingAsset ? 'Altere os dados do veículo' : vehicleOnly ? 'Cadastre um novo veículo no seu patrimônio.' : 'Cadastre um novo item ao seu patrimônio')
+                      : 'Configure os custos do veículo para vinculação ao planejamento'
+                    )
             }
           </DialogDescription>
           {newAsset.type === 'property' && (
@@ -1325,6 +1469,177 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
           </div>
           ) : currentStep === 'details' ? (
           <div className="space-y-6 py-4">
+            {lockedType && (newAsset.type === 'intellectual_property' || newAsset.type === 'licenses_software' || newAsset.type === 'rights') ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Sub-tipo</Label>
+                  <Select
+                    value={newAsset.type}
+                    onValueChange={(v: AssetType) => setNewAsset({ ...newAsset, type: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="intellectual_property">Propriedade Intelectual (patente, marca, direito autoral)</SelectItem>
+                      <SelectItem value="licenses_software">Licença / Software</SelectItem>
+                      <SelectItem value="rights">Direito Contratual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome / Identificação <span className="text-destructive">*</span></Label>
+                  <Input id="name" value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value.slice(0, 80) })} placeholder="Ex: Marca X, Patente Y" maxLength={80} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value">Valor Estimado <span className="text-destructive">*</span></Label>
+                  <CurrencyInput id="value" value={newAsset.value} onChange={(value) => setNewAsset({ ...newAsset, value })} placeholder="0" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data de Registro / Início</Label>
+                  <DatePickerFriendly value={newAsset.purchaseDate} onChange={(date) => setNewAsset({ ...newAsset, purchaseDate: date })} placeholder="DD/MM/AAAA" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Switch id="noValidity" checked={newAsset.intangibleNoValidity} onCheckedChange={(checked) => setNewAsset({ ...newAsset, intangibleNoValidity: checked })} />
+                    <Label htmlFor="noValidity" className="cursor-pointer">Sem validade definida</Label>
+                  </div>
+                  {!newAsset.intangibleNoValidity && (
+                    <div className="space-y-2">
+                      <Label>Data de Validade</Label>
+                      <DatePickerFriendly value={newAsset.intangibleValidityDate} onChange={(date) => setNewAsset({ ...newAsset, intangibleValidityDate: date })} placeholder="DD/MM/AAAA" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                  <Label htmlFor="generatesRevenue" className="cursor-pointer">Gera receita?</Label>
+                  <Switch id="generatesRevenue" checked={newAsset.intangibleGeneratesRevenue} onCheckedChange={(checked) => setNewAsset({ ...newAsset, intangibleGeneratesRevenue: checked })} />
+                </div>
+                {newAsset.intangibleGeneratesRevenue && (
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyRevenue">Receita mensal (R$)</Label>
+                    <CurrencyInput id="monthlyRevenue" value={newAsset.intangibleMonthlyRevenue} onChange={(value) => setNewAsset({ ...newAsset, intangibleMonthlyRevenue: value })} placeholder="0" />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição (opcional)</Label>
+                  <Input id="description" value={newAsset.description} onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })} placeholder="Informações adicionais..." />
+                </div>
+              </>
+            ) : lockedType && newAsset.type === 'obligations' ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Sub-tipo passivo</Label>
+                  <Select value={newAsset.passivoSubtype} onValueChange={(v: 'financing' | 'consortium' | 'debt') => setNewAsset({ ...newAsset, passivoSubtype: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="financing">Financiamento</SelectItem>
+                      <SelectItem value="consortium">Consórcio</SelectItem>
+                      <SelectItem value="debt">Dívida / Obrigação</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nome / Identificação <span className="text-destructive">*</span></Label>
+                  <Input id="name" value={newAsset.name} onChange={(e) => setNewAsset({ ...newAsset, name: e.target.value.slice(0, 80) })} placeholder="Ex: Financiamento Imóvel, Cartão XYZ" maxLength={80} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="value">Saldo Devedor Atual (R$) <span className="text-destructive">*</span></Label>
+                  <CurrencyInput id="value" value={newAsset.value} onChange={(value) => setNewAsset({ ...newAsset, value })} placeholder="0" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Parcela Mensal (R$)</Label>
+                    <CurrencyInput value={newAsset.passivoParcelaMensal} onChange={(value) => setNewAsset({ ...newAsset, passivoParcelaMensal: value })} placeholder="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data de Início</Label>
+                    <DatePickerFriendly value={newAsset.passivoDataInicio} onChange={(date) => setNewAsset({ ...newAsset, passivoDataInicio: date })} placeholder="DD/MM/AAAA" />
+                  </div>
+                </div>
+                {newAsset.passivoSubtype === 'financing' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Banco / Instituição</Label>
+                      <Input value={newAsset.passivoBanco} onChange={(e) => setNewAsset({ ...newAsset, passivoBanco: e.target.value })} placeholder="Ex: Banco XYZ" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Valor Total Financiado (R$)</Label>
+                      <CurrencyInput value={newAsset.passivoValorTotalFinanciado} onChange={(value) => setNewAsset({ ...newAsset, passivoValorTotalFinanciado: value })} placeholder="0" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Total de Parcelas</Label>
+                        <Input type="number" min={0} value={newAsset.passivoTotalParcelas || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoTotalParcelas: parseInt(e.target.value, 10) || 0 })} placeholder="0" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Parcelas Pagas</Label>
+                        <Input type="number" min={0} value={newAsset.passivoParcelasPagas || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoParcelasPagas: parseInt(e.target.value, 10) || 0 })} placeholder="0" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Taxa de Juros (% a.m.)</Label>
+                      <Input type="number" step={0.01} value={newAsset.passivoTaxaJuros || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoTaxaJuros: parseFloat(e.target.value) || 0 })} placeholder="0" />
+                    </div>
+                  </>
+                )}
+                {newAsset.passivoSubtype === 'consortium' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Administradora</Label>
+                      <Input value={newAsset.passivoAdministradora} onChange={(e) => setNewAsset({ ...newAsset, passivoAdministradora: e.target.value })} placeholder="Ex: Administradora X" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Valor do Bem (R$)</Label>
+                      <CurrencyInput value={newAsset.passivoValorBem} onChange={(value) => setNewAsset({ ...newAsset, passivoValorBem: value })} placeholder="0" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Total de Parcelas</Label>
+                        <Input type="number" min={0} value={newAsset.passivoTotalParcelas || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoTotalParcelas: parseInt(e.target.value, 10) || 0 })} placeholder="0" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Parcelas Pagas</Label>
+                        <Input type="number" min={0} value={newAsset.passivoParcelasPagas || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoParcelasPagas: parseInt(e.target.value, 10) || 0 })} placeholder="0" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                      <Label htmlFor="contemplado" className="cursor-pointer">Contemplado?</Label>
+                      <Switch id="contemplado" checked={newAsset.passivoContemplado} onCheckedChange={(checked) => setNewAsset({ ...newAsset, passivoContemplado: checked })} />
+                    </div>
+                    {newAsset.passivoContemplado && (
+                      <div className="space-y-2">
+                        <Label>Data da Contemplação</Label>
+                        <DatePickerFriendly value={newAsset.passivoDataContemplacao} onChange={(date) => setNewAsset({ ...newAsset, passivoDataContemplacao: date })} placeholder="DD/MM/AAAA" />
+                      </div>
+                    )}
+                  </>
+                )}
+                {newAsset.passivoSubtype === 'debt' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Credor (opcional)</Label>
+                      <Input value={newAsset.passivoCredor} onChange={(e) => setNewAsset({ ...newAsset, passivoCredor: e.target.value })} placeholder="Ex: Banco XYZ, Cartão ABC" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Valor Total da Dívida (R$)</Label>
+                      <CurrencyInput value={newAsset.passivoValorTotalDivida} onChange={(value) => setNewAsset({ ...newAsset, passivoValorTotalDivida: value })} placeholder="0" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Taxa de Juros (% a.m., opcional)</Label>
+                      <Input type="number" step={0.01} value={newAsset.passivoTaxaJuros || ''} onChange={(e) => setNewAsset({ ...newAsset, passivoTaxaJuros: parseFloat(e.target.value) || 0 })} placeholder="0" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data de Vencimento (opcional)</Label>
+                      <DatePickerFriendly value={newAsset.passivoDataVencimento} onChange={(date) => setNewAsset({ ...newAsset, passivoDataVencimento: date })} placeholder="DD/MM/AAAA" />
+                    </div>
+                  </>
+                )}
+                <div className="space-y-2">
+                  <Label>Descrição (opcional)</Label>
+                  <Input value={newAsset.description} onChange={(e) => setNewAsset({ ...newAsset, description: e.target.value })} placeholder="Ex: Banco, credor..." />
+                </div>
+              </>
+            ) : (
+            <>
             {/* Para veículo: uma única seção FIPE (Tipo, Marca, Modelo, Ano — dados da FIPE) */}
             {newAsset.type === 'vehicle' && (
               <div className="border border-border rounded-xl p-5 space-y-4 bg-card/50">
@@ -1364,7 +1679,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                 />
               </div>
 
-              {!vehicleOnly && (
+              {!vehicleOnly && !lockedType && (
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>
                   <Select
@@ -1697,22 +2012,37 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
 
             {/* Opções para Empresas */}
             {newAsset.type === 'company' && (
-              <CompanyForm
-                data={{
-                  companyValuationType: newAsset.companyValuationType,
-                  companyOwnershipPercent: newAsset.companyOwnershipPercent,
-                  companyMarketValue: newAsset.companyMarketValue,
-                  companySector: newAsset.companySector,
-                  companyAnnualProfit: newAsset.companyAnnualProfit,
-                  companyCashPosition: newAsset.companyCashPosition,
-                }}
-                onChange={(data) => setNewAsset(prev => ({ ...prev, ...data }))}
-                onValueChange={(value, calculatedValue) => setNewAsset(prev => ({
-                  ...prev,
-                  value,
-                  companyCalculatedValue: calculatedValue || 0,
-                }))}
-              />
+              <>
+                <CompanyForm
+                  data={{
+                    companyValuationType: newAsset.companyValuationType,
+                    companyOwnershipPercent: newAsset.companyOwnershipPercent,
+                    companyMarketValue: newAsset.companyMarketValue,
+                    companySector: newAsset.companySector,
+                    companyAnnualProfit: newAsset.companyAnnualProfit,
+                    companyCashPosition: newAsset.companyCashPosition,
+                  }}
+                  onChange={(data) => setNewAsset(prev => ({ ...prev, ...data }))}
+                  onValueChange={(value, calculatedValue) => setNewAsset(prev => ({
+                    ...prev,
+                    value,
+                    companyCalculatedValue: calculatedValue || 0,
+                  }))}
+                />
+                <div className="space-y-2">
+                  <Label htmlFor="companyCnpj">CNPJ (opcional)</Label>
+                  <Input
+                    id="companyCnpj"
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="00.000.000/0000-00"
+                    value={newAsset.companyCnpj}
+                    onChange={(e) => setNewAsset({ ...newAsset, companyCnpj: formatCnpjDisplay(e.target.value) })}
+                    maxLength={18}
+                    className="font-mono tracking-wider"
+                  />
+                </div>
+              </>
             )}
 
             {/* Curva Personalizada - moved from investment section */}
@@ -1796,6 +2126,8 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
                   </div>
                 )}
               </div>
+            )}
+            </>
             )}
           </div>
           ) : (

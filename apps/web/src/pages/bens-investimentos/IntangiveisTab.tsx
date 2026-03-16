@@ -17,7 +17,7 @@ export default function IntangiveisTab() {
         <Button
           size="sm"
           className="gap-1.5"
-          onClick={() => handleOpenAddDialog(undefined, undefined, 'intellectual_property')}
+          onClick={() => handleOpenAddDialog(undefined, undefined, 'intellectual_property', true)}
         >
           <Plus className="h-4 w-4" />
           Adicionar intangível
@@ -28,7 +28,7 @@ export default function IntangiveisTab() {
         title="Nenhum intangível cadastrado"
         description="Adicione propriedade intelectual, licenças e direitos contratuais para acompanhar seu patrimônio."
         actionLabel="Adicionar intangível"
-        onAction={() => handleOpenAddDialog(undefined, undefined, 'intellectual_property')}
+        onAction={() => handleOpenAddDialog(undefined, undefined, 'intellectual_property', true)}
       />
     </div>
   );

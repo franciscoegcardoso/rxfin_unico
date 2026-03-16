@@ -17,7 +17,7 @@ export default function ParticipacaoTab() {
         <Button
           size="sm"
           className="gap-1.5"
-          onClick={() => handleOpenAddDialog(undefined, undefined, 'company')}
+          onClick={() => handleOpenAddDialog(undefined, undefined, 'company', true)}
         >
           <Plus className="h-4 w-4" />
           Adicionar participação
@@ -28,7 +28,7 @@ export default function ParticipacaoTab() {
         title="Nenhuma participação cadastrada"
         description="Adicione suas participações societárias em empresas para acompanhar seu patrimônio empresarial."
         actionLabel="Adicionar participação"
-        onAction={() => handleOpenAddDialog(undefined, undefined, 'company')}
+        onAction={() => handleOpenAddDialog(undefined, undefined, 'company', true)}
       />
     </div>
   );
