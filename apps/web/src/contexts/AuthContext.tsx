@@ -26,6 +26,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Nota: o aviso "@supabase/gotrue-js: Lock ... was not released within 5000ms" é conhecido.
+    // Ocorre com muitas chamadas concorrentes a getSession() (ex.: várias páginas/hooks) ou
+    // em React Strict Mode (dev). A lib recupera sozinha (force-acquire). Preferir useAuth().session
+    // em novos códigos em vez de supabase.auth.getSession() para reduzir contenção.
+    //
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {

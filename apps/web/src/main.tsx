@@ -8,22 +8,29 @@ initSentry();
 
 /**
  * Clarity carregado de forma diferida — não bloqueia o first paint.
- * Antes estava inline no <head>, causando 126ms de bloqueio no main thread.
+ * Se o tag retornar 400 (projeto inválido/desativado ou bloqueado), falha em silêncio.
  */
+const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID || "vk439rf8hj";
+
 function initClarityDeferred() {
   if (import.meta.env.DEV) return;
-  if ((window as any).clarity) return;
+  if (!CLARITY_PROJECT_ID || (window as any).clarity) return;
 
   const loadClarity = () => {
     setTimeout(() => {
-      (function (c: any, l: Document, a: string, r: string, i: string) {
-        c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
-        const t = l.createElement(r) as HTMLScriptElement;
-        t.async = true;
-        t.src = "https://www.clarity.ms/tag/" + i;
-        const y = l.getElementsByTagName(r)[0];
-        y.parentNode?.insertBefore(t, y);
-      })(window, document, "clarity", "script", "vk439rf8hj");
+      try {
+        (function (c: any, l: Document, a: string, r: string, i: string) {
+          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+          const t = l.createElement(r) as HTMLScriptElement;
+          t.async = true;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          t.onerror = () => { /* falha em silêncio (ex.: 400, bloqueador) */ };
+          const y = l.getElementsByTagName(r)[0];
+          y.parentNode?.insertBefore(t, y);
+        })(window, document, "clarity", "script", CLARITY_PROJECT_ID);
+      } catch (_) {
+        // ignora erros de init
+      }
     }, 1000);
   };
 
