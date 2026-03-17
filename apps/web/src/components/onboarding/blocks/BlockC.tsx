@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
-  Plus, Trash2
+  Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,9 +46,79 @@ const formatBRL = (v: number) => v > 0 ? `R$ ${v.toLocaleString('pt-BR')}` : 'R$
 export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
   const { user } = useAuth();
   const [milestoneData, setMilestoneData] = useState<any>(null);
+  const [irImports, setIrImports] = useState<Array<{
+    id: string;
+    ano_exercicio: number;
+    ano_calendario: number;
+    bens_count: number;
+    rendimentos_count: number;
+    source_type: string;
+    file_name: string | null;
+    imported_at: string;
+  }>>([]);
+  const [irLoaded, setIrLoaded] = useState(false);
+  const [irUploading, setIrUploading] = useState(false);
+  const [irUploadError, setIrUploadError] = useState('');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
+  const loadIrImports = async () => {
+    if (irLoaded || !user?.id) return;
+    try {
+      const currentYear = new Date().getFullYear();
+      const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
+      const allImports: typeof irImports = [];
+      for (const year of years) {
+        const { data } = await supabase.rpc('get_ir_dashboard', {
+          p_user_id: user.id,
+          p_year: year,
+        });
+        if (data?.imports?.length > 0) {
+          allImports.push(...data.imports);
+        }
+      }
+      setIrImports(allImports);
+    } catch (err) {
+      console.warn('[BlockC] loadIrImports erro:', err);
+    } finally {
+      setIrLoaded(true);
+    }
+  };
+
+  const handleIrFileUpload = async (file: File) => {
+    if (!user?.id || !file) return;
+    setIrUploading(true);
+    setIrUploadError('');
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const { data, error } = await supabase.functions.invoke('fiscal-organizer', {
+        body: {
+          action: 'import_ir_pdf',
+          user_id: user.id,
+          file_name: file.name,
+          file_base64: base64,
+        },
+      });
+      if (error) throw error;
+      setIrLoaded(false);
+      await loadIrImports();
+    } catch (err: unknown) {
+      console.error('[BlockC] handleIrFileUpload erro:', err);
+      setIrUploadError('Erro ao processar o arquivo. Verifique se é um PDF válido do IR.');
+    } finally {
+      setIrUploading(false);
+    }
+  };
 
   useEffect(() => {
-    if (step === 4 && user?.id) {
+    if (step === 5 && user?.id) {
       supabase.rpc('calculate_milestone_cashflow', { p_user_id: user.id })
         .then(({ data }) => setMilestoneData(data));
     }
@@ -92,15 +163,156 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 1: Budget allocation ────────────────────────────────
+  // ─── Step 1: Import IR ──────────────────────────────────────
   if (step === 1) {
+    if (!irLoaded) {
+      loadIrImports();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground">Verificando declarações anteriores...</p>
+        </div>
+      );
+    }
+    const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+    const importedYears = new Set(irImports.map(imp => imp.ano_exercicio));
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(0)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium text-primary uppercase tracking-wide">
+              Declaração de IR
+            </p>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Importe suas declarações de IR
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            O RXFin usa seus dados do IR para construir um histórico patrimonial
+            preciso. Importe o PDF da declaração de cada ano disponível.
+          </p>
+        </div>
+        <div className="space-y-2 mb-5">
+          {years.map(year => {
+            const imported = importedYears.has(year);
+            const imp = irImports.find(i => i.ano_exercicio === year);
+            return (
+              <div
+                key={year}
+                className={cn(
+                  'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all',
+                  imported ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                )}
+              >
+                <div className="shrink-0">
+                  {imported
+                    ? <CheckCircle2 className="h-5 w-5 text-primary" />
+                    : <Calendar className="h-5 w-5 text-muted-foreground" />
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    Exercício {year} <span className="text-muted-foreground font-normal text-xs">(ano-base {year - 1})</span>
+                  </p>
+                  {imported && imp && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {imp.bens_count} bens · {imp.rendimentos_count} rendimentos
+                      {imp.file_name && ` · ${imp.file_name}`}
+                    </p>
+                  )}
+                  {!imported && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Não importada
+                    </p>
+                  )}
+                </div>
+                {!imported && (
+                  <label className="shrink-0 cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedYear(year);
+                          handleIrFileUpload(file);
+                        }
+                      }}
+                    />
+                    <span className={cn(
+                      'text-xs font-medium px-3 py-1.5 rounded-lg border transition-all',
+                      irUploading && selectedYear === year
+                        ? 'border-primary/40 text-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                    )}>
+                      {irUploading && selectedYear === year
+                        ? <><Loader2 className="h-3 w-3 animate-spin inline mr-1" />Processando...</>
+                        : <><Upload className="h-3 w-3 inline mr-1" />PDF</>
+                      }
+                    </span>
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {irUploadError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mb-4">
+            <p className="text-xs text-destructive">{irUploadError}</p>
+          </div>
+        )}
+        {irImports.length > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground">
+              <span className="font-semibold">{irImports.length} declaraç{irImports.length !== 1 ? 'ões importadas' : 'ão importada'}.</span>
+              {' '}O histórico patrimonial será construído automaticamente.
+            </p>
+          </div>
+        )}
+        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            <strong>Como obter o PDF:</strong> No programa do IR (IRPF), vá em
+            &quot;Imprimir&quot; → &quot;Declaração Completa&quot; → salve como PDF. Faça isso
+            para cada ano disponível.
+          </p>
+        </div>
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          onClick={() => onStepChange(2)}
+          disabled={irUploading}
+        >
+          {irImports.length > 0 ? 'Continuar' : 'Pular por agora'}
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+        {irImports.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Você pode importar depois em Configurações → IR
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ─── Step 2: Budget allocation ────────────────────────────────
+  if (step === 2) {
     return (
       <div className="max-w-3xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(0)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(1)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('budget', {}); onStepChange(2); }}>
+          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('budget', {}); onStepChange(3); }}>
             Próximo: Metas <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
@@ -109,15 +321,15 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 2: Goals ────────────────────────────────────────────
-  if (step === 2) {
+  // ─── Step 3: Goals ────────────────────────────────────────────
+  if (step === 3) {
     return (
       <div className="max-w-3xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(1)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(2)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('goals', {}); onStepChange(3); }}>
+          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('goals', {}); onStepChange(4); }}>
             Próximo: Revisão <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
@@ -126,12 +338,12 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 3: Review ───────────────────────────────────────────
-  if (step === 3) {
+  // ─── Step 4: Review ───────────────────────────────────────────
+  if (step === 4) {
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(2)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(3)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
@@ -139,15 +351,15 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           <h2 className="text-xl font-bold text-foreground mb-2">Quase lá!</h2>
           <p className="text-sm text-muted-foreground">Vamos ver o resultado do seu fluxo de caixa.</p>
         </div>
-        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(4)}>
+        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(5)}>
           Ver meu Fluxo de Caixa <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     );
   }
 
-  // ─── Step 4: Conquest Card ────────────────────────────────────
-  if (step === 4) {
+  // ─── Step 5: Conquest Card ────────────────────────────────────
+  if (step === 5) {
     const md = milestoneData as any;
     const variancePositive = md?.variance >= 0;
 
