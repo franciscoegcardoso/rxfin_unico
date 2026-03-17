@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, B
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
-import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
+import { CategoryAssignmentCard, CategoryAssignmentDialog } from '@/components/shared/CategoryAssignmentDialog';
 import { ContasListSection } from '@/components/lancamentos/ContasListSection';
 import { ContaFormDialog } from '@/components/lancamentos/ContaFormDialog';
 import { CompromissosRecorrentesSection } from '@/components/extrato/CompromissosRecorrentesSection';
@@ -87,6 +87,8 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const { isHidden } = useVisibility();
   const { isManual } = useFinanceMode();
   const { user } = useAuth();
+  const [assignCategoriesOpen, setAssignCategoriesOpen] = useState(false);
+  const [todosLancamentosDialogOpen, setTodosLancamentosDialogOpen] = useState(false);
   // Month selector state (declarado antes do hook para passar ao useLancamentosRealizados)
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
@@ -1350,13 +1352,11 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               />
             </div>
 
-            {/* Botões de ação rápida */}
+            {/* CTAs: abrem janelas diretamente */}
             <div className="flex flex-col gap-1 py-1">
               <button
                 type="button"
-                onClick={() => {
-                  document.getElementById('section-todos-lancamentos')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => setTodosLancamentosDialogOpen(true)}
                 className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
               >
                 <span className="text-primary font-medium">›</span>
@@ -1364,9 +1364,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  document.getElementById('section-atribuir-categorias')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => setAssignCategoriesOpen(true)}
                 className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
               >
                 <span className="text-primary font-medium">›</span>
@@ -1381,15 +1379,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               allLancamentos={allLancamentosForAnalytics}
               loadingHistory={loadingAllForAnalytics}
             />
-
-            <div id="section-atribuir-categorias">
-              <CategoryAssignmentCard
-                title="Atribuir categorias aos lançamentos"
-                description="Valide e organize suas receitas e despesas por categoria"
-                count={filteredByMonth.filter(l => !l.is_category_confirmed).length}
-                defaultTab="conta"
-              />
-            </div>
 
             <CompromissosRecorrentesSection />
 
@@ -1429,13 +1418,16 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               </Button>
             </CollapsibleModule>
 
-            <div id="section-todos-lancamentos">
-            <CollapsibleModule
-              title="Todos os Lançamentos"
-              icon={<Layers className="h-4 w-4 text-primary" />}
-              count={totalCount}
-              useDialogOnDesktop
-            >
+            {/* Dialog "Todos os Lançamentos" aberto pelo CTA */}
+            <Dialog open={todosLancamentosDialogOpen} onOpenChange={setTodosLancamentosDialogOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+                <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+                  <DialogTitle className="flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-primary" />
+                    Todos os Lançamentos ({totalCount})
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
               {categoryFilter != null && (
                 <div className="flex items-center gap-2 px-4 py-2 mb-2 bg-muted/50 rounded-lg text-sm">
                   <span>
@@ -1623,8 +1615,9 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   </div>
                 </div>
               )}
-            </CollapsibleModule>
-            </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Entradas Tab */}
@@ -2003,7 +1996,11 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
       isLoading={markAsPaidLoading}
     />
 
-
+    <CategoryAssignmentDialog
+      open={assignCategoriesOpen}
+      onOpenChange={setAssignCategoriesOpen}
+      defaultTab="conta"
+    />
 
     </>
   );

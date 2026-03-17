@@ -12,6 +12,7 @@ import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
 import { Label } from '@/components/ui/label';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ interface CartaoCreditoProps {
 
 const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [todasTransacoesDialogOpen, setTodasTransacoesDialogOpen] = useState(false);
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
   const dashboard = data as DashboardData | null;
 
@@ -170,17 +172,19 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
-            {/* Botões de ação rápida */}
-            <div className="flex flex-col gap-1 py-1">
-              <button
-                type="button"
-                onClick={() => document.getElementById('cc-section-transacoes')?.scrollIntoView({ behavior: 'smooth' })}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-              >
-                <span className="text-primary font-medium">›</span>
-                Ver todas as transações ({recentTransactions.length})
-              </button>
-            </div>
+            {/* CTA: abre janela com todas as transações */}
+            {recentTransactions.length > 0 && (
+              <div className="flex flex-col gap-1 py-1">
+                <button
+                  type="button"
+                  onClick={() => setTodasTransacoesDialogOpen(true)}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                >
+                  <span className="text-primary font-medium">›</span>
+                  Ver todas as transações ({recentTransactions.length})
+                </button>
+              </div>
+            )}
 
             {/* Seções colapsáveis — Análises primeiro, depois demais seções (Compras Recorrentes está dentro) */}
             <CartaoCreditoSection />
@@ -218,81 +222,87 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
               </section>
             )}
 
-            {/* C) Últimas transações — tabela em desktop, cards empilhados em mobile */}
-            {sortedTransactions.length > 0 && (
-              <section id="cc-section-transacoes">
-                <h2 className="mb-3 text-lg font-semibold">Últimas transações</h2>
-                {/* Mobile: cards empilhados */}
-                <div className="md:hidden space-y-3">
-                  {sortedTransactions.map((tx, i) => {
-                    const dateStr = tx.date ?? tx.transaction_date ?? '';
-                    const dateFormatted = dateStr ? format(new Date(dateStr), 'dd/MM') : '—';
-                    return (
-                      <Card key={tx.id ?? i} className="rounded-[14px] border border-border/80 p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-foreground truncate">{tx.store_name ?? '—'}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{dateFormatted}</p>
-                            {tx.category && (
-                              <Badge variant="secondary" className="text-xs mt-1.5">{tx.category}</Badge>
-                            )}
-                          </div>
-                          <p className="font-semibold text-foreground shrink-0 tabular-nums whitespace-nowrap">{formatCurrency(tx.value ?? 0)}</p>
-                        </div>
-                        {tx.card_id && (
-                          <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 truncate">{tx.card_id}</p>
-                        )}
-                      </Card>
-                    );
-                  })}
-                </div>
-                {/* Desktop: tabela com overflow e colunas responsivas */}
-                <Card className="hidden md:block rounded-[14px] border border-border/80 overflow-hidden">
-                  <div className="overflow-x-auto min-w-0">
-                    <table className="w-full min-w-[320px] text-sm">
-                      <thead>
-                        <tr className="border-b border-border/80 bg-muted/30">
-                          <th className="px-4 py-3 text-left font-medium">Data</th>
-                          <th className="px-4 py-3 text-left font-medium min-w-0">Loja</th>
-                          <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Categoria</th>
-                          <th className="px-4 py-3 text-right font-medium">Valor</th>
-                          <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Cartão</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedTransactions.map((tx, i) => {
-                          const dateStr = tx.date ?? tx.transaction_date ?? '';
-                          const dateFormatted = dateStr
-                            ? format(new Date(dateStr), 'dd/MM')
-                            : '—';
-                          return (
-                            <tr
-                              key={tx.id ?? i}
-                              className="border-b border-border/50 last:border-0 hover:bg-muted/20"
-                            >
-                              <td className="px-4 py-3 text-muted-foreground">{dateFormatted}</td>
-                              <td className="px-4 py-3 font-medium max-w-[160px] truncate" title={tx.store_name ?? undefined}>{tx.store_name ?? '—'}</td>
-                              <td className="px-4 py-3 hidden sm:table-cell">
-                                {tx.category ? (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {tx.category}
-                                  </Badge>
-                                ) : (
-                                  '—'
+            {/* Dialog "Todas as transações" aberto pelo CTA */}
+            {recentTransactions.length > 0 && (
+              <Dialog open={todasTransacoesDialogOpen} onOpenChange={setTodasTransacoesDialogOpen}>
+                <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col p-0 gap-0">
+                  <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+                    <DialogTitle>Todas as transações ({recentTransactions.length})</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+                    {/* Mobile: cards empilhados */}
+                    <div className="md:hidden space-y-3">
+                      {recentTransactions.map((tx, i) => {
+                        const dateStr = tx.date ?? tx.transaction_date ?? '';
+                        const dateFormatted = dateStr ? format(new Date(dateStr), 'dd/MM') : '—';
+                        return (
+                          <Card key={tx.id ?? i} className="rounded-[14px] border border-border/80 p-4">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-foreground truncate">{tx.store_name ?? '—'}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{dateFormatted}</p>
+                                {tx.category && (
+                                  <Badge variant="secondary" className="text-xs mt-1.5">{tx.category}</Badge>
                                 )}
-                              </td>
-                              <td className="px-4 py-3 text-right font-medium tabular-nums">
-                                {formatCurrency(tx.value ?? 0)}
-                              </td>
-                              <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{tx.card_id ?? '—'}</td>
+                              </div>
+                              <p className="font-semibold text-foreground shrink-0 tabular-nums whitespace-nowrap">{formatCurrency(tx.value ?? 0)}</p>
+                            </div>
+                            {tx.card_id && (
+                              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 truncate">{tx.card_id}</p>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                    {/* Desktop: tabela */}
+                    <Card className="hidden md:block rounded-[14px] border border-border/80 overflow-hidden">
+                      <div className="overflow-x-auto min-w-0">
+                        <table className="w-full min-w-[320px] text-sm">
+                          <thead>
+                            <tr className="border-b border-border/80 bg-muted/30">
+                              <th className="px-4 py-3 text-left font-medium">Data</th>
+                              <th className="px-4 py-3 text-left font-medium min-w-0">Loja</th>
+                              <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Categoria</th>
+                              <th className="px-4 py-3 text-right font-medium">Valor</th>
+                              <th className="px-4 py-3 text-left font-medium text-muted-foreground hidden sm:table-cell">Cartão</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {recentTransactions.map((tx, i) => {
+                              const dateStr = tx.date ?? tx.transaction_date ?? '';
+                              const dateFormatted = dateStr
+                                ? format(new Date(dateStr), 'dd/MM')
+                                : '—';
+                              return (
+                                <tr
+                                  key={tx.id ?? i}
+                                  className="border-b border-border/50 last:border-0 hover:bg-muted/20"
+                                >
+                                  <td className="px-4 py-3 text-muted-foreground">{dateFormatted}</td>
+                                  <td className="px-4 py-3 font-medium max-w-[160px] truncate" title={tx.store_name ?? undefined}>{tx.store_name ?? '—'}</td>
+                                  <td className="px-4 py-3 hidden sm:table-cell">
+                                    {tx.category ? (
+                                      <Badge variant="secondary" className="text-xs">
+                                        {tx.category}
+                                      </Badge>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-medium tabular-nums">
+                                    {formatCurrency(tx.value ?? 0)}
+                                  </td>
+                                  <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{tx.card_id ?? '—'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </Card>
                   </div>
-                </Card>
-              </section>
+                </DialogContent>
+              </Dialog>
             )}
 
             {!loading && !error && bills.length === 0 && sortedTransactions.length === 0 && (

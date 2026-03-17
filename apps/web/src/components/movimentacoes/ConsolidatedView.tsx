@@ -206,12 +206,19 @@ export function ConsolidatedView() {
         />
       </div>
 
-      {/* Botão de ação rápida */}
+      {/* Botão de ação rápida — scroll no container da página, não no window */}
       {!loading && (
         <div className="py-1">
           <button
             type="button"
-            onClick={() => document.getElementById('consolidated-transacoes')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => {
+              const container = document.querySelector('.overflow-y-auto');
+              const target = document.getElementById('consolidated-transacoes');
+              if (container && target) {
+                const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 16;
+                container.scrollTo({ top, behavior: 'smooth' });
+              }
+            }}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
           >
             <span className="text-primary font-medium">›</span>

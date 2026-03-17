@@ -118,8 +118,9 @@ export function LancamentoCategorySection({
             date: l.data_pagamento || l.data_registro || l.mes_referencia + '-01',
             isAccountTransaction: true as const,
           }));
+          const incomeCategoryNames = incomeCategories.map((c) => c.name);
           const { data, error } = await supabase.functions.invoke('categorize-transactions', {
-            body: { transactions },
+            body: { transactions, incomeCategories: incomeCategoryNames },
           });
           if (error || !data?.categorizedTransactions) {
             if (!cancelled) setSuggestionMap((prev) => prev);
@@ -152,7 +153,9 @@ export function LancamentoCategorySection({
     return () => {
       cancelled = true;
     };
-  }, [lancamentos]);
+    // Re-run when list of lancamento IDs or income categories change; not when only is_category_confirmed changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lancamentos.map((l) => l.id).sort().join(','), incomeCategories.map((c) => c.name).join(',')]);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -513,6 +516,7 @@ export function LancamentoCategorySection({
                     <div className="space-y-1.5">
                       <span className="text-sm text-muted-foreground">Categoria</span>
                       <Select
+                        key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
                         value={getDisplayCategory(item) || undefined}
                         onValueChange={(value) => handleCategoryChange(item, value)}
                         disabled={updatingId === item.id}
@@ -681,6 +685,7 @@ export function LancamentoCategorySection({
                       <TableCell className="py-1.5 px-2">
                         <div className="flex items-center gap-1.5">
                           <Select
+                            key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
                             value={getDisplayCategory(item) || undefined}
                             onValueChange={(value) => handleCategoryChange(item, value)}
                             disabled={isUpdating}
@@ -864,6 +869,7 @@ export function LancamentoCategorySection({
                 <div>
                   <label className="text-xs text-muted-foreground block mb-2">Categoria</label>
                   <Select
+                    key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
                     value={getDisplayCategory(item) || undefined}
                     onValueChange={(value) => handleCategoryChange(item, value)}
                     disabled={updatingId === item.id}
