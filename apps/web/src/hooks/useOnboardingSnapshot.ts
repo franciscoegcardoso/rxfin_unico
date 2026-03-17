@@ -21,14 +21,35 @@ export interface OnboardingSnapshot {
   snapshot_at: string;
 }
 
+function defaultOnboardingSnapshot(): OnboardingSnapshot {
+  return {
+    pluggy_connections_count: 0,
+    pluggy_connections: [],
+    has_cpf: false,
+    transactions_count: 0,
+    transactions_categorized_count: 0,
+    has_onboarding_profile: false,
+    has_financial_config: false,
+    snapshot_at: new Date().toISOString(),
+  };
+}
+
 export function useOnboardingSnapshot(enabled = true) {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ['onboarding-snapshot', user?.id],
     queryFn: async (): Promise<OnboardingSnapshot> => {
-      const { data, error } = await supabase.rpc('get_onboarding_data_snapshot');
-      if (error) throw error;
+      const { data, error } = await supabase.rpc('get_onboarding_data_snapshot', {
+        p_user_id: user?.id ?? null,
+      });
+      if (error) {
+        if (error.code === 'PGRST202' || error.message?.includes('400')) {
+          console.warn('[onboarding-snapshot] RPC 400/unavailable, using default snapshot:', error.message);
+          return defaultOnboardingSnapshot();
+        }
+        throw error;
+      }
       return data as OnboardingSnapshot;
     },
     enabled: !!user?.id && enabled,
