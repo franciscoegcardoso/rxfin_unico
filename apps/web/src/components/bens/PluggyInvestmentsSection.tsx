@@ -161,46 +161,23 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
               {totals != null ? (
                 <TooltipProvider>
                   <div className="space-y-0.5 mt-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-muted-foreground">Valor bruto</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex text-muted-foreground hover:text-foreground cursor-help">
-                            <Info className="h-3.5 w-3.5" />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-[240px]">
-                          Valor nominal aplicado. Use para comparar com o app do seu banco.
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <p className="text-xl font-bold text-primary">{formatCurrency(totals.gross_total)}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[11px] text-muted-foreground">Valor líquido</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex text-muted-foreground hover:text-foreground cursor-help">
-                            <Info className="h-3.5 w-3.5" />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-[240px]">
-                          Estimativa após IR (Renda Fixa) e ajuste de cota (Fundos).
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
+                    <p className="text-[11px] text-muted-foreground">Valor estimado líquido</p>
+                    <p className="text-[10px] text-muted-foreground/90">Inclui ajuste IR est. + lag de cota</p>
                     <p className="text-xl font-bold text-primary">{formatCurrency(totals.net_total)}</p>
-                    {(totals.gross_net_spread ?? 0) !== 0 && (
+                    <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-primary/20">
+                      <span className="text-[11px] text-muted-foreground">Saldo Open Finance</span>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <p className="text-sm text-muted-foreground border-t border-primary/20 pt-1 mt-1">
-                            Δ {formatCurrency(totals.gross_net_spread)} <span className="text-[11px]">(IR est. + lag de cota)</span>
-                          </p>
+                          <span className="inline-flex text-muted-foreground hover:text-foreground cursor-help" aria-label="Explicação">
+                            <Info className="h-3.5 w-3.5" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="max-w-[280px]">
-                          Diferença entre valor bruto e líquido. Para Renda Fixa inclui IR estimado. Para Fundos pode refletir diferença de cota com o banco.
+                          Saldo reportado pelo banco em tempo real. O valor estimado aplica desconto de IR e defasagem de cota, e pode diferir do valor real de resgate.
                         </TooltipContent>
                       </Tooltip>
-                    )}
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">{formatCurrency(totals.gross_total)}</p>
                     {totals.sync_coverage_pct != null && totals.sync_coverage_pct < 100 && (
                       <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-1" style={{ marginTop: '4px' }}>
                         ⚠ Cobertura Open Finance: {totals.sync_coverage_pct}%
