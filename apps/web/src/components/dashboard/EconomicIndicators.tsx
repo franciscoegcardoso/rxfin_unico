@@ -150,7 +150,7 @@ export const EconomicIndicators: React.FC = () => {
                 value: unitLabel, 
                 angle: -90, 
                 position: 'insideLeft', 
-                style: { textAnchor: 'middle', fontSize: 10, fill: 'hsl(var(--muted-foreground))' } 
+                style: { textAnchor: 'middle', fontSize: 10, fill: 'hsl(var(--color-text-tertiary))' } 
               }}
             />
             <Tooltip

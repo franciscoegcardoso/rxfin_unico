@@ -749,12 +749,14 @@ export const CartaoCreditoSection: React.FC = () => {
       </CollapsibleModule>
 
       {/* Category Assignment Card */}
-      <CategoryAssignmentCard
-        title="Atribuir gastos nas suas categorias"
-        description="Novos lançamentos do mês — compras parceladas aparecem no mês da compra original"
-        count={processedTransactions.filter(t => !t.is_category_confirmed).length}
-        defaultTab="cartao"
-      />
+      <div id="cc-section-categorias">
+        <CategoryAssignmentCard
+          title="Atribuir gastos nas suas categorias"
+          description="Novos lançamentos do mês — compras parceladas aparecem no mês da compra original"
+          count={processedTransactions.filter(t => !t.is_category_confirmed).length}
+          defaultTab="cartao"
+        />
+      </div>
 
 
       {/* Recurring Purchases Section */}

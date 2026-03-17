@@ -79,8 +79,8 @@ export const AdminParametersSection: React.FC = () => {
     category_name: '',
     name: '',
     expense_type: 'variable_non_essential',
-    expense_nature: 'variable',
-    recurrence_type: 'monthly',
+    expense_nature: 'essential' as 'essential' | 'non_essential' | 'investment',
+    recurrence_type: 'monthly' as 'monthly' | 'yearly',
     is_recurring: false,
     payment_method: 'credit_card',
     enabled_by_default: true,
@@ -151,8 +151,8 @@ export const AdminParametersSection: React.FC = () => {
         category_name: item.category_name,
         name: item.name,
         expense_type: item.expense_type,
-        expense_nature: item.expense_nature,
-        recurrence_type: item.recurrence_type,
+        expense_nature: (item.expense_nature === 'essential' || item.expense_nature === 'non_essential' || item.expense_nature === 'investment' ? item.expense_nature : 'essential'),
+        recurrence_type: (item.recurrence_type === 'yearly' ? 'yearly' : 'monthly'),
         is_recurring: item.is_recurring,
         payment_method: item.payment_method,
         enabled_by_default: item.enabled_by_default,
@@ -167,7 +167,7 @@ export const AdminParametersSection: React.FC = () => {
         category_name: '',
         name: '',
         expense_type: 'variable_non_essential',
-        expense_nature: 'variable',
+        expense_nature: 'essential',
         recurrence_type: 'monthly',
         is_recurring: false,
         payment_method: 'credit_card',
@@ -573,6 +573,37 @@ export const AdminParametersSection: React.FC = () => {
                     {paymentMethodOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Natureza</Label>
+                <Select
+                  value={expenseForm.expense_nature}
+                  onValueChange={(value: 'essential' | 'non_essential' | 'investment') => setExpenseForm(prev => ({ ...prev, expense_nature: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="essential">Essencial</SelectItem>
+                    <SelectItem value="non_essential">Não essencial</SelectItem>
+                    <SelectItem value="investment">Investimento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Periodicidade</Label>
+                <Select
+                  value={expenseForm.recurrence_type}
+                  onValueChange={(value: 'monthly' | 'yearly') => setExpenseForm(prev => ({ ...prev, recurrence_type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="yearly">Anual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

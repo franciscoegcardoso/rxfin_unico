@@ -306,12 +306,16 @@ export function InstallmentPurchasesSection({
         <div className="flex items-center gap-2">
           <Badge 
             variant="outline" 
-            className={cn(
-              "gap-1 text-[10px] font-medium py-0 px-1.5 h-5",
-              consolidationStatus.isToday 
-                ? "bg-emerald-50 border-emerald-200/80 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-800/60 dark:text-emerald-400" 
-                : "bg-muted/30 border-border/50 text-[hsl(var(--color-text-tertiary))]"
-            )}
+            className="gap-1 text-[10px] font-medium py-0 px-1.5 h-5"
+            style={consolidationStatus.isToday ? {
+              background: 'hsl(var(--color-income-bg))',
+              borderColor: 'hsl(var(--color-income) / 0.3)',
+              color: 'hsl(var(--color-income))',
+            } : {
+              background: 'hsl(var(--color-surface-sunken))',
+              borderColor: 'hsl(var(--color-border-subtle))',
+              color: 'hsl(var(--color-text-tertiary))',
+            }}
           >
             <Clock className="h-2.5 w-2.5" strokeWidth={1.5} />
             {consolidationStatus.displayText}
@@ -346,7 +350,7 @@ export function InstallmentPurchasesSection({
       {/* Compact summary row */}
       <div className="flex items-center gap-4 text-xs text-[hsl(var(--color-text-tertiary))]">
         <span><Layers className="h-3 w-3 inline mr-1" strokeWidth={1.5} />{totals.pendingInstallments} parcelas</span>
-        <span className="font-mono tabular-nums text-[hsl(var(--color-text-primary))]">{formatCurrency(totals.totalRemaining)}</span>
+        <span className="font-numeric tabular-nums text-[hsl(var(--color-text-primary))]">{formatCurrency(totals.totalRemaining)}</span>
         <span>{totals.pctPaid}% quitado</span>
       </div>
 
@@ -359,7 +363,7 @@ export function InstallmentPurchasesSection({
               <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted/50" onClick={() => shiftStartMonth(-1)}>
                 <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
               </Button>
-              <span className="text-xs font-medium min-w-[70px] text-center font-mono tabular-nums text-[hsl(var(--color-text-primary))]">
+              <span className="text-xs font-medium min-w-[70px] text-center font-numeric tabular-nums text-[hsl(var(--color-text-primary))]">
                 {formatDate(startMonth)}
               </span>
               <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted/50" onClick={() => shiftStartMonth(1)}>
@@ -429,7 +433,7 @@ export function InstallmentPurchasesSection({
                                   >
                                     <div className="flex flex-col items-center justify-end" style={{ height: isMobile ? 60 : 72 }}>
                                       <span className={cn(
-                                        "text-[hsl(var(--color-text-tertiary))] mb-0.5 font-mono tabular-nums",
+                                        "text-[hsl(var(--color-text-tertiary))] mb-0.5 font-numeric tabular-nums",
                                         isMobile ? "text-[10px]" : "text-xs"
                                       )}>
                                         {isHidden ? '••' : formatCurrency(value, true)}
@@ -439,8 +443,8 @@ export function InstallmentPurchasesSection({
                                         style={{ 
                                           height: `${Math.max(barHeight, 3)}px`,
                                           width: isMobile ? 24 : 40,
-                                          backgroundColor: 'hsl(var(--muted-foreground))',
-                                          opacity: index === 0 ? 0.9 : 0.5 + (0.4 * (1 - index / filteredMonths.length)),
+                                          backgroundColor: 'hsl(var(--color-brand-500))',
+                                          opacity: index === 0 ? 0.85 : 0.3 + (0.55 * (1 - index / filteredMonths.length)),
                                         }}
                                       />
                                     </div>
@@ -467,7 +471,7 @@ export function InstallmentPurchasesSection({
                                       {row.storeName}
                                     </span>
                                     <span className={cn(
-                                      "text-[hsl(var(--color-text-tertiary))] font-mono tabular-nums",
+                                      "text-[hsl(var(--color-text-tertiary))] font-numeric tabular-nums",
                                       isMobile ? "text-[10px]" : "text-xs"
                                     )}>
                                       ({row.currentInstallment}/{row.totalInstallments})
@@ -485,7 +489,7 @@ export function InstallmentPurchasesSection({
                                   >
                                     {row.monthlyValues[month] ? (
                                       <span className={cn(
-                                        "font-mono tabular-nums font-medium text-[hsl(var(--color-text-primary))]",
+                                        "font-numeric tabular-nums font-medium text-[hsl(var(--color-text-primary))]",
                                         isMobile ? "text-[10px]" : "text-xs"
                                       )}>
                                         {formatCurrency(row.monthlyValues[month], isMobile)}
@@ -517,7 +521,7 @@ export function InstallmentPurchasesSection({
                                   style={{ width: monthColWidth }}
                                 >
                                   <span className={cn(
-                                    "font-mono font-semibold tabular-nums text-[hsl(var(--color-text-primary))]",
+                                    "font-numeric font-semibold tabular-nums text-[hsl(var(--color-text-primary))]",
                                     isMobile ? "text-[10px]" : "text-xs"
                                   )}>
                                     {formatCurrency(columnSubtotals[month], isMobile)}

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
+import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -57,11 +58,31 @@ interface CartaoCreditoProps {
   embedded?: boolean;
 }
 
+const scrollToSection = (id: string) => {
+  const container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
+  const target = document.getElementById(id);
+  if (!container || !target) return;
+  let offsetTop = 0;
+  let el: HTMLElement | null = target;
+  while (el && el !== container) {
+    offsetTop += el.offsetTop;
+    el = el.offsetParent as HTMLElement | null;
+  }
+  container.scrollTo({ top: offsetTop - 16, behavior: 'smooth' });
+};
+
 const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [todasTransacoesDialogOpen, setTodasTransacoesDialogOpen] = useState(false);
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
+  const { transactions: allTransactions } = useCreditCardTransactions();
   const dashboard = data as DashboardData | null;
+
+  const pendentesCartao = useMemo(() => {
+    return allTransactions.filter(
+      (t) => t.transaction_date?.startsWith(selectedMonth) && !t.is_category_confirmed
+    ).length;
+  }, [allTransactions, selectedMonth]);
 
   const totals = dashboard?.totals ?? dashboard?.summary;
   const totalBills = totals?.total_bills ?? 0;
@@ -172,17 +193,29 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
-            {/* CTA: abre janela com todas as transações */}
-            {recentTransactions.length > 0 && (
+            {/* Botões de ação rápida */}
+            {(recentTransactions.length > 0 || pendentesCartao > 0) && (
               <div className="flex flex-col gap-1 py-1">
-                <button
-                  type="button"
-                  onClick={() => setTodasTransacoesDialogOpen(true)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                >
-                  <span className="text-primary font-medium">›</span>
-                  Ver todas as transações ({recentTransactions.length})
-                </button>
+                {recentTransactions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setTodasTransacoesDialogOpen(true)}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                  >
+                    <span className="text-primary font-medium">›</span>
+                    Ver todas as transações ({recentTransactions.length})
+                  </button>
+                )}
+                {pendentesCartao > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection('cc-section-categorias')}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                  >
+                    <span className="text-primary font-medium">›</span>
+                    Atribuir categorias às transações ({pendentesCartao} pendentes)
+                  </button>
+                )}
               </div>
             )}
 

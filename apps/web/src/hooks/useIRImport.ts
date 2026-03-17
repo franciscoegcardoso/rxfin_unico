@@ -120,6 +120,16 @@ export const useIRImport = () => {
         filePath: result.filePath as string | undefined,
       };
 
+      // Opção A — atualizar estado local imediatamente para a UI refletir sem esperar refetch
+      setImports(prev => {
+        const existing = prev.find(i => i.anoExercicio === importData.anoExercicio);
+        if (existing) {
+          return prev.map(i => (i.anoExercicio === importData.anoExercicio ? importData : i));
+        }
+        return [importData, ...prev];
+      });
+
+      // Opção B — refetch para sincronizar com o banco (lista canônica)
       await fetchImports();
       return importData;
 

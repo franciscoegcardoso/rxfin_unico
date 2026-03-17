@@ -36,6 +36,8 @@ interface CollapsibleModuleProps {
   useDialogOnDesktop?: boolean;
   /** Visually highlight this module with a primary border pulse */
   highlight?: boolean;
+  /** When true, inline mode renders without card border/shadow/background (flat on page) */
+  noCardStyle?: boolean;
 }
 
 const useIsTabletOrMobile = () => {
@@ -120,6 +122,7 @@ export const CollapsibleModule: React.FC<CollapsibleModuleProps> = ({
   useDrawerOnMobile = true,
   useDialogOnDesktop = false,
   highlight = false,
+  noCardStyle = false,
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -226,7 +229,7 @@ export const CollapsibleModule: React.FC<CollapsibleModuleProps> = ({
   // Desktop: original inline collapsible behavior
   return (
     <div className={cn(
-      "rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm",
+      noCardStyle ? "overflow-hidden" : "rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm",
       className
     )}>
       {/* Header — always visible */}

@@ -9,6 +9,7 @@ import {
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { BarChart2, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -85,6 +86,7 @@ const CustomLegend: React.FC<{ payload?: Array<{ value: string; color: string }>
 export const CashFlowChart: React.FC = () => {
   const { lancamentos } = useLancamentosRealizados();
   const { isHidden } = useVisibility();
+  const isMobile = useIsMobile();
 
   const data = useMemo(() => {
     const now = new Date();
@@ -118,7 +120,7 @@ export const CashFlowChart: React.FC = () => {
             <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 0 }} barCategoryGap="28%" barGap={3}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border-subtle))" vertical={false} />
               <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tick={(props) => <AxisTick {...props} isHidden={isHidden} />} />
-              <YAxis axisLine={false} tickLine={false} width={72} tick={(props) => <AxisTick {...props} isHidden={isHidden} isY />} />
+              <YAxis hide={isMobile} axisLine={false} tickLine={false} width={isMobile ? 0 : 72} tick={(props) => isMobile ? <g /> : <AxisTick {...props} isHidden={isHidden} isY />} />
               <Tooltip cursor={{ fill: 'hsl(var(--color-border-subtle))', radius: 4 }} content={<CustomTooltip isHidden={isHidden} />} />
               <Legend content={<CustomLegend />} />
               <Bar dataKey="receitas" name="Receitas" fill={COLOR_INCOME} radius={[4, 4, 0, 0]} />

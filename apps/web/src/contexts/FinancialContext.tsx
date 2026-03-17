@@ -96,6 +96,13 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const prevUserId = useRef<string | null>(null);
+  const localConfigRef = useRef<Pick<FinancialConfig, 'accountType' | 'userProfile' | 'projectionDefaults' | 'incomeItems' | 'expenseItems'>>({
+    accountType: 'individual',
+    userProfile: { firstName: '', lastName: '', email: '', birthDate: '' },
+    projectionDefaults: undefined,
+    incomeItems: [],
+    expenseItems: [],
+  });
 
   // Local state only for things not yet in Supabase or UI-only
   const [localConfig, setLocalConfig] = useState<Pick<FinancialConfig, 'accountType' | 'userProfile' | 'projectionDefaults' | 'incomeItems' | 'expenseItems'>>({
@@ -118,6 +125,11 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const financialInstitutionsHook = useUserFinancialInstitutions();
   const driversHook = useUserDrivers();
   const vehicleRecordsHook = useUserVehicleRecords();
+
+  // Keep ref in sync for use inside updateExpenseItem (RPC needs current item)
+  useEffect(() => {
+    localConfigRef.current = localConfig;
+  }, [localConfig]);
 
   // ===== COMPOSITE CONFIG (merges local + Supabase data) =====
   const config: FinancialConfig = {
@@ -414,10 +426,62 @@ export const FinancialProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const updateExpenseItem = (id: string, updates: Partial<ExpenseItem>) => {
-    setLocalConfig(prev => ({
-      ...prev,
-      expenseItems: prev.expenseItems.map(item => item.id === id ? { ...item, ...updates } : item),
-    }));
+    const prev = localConfigRef.current;
+    const item = prev.expenseItems.find(i => i.id === id);
+    const merged = item ? { ...item, ...updates } : null;
+
+    if (!user?.id) {
+      setLocalConfig(prevState => ({
+        ...prevState,
+        expenseItems: prevState.expenseItems.map(i => i.id === id ? { ...i, ...updates } : i),
+      }));
+      return;
+    }
+
+    if (merged) {
+      const p_expense_nature =
+        (merged.expenseNature === 'essential' || merged.expenseNature === 'non_essential' || merged.expenseNature === 'investment')
+          ? merged.expenseNature
+          : 'essential';
+      const p_recurrence_type = merged.recurrenceType === 'yearly' ? 'yearly' : 'monthly';
+
+      supabase
+        .rpc('upsert_user_expense_item', {
+          p_user_id: user.id,
+          p_id: id,
+          p_name: merged.name,
+          p_category_id: merged.categoryId,
+          p_category_name: merged.category ?? '',
+          p_expense_type: merged.expenseType ?? 'variable',
+          p_expense_nature,
+          p_recurrence_type,
+          p_is_recurring: merged.isRecurring ?? false,
+          p_payment_method: merged.paymentMethod ?? null,
+          p_enabled: merged.enabled ?? true,
+          p_order_index: 0,
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('[FinancialContext] upsert_user_expense_item error:', error);
+            toast.error('Erro ao salvar despesa');
+            return;
+          }
+          queryClient.invalidateQueries({ queryKey: ['user-expense-items'] });
+          setLocalConfig(prevState => ({
+            ...prevState,
+            expenseItems: prevState.expenseItems.map(i => i.id === id ? { ...i, ...updates } : i),
+          }));
+        })
+        .catch((err) => {
+          console.error('[FinancialContext] upsert_user_expense_item:', err);
+          toast.error('Erro ao salvar despesa');
+        });
+    } else {
+      setLocalConfig(prevState => ({
+        ...prevState,
+        expenseItems: prevState.expenseItems.map(i => (i.id === id ? { ...i, ...updates } : i)),
+      }));
+    }
   };
 
   const addExpenseItem = (item: Omit<ExpenseItem, 'id'>) => {

@@ -28,6 +28,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -72,6 +73,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
   loadingHistory: effectiveLoadingAll,
 }) => {
   const { isHidden } = useVisibility();
+  const isMobile = useIsMobile();
   const { data: summary, loading: loadingSummary } = useLancamentosSummary(selectedMonth);
 
   const handleCategoryClick = useCallback(
@@ -152,6 +154,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
       description="Evolução mensal, categorias e formas de pagamento"
       icon={<BarChart3 className="h-4 w-4 text-primary" />}
       defaultOpen
+      noCardStyle
     >
       {showGridSkeleton ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
@@ -169,7 +172,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
               </CardHeader>
               <CardContent className="h-[240px] pb-4 px-2">
                 {effectiveLoadingAll ? (
-                  <div className="h-full w-full flex items-end gap-1 px-2 pb-4">
+                  <div className="h-full w-full flex items-end justify-center gap-1 pb-4 px-2">
                     {EVOLUTION_SKELETON_HEIGHTS.map((pct, i) => (
                       <div
                         key={i}
@@ -206,11 +209,11 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
             <Card className="border-0 shadow-none">
               <CardHeader className="pb-2 pt-3 px-4">
                 <CardTitle className="text-sm font-semibold">Distribuição por Categoria</CardTitle>
-                <p className="text-xs text-muted-foreground">Clique para filtrar</p>
+                <p className="text-xs" style={{ color: 'hsl(var(--color-text-tertiary))' }}>Clique para filtrar</p>
               </CardHeader>
               <CardContent className="pb-4 min-h-[200px]">
                 {treemapData.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">Sem despesas por categoria neste mês</p>
+                  <p className="text-sm py-8 text-center" style={{ color: 'hsl(var(--color-text-tertiary))' }}>Sem despesas por categoria neste mês</p>
                 ) : (
                   <InteractiveTreemap
                     data={treemapData}

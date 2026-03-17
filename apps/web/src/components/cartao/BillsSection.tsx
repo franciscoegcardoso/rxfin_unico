@@ -44,41 +44,73 @@ interface BillsSectionProps {
 type BillStatusType = 'open' | 'closed' | 'paid' | 'overdue';
 type DisplayStatusType = 'open' | 'closed' | 'paid' | 'partial' | 'awaiting' | 'overdue' | 'manual_check';
 
-const statusConfig: Record<DisplayStatusType, { label: string; className: string; icon: React.ElementType }> = {
-  open: { 
-    label: 'Em Aberto', 
-    className: 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/60',
-    icon: Clock
+const statusConfig: Record<DisplayStatusType, {
+  label: string;
+  style: React.CSSProperties;
+  icon: React.ElementType;
+}> = {
+  open: {
+    label: 'Em Aberto',
+    style: {
+      background: 'hsl(var(--color-info-bg))',
+      color: 'hsl(var(--color-info))',
+      borderColor: 'hsl(var(--color-info) / 0.3)',
+    },
+    icon: Clock,
   },
-  closed: { 
-    label: 'Fechada', 
-    className: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/60',
-    icon: AlertCircle
+  closed: {
+    label: 'Fechada',
+    style: {
+      background: 'hsl(var(--color-warning-bg))',
+      color: 'hsl(var(--color-warning))',
+      borderColor: 'hsl(var(--color-warning) / 0.3)',
+    },
+    icon: AlertCircle,
   },
-  paid: { 
-    label: 'Paga', 
-    className: 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/60',
-    icon: Check
+  paid: {
+    label: 'Paga',
+    style: {
+      background: 'hsl(var(--color-income-bg))',
+      color: 'hsl(var(--color-income))',
+      borderColor: 'hsl(var(--color-income) / 0.3)',
+    },
+    icon: Check,
   },
   partial: {
     label: 'Pgto. Parcial',
-    className: 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/60',
-    icon: AlertCircle
+    style: {
+      background: 'hsl(var(--color-warning-bg))',
+      color: 'hsl(var(--color-warning))',
+      borderColor: 'hsl(var(--color-warning) / 0.3)',
+    },
+    icon: AlertCircle,
   },
   awaiting: {
     label: 'Aguardando Pgto.',
-    className: 'bg-orange-50 text-orange-700 border-orange-200/80 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-800/60',
-    icon: Clock
+    style: {
+      background: 'hsl(var(--color-warning-bg))',
+      color: 'hsl(var(--color-warning))',
+      borderColor: 'hsl(var(--color-warning) / 0.3)',
+    },
+    icon: Clock,
   },
   overdue: {
     label: 'Vencida',
-    className: 'bg-red-50 text-red-700 border-red-200/80 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800/60',
-    icon: AlertCircle
+    style: {
+      background: 'hsl(var(--color-expense-bg))',
+      color: 'hsl(var(--color-expense))',
+      borderColor: 'hsl(var(--color-expense) / 0.3)',
+    },
+    icon: AlertCircle,
   },
   manual_check: {
     label: 'Verificar',
-    className: 'bg-yellow-50 text-yellow-700 border-yellow-200/80 dark:bg-yellow-950/30 dark:text-yellow-300 dark:border-yellow-800/60',
-    icon: AlertCircle
+    style: {
+      background: 'hsl(var(--color-warning-bg))',
+      color: 'hsl(var(--color-warning))',
+      borderColor: 'hsl(var(--color-warning) / 0.3)',
+    },
+    icon: AlertCircle,
   },
 };
 
@@ -214,10 +246,10 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
         </CardHeader>
         <CardContent className="pt-2 px-6 pb-6">
           {billsByMonth.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
+            <div className="text-center py-16" style={{ color: 'hsl(var(--color-text-tertiary))' }}>
               <CreditCard className="h-10 w-10 mx-auto mb-4 opacity-30" strokeWidth={1.5} />
               <p className="font-medium text-sm">Nenhuma fatura encontrada</p>
-              <p className="text-xs mt-1 text-muted-foreground/70">Importe suas faturas de cartão para começar</p>
+              <p className="text-xs mt-1" style={{ color: 'hsl(var(--color-text-tertiary))', opacity: 0.85 }}>Importe suas faturas de cartão para começar</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -235,21 +267,21 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                         </div>
                         <div className="text-left">
                           <p className="font-semibold text-sm capitalize tracking-tight">{monthLabel}</p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[11px]" style={{ color: 'hsl(var(--color-text-tertiary))' }}>
                             {monthBills.length} fatura{monthBills.length !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="font-bold text-sm font-mono tabular-nums tracking-tight">{formatCurrency(total)}</p>
+                          <p className="font-semibold text-sm font-numeric tabular-nums tracking-tight">{formatCurrency(total)}</p>
                           {paidTotal > 0 && paidTotal < total && (
-                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono tabular-nums font-medium">
+                            <p className="text-[10px] font-numeric tabular-nums font-medium" style={{ color: 'hsl(var(--color-income))' }}>
                               {formatCurrency(paidTotal)} pago
                             </p>
                           )}
                         </div>
-                        <div className="text-muted-foreground/40">
+                        <div style={{ color: 'hsl(var(--color-text-tertiary))', opacity: 0.5 }}>
                           {expandedMonths.has(monthKey) ? (
                             <ChevronDown className="h-4 w-4" strokeWidth={1.5} />
                           ) : (
@@ -272,10 +304,12 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                             key={bill.id}
                             className={cn(
                               "flex flex-col p-4 rounded-xl border transition-all",
-                              isOverdue 
-                                ? "border-red-200/80 bg-red-50/20 dark:border-red-800/30 dark:bg-red-950/10" 
-                                : "border-border/30 bg-card hover:bg-muted/10"
+                              isOverdue ? "" : "border-border/30 bg-card hover:bg-muted/10"
                             )}
+                            style={isOverdue ? {
+                              borderColor: 'hsl(var(--color-expense) / 0.35)',
+                              background: 'hsl(var(--color-expense-bg) / 0.12)',
+                            } : undefined}
                           >
                             <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -291,7 +325,7 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                                   />
                                 ) : (
                                   <div className="h-9 w-9 rounded-xl bg-muted/40 flex items-center justify-center">
-                                    <CreditCard className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+                                    <CreditCard className="h-4 w-4" style={{ color: 'hsl(var(--color-text-tertiary))' }} strokeWidth={1.5} />
                                   </div>
                                 );
                               })()}
@@ -299,7 +333,7 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                                 <p className="font-medium text-sm tracking-tight">
                                   {bill.card_name || 'Cartão de Crédito'}
                                 </p>
-                                <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-mono tabular-nums">
+                                <div className="flex items-center gap-2 text-[11px] font-numeric tabular-nums" style={{ color: 'hsl(var(--color-text-tertiary))' }}>
                                   <span>Fecha {format(parseISO(bill.closing_date), 'dd/MM')}</span>
                                   <span className="text-border">·</span>
                                   <span>Vence {format(parseISO(bill.due_date), 'dd/MM')}</span>
@@ -309,20 +343,22 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                             <div className="flex items-center gap-3">
                               <div className="text-right">
                                 <p className={cn(
-                                  "font-bold text-sm font-mono tabular-nums tracking-tight",
-                                  displayStatus === 'paid' ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
-                                )}>
+                                  "font-semibold text-sm font-numeric tabular-nums tracking-tight",
+                                  displayStatus === 'paid' ? "" : "text-foreground"
+                                )}
+                                style={displayStatus === 'paid' ? { color: 'hsl(var(--color-income))' } : undefined}>
                                   {formatCurrency(bill.total_value)}
                                 </p>
                                 <Badge 
                                   variant="outline" 
-                                  className={cn("text-[9px] px-1.5 py-0 font-medium mt-0.5", config.className)}
+                                  className="text-[9px] px-1.5 py-0 font-medium mt-0.5"
+                                  style={config.style}
                                 >
                                   <StatusIcon className="h-2.5 w-2.5 mr-0.5" strokeWidth={1.5} />
                                   {config.label}
                                 </Badge>
                                 {bill.payment_source === 'bank_statement' && (
-                                  <Badge variant="outline" className="text-[8px] px-1 py-0 font-medium bg-blue-50 text-blue-600 border-blue-200/80 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/60">
+                                  <Badge variant="outline" className="text-[8px] px-1 py-0 font-medium" style={{ background: 'hsl(var(--color-info-bg))', color: 'hsl(var(--color-info))', borderColor: 'hsl(var(--color-info) / 0.3)' }}>
                                     via extrato
                                   </Badge>
                                 )}
@@ -342,7 +378,7 @@ export const BillsSection: React.FC<BillsSectionProps> = ({ cardFilter, availabl
                             </div>
                             {/* Partial payment alert */}
                             {remaining != null && remaining > 0 && (
-                              <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 text-xs">
+                              <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs" style={{ background: 'hsl(var(--color-warning-bg))', color: 'hsl(var(--color-warning))' }}>
                                 <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                                 <span className="font-medium">Pagamento Parcial: Restam {formatCurrency(remaining)}</span>
                               </div>
