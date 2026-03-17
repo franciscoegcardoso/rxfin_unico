@@ -75,6 +75,8 @@ const BensInvestimentosLayout: React.FC = () => {
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
   const validTabs = VALID_TABS as readonly string[];
   const tabFromUrl = (() => {
+    // 'dividas' é tratada pelo React Router via <Navigate to="/passivos"> — não forçar consolidado
+    if (pathSegment === 'dividas') return 'dividas';
     if (pathSegment === 'overview') return 'consolidado';
     if (pathSegment === 'imoveis' || pathSegment === 'veiculos') return 'patrimonio';
     if (pathSegment === 'financiamentos') return 'passivos';
@@ -1034,7 +1036,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
-              {(currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'historico-ir') && <Outlet />}
+              {(currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'historico-ir' || currentTab === 'dividas') && <Outlet />}
 
               {currentTab === 'seguros' && (
                 <div className="space-y-4">
