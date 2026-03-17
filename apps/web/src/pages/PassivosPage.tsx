@@ -1,5 +1,6 @@
 import React from 'react';
 import { CreditoSection } from '@/components/credito/CreditoSection';
+import { DividasObrigacoesSection } from '@/components/passivos/DividasObrigacoesSection';
 
 const PassivosPage: React.FC = () => {
   return (
@@ -10,7 +11,10 @@ const PassivosPage: React.FC = () => {
           Dívidas, financiamentos e obrigações financeiras
         </p>
       </div>
-      <CreditoSection />
+      <div className="space-y-10">
+        <DividasObrigacoesSection />
+        <CreditoSection />
+      </div>
     </div>
   );
 };
