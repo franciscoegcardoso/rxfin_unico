@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -117,46 +118,30 @@ export const CreditoSection: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-700 dark:text-blue-400">Consórcios</p>
-                  <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{consorcios.length}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-blue-500" />
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">Total cartas: {formatMoney(totalConsorcios)}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-emerald-700 dark:text-emerald-400">Financiamentos</p>
-                  <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">{financiamentos.length}</p>
-                </div>
-                <Landmark className="h-8 w-8 text-emerald-500" />
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">Saldo devedor: {formatMoney(totalFinanciamentos)}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Compromissos</p>
-                  <p className="text-2xl font-bold">{formatMoney(totalConsorcios + totalFinanciamentos)}</p>
-                </div>
-                <ArrowRightLeft className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Summary — mesmo padrão visual que Bens e Investimentos (HeaderMetricCard) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <HeaderMetricCard
+            label="Consórcios"
+            value={formatMoney(totalConsorcios)}
+            variant="blue"
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
+          <HeaderMetricCard
+            label="Financiamentos"
+            value={formatMoney(totalFinanciamentos)}
+            variant="negative"
+            icon={<Landmark className="h-4 w-4" />}
+          />
+          <HeaderMetricCard
+            label="Total compromissos"
+            value={formatMoney(totalConsorcios + totalFinanciamentos)}
+            variant="neutral"
+            icon={<ArrowRightLeft className="h-4 w-4" />}
+          />
         </div>
+        <p className="text-[10px] text-muted-foreground -mt-2">
+          {consorcios.length} consórcio(s) · {financiamentos.length} financiamento(s)
+        </p>
 
         {/* Button and Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

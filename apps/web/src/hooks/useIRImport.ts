@@ -1,26 +1,8 @@
 import { useState } from 'react';
-import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-/** Extrai mensagem de erro do corpo da resposta (vários formatos possíveis). */
-function normalizeErrorMessage(body: Record<string, unknown> | null | undefined, status: number): string {
-  if (!body || typeof body !== 'object') return 'Erro ao processar arquivo. Tente novamente.';
-  const err = body.error;
-  if (typeof err === 'string' && err.trim()) return err.trim();
-  if (err && typeof err === 'object' && typeof (err as { message?: string }).message === 'string') {
-    return (err as { message: string }).message.trim();
-  }
-  if (typeof body.message === 'string' && body.message.trim()) return body.message.trim();
-  if (typeof body.detail === 'string' && body.detail.trim()) return body.detail.trim();
-  if (Array.isArray(body.errors) && body.errors[0] && typeof (body.errors[0] as { message?: string }).message === 'string') {
-    return (body.errors[0] as { message: string }).message;
-  }
-  if (status === 401) return 'Sessão expirada. Faça login novamente.';
-  if (status === 413) return 'Arquivo muito grande. Use um arquivo menor ou exporte em XML/DEC.';
-  if (status >= 500) return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
-  return 'Erro ao processar arquivo. Verifique o formato (XML, DEC ou PDF) e tente novamente.';
-}
+import { uploadIRFileMultipart } from '@/lib/processIrImportUpload';
 
 export interface BemDireito {
   codigo: string;
@@ -96,68 +78,13 @@ export const useIRImport = () => {
         return null;
       }
 
-      // Read file as base64
-      const fileContent = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          // Remove data URL prefix if present
-          const base64 = result.includes(',') ? result.split(',')[1] : result;
-          resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      // Chamada à edge function: Headers API evita ByteString inválido; resposta tratada com fallback
-      const baseUrl = typeof SUPABASE_URL === 'string' ? SUPABASE_URL.trim() : '';
-      const url = baseUrl ? `${baseUrl.replace(/\/$/, '')}/functions/v1/process-ir-import` : '';
-      const tokenStr = String(session?.access_token ?? '').trim();
-      if (!url || !tokenStr) {
-        toast.error('Sessão inválida. Faça login novamente.');
-        return null;
+      const { data: responseBody, error: uploadErr } = await uploadIRFileMultipart(file);
+      if (uploadErr) {
+        throw uploadErr;
       }
-      const headers = new Headers();
-      headers.set('Content-Type', 'application/json');
-      headers.set('Authorization', `Bearer ${tokenStr}`);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          fileContent,
-          fileType,
-          fileName: file.name,
-        }),
-      });
-
-      const text = await response.text();
-      let result: Record<string, unknown>;
-      try {
-        if (!text?.trim()) {
-          throw new Error(
-            response.status >= 500
-              ? 'Serviço temporariamente indisponível. Tente novamente em instantes.'
-              : 'Resposta vazia do servidor. Tente novamente.'
-          );
-        }
-        result = JSON.parse(text) as Record<string, unknown>;
-      } catch (parseErr) {
-        if (parseErr instanceof SyntaxError) {
-          console.error('[IR Import] Resposta não-JSON:', response.status, text?.slice(0, 200));
-          throw new Error(
-            response.status >= 500
-              ? 'Serviço temporariamente indisponível. Tente novamente em instantes.'
-              : 'Resposta inválida do servidor. Tente novamente.'
-          );
-        }
-        throw parseErr;
-      }
-
-      if (!response.ok) {
-        const errorMsg = normalizeErrorMessage(result, response.status);
-        console.error('[IR Import] Erro da API:', response.status, result);
-        throw new Error(errorMsg);
+      const result = responseBody as Record<string, unknown>;
+      if (!result || typeof result !== 'object') {
+        throw new Error('Resposta inválida do servidor.');
       }
 
       const data = result?.data as Record<string, unknown> | undefined;

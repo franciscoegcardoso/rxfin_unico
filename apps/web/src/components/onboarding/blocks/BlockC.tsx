@@ -19,18 +19,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-const readFileAsBase64 = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64 = result.split(',')[1];
-      resolve(base64 ?? '');
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+import { uploadIRFileMultipart } from '@/lib/processIrImportUpload';
 
 const getFileType = (file: File): 'pdf' | 'xml' | null => {
   const name = file.name.toLowerCase();
@@ -137,12 +126,8 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     setIrUploading(true);
     setIrUploadError('');
     try {
-      const fileContent = await readFileAsBase64(file);
-      const { data, error } = await supabase.functions.invoke('process-ir-import', {
-        body: { fileContent, fileType, fileName: file.name },
-      });
-      if (error) throw new Error(error.message);
-      const payload = data as { success?: boolean; error?: string; data?: { anoExercicio?: number } } | null;
+      const { data: payload, error: uploadErr } = await uploadIRFileMultipart(file);
+      if (uploadErr) throw uploadErr;
       if (!payload?.success) throw new Error(payload?.error ?? 'Erro desconhecido');
       const ano = payload.data?.anoExercicio ?? anoExercicio;
       toast.success(`Declaração ${ano} importada com sucesso!`);
