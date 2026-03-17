@@ -170,13 +170,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   // Check if page is available (is_active_users = true). /inicio is always available.
-  if (!isInicio && !isAvailable) {
+  // /movimentacoes and sub-routes (extrato, cartao-credito, consolidado) are always allowed to load
+  // so the Movimentações module works even when the DB page record is inactive.
+  const isMovimentacoesRoute = location.pathname === '/movimentacoes' || location.pathname.startsWith('/movimentacoes/');
+  if (!isInicio && !isMovimentacoesRoute && !isAvailable) {
     const featureName = pageName || ROUTE_FEATURE_NAMES[location.pathname];
     return <ComingSoon featureName={featureName} />;
   }
 
-  // Check if user has permission for this route (based on plan hierarchy)
-  if (!isInicio && !hasRoutePermission(location.pathname)) {
+  // Check if user has permission for this route (based on plan hierarchy).
+  // /movimentacoes and sub-routes always allowed so Cartão de Crédito etc. load.
+  if (!isInicio && !isMovimentacoesRoute && !hasRoutePermission(location.pathname)) {
     const featureName = pageName || ROUTE_FEATURE_NAMES[location.pathname];
     return <ComingSoon featureName={featureName} />;
   }
