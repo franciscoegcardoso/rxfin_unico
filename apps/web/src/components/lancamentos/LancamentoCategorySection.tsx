@@ -114,41 +114,34 @@ export function LancamentoCategorySection({
     setLoadingSuggestions(true);
     (async () => {
       try {
-        const allResults: { id: string; entry: SuggestionEntry }[] = [];
         for (let i = 0; i < unvalidated.length; i += BATCH_SIZE) {
           if (cancelled) return;
           const batch = unvalidated.slice(i, i + BATCH_SIZE);
-          const transactions = batch.map((l) => ({
+          const batchPayload = batch.map((l) => ({
             storeName: (l.friendly_name || l.nome || '').trim() || 'Sem descrição',
             value: l.valor_realizado ?? l.valor_previsto ?? 0,
             date: l.data_pagamento || l.data_registro || l.mes_referencia + '-01',
             isAccountTransaction: true as const,
           }));
-          const incomeCategoryNames = incomeCategories.map((c) => c.name);
+          const incomeCategoriesList = incomeCategories.map((c) => c.name);
           const { data, error } = await supabase.functions.invoke('categorize-transactions', {
-            body: { transactions, incomeCategories: incomeCategoryNames },
+            body: { transactions: batchPayload, isAccountTransaction: true, incomeCategories: incomeCategoriesList },
           });
-          if (error || !data?.categorizedTransactions) {
-            if (!cancelled) setSuggestionMap((prev) => prev);
-            return;
-          }
-          const categorized = data.categorizedTransactions as Array<{ suggestedCategoryId?: string; suggestedCategory?: string; confidence?: string }>;
-          batch.forEach((l, idx) => {
-            const c = categorized[idx];
-            const suggestedCategory = (c?.suggestedCategory || 'Outros').trim();
-            const suggestedCategoryId = c?.suggestedCategoryId || 'outros';
-            const confidence = c?.confidence || 'low';
-            allResults.push({ id: l.id, entry: { suggestedCategoryId, suggestedCategory, confidence } });
-          });
-        }
-        if (!cancelled) {
-          setSuggestionMap((prev) => {
-            const next = { ...prev };
-            allResults.forEach(({ id, entry }) => {
-              next[id] = entry;
+
+          if (!error && data?.categorizedTransactions) {
+            const newMap: Record<string, { suggestedCategoryId: string; suggestedCategory: string; confidence: string }> = {};
+            data.categorizedTransactions.forEach((result: any, idx: number) => {
+              const lancId = batch[idx]?.id;
+              if (lancId) {
+                newMap[lancId] = {
+                  suggestedCategoryId: result?.suggestedCategoryId ?? 'outros',
+                  suggestedCategory: (result?.suggestedCategory ?? 'Outros').trim(),
+                  confidence: result?.confidence ?? 'low',
+                };
+              }
             });
-            return next;
-          });
+            if (!cancelled) setSuggestionMap((prev) => ({ ...prev, ...newMap }));
+          }
         }
       } catch (err) {
         console.error('Error fetching category suggestions:', err);
