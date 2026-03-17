@@ -97,6 +97,11 @@ export function LancamentoCategorySection({
   const [selectedLancamento, setSelectedLancamento] = useState<LancamentoRealizado | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
+  const unvalidatedIdsKey = useMemo(
+    () => lancamentos.filter((l) => !l.is_category_confirmed).map((l) => l.id).sort().join(','),
+    [lancamentos]
+  );
+
   // Fetch AI category suggestions for unvalidated lançamentos (conta)
   useEffect(() => {
     const unvalidated = lancamentos.filter((l) => !l.is_category_confirmed);
@@ -153,9 +158,9 @@ export function LancamentoCategorySection({
     return () => {
       cancelled = true;
     };
-    // Re-run when list of lancamento IDs or income categories change; not when only is_category_confirmed changes
+    // Re-run when set of unvalidated IDs or income categories change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lancamentos.map((l) => l.id).sort().join(','), incomeCategories.map((c) => c.name).join(',')]);
+  }, [unvalidatedIdsKey, incomeCategories.map((c) => c.name).join(',')]);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';

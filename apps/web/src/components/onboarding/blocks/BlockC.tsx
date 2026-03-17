@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
   Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { IrDownloadGuideContent } from '@/components/shared/IrDownloadGuide';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatIRFileName } from '@/lib/irFileName';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
@@ -83,6 +84,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const [patrimonioData, setPatrimonioData] = useState<any>(null);
   const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
   const [irGuideOpen, setIrGuideOpen] = useState(false);
+  const [summaryYear, setSummaryYear] = useState<number | null>(null);
 
   const loadPatrimonio = async () => {
     if (patrimonioLoaded || !user?.id) return;
@@ -214,7 +216,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Zap className="h-5 w-5 text-primary" />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-foreground mb-1">
                 Importe pelo menos os últimos 2 anos
               </h3>
@@ -223,6 +225,15 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                 calcular sua taxa de poupança histórica e detectar inconsistências. Com apenas 1 ano,
                 a análise fica limitada.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 gap-1.5"
+                onClick={() => setIrGuideOpen(true)}
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                Como obter o PDF?
+              </Button>
             </div>
           </div>
         </div>
@@ -230,13 +241,18 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           {years.map(year => {
             const imported = importedYears.has(year);
             const imp = irImports.find(i => i.ano_exercicio === year);
+            const displayFileName = imp
+              ? formatIRFileName(imp.ano_exercicio, imp.ano_calendario, user?.user_metadata?.cpf)
+              : null;
             return (
               <div
                 key={year}
                 className={cn(
                   'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all',
-                  imported ? 'border-primary bg-primary/5' : 'border-border bg-card'
+                  imported ? 'border-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'border-border bg-card'
                 )}
+                onClick={imported ? () => setSummaryYear(year) : undefined}
+                role={imported ? 'button' : undefined}
               >
                 <div className="shrink-0">
                   {imported
@@ -251,7 +267,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                   {imported && imp && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {imp.bens_count} bens · {imp.rendimentos_count} rendimentos
-                      {imp.file_name && ` · ${imp.file_name}`}
+                      {displayFileName && ` · ${displayFileName}`}
                     </p>
                   )}
                   {!imported && (
@@ -267,6 +283,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                       'shrink-0 cursor-pointer',
                       irUploading && selectedYear === year && 'pointer-events-none opacity-80'
                     )}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <input
                       id={`ir-upload-${year}`}
@@ -321,15 +338,6 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             </p>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
-          onClick={() => setIrGuideOpen(true)}
-        >
-          <HelpCircle className="h-4 w-4" />
-          Como obter o PDF?
-        </Button>
         <Dialog open={irGuideOpen} onOpenChange={setIrGuideOpen}>
           <DialogContent className="max-w-lg">
             <DialogHeader>
@@ -341,6 +349,58 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             <IrDownloadGuideContent />
           </DialogContent>
         </Dialog>
+
+        {summaryYear != null && (() => {
+          const imp = irImportList.find(i => i.anoExercicio === summaryYear);
+          if (!imp) return null;
+          const totalBens = (imp.bensDireitos ?? []).reduce((s: number, b: { situacaoAtual?: number }) => s + (b.situacaoAtual ?? 0), 0);
+          const totalRendTrib = (imp.rendimentosTributaveis ?? []).reduce((s: number, r: { valor?: number }) => s + (r.valor ?? 0), 0);
+          const totalRendIsentos = (imp.rendimentosIsentos ?? []).reduce((s: number, r: { valor?: number }) => s + (r.valor ?? 0), 0);
+          const totalRend = totalRendTrib + totalRendIsentos;
+          const totalDiv = (imp.dividas ?? []).reduce((s: number, d: { situacaoAtual?: number }) => s + (d.situacaoAtual ?? 0), 0);
+          const numFontes = (imp.rendimentosTributaveis?.length ?? 0) + (imp.rendimentosIsentos?.length ?? 0);
+          const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+          const handleImportAnother = () => {
+            const y = summaryYear;
+            setSummaryYear(null);
+            setTimeout(() => document.getElementById(`ir-upload-${y}`)?.click(), 100);
+          };
+          return (
+            <Dialog open={true} onOpenChange={(open) => !open && setSummaryYear(null)}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Declaração {imp.anoExercicio} (ano-base {imp.anoCalendario})</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Card className="p-3 border-blue-500/20 bg-blue-500/5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bens e Direitos</p>
+                    <p className="font-semibold text-blue-600 dark:text-blue-400">{(imp.bensDireitos ?? []).length} itens</p>
+                    <p className="text-sm font-medium">{fmt(totalBens)}</p>
+                  </Card>
+                  <Card className="p-3 border-green-500/20 bg-green-500/5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rendimentos</p>
+                    <p className="text-xs text-muted-foreground">Trib. {fmt(totalRendTrib)} · Isentos {fmt(totalRendIsentos)}</p>
+                    <p className="font-semibold text-green-600 dark:text-green-400">{fmt(totalRend)}</p>
+                    <p className="text-xs text-muted-foreground">{numFontes} fontes pagadoras</p>
+                  </Card>
+                  <Card className="p-3 border-orange-500/20 bg-orange-500/5">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Dívidas e Ônus</p>
+                    <p className="font-semibold text-orange-600 dark:text-orange-400">{(imp.dividas ?? []).length} itens</p>
+                    <p className="text-sm font-medium">{fmt(totalDiv)}</p>
+                  </Card>
+                </div>
+                <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                  <Button variant="outline" className="sm:flex-1" onClick={() => setSummaryYear(null)}>Concluir</Button>
+                  <Button className="bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-1" onClick={handleImportAnother}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar outro ano
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          );
+        })()}
+
         <Button
           variant="hero"
           size="lg"

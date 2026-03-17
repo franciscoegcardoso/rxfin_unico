@@ -19,6 +19,7 @@ import {
   Shield,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Loader2,
   Building,
   Banknote,
@@ -244,64 +245,86 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
     </div>
   );
 
+  const handleImportAnother = useCallback(() => {
+    setStep('upload');
+    setTimeout(() => fileInputRef.current?.click(), 100);
+  }, []);
+
   const renderResultStep = () => {
     if (!lastImport) return null;
 
-    const totalBens = lastImport.bensDireitos.reduce((sum, b) => sum + b.situacaoAtual, 0);
-    const totalRendimentos = lastImport.rendimentosTributaveis.reduce((sum, r) => sum + r.valor, 0);
-    const totalDividas = lastImport.dividas.reduce((sum, d) => sum + d.situacaoAtual, 0);
+    const totalBens = lastImport.bensDireitos.reduce((sum, b) => sum + (b as { situacaoAtual?: number }).situacaoAtual, 0);
+    const totalRendTrib = lastImport.rendimentosTributaveis.reduce((sum, r) => sum + (r as { valor?: number }).valor, 0);
+    const totalRendIsentos = lastImport.rendimentosIsentos.reduce((sum, r) => sum + (r as { valor?: number }).valor, 0);
+    const totalRendimentos = totalRendTrib + totalRendIsentos;
+    const totalDividas = lastImport.dividas.reduce((sum, d) => sum + (d as { situacaoAtual?: number }).situacaoAtual, 0);
+    const numFontes = lastImport.rendimentosTributaveis.length + lastImport.rendimentosIsentos.length;
+    const isEmpty =
+      lastImport.bensDireitos.length === 0 &&
+      lastImport.rendimentosTributaveis.length === 0 &&
+      lastImport.rendimentosIsentos.length === 0 &&
+      lastImport.dividas.length === 0;
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-green-600">
-          <CheckCircle2 className="h-5 w-5" />
-          <span className="font-medium">Importação concluída!</span>
+        <div className="flex items-center gap-2">
+          {isEmpty ? (
+            <>
+              <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+              <span className="font-medium text-foreground">Registrado sem dados detalhados</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+              <span className="font-medium text-foreground">Importação concluída!</span>
+            </>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Declaração {lastImport.anoExercicio} (ano-base {lastImport.anoCalendario})
+        </p>
+
+        {isEmpty && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+            <p className="font-medium mb-1">Provavelmente é um Recibo</p>
+            <p className="text-muted-foreground text-xs">
+              O arquivo foi registrado, mas não contém dados detalhados. Para análise completa, importe o XML ou arquivo .dec da declaração.
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="p-3 border-blue-500/20 bg-blue-500/5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bens e Direitos</p>
+            <p className="font-semibold text-blue-600 dark:text-blue-400">
+              {lastImport.bensDireitos.length} itens
+            </p>
+            <p className="text-sm font-medium">{formatCurrency(totalBens)}</p>
+          </Card>
+          <Card className="p-3 border-green-500/20 bg-green-500/5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rendimentos</p>
+            <p className="text-xs text-muted-foreground">
+              Trib. {formatCurrency(totalRendTrib)} · Isentos {formatCurrency(totalRendIsentos)}
+            </p>
+            <p className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(totalRendimentos)}</p>
+            <p className="text-xs text-muted-foreground">{numFontes} fontes pagadoras</p>
+          </Card>
+          <Card className="p-3 border-orange-500/20 bg-orange-500/5">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Dívidas e Ônus</p>
+            <p className="font-semibold text-orange-600 dark:text-orange-400">
+              {lastImport.dividas.length} itens
+            </p>
+            <p className="text-sm font-medium">{formatCurrency(totalDividas)}</p>
+          </Card>
         </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-medium">Declaração {lastImport.anoExercicio}</span>
-            <Badge variant="outline">
-              {lastImport.sourceType.toUpperCase()}
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="p-2 bg-blue-500/10 rounded">
-              <p className="text-muted-foreground">Bens e Direitos</p>
-              <p className="font-semibold text-blue-600">
-                {lastImport.bensDireitos.length} itens
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(totalBens)}
-              </p>
-            </div>
-
-            <div className="p-2 bg-green-500/10 rounded">
-              <p className="text-muted-foreground">Rendimentos</p>
-              <p className="font-semibold text-green-600">
-                {lastImport.rendimentosTributaveis.length + lastImport.rendimentosIsentos.length} fontes
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatCurrency(totalRendimentos)}
-              </p>
-            </div>
-
-            <div className="p-2 bg-orange-500/10 rounded col-span-2">
-              <p className="text-muted-foreground">Dívidas e Ônus</p>
-              <p className="font-semibold text-orange-600">
-                {lastImport.dividas.length} itens • {formatCurrency(totalDividas)}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => setStep('upload')}>
-            Importar outro
-          </Button>
-          <Button className="flex-1" onClick={() => onOpenChange(false)}>
+        <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+          <Button variant="outline" className="sm:flex-1" onClick={() => onOpenChange(false)}>
             Concluir
+          </Button>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-1" onClick={handleImportAnother}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar outro ano
           </Button>
         </div>
       </div>
@@ -310,7 +333,7 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={cn(step === 'result' ? 'sm:max-w-lg' : 'sm:max-w-md')}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />

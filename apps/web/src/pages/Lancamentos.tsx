@@ -1115,8 +1115,8 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
           </DialogContent>
         </Dialog>
 
-        {/* Filtros + conteúdo: mobile = chips + Tabs; desktop = grid sidebar | Tabs. Gap centraliza a borda entre painel e conteúdo. */}
-        <div className={cn(isMobile ? 'space-y-4 mb-6' : 'grid grid-cols-[240px_1fr] gap-6 mb-6')}>
+        {/* Filtros + conteúdo: mobile = chips + busca + período + Tabs; desktop = período + faixa horizontal de filtros + Tabs (full width). */}
+        <div className={cn(isMobile ? 'space-y-4 mb-6' : 'space-y-4 mb-6')}>
         {isMobile ? (
           <>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
@@ -1186,11 +1186,20 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
             </div>
           </>
         ) : (
-            <aside className="w-[240px] shrink-0 bg-[hsl(var(--color-surface-base))] border-r border-[hsl(var(--color-border-subtle))] pr-6 p-4 space-y-4">
-              <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
+          <>
+            {/* Desktop: período na primeira linha */}
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
+              <div className="mt-1.5">
+                <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+              </div>
+            </div>
+            {/* Desktop: faixa horizontal de filtros abaixo do período */}
+            <div className="flex flex-wrap items-end gap-3 py-3 px-3 rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-sunken)/0.5)]">
+              <div className="flex-shrink-0">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Tipo</Label>
                 <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => { setCategoryFilter(null); setFilterTipo(v); }}>
-                  <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
+                  <SelectTrigger className="h-9 w-[120px] border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1200,10 +1209,10 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Status</Label>
+              <div className="flex-shrink-0">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Status</Label>
                 <Select value={filterStatus} onValueChange={(v: 'all' | 'paid' | 'pending' | 'overdue') => setFilterStatus(v)}>
-                  <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
+                  <SelectTrigger className="h-9 w-[110px] border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1214,13 +1223,13 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Categoria</Label>
+              <div className="flex-shrink-0">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Categoria</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="mt-1.5 w-full justify-between border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))]">
-                      <span className="truncate">{filterCategories.length === 0 ? 'Todas' : `${filterCategories.length} selecionada(s)`}</span>
-                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    <Button variant="outline" className="h-9 min-w-[100px] max-w-[160px] justify-between border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] text-sm">
+                      <span className="truncate">{filterCategories.length === 0 ? 'Todas' : `${filterCategories.length} sel.`}</span>
+                      <ChevronDown className="h-4 w-4 shrink-0 ml-1" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-56 p-2" align="start">
@@ -1249,10 +1258,10 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 </Popover>
               </div>
               {availableBanks.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Banco</Label>
+                <div className="flex-shrink-0">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Banco</Label>
                   <Select value={selectedBank} onValueChange={setSelectedBank}>
-                    <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
+                    <SelectTrigger className="h-9 w-[130px] border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-sm">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1270,10 +1279,10 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 </div>
               )}
               {availableAccountTypes.length > 0 && (
-                <div>
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Conta</Label>
+                <div className="flex-shrink-0">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Conta</Label>
                   <Select value={selectedAccountType} onValueChange={setSelectedAccountType}>
-                    <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
+                    <SelectTrigger className="h-9 w-[120px] border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-sm">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1285,29 +1294,32 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   </Select>
                 </div>
               )}
-              <div>
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Busca</Label>
-                <div className="relative mt-1.5">
+              <div className="flex-shrink-0 flex-1 min-w-[140px] max-w-[200px]">
+                <Label className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Busca</Label>
+                <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Por nome..."
+                    placeholder="Por nome ou categoria..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8 h-9 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] text-sm"
                   />
                 </div>
               </div>
-            </aside>
+            </div>
+          </>
         )}
         <div className={cn(!isMobile && 'min-w-0 overflow-hidden')}>
 
-        {/* Período — acima das guias para facilitar a UX */}
+        {/* Período — apenas no mobile (no desktop fica na faixa superior) */}
+        {isMobile && (
         <div className="mb-4">
           <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
           <div className="mt-1.5">
             <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
           </div>
         </div>
+        )}
 
         {/* Tabs - responsivo */}
         <Tabs defaultValue="geral" className="w-full">

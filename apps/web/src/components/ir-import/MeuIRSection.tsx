@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -62,6 +63,8 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { useIRImport, IRImportData, BemDireito } from '@/hooks/useIRImport';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatIRFileName } from '@/lib/irFileName';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,6 +129,8 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
   const [searchTerm, setSearchTerm] = useState<string>('');
   /** Contagens de bens por ir_import_id (total e pendentes) para os banners de reconciliação */
   const [reconciliationCounts, setReconciliationCounts] = useState<Record<string, { total: number; pendentes: number }>>({});
+  const [summaryModalYear, setSummaryModalYear] = useState<number | null>(null);
+  const { user } = useAuth();
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -442,6 +447,18 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
                         <Badge variant="secondary" className="text-[10px] px-1.5">
                           {ir.sourceType.toUpperCase()}
                         </Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSummaryModalYear(ir.anoExercicio);
+                          }}
+                        >
+                          <Wallet className="h-3.5 w-3.5 mr-1" />
+                          Ver resumo
+                        </Button>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
                         <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -829,6 +846,9 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
                           <Calendar className="h-3 w-3" />
                           <span>Importado em {formatDate(ir.importedAt)}</span>
                         </div>
+                        <span className="text-muted-foreground/80">
+                          {formatIRFileName(ir.anoExercicio, ir.anoCalendario, (user as { user_metadata?: { cpf?: string } })?.user_metadata?.cpf)}
+                        </span>
                         {ir.fileName && ir.filePath && (
                           <Button
                             variant="ghost"
@@ -886,6 +906,52 @@ export const MeuIRSection: React.FC<MeuIRSectionProps> = ({ onOpenImport, refres
           onItemLinked={handleLinkingSaved}
         />
       )}
+
+      {/* Resumo rápido do exercício (3 cards) */}
+      {summaryModalYear != null && (() => {
+        const imp = imports.find((i) => i.anoExercicio === summaryModalYear);
+        if (!imp) return null;
+        const totalBens = (imp.bensDireitos ?? []).reduce((s, b) => s + (b.situacaoAtual ?? 0), 0);
+        const totalRendTrib = (imp.rendimentosTributaveis ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+        const totalRendIsentos = (imp.rendimentosIsentos ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+        const totalRend = totalRendTrib + totalRendIsentos;
+        const totalDiv = (imp.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0);
+        const numFontes = (imp.rendimentosTributaveis?.length ?? 0) + (imp.rendimentosIsentos?.length ?? 0);
+        return (
+          <Dialog open onOpenChange={(open) => !open && setSummaryModalYear(null)}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Declaração {imp.anoExercicio} (ano-base {imp.anoCalendario})</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Card className="p-3 border-blue-500/20 bg-blue-500/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Bens e Direitos</p>
+                  <p className="font-semibold text-blue-600 dark:text-blue-400">{(imp.bensDireitos ?? []).length} itens</p>
+                  <p className="text-sm font-medium">{formatCurrency(totalBens)}</p>
+                </Card>
+                <Card className="p-3 border-green-500/20 bg-green-500/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rendimentos</p>
+                  <p className="text-xs text-muted-foreground">Trib. {formatCurrency(totalRendTrib)} · Isentos {formatCurrency(totalRendIsentos)}</p>
+                  <p className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(totalRend)}</p>
+                  <p className="text-xs text-muted-foreground">{numFontes} fontes pagadoras</p>
+                </Card>
+                <Card className="p-3 border-orange-500/20 bg-orange-500/5">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Dívidas e Ônus</p>
+                  <p className="font-semibold text-orange-600 dark:text-orange-400">{(imp.dividas ?? []).length} itens</p>
+                  <p className="text-sm font-medium">{formatCurrency(totalDiv)}</p>
+                </Card>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                <Button variant="outline" className="sm:flex-1" onClick={() => setSummaryModalYear(null)}>Concluir</Button>
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-1" onClick={() => { setSummaryModalYear(null); onOpenImport(); }}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar outro ano
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 };
