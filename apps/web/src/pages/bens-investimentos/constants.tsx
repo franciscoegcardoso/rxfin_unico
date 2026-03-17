@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Home, Car, TrendingUp, Building2, Gem, FileCode2,
   Scale, CreditCard, ShieldCheck, LayoutDashboard,
-  Briefcase, Landmark, Package, FileBarChart
+  Briefcase, Landmark, Package
 } from 'lucide-react';
 
 // ─── Grupos ─────────────────────────────────────────────────────────────────
@@ -46,7 +46,6 @@ export const TABS = [
   { id: 'participacoes', label: 'Participações',   icon: Building2       },
   { id: 'intangiveis',   label: 'Intangíveis',     icon: Briefcase       },
   { id: 'seguros',       label: 'Seguros',         icon: ShieldCheck     },
-  { id: 'historico-ir',  label: 'Histórico IR',    icon: FileBarChart    },
 ] as const;
 
 export type BensTab = typeof TABS[number]['id'];
@@ -59,7 +58,6 @@ export const TAB_ASSET_TYPES: Record<BensTab, NewAssetType[]> = {
   'participacoes': ['company_stake'],
   'intangiveis':   ['intellectual_property', 'license', 'contract_right'],
   'seguros':       [],
-  'historico-ir':  [],
 };
 
 // ─── Compatibilidade retroativa (mantém exportações usadas por outros arquivos) ──

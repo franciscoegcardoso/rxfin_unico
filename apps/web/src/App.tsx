@@ -59,7 +59,6 @@ const PassivosPage = lazy(() => import("./pages/PassivosPage"));
 const SegurosTab = lazy(() => import("./pages/bens-investimentos/SegurosTab"));
 const ParticipacaoTab = lazy(() => import("./pages/bens-investimentos/ParticipacaoTab"));
 const IntangiveisTab = lazy(() => import("./pages/bens-investimentos/IntangiveisTab"));
-const HistoricoIrTab = lazy(() => import("./pages/bens-investimentos/HistoricoIrTab"));
 
 const PlanejamentoLayout = lazy(() => import("./pages/planejamento/PlanejamentoLayout"));
 const VisaoMensalTab = lazy(() => import("./pages/Planejamento"));
@@ -219,7 +218,7 @@ const App = () => (
                                     <Route path="seguros" element={<SegurosTab />} />
                                     <Route path="participacoes" element={<ParticipacaoTab />} />
                                     <Route path="intangiveis" element={<IntangiveisTab />} />
-                                    <Route path="historico-ir" element={<HistoricoIrTab />} />
+                                    <Route path="historico-ir" element={<Navigate to="/meu-ir/historico-ir" replace />} />
                                   </Route>
 
                                   <Route path="passivos" element={<PassivosPage />} />
@@ -283,6 +282,7 @@ const App = () => (
                                   <Route path="rx-split" element={<RXSplit />} />
                                   <Route path="dividir-conta" element={<DividirConta />} />
                                   <Route path="meu-ir" element={<MeuIR />} />
+                                  <Route path="meu-ir/historico-ir" element={<MeuIR defaultTab="historico-ir" />} />
                                 </Route>
 
                                 <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />

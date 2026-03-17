@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -21,9 +21,17 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import IrBensDireitosTab from '@/components/ir/IrBensDireitosTab';
 import IrExercicioSummaryCard from '@/components/ir/IrExercicioSummaryCard';
+import HistoricoIrTab from '@/pages/bens-investimentos/HistoricoIrTab';
 
-const MeuIR: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('organizer');
+interface MeuIRProps {
+  defaultTab?: string;
+}
+
+const MeuIR: React.FC<MeuIRProps> = ({ defaultTab }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab || 'organizer');
+  useEffect(() => {
+    if (defaultTab) setActiveTab(defaultTab);
+  }, [defaultTab]);
   const [isIRImportOpen, setIsIRImportOpen] = useState(false);
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   /** Incrementado após importação bem-sucedida para que MeuIRSection refaça o fetch e exiba a nova declaração sem F5 */
@@ -77,7 +85,7 @@ const MeuIR: React.FC = () => {
           }}
         />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-auto min-h-[52px] p-0 bg-transparent gap-0">
+          <TabsList className="w-full grid grid-cols-4 h-auto min-h-[52px] p-0 bg-transparent gap-0">
             <TabsTrigger 
               value="organizer" 
               className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 px-2 sm:px-4 min-h-[52px] text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors text-center leading-tight"
@@ -100,6 +108,13 @@ const MeuIR: React.FC = () => {
               <History className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Declarações anteriores</span>
               <span className="sm:hidden">Decl. anteriores</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="historico-ir" 
+              className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-3 px-2 sm:px-4 min-h-[52px] text-sm font-normal rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-semibold bg-muted/30 hover:bg-muted/50 transition-colors text-center leading-tight"
+            >
+              <FileText className="h-4 w-4 shrink-0" />
+              Histórico IR
             </TabsTrigger>
           </TabsList>
 
@@ -185,6 +200,10 @@ const MeuIR: React.FC = () => {
               onImportComplete={() => setIrRefreshKey((k) => k + 1)}
             />
             <MeuIRSection onOpenImport={() => setIsIRImportOpen(true)} refreshKey={irRefreshKey} />
+          </TabsContent>
+
+          <TabsContent value="historico-ir" className="mt-6">
+            <HistoricoIrTab />
           </TabsContent>
         </Tabs>
         </div>

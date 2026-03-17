@@ -967,7 +967,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 </div>
               )}
 
-              {(currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'historico-ir' || currentTab === 'dividas') && <Outlet />}
+              {(currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'dividas') && <Outlet />}
 
               {currentTab === 'seguros' && (
                 <div className="space-y-4">
