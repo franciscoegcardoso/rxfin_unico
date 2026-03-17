@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -79,15 +79,17 @@ const formatCurrencyCompact = (value: number) => {
 };
 
 // Tooltip customizado aprimorado com mais informações
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, isZeroKm }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    
+    const isZeroKmAnchor = isZeroKm && (data?.x === 0 || data?.timestamp === 0);
     return (
       <div className="bg-popover border border-border rounded-lg p-3 shadow-xl min-w-[200px]">
         {/* Header com data e badges */}
         <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="font-semibold text-foreground">{data.monthLabel}</p>
+          <p className="font-semibold text-foreground">
+            {isZeroKmAnchor ? 'Preço de lançamento 0 km' : data.monthLabel}
+          </p>
           <div className="flex items-center gap-1">
             {data.isLaunchPrice && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30">
@@ -263,8 +265,13 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
   familyName,
 }) => {
   const isMobile = useIsMobile();
+  const isZeroKm = modelYear === 32000;
   // State para controlar exibição da projeção (default: false = apenas histórico)
   const [showProjection, setShowProjection] = useState(false);
+  // Para 0km: sempre mostra projeção (não há histórico, só projeção faz sentido)
+  useEffect(() => {
+    if (isZeroKm) setShowProjection(true);
+  }, [isZeroKm]);
 
   // =========================================================================
   // CRITICAL: All hooks MUST be called unconditionally before any returns
@@ -490,7 +497,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
         engineV2: engineV2Metadata,
       },
     };
-  }, [priceHistory, cohortData, engineV2Result, modelYear]);
+  }, [priceHistory, cohortData, engineV2Result, modelYear, isZeroKm]);
 
   // Filtra dados baseado no toggle de projeção
   // IMPORTANT: Hooks must be called unconditionally - moved before early return
@@ -614,7 +621,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                 </span>
               </CardTitle>
               <CardDescription className="text-[10px] sm:text-xs mt-1">
-                Série temporal do {modelName} {modelYear}
+                {isZeroKm ? `Projeção de depreciação — ${modelName} 0 km` : `Série temporal do ${modelName} ${modelYear}`}
               </CardDescription>
             </div>
           </div>
@@ -710,7 +717,11 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                 <Switch
                   id="show-projection"
                   checked={showProjection}
-                  onCheckedChange={setShowProjection}
+                  onCheckedChange={(val) => {
+                    if (isZeroKm) return;
+                    setShowProjection(val);
+                  }}
+                  disabled={isZeroKm}
                   className="scale-90 sm:scale-100"
                 />
                 <Label htmlFor="show-projection" className="text-[10px] sm:text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
@@ -784,8 +795,9 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                       }
                       return selectedTicks;
                     })()}
-                    tickFormatter={(ts: number) => {
-                      const date = new Date(ts);
+                    tickFormatter={(value: number) => {
+                      if (isZeroKm && value === 0) return '0 km';
+                      const date = new Date(value);
                       return date.getUTCFullYear().toString().slice(-2);
                     }}
                     {...premiumXAxis}
@@ -807,7 +819,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                     ]}
                   />
                   <RechartsTooltip 
-                    content={<CustomTooltip />} 
+                    content={(props) => <CustomTooltip {...props} isZeroKm={isZeroKm} />}
                     wrapperStyle={{ zIndex: 50 }}
                   />
                 
@@ -936,13 +948,14 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
               {showProjection ? (
                 <>
                   <p>
-                    <strong>Série histórica FIPE + projeção 5 anos.</strong>{' '}
+                    <strong>{isZeroKm ? 'Projeção de depreciação 0 km.' : 'Série histórica FIPE + projeção 5 anos.'}</strong>{' '}
                     <span className="hidden sm:inline">Mais detalhes no botão 'Ver Metodologia'.</span>
                   </p>
                   <p className="hidden sm:block">
-                    O primeiro ponto ({metrics.periodStart}) representa o <strong>preço de lançamento 0km</strong>. 
-                    A linha pontilhada é a projeção futura 
-                    (taxa: {projectionInfo ? `${(projectionInfo.annualRate * 100).toFixed(1)}%` : 'N/A'} a.a.).
+                    {isZeroKm
+                      ? <>O primeiro ponto representa o <strong>preço atual do veículo 0 km</strong>. A linha pontilhada é a projeção futura de depreciação (taxa: {projectionInfo ? `${(projectionInfo.annualRate * 100).toFixed(1)}%` : 'N/A'} a.a.).</>
+                      : <>O primeiro ponto ({metrics.periodStart}) representa o <strong>preço de lançamento 0km</strong>. A linha pontilhada é a projeção futura (taxa: {projectionInfo ? `${(projectionInfo.annualRate * 100).toFixed(1)}%` : 'N/A'} a.a.).</>
+                    }
                   </p>
                 </>
               ) : (

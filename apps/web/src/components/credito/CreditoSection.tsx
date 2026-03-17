@@ -12,7 +12,9 @@ import { Consorcio, Financiamento } from '@/types/credito';
 import { ConsorcioDialog } from './ConsorcioDialog';
 import { FinanciamentoDialog } from './FinanciamentoDialog';
 import { useCreditos } from '@/hooks/useCreditos';
+import { useFinancial } from '@/contexts/FinancialContext';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
+import { DividasObrigacoesSection } from '@/components/passivos/DividasObrigacoesSection';
 
 import { 
   TrendingUp, 
@@ -23,7 +25,8 @@ import {
   ArrowRightLeft,
   Loader2,
   CheckCircle2,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 
 
@@ -45,8 +48,10 @@ export const CreditoSection: React.FC = () => {
     updateFinanciamento,
     deleteFinanciamento,
   } = useCreditos();
+  const { config } = useFinancial();
+  const dividasCount = config.assets.filter((a) => a.type === 'obligations' && !a.isSold).length;
 
-  const [activeTab, setActiveTab] = useState<'consorcios' | 'financiamentos'>('consorcios');
+  const [activeTab, setActiveTab] = useState<'consorcios' | 'financiamentos' | 'dividas'>('consorcios');
   const [consorcioDialogOpen, setConsorcioDialogOpen] = useState(false);
   const [financiamentoDialogOpen, setFinanciamentoDialogOpen] = useState(false);
   const [editingConsorcio, setEditingConsorcio] = useState<Consorcio | null>(null);
@@ -82,7 +87,7 @@ export const CreditoSection: React.FC = () => {
     if (activeTab === 'consorcios') {
       setEditingConsorcio(null);
       setConsorcioDialogOpen(true);
-    } else {
+    } else if (activeTab === 'financiamentos') {
       setEditingFinanciamento(null);
       setFinanciamentoDialogOpen(true);
     }
@@ -143,9 +148,9 @@ export const CreditoSection: React.FC = () => {
           {consorcios.length} consórcio(s) · {financiamentos.length} financiamento(s)
         </p>
 
-        {/* Button and Tabs */}
+        {/* Tabs: Consórcios | Financiamentos | Dívidas e obrigações */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'consorcios' | 'financiamentos')}>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'consorcios' | 'financiamentos' | 'dividas')}>
             <TabsList>
               <TabsTrigger value="consorcios" className="gap-1">
                 <TrendingUp className="h-4 w-4" />
@@ -155,13 +160,19 @@ export const CreditoSection: React.FC = () => {
                 <Landmark className="h-4 w-4" />
                 Financiamentos ({financiamentos.length})
               </TabsTrigger>
+              <TabsTrigger value="dividas" className="gap-1">
+                <FileText className="h-4 w-4" />
+                Dívidas e obrigações ({dividasCount})
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <Button onClick={handleAddNew} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Novo
-          </Button>
+          {activeTab !== 'dividas' && (
+            <Button onClick={handleAddNew} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Novo
+            </Button>
+          )}
         </div>
 
         {/* Content */}
@@ -321,6 +332,10 @@ export const CreditoSection: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'dividas' && (
+          <DividasObrigacoesSection />
         )}
       </div>
 
