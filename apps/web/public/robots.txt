@@ -1,0 +1,42 @@
+User-agent: *
+
+Allow: /simuladores/veiculos/simulador-fipe
+Allow: /simuladores/planejamento/simulador-custo-hora
+Allow: /termos-de-uso
+Allow: /politica-privacidade
+Allow: /politica-cookies
+
+Disallow: /inicio
+Disallow: /movimentacoes
+Disallow: /lancamentos
+Disallow: /bens-investimentos
+Disallow: /planejamento
+Disallow: /planejamento-anual
+Disallow: /contas
+Disallow: /fluxo-financeiro
+Disallow: /passivos
+Disallow: /configuracoes
+Disallow: /configuracoes-fiscais
+Disallow: /minha-conta
+Disallow: /financeiro
+Disallow: /gestao-veiculos
+Disallow: /meu-ir
+Disallow: /seguros
+Disallow: /presentes
+Disallow: /rx-split
+Disallow: /dividir-conta
+Disallow: /alertas
+Disallow: /recorrentes
+Disallow: /notificacoes
+Disallow: /lixeira
+Disallow: /registro-compras
+Disallow: /pacotes-orcamento
+Disallow: /sonhos
+Disallow: /dados-financeiros
+Disallow: /instituicoes-financeiras
+Disallow: /onboarding
+Disallow: /parametros
+Disallow: /admin
+Disallow: /bem-vindo
+
+Sitemap: https://app.rxfin.com.br/sitemap.xml
