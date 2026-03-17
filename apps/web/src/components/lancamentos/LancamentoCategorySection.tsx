@@ -158,9 +158,8 @@ export function LancamentoCategorySection({
     return () => {
       cancelled = true;
     };
-    // Re-run when set of unvalidated IDs or income categories change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unvalidatedIdsKey, incomeCategories.map((c) => c.name).join(',')]);
+  }, [unvalidatedIdsKey]);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
