@@ -24,8 +24,11 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { usePluggyInvestments, InvestmentCategoryData, InvestmentCategory } from '@/hooks/usePluggyInvestments';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
+import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
@@ -62,7 +65,34 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   refreshTrigger = 0,
   onAddManual,
 }) => {
-  const { categories, totalBalance, totals, summaryByCategory, isLoading, refetch, investments, filters, setFilters, filterOptions, hasActiveFilters, allInvestments, syncAlertRows } = usePluggyInvestments();
+  const { user } = useAuth();
+  const {
+    categories,
+    totalBalance,
+    totals,
+    summaryByCategory,
+    isLoading,
+    refetch,
+    investments,
+    filters,
+    setFilters,
+    filterOptions,
+    hasActiveFilters,
+    allInvestments,
+    syncAlertRows,
+    onboardingStatus,
+  } = usePluggyInvestments();
+
+  const [showOnboardingCard, setShowOnboardingCard] = useState(true);
+  const showOnboarding = showOnboardingCard && onboardingStatus?.should_show === true;
+
+  const handleOnboardingDismiss = React.useCallback(async () => {
+    setShowOnboardingCard(false);
+    if (user?.id) {
+      await supabase.rpc('mark_investment_onboarding_seen', { p_user_id: user.id });
+      refetch();
+    }
+  }, [user?.id, refetch]);
 
   React.useEffect(() => {
     if (refreshTrigger > 0) void refetch();
@@ -102,6 +132,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   if (allInvestments.length === 0 && !isLoading && syncAlertRows.length > 0 && manualCount === 0) {
     return (
       <div className="space-y-4">
+        {showOnboarding && onboardingStatus && (
+          <InvestmentOnboardingCard onboarding={onboardingStatus} onDismiss={handleOnboardingDismiss} />
+        )}
         <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
       </div>
     );
@@ -114,6 +147,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
 
   return (
     <div className="space-y-4">
+      {showOnboarding && onboardingStatus && (
+        <InvestmentOnboardingCard onboarding={onboardingStatus} onDismiss={handleOnboardingDismiss} />
+      )}
       <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
 
       {/* Header */}
@@ -164,6 +200,12 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                           Diferença entre valor bruto e líquido. Para Renda Fixa inclui IR estimado. Para Fundos pode refletir diferença de cota com o banco.
                         </TooltipContent>
                       </Tooltip>
+                    )}
+                    {totals.sync_coverage_pct != null && totals.sync_coverage_pct < 100 && (
+                      <div className="text-[11px] text-amber-600 dark:text-amber-400 mt-1" style={{ marginTop: '4px' }}>
+                        ⚠ Cobertura Open Finance: {totals.sync_coverage_pct}%
+                        {' '}— alguns ativos podem não estar aparecendo.
+                      </div>
                     )}
                     {(totals.manual_count ?? 0) > 0 && (
                       <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-2 pt-2 border-t border-primary/10">
@@ -398,6 +440,15 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <CardTitle className="text-base">{cat.category}</CardTitle>
+                        {summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100 && (
+                          <span
+                            title={`${summaryRow.sync_coverage_pct}% dos ativos desta classe foram retornados pelo Open Finance. Verifique o app do banco.`}
+                            className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40"
+                            style={{ cursor: 'default' }}
+                          >
+                            {summaryRow.sync_coverage_pct}% coberto
+                          </span>
+                        )}
                         {summaryRow?.has_stale_data && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40">
                             Cota desatualizada

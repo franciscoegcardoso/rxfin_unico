@@ -11,7 +11,6 @@ import { ContasListSection } from '@/components/lancamentos/ContasListSection';
 import { ContaFormDialog } from '@/components/lancamentos/ContaFormDialog';
 import { CompromissosRecorrentesSection } from '@/components/extrato/CompromissosRecorrentesSection';
 import { LancamentosAnalyticsSection } from '@/components/lancamentos/LancamentosAnalyticsSection';
-import { RecorrentesSection } from '@/components/lancamentos/RecorrentesSection';
 import { ConfirmPaymentDialog } from '@/components/lancamentos/ConfirmPaymentDialog';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -278,12 +277,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   // Contas filtered
   const contasPagar = useMemo(() => contas.filter(c => c.tipo === 'pagar' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
   const contasReceber = useMemo(() => contas.filter(c => c.tipo === 'receber' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
-  const contasRecorrentesList = useMemo(
-    () => contas.filter((c) => c.recorrente && c.tipoCobranca === 'recorrente'),
-    [contas]
-  );
-  const recorrrentes = useMemo(() => rawContas.filter(c => c.recorrente === true), [rawContas]);
-
   // Sync credit card accounts with financial institutions
   useEffect(() => {
     const syncCreditCardContas = async () => {
@@ -319,7 +312,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
 
   const handleOpenContaDialog = (tipo: ContaTipo) => { setDefaultTipoCobrancaConta(undefined); setContaDialogTipo(tipo); setEditingConta(null); setContaDialogOpen(true); };
   const handleEditConta = (conta: Conta) => { setDefaultTipoCobrancaConta(undefined); setEditingConta(conta); setContaDialogTipo(conta.tipo); setContaDialogOpen(true); };
-  const handleOpenNewRecorrente = () => { setDefaultTipoCobrancaConta('recorrente'); setContaDialogTipo('pagar'); setEditingConta(null); setContaDialogOpen(true); };
   const handleContaDialogOpenChange = (open: boolean) => { if (!open) setDefaultTipoCobrancaConta(undefined); setContaDialogOpen(open); };
   const handleDeleteConta = async (id: string) => {
     const conta = contas.find(c => c.id === id);
@@ -1360,15 +1352,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               selectedMonth={selectedMonth}
               categoryFilter={categoryFilter}
               onCategoryFilter={setCategoryFilter}
-            />
-
-            <RecorrentesSection
-              recorrrentes={contasRecorrentesList}
-              userId={user?.id}
-              onOpenNewRecorrente={handleOpenNewRecorrente}
-              onEditRecorrente={handleEditConta}
-              onDeleteRecorrente={deleteConta}
-              loading={loadingContas}
             />
 
             <CategoryAssignmentCard

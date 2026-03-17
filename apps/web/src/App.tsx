@@ -202,6 +202,7 @@ const App = () => (
                     <Route path="movimentacoes" element={<MovimentacoesPage />} />
                     <Route path="movimentacoes/extrato" element={<MovimentacoesPage defaultTab="extrato" />} />
                     <Route path="movimentacoes/cartao-credito" element={<MovimentacoesPage defaultTab="cartao-credito" />} />
+                    <Route path="movimentacoes/consolidado" element={<MovimentacoesPage defaultTab="consolidado" />} />
                     <Route path="lancamentos" element={<Navigate to="/movimentacoes/extrato" replace />} />
                     <Route path="contas" element={<Contas />} />
                     <Route path="fluxo-financeiro" element={<FluxoFinanceiro />} />

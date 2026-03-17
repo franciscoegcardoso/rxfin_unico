@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Receipt, CreditCard } from 'lucide-react';
+import { Receipt, CreditCard, LayoutDashboard } from 'lucide-react';
 import Lancamentos from './Lancamentos';
 import CartaoCredito from './CartaoCredito';
+import { ConsolidatedView } from '@/components/movimentacoes/ConsolidatedView';
 import { cn } from '@/lib/utils';
 
-type Tab = 'extrato' | 'cartao-credito';
+type Tab = 'extrato' | 'cartao-credito' | 'consolidado';
 
 interface MovimentacoesPageProps {
   defaultTab?: Tab;
@@ -17,19 +18,24 @@ export default function MovimentacoesPage({ defaultTab }: MovimentacoesPageProps
 
   const activeTab: Tab = location.pathname.includes('cartao-credito')
     ? 'cartao-credito'
-    : (defaultTab ?? 'extrato');
+    : location.pathname.includes('consolidado')
+      ? 'consolidado'
+      : (defaultTab ?? 'extrato');
 
   const handleTabChange = (tab: Tab) => {
     if (tab === 'extrato') {
       navigate('/movimentacoes/extrato', { replace: true });
-    } else {
+    } else if (tab === 'cartao-credito') {
       navigate('/movimentacoes/cartao-credito', { replace: true });
+    } else {
+      navigate('/movimentacoes/consolidado', { replace: true });
     }
   };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'extrato', label: 'Extrato de conta', icon: Receipt },
     { id: 'cartao-credito', label: 'Cartão de crédito', icon: CreditCard },
+    { id: 'consolidado', label: 'Visão consolidada', icon: LayoutDashboard },
   ];
 
   return (
@@ -56,8 +62,12 @@ export default function MovimentacoesPage({ defaultTab }: MovimentacoesPageProps
       <div className="flex-1 min-h-0 overflow-y-auto">
         {activeTab === 'extrato' ? (
           <Lancamentos embedded />
-        ) : (
+        ) : activeTab === 'cartao-credito' ? (
           <CartaoCredito embedded />
+        ) : (
+          <div className="p-4 md:p-6">
+            <ConsolidatedView />
+          </div>
         )}
       </div>
     </div>

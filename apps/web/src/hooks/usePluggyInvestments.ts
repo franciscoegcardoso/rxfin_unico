@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { SyncStatusRow, InvestmentTotalsV2, InvestmentSummaryV3Row } from '@/types/investments';
+import type { SyncStatusRow, InvestmentTotalsV2, InvestmentSummaryV3Row, OnboardingStatus } from '@/types/investments';
 
 export interface PluggyInvestment {
   id: string;
@@ -63,7 +63,7 @@ export interface InvestmentSummary {
   with_isin_count?: number;
 }
 
-/** Row from get_pluggy_investments_summary_v2 */
+/** Row from get_pluggy_investments_summary_v2 (or mapped from summary_v3) */
 export interface InvestmentSummaryRow {
   investment_type: string;
   investment_subtype: string;
@@ -75,6 +75,8 @@ export interface InvestmentSummaryRow {
   has_stale_data: boolean;
   suspect_zero_count: number;
   oldest_balance_date: string | null;
+  /** F5: from get_investments_summary_v3 */
+  sync_coverage_pct?: number | null;
 }
 
 /** @deprecated use InvestmentTotalsV2 — mantido para leitura legada */
@@ -100,6 +102,8 @@ export interface SummaryByCategory {
   gross_net_spread: number;
   has_stale_data: boolean;
   suspect_zero_count: number;
+  /** F5: min sync_coverage_pct of rows in category, or null */
+  sync_coverage_pct: number | null;
 }
 
 export interface InvestmentCategoryData {
@@ -149,6 +153,7 @@ export function usePluggyInvestments() {
   const [error, setError] = useState<string | null>(null);
   const [hasSyncedData, setHasSyncedData] = useState(false);
   const [syncStatusRows, setSyncStatusRows] = useState<SyncStatusRow[]>([]);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
   const [filters, setFilters] = useState<{ userId: string | null; institution: string | null; category: InvestmentCategory | null }>({
     userId: null,
     institution: null,
@@ -170,16 +175,23 @@ export function usePluggyInvestments() {
       if (invResult.error) throw invResult.error;
       const list = (invResult.data || []) as PluggyInvestment[];
 
-      const [summaryV3Result, totalsV2Result, syncStatusResult] = await Promise.all([
+      const [summaryV3Result, totalsV2Result, syncStatusResult, onboardingResult] = await Promise.all([
         supabase.rpc('get_investments_summary_v3', { p_user_id: user.id }),
         supabase.rpc('get_investments_totals_v2', { p_user_id: user.id }),
         supabase.rpc('get_investment_sync_status', { p_user_id: user.id }),
+        supabase.rpc('get_investment_onboarding_status', { p_user_id: user.id }),
       ]);
 
       if (!syncStatusResult.error && Array.isArray(syncStatusResult.data)) {
         setSyncStatusRows(syncStatusResult.data as SyncStatusRow[]);
       } else {
         setSyncStatusRows([]);
+      }
+
+      if (!onboardingResult.error && Array.isArray(onboardingResult.data) && onboardingResult.data.length > 0) {
+        setOnboardingStatus(onboardingResult.data[0] as OnboardingStatus);
+      } else {
+        setOnboardingStatus(null);
       }
 
       let v2Rows: InvestmentSummaryRow[] = [];
@@ -197,6 +209,7 @@ export function usePluggyInvestments() {
           has_stale_data: Boolean(row.has_stale_data),
           suspect_zero_count: Number(row.suspect_zero_count ?? 0),
           oldest_balance_date: row.oldest_balance_date,
+          sync_coverage_pct: row.sync_coverage_pct ?? null,
         }));
       } else {
         const legacySum = await supabase.rpc('get_pluggy_investments_summary_v2', { p_user_id: user.id });
@@ -217,6 +230,7 @@ export function usePluggyInvestments() {
           suspect_zero_total: Number(row.suspect_zero_total ?? 0),
           has_stale_data: Boolean(row.has_stale_data),
           oldest_balance_date: (row.oldest_balance_date as string) ?? null,
+          sync_coverage_pct: row.sync_coverage_pct != null ? Number(row.sync_coverage_pct) : null,
         };
       } else {
         const legacyTot = await supabase.rpc('get_investments_totals', { p_user_id: user.id });
@@ -232,6 +246,7 @@ export function usePluggyInvestments() {
             suspect_zero_total: t.suspect_zero_total,
             has_stale_data: t.has_stale_data,
             oldest_balance_date: t.oldest_balance_date,
+            sync_coverage_pct: null,
           };
         }
       }
@@ -336,16 +351,23 @@ export function usePluggyInvestments() {
       gross_net_spread: 0,
       has_stale_data: false,
       suspect_zero_count: 0,
+      sync_coverage_pct: null,
     });
     for (const row of summaryV2) {
       const cat = getCategoryForType(row.investment_type) as InvestmentCategory;
       const cur = acc.get(cat) ?? init(cat);
+      const rowPct = row.sync_coverage_pct;
+      const minPct =
+        cur.sync_coverage_pct != null && rowPct != null
+          ? Math.min(cur.sync_coverage_pct, rowPct)
+          : cur.sync_coverage_pct ?? rowPct ?? null;
       acc.set(cat, {
         gross_balance: cur.gross_balance + Number(row.gross_balance ?? 0),
         net_balance: cur.net_balance + Number(row.net_balance ?? 0),
         gross_net_spread: cur.gross_net_spread + Number(row.gross_net_spread ?? 0),
         has_stale_data: cur.has_stale_data || Boolean(row.has_stale_data),
         suspect_zero_count: cur.suspect_zero_count + Number(row.suspect_zero_count ?? 0),
+        sync_coverage_pct: minPct,
       });
     }
     return Object.fromEntries(acc) as Record<InvestmentCategory, SummaryByCategory>;
@@ -364,6 +386,7 @@ export function usePluggyInvestments() {
     totalBalance,
     syncStatusRows,
     syncAlertRows,
+    onboardingStatus,
     totalAmount,
     totalTaxes,
     activeCount,

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * @deprecated Use useRecorrentesExtrato ou useRecorrentesCartao.
@@ -39,10 +38,22 @@ export interface CompromissosData {
   monthly_summary: MonthlySummary;
 }
 
+/** RPC get_compromissos_fixos não existe mais; retorna estrutura vazia para compatibilidade. */
 async function fetchCompromissos(): Promise<CompromissosData | null> {
-  const { data, error } = await supabase.rpc('get_compromissos_fixos');
-  if (error) throw error;
-  return data as CompromissosData | null;
+  return {
+    expenses: [],
+    incomes: [],
+    monthly_summary: {
+      current_month: '',
+      expected_expenses: 0,
+      expected_incomes: 0,
+      expenses_seen_this_month: 0,
+      incomes_seen_this_month: 0,
+      total_expenses_count: 0,
+      total_incomes_count: 0,
+      last_synced_at: null,
+    },
+  };
 }
 
 export function useCompromissos() {

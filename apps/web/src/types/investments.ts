@@ -83,6 +83,8 @@ export interface InvestmentTotalsV2 {
   suspect_zero_total: number;
   has_stale_data: boolean;
   oldest_balance_date: string | null;
+  /** F5: cobertura global Open Finance; 100 = total, <100 parcial, null = manual_only */
+  sync_coverage_pct: number | null;
 }
 
 /** get_investments_summary_v3 */
@@ -99,4 +101,14 @@ export interface InvestmentSummaryV3Row {
   manual_count: number;
   oldest_balance_date: string | null;
   source_mix: 'pluggy_only' | 'manual_only' | 'mixed';
+  /** F5: cobertura da classe; 100 = total, <100 parcial, null = manual_only */
+  sync_coverage_pct: number | null;
+}
+
+/** get_investment_onboarding_status — F5 card contextual */
+export interface OnboardingStatus {
+  should_show: boolean;
+  already_seen: boolean;
+  has_new_connection: boolean;
+  newest_connector_name: string | null;
 }

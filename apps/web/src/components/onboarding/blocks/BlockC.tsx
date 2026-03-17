@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
   Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
@@ -19,15 +19,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { uploadIRFileMultipart } from '@/lib/processIrImportUpload';
-
-const getFileType = (file: File): 'pdf' | 'xml' | null => {
-  const name = file.name.toLowerCase();
-  const mime = file.type.toLowerCase();
-  if (name.endsWith('.pdf') || mime === 'application/pdf') return 'pdf';
-  if (name.endsWith('.xml') || name.endsWith('.dec') || mime.includes('xml')) return 'xml';
-  return null;
-};
+import { useIRImport } from '@/hooks/useIRImport';
 
 interface BlockCProps {
   step: number;
@@ -57,23 +49,37 @@ const BUDGET_CATEGORIES = [
 
 const formatBRL = (v: number) => v > 0 ? `R$ ${v.toLocaleString('pt-BR')}` : 'R$ 0';
 
+type IrImportDisplay = {
+  id: string;
+  ano_exercicio: number;
+  ano_calendario: number;
+  bens_count: number;
+  rendimentos_count: number;
+  source_type: string;
+  file_name: string | null;
+  imported_at: string;
+};
+
 export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, onSaveDraft }) => {
   const { user } = useAuth();
+  const { processFile, fetchImports, imports: irImportList, isLoading: irUploading } = useIRImport();
   const [milestoneData, setMilestoneData] = useState<any>(null);
-  const [irImports, setIrImports] = useState<Array<{
-    id: string;
-    ano_exercicio: number;
-    ano_calendario: number;
-    bens_count: number;
-    rendimentos_count: number;
-    source_type: string;
-    file_name: string | null;
-    imported_at: string;
-  }>>([]);
   const [irLoaded, setIrLoaded] = useState(false);
-  const [irUploading, setIrUploading] = useState(false);
   const [irUploadError, setIrUploadError] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+
+  const irImports: IrImportDisplay[] = React.useMemo(() => {
+    return irImportList.map((imp) => ({
+      id: imp.id,
+      ano_exercicio: imp.anoExercicio,
+      ano_calendario: imp.anoCalendario,
+      bens_count: imp.bensDireitos?.length ?? 0,
+      rendimentos_count: (imp.rendimentosTributaveis?.length ?? 0) + (imp.rendimentosIsentos?.length ?? 0),
+      source_type: imp.sourceType,
+      file_name: imp.fileName ?? null,
+      imported_at: imp.importedAt,
+    }));
+  }, [irImportList]);
   const [patrimonioData, setPatrimonioData] = useState<any>(null);
   const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
   const [irGuideOpen, setIrGuideOpen] = useState(false);
@@ -92,54 +98,34 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     }
   };
 
-  const loadIrImports = async () => {
-    if (irLoaded || !user?.id) return;
-    try {
-      const currentYear = new Date().getFullYear();
-      const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
-      const allImports: typeof irImports = [];
-      for (const year of years) {
-        const { data } = await supabase.rpc('get_ir_dashboard', {
-          p_user_id: user.id,
-          p_year: year,
-        });
-        if (data?.imports?.length > 0) {
-          allImports.push(...data.imports);
-        }
-      }
-      setIrImports(allImports);
-    } catch (err) {
-      console.warn('[BlockC] loadIrImports erro:', err);
-    } finally {
-      setIrLoaded(true);
+  const hasFetchedIrRef = useRef(false);
+  useEffect(() => {
+    if (step !== 1) {
+      hasFetchedIrRef.current = false;
+      setIrLoaded(false);
+      return;
     }
-  };
+    if (!user?.id) return;
+    if (hasFetchedIrRef.current) return;
+    hasFetchedIrRef.current = true;
+    fetchImports()
+      .then(() => setIrLoaded(true))
+      .catch((err) => {
+        console.warn('[BlockC] fetchImports erro:', err);
+        setIrLoaded(true);
+      });
+  }, [step, user?.id]);
 
   const handleIRUpload = async (file: File, anoExercicio: number) => {
     if (!user?.id || !file) return;
-    const fileType = getFileType(file);
-    if (!fileType) {
-      toast.error('Formato inválido. Use PDF, XML ou .DEC');
-      return;
-    }
     setSelectedYear(anoExercicio);
-    setIrUploading(true);
     setIrUploadError('');
-    try {
-      const { data: payload, error: uploadErr } = await uploadIRFileMultipart(file);
-      if (uploadErr) throw uploadErr;
-      if (!payload?.success) throw new Error(payload?.error ?? 'Erro desconhecido');
-      const ano = payload.data?.anoExercicio ?? anoExercicio;
-      toast.success(`Declaração ${ano} importada com sucesso!`);
-      setIrLoaded(false);
-      await loadIrImports();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao importar';
-      toast.error(msg);
-      setIrUploadError(msg);
-      console.error('[BlockC] IR import error:', err);
-    } finally {
-      setIrUploading(false);
+    const result = await processFile(file);
+    if (result) {
+      toast.success(`Declaração ${result.anoExercicio} importada com sucesso!`);
+      await fetchImports();
+    } else {
+      setIrUploadError('Erro ao importar. Tente novamente.');
     }
   };
 
@@ -192,7 +178,6 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   // ─── Step 1: Import IR ──────────────────────────────────────
   if (step === 1) {
     if (!irLoaded) {
-      loadIrImports();
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <Loader2 className="h-10 w-10 text-primary animate-spin" />
