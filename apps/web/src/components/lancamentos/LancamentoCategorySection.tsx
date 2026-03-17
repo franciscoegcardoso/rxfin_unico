@@ -516,7 +516,7 @@ export function LancamentoCategorySection({
                     <div className="space-y-1.5">
                       <span className="text-sm text-muted-foreground">Categoria</span>
                       <Select
-                        key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
+                        key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
                         value={getDisplayCategory(item) || undefined}
                         onValueChange={(value) => handleCategoryChange(item, value)}
                         disabled={updatingId === item.id}
@@ -685,7 +685,7 @@ export function LancamentoCategorySection({
                       <TableCell className="py-1.5 px-2">
                         <div className="flex items-center gap-1.5">
                           <Select
-                            key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
+                            key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
                             value={getDisplayCategory(item) || undefined}
                             onValueChange={(value) => handleCategoryChange(item, value)}
                             disabled={isUpdating}
@@ -869,7 +869,7 @@ export function LancamentoCategorySection({
                 <div>
                   <label className="text-xs text-muted-foreground block mb-2">Categoria</label>
                   <Select
-                    key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'none'}`}
+                    key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
                     value={getDisplayCategory(item) || undefined}
                     onValueChange={(value) => handleCategoryChange(item, value)}
                     disabled={updatingId === item.id}

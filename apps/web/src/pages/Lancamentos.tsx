@@ -89,6 +89,9 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const { user } = useAuth();
   const [assignCategoriesOpen, setAssignCategoriesOpen] = useState(false);
   const [todosLancamentosDialogOpen, setTodosLancamentosDialogOpen] = useState(false);
+  const [compromissosRecorrentesDialogOpen, setCompromissosRecorrentesDialogOpen] = useState(false);
+  const [contasPagarDialogOpen, setContasPagarDialogOpen] = useState(false);
+  const [contasReceberDialogOpen, setContasReceberDialogOpen] = useState(false);
   // Month selector state (declarado antes do hook para passar ao useLancamentosRealizados)
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
@@ -1370,6 +1373,30 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 <span className="text-primary font-medium">›</span>
                 Atribuir categorias aos lançamentos ({filteredByMonth.filter(l => !l.is_category_confirmed).length} pendentes)
               </button>
+              <button
+                type="button"
+                onClick={() => setCompromissosRecorrentesDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Compromissos recorrentes
+              </button>
+              <button
+                type="button"
+                onClick={() => setContasPagarDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Contas A Pagar (AP)
+              </button>
+              <button
+                type="button"
+                onClick={() => setContasReceberDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Contas A Receber (AR)
+              </button>
             </div>
 
             <LancamentosAnalyticsSection
@@ -1379,44 +1406,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               allLancamentos={allLancamentosForAnalytics}
               loadingHistory={loadingAllForAnalytics}
             />
-
-            <CompromissosRecorrentesSection />
-
-            <CollapsibleModule
-              title="Contas a Pagar"
-              icon={<TrendingDown className="h-4 w-4 text-[hsl(var(--color-text-danger))]" />}
-              count={contasPagar.length}
-              useDialogOnDesktop
-            >
-              <ContasListSection
-                contas={contasPagar}
-                tipo="pagar"
-                onConfirmPayment={(id) => setConfirmPaymentConta(contas.find(c => c.id === id) || null)}
-                onEdit={handleEditConta}
-                onDelete={handleDeleteConta}
-              />
-              <Button variant="outline" size="sm" className="w-full mt-3 gap-1.5 text-xs" onClick={() => handleOpenContaDialog('pagar')}>
-                <Plus className="h-3.5 w-3.5" /> Nova Conta a Pagar
-              </Button>
-            </CollapsibleModule>
-
-            <CollapsibleModule
-              title="Contas a Receber"
-              icon={<TrendingUp className="h-4 w-4 text-[hsl(var(--color-text-success))]" />}
-              count={contasReceber.length}
-              useDialogOnDesktop
-            >
-              <ContasListSection
-                contas={contasReceber}
-                tipo="receber"
-                onConfirmPayment={(id) => setConfirmPaymentConta(contas.find(c => c.id === id) || null)}
-                onEdit={handleEditConta}
-                onDelete={handleDeleteConta}
-              />
-              <Button variant="outline" size="sm" className="w-full mt-3 gap-1.5 text-xs" onClick={() => handleOpenContaDialog('receber')}>
-                <Plus className="h-3.5 w-3.5" /> Nova Conta a Receber
-              </Button>
-            </CollapsibleModule>
 
             {/* Dialog "Todos os Lançamentos" aberto pelo CTA */}
             <Dialog open={todosLancamentosDialogOpen} onOpenChange={setTodosLancamentosDialogOpen}>
@@ -1615,6 +1604,60 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   </div>
                 </div>
               )}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Dialog Compromissos recorrentes */}
+            <Dialog open={compromissosRecorrentesDialogOpen} onOpenChange={setCompromissosRecorrentesDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+                <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+                  <DialogTitle>Compromissos recorrentes</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+                  <CompromissosRecorrentesSection defaultOpen={true} />
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Dialog Contas A Pagar (AP) */}
+            <Dialog open={contasPagarDialogOpen} onOpenChange={setContasPagarDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+                <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+                  <DialogTitle>Contas A Pagar (AP)</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+                  <ContasListSection
+                    contas={contasPagar}
+                    tipo="pagar"
+                    onConfirmPayment={(id) => setConfirmPaymentConta(contas.find(c => c.id === id) || null)}
+                    onEdit={handleEditConta}
+                    onDelete={handleDeleteConta}
+                  />
+                  <Button variant="outline" size="sm" className="w-full mt-3 gap-1.5 text-xs" onClick={() => { setContasPagarDialogOpen(false); handleOpenContaDialog('pagar'); }}>
+                    <Plus className="h-3.5 w-3.5" /> Nova Conta a Pagar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Dialog Contas A Receber (AR) */}
+            <Dialog open={contasReceberDialogOpen} onOpenChange={setContasReceberDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+                <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+                  <DialogTitle>Contas A Receber (AR)</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+                  <ContasListSection
+                    contas={contasReceber}
+                    tipo="receber"
+                    onConfirmPayment={(id) => setConfirmPaymentConta(contas.find(c => c.id === id) || null)}
+                    onEdit={handleEditConta}
+                    onDelete={handleDeleteConta}
+                  />
+                  <Button variant="outline" size="sm" className="w-full mt-3 gap-1.5 text-xs" onClick={() => { setContasReceberDialogOpen(false); handleOpenContaDialog('receber'); }}>
+                    <Plus className="h-3.5 w-3.5" /> Nova Conta a Receber
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
