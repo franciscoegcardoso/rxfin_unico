@@ -19,7 +19,9 @@ export interface ProcessIrImportResponse {
 }
 
 /**
- * Envia o arquivo como multipart/form-data (campo `file`).
+ * Envia o arquivo como multipart/form-data para a Edge Function `process-ir-import` (v140+).
+ * - Campo no FormData DEVE ser `"file"` (a função lê formData.get('file')).
+ * - NÃO setar Content-Type: o browser define automaticamente com o boundary correto.
  * Evita limite de payload JSON com base64 em PDFs grandes (~6MB+).
  */
 export async function uploadIRFileMultipart(

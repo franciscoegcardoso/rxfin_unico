@@ -165,8 +165,8 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl w-full max-h-[85vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-[1600px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="h-4 w-4 text-primary" />
@@ -174,7 +174,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
             Atribuir Categorias
           </DialogTitle>
         </DialogHeader>
-        <CategoryAssignmentContent defaultTab={defaultTab} open={open} />
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <CategoryAssignmentContent defaultTab={defaultTab} open={open} />
+        </div>
       </DialogContent>
     </Dialog>
   );
