@@ -32,8 +32,11 @@ import {
   CreditCardSpendingCard,
   BudgetCompositionCard,
   PendingCategorizationCard,
+  MonthSummaryCard,
+  ExpensesStatusCard,
 } from "@/components/inicio/MobileHomeSections";
 import { HomeHeader } from "@/components/inicio/HomeHeader";
+import { MobileHomeHero } from "@/components/inicio/MobileHomeHero";
 import { InicioKpiBar } from "@/components/inicio/InicioKpiBar";
 import { CashFlowChart } from "@/components/inicio/CashFlowChart";
 import { AcoesImediatas } from "@/components/inicio/AcoesImediatas";
@@ -476,27 +479,18 @@ const Inicio: React.FC = () => {
     </p>
   );
 
-  // ─── Mobile layout ────────────────────────────────────────
+  // ─── Mobile/tablet layout (cabeçalho verde + Resumo/Despesas do mês; do gráfico pra baixo = formato atual) ────────────────────────────────────────
   if (isMobile) {
     return (
       <AppLayout>
         <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1">
             {errorBlock}
-            <HomeHeader firstName={displayFirstName} avatarUrl={user?.user_metadata?.avatar_url || user?.user_metadata?.picture || ""} />
-            <InicioKpiBar
-              receitas={monthSummaryData.receitas}
-              despesasSemCartao={monthSummaryData.despesasSemCartao}
-              totalCartao={monthSummaryData.totalCartao}
-              totalDespesas={monthSummaryData.totalDespesas}
-              saldoMensal={monthSummaryData.saldoMensal}
-              totalLancamentos={monthSummaryData.totalLancamentos}
-              lancamentosSemCategoria={monthSummaryData.lancamentosSemCategoria}
-              deltaVsMesAnterior={monthSummaryData.deltaVsMesAnterior}
-              isHidden={isHidden}
-            />
-          {isDemoMode && <OnboardingInsightCard />}
-          {showControlBanner && <ControlOnboardingBanner />}
+            {showControlBanner && <ControlOnboardingBanner />}
+            <MobileHomeHero firstName={displayFirstName} saldoLiquido={saldoLiquido} />
+            <MonthSummaryCard />
+            <ExpensesStatusCard />
+            {isDemoMode && <OnboardingInsightCard />}
 
           <DemoCardWrapper isDemoMode={isDemoMode}>
             <CashFlowChart />
