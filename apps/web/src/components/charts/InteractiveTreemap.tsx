@@ -54,6 +54,10 @@ interface InteractiveTreemapProps {
   showLegend?: boolean;
   groupSmallItems?: boolean;
   smallItemThreshold?: number;
+  /** Categoria (folha) selecionada — borda de destaque no treemap */
+  selectedLeafName?: string | null;
+  /** Clique em célula sem filhos (ex.: filtrar lista por categoria) */
+  onLeafClick?: (name: string) => void;
 }
 
 // Custom content component for Treemap cells
@@ -69,16 +73,20 @@ const CustomizedContent: React.FC<any> = (props) => {
     depth,
     index,
     hasChildren,
+    selectedLeafName,
   } = props;
 
   const isSmall = width < 70 || height < 50;
   const isTiny = width < 45 || height < 35;
   const showExpandIcon = hasChildren && width >= 50 && height >= 40;
+  const isSelectedLeaf = selectedLeafName != null && name === selectedLeafName;
 
   // Skip rendering for container nodes
   if (depth === 0) return null;
 
   const fillColor = color || COLORS[index % COLORS.length];
+  const strokeColor = isSelectedLeaf ? 'hsl(var(--primary))' : 'hsl(var(--background))';
+  const strokeW = isSelectedLeaf ? 3 : 2;
 
   // Expand icon SVG path (ChevronRight style)
   const expandIconSize = 12;
@@ -87,7 +95,7 @@ const CustomizedContent: React.FC<any> = (props) => {
 
   if (isTiny) {
     return (
-      <g className="treemap-cell" style={{ cursor: hasChildren ? 'pointer' : 'default' }}>
+      <g className="treemap-cell" style={{ cursor: hasChildren || props.onLeafClick ? 'pointer' : 'default' }}>
         <rect
           x={x}
           y={y}
@@ -96,9 +104,10 @@ const CustomizedContent: React.FC<any> = (props) => {
           rx={3}
           style={{
             fill: fillColor,
-            stroke: 'hsl(var(--background))',
-            strokeWidth: 2,
+            stroke: strokeColor,
+            strokeWidth: strokeW,
             transition: 'all 0.3s ease-out',
+            opacity: selectedLeafName && !isSelectedLeaf ? 0.65 : 1,
           }}
         />
         {showExpandIcon && (
@@ -119,7 +128,7 @@ const CustomizedContent: React.FC<any> = (props) => {
   }
 
   return (
-    <g className="treemap-cell" style={{ cursor: hasChildren ? 'pointer' : 'default' }}>
+    <g className="treemap-cell" style={{ cursor: hasChildren || props.onLeafClick ? 'pointer' : 'default' }}>
       <rect
         x={x}
         y={y}
@@ -128,9 +137,10 @@ const CustomizedContent: React.FC<any> = (props) => {
         rx={3}
         style={{
           fill: fillColor,
-          stroke: 'hsl(var(--background))',
-          strokeWidth: 2,
+          stroke: strokeColor,
+          strokeWidth: strokeW,
           transition: 'all 0.3s ease-out',
+          opacity: selectedLeafName && !isSelectedLeaf ? 0.65 : 1,
         }}
       />
       {/* Expand icon for items with children */}
@@ -194,6 +204,8 @@ export const InteractiveTreemap: React.FC<InteractiveTreemapProps> = ({
   showLegend = true,
   groupSmallItems = true,
   smallItemThreshold = 5,
+  selectedLeafName = null,
+  onLeafClick,
 }) => {
   const [drilldownItem, setDrilldownItem] = useState<TreemapItem | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -333,11 +345,15 @@ export const InteractiveTreemap: React.FC<InteractiveTreemapProps> = ({
   };
 
   // Handle click on treemap
-  const handleTreemapClick = (data: any) => {
-    if (data && data.name) {
-      const item = currentFullData.find((d) => d.name === data.name);
+  const handleTreemapClick = (clickData: any) => {
+    if (clickData && clickData.name) {
+      const item = currentFullData.find((d) => d.name === clickData.name);
       if (item) {
-        handleItemClick(item);
+        if (item.children && item.children.length > 0) {
+          handleItemClick(item);
+        } else if (onLeafClick) {
+          onLeafClick(item.name);
+        }
       }
     }
   };
@@ -421,10 +437,13 @@ export const InteractiveTreemap: React.FC<InteractiveTreemapProps> = ({
             return (
               <motion.button
                 key={item.id}
-                onClick={() => handleItemClick(item)}
+                onClick={() =>
+                  hasChildren ? handleItemClick(item) : onLeafClick?.(item.name)
+                }
                 className={cn(
                   "flex items-center gap-1.5 p-1.5 rounded hover:bg-muted/50 transition-colors text-left",
-                  hasChildren && "cursor-pointer"
+                  (hasChildren || onLeafClick) && "cursor-pointer",
+                  selectedLeafName === item.name && "ring-2 ring-primary rounded-md bg-primary/5"
                 )}
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 1, x: 0 }}

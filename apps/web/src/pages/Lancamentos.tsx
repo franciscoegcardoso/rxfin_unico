@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale, BarChart2, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale, ChevronRight, X } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
@@ -10,6 +10,8 @@ import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDi
 import { ContasListSection } from '@/components/lancamentos/ContasListSection';
 import { ContaFormDialog } from '@/components/lancamentos/ContaFormDialog';
 import { CompromissosRecorrentesSection } from '@/components/extrato/CompromissosRecorrentesSection';
+import { LancamentosAnalyticsSection } from '@/components/lancamentos/LancamentosAnalyticsSection';
+import { RecorrentesSection } from '@/components/lancamentos/RecorrentesSection';
 import { ConfirmPaymentDialog } from '@/components/lancamentos/ConfirmPaymentDialog';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -50,7 +52,6 @@ import { PluggySyncStatus } from '@/components/sync/PluggySyncStatus';
 import { OutdatedConnectionBanner } from '@/components/sync/OutdatedConnectionBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, addMonths } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 import { useLancamentosRealizados, LancamentoRealizado, LancamentoInput } from '@/hooks/useLancamentosRealizados';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
@@ -144,12 +145,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const summaryTotals = rpcSummary?.summary ?? (rpcSummary as Record<string, unknown>);
   const totalIncome = (summaryTotals?.total_income as number) ?? 0;
   const totalExpense = (summaryTotals?.total_expense as number) ?? 0;
-  const topCategories = ((rpcSummary as { top_categories?: Array<{ category: string; total: number; count?: number; pct?: number }> })?.top_categories ?? rpcSummary?.by_category ?? []) as Array<{ category: string; total: number; count?: number; pct?: number }>;
-  const byPaymentMethod = (rpcSummary?.by_payment_method ?? []) as Array<{ method: string; total: number; count: number }>;
-  const PAYMENT_LABELS: Record<string, string> = { pix: 'PIX', cartao_credito: 'Cartão de Crédito', debito_auto: 'Débito Automático', boleto: 'Boleto', transferencia: 'Transferência' };
-  const CATEGORY_COLORS: Record<string, string> = { 'Contas da Casa': '#3b82f6', 'Alimentação': '#22c55e', 'Saúde': '#ef4444', 'Lazer': '#a855f7', 'Transporte': '#f59e0b', 'Pessoal': '#ec4899', 'Investimentos': '#14b8a6' };
-  const getCategoryColor = (c: string) => CATEGORY_COLORS[c] ?? 'var(--primary)';
-
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTipo, setFilterTipo] = useState<'all' | 'receita' | 'despesa'>('all');
@@ -159,7 +154,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const [selectedAccountType, setSelectedAccountType] = useState<string>('all');
   const [markAsPaidItem, setMarkAsPaidItem] = useState<LancamentoRealizado | null>(null);
   const [markAsPaidLoading, setMarkAsPaidLoading] = useState(false);
-  const [analiseDialogOpen, setAnaliseDialogOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
   // Extract unique banks and account types from sourceMap
   const { availableBanks, availableAccountTypes } = useMemo(() => {
@@ -200,6 +195,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
     return filteredByMonth.filter(l => {
       if (filterTipo !== 'all' && l.tipo !== filterTipo) return false;
       if (filterStatus !== 'all' && getLancamentoStatus(l) !== filterStatus) return false;
+      if (categoryFilter != null && l.categoria !== categoryFilter) return false;
       if (filterCategories.length > 0 && !filterCategories.includes(l.categoria)) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -217,7 +213,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
       }
       return true;
     });
-  }, [filteredByMonth, filterTipo, filterStatus, filterCategories, searchQuery, selectedBank, selectedAccountType, getSourceInfo, getLancamentoStatus]);
+  }, [filteredByMonth, filterTipo, filterStatus, filterCategories, categoryFilter, searchQuery, selectedBank, selectedAccountType, getSourceInfo, getLancamentoStatus]);
 
   const uniqueCategoriesForFilter = useMemo(() => {
     const set = new Set<string>();
@@ -282,6 +278,10 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   // Contas filtered
   const contasPagar = useMemo(() => contas.filter(c => c.tipo === 'pagar' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
   const contasReceber = useMemo(() => contas.filter(c => c.tipo === 'receber' && !c.dataPagamento && (c.dataVencimento?.startsWith(selectedMonth) ?? false)), [contas, selectedMonth]);
+  const contasRecorrentesList = useMemo(
+    () => contas.filter((c) => c.recorrente && c.tipoCobranca === 'recorrente'),
+    [contas]
+  );
   const recorrrentes = useMemo(() => rawContas.filter(c => c.recorrente === true), [rawContas]);
 
   // Sync credit card accounts with financial institutions
@@ -795,17 +795,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               <>
                 {!isManual && <BankSyncButton variant="button" className={isMobile ? '!px-2.5 [&>span.text-sm]:hidden [&>span:not(.animate-spin)]:hidden' : ''} />}
                 <VisibilityToggle />
-                {isMobile && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="min-h-[44px] min-w-[44px] touch-manipulation"
-                    onClick={() => setAnaliseDialogOpen(true)}
-                    aria-label="Análise dos lançamentos"
-                  >
-                    <BarChart2 className="h-5 w-5" />
-                  </Button>
-                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="hero" className="gap-2 min-h-[44px] min-w-[44px] touch-manipulation">
@@ -893,139 +882,6 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 {isHidden ? '••••' : formatCurrency(totalExpense)}
               </p>
             </div>
-          </div>
-        )}
-
-        {/* Resumo do mês (RPC) — análise dos lançamentos */}
-        {rpcSummary != null && (
-          <div className="space-y-4">
-            {/* Seção Análise dos lançamentos — abre modal com gráficos (desktop); mobile acessa via ícone no header) */}
-            <div className="hidden sm:block">
-              <Card
-                className="rounded-[14px] border border-border/80 cursor-pointer transition-colors hover:bg-muted/30 hover:border-primary/40"
-                onClick={() => setAnaliseDialogOpen(true)}
-              >
-                <CardContent className="flex flex-row items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                      <BarChart2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground">Análise dos lançamentos</p>
-                      <p className="text-sm text-muted-foreground">Top categorias, formas de pagamento, receita vs despesa e despesas por categoria</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Modal: Análise dos lançamentos (gráficos) */}
-            <Dialog open={analiseDialogOpen} onOpenChange={setAnaliseDialogOpen}>
-              <DialogContent className="max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <BarChart2 className="h-5 w-5 text-primary" />
-                    Análise dos lançamentos
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  {topCategories.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Top Categorias</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {topCategories.slice(0, 5).map((row) => {
-                          const totalAll = topCategories.reduce((s, i) => s + i.total, 0);
-                          const pct = totalAll > 0 ? (row.total / totalAll) * 100 : (row.pct ?? 0);
-                          const color = getCategoryColor(row.category);
-                          return (
-                            <div key={row.category} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                              <span className="w-full sm:w-32 shrink-0 text-sm font-medium truncate">{row.category}</span>
-                              <div className="flex-1 w-full h-6 rounded-md bg-muted overflow-hidden min-w-0">
-                                <div className="h-full rounded-md transition-all" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
-                              </div>
-                              <span className="shrink-0 text-sm text-muted-foreground">{formatCurrency(row.total)} ({(row.pct ?? pct).toFixed(1)}%)</span>
-                            </div>
-                          );
-                        })}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {byPaymentMethod.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Por Forma de Pagamento</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {byPaymentMethod.map((row) => (
-                            <span key={row.method} className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/50 px-3 py-2 min-h-[36px] text-sm">
-                              <span className="font-medium">{PAYMENT_LABELS[row.method] ?? row.method}:</span>
-                              <span>{formatCurrency(row.total)} ({row.count})</span>
-                            </span>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  <Card className="rounded-[14px] border border-border/80">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Receita vs Despesa</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[200px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[{ name: 'Receitas', valor: totalIncome, fill: 'hsl(var(--color-income))' }, { name: 'Despesas', valor: totalExpense, fill: 'hsl(var(--color-expense))' }]} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                            <YAxis hide={isMobile} tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(1)}k` : `R$ ${v}`)} />
-                            <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                            <Bar dataKey="valor" name="Valor" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {topCategories.length > 0 && (
-                    <Card className="rounded-[14px] border border-border/80">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Despesas por Categoria</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-[200px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={topCategories.slice(0, 6).map((row) => ({ name: row.category, value: row.total }))}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={50}
-                                outerRadius={80}
-                                paddingAngle={2}
-                                dataKey="value"
-                                nameKey="name"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              >
-                                {topCategories.slice(0, 6).map((row) => (
-                                  <Cell key={row.category} fill={getCategoryColor(row.category)} />
-                                ))}
-                              </Pie>
-                              <RechartsTooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                              <Legend />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
         )}
 
@@ -1267,7 +1123,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 md:mx-0 md:px-0 md:flex-wrap">
               <button
                 type="button"
-                onClick={() => { setFilterTipo('all'); setFilterCategories([]); }}
+                onClick={() => { setFilterTipo('all'); setFilterCategories([]); setCategoryFilter(null); }}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                   filterTipo === 'all' && filterCategories.length === 0
@@ -1279,7 +1135,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               </button>
               <button
                 type="button"
-                onClick={() => { setFilterTipo('receita'); setFilterCategories([]); }}
+                onClick={() => { setFilterTipo('receita'); setFilterCategories([]); setCategoryFilter(null); }}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                   filterTipo === 'receita'
@@ -1291,7 +1147,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               </button>
               <button
                 type="button"
-                onClick={() => { setFilterTipo('despesa'); setFilterCategories([]); }}
+                onClick={() => { setFilterTipo('despesa'); setFilterCategories([]); setCategoryFilter(null); }}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                   filterTipo === 'despesa'
@@ -1307,7 +1163,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => { setFilterTipo('all'); setFilterCategories(active ? [] : [cat]); }}
+                    onClick={() => { setFilterTipo('all'); setFilterCategories(active ? [] : [cat]); setCategoryFilter(null); }}
                     className={cn(
                       'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium whitespace-nowrap cursor-pointer transition-colors duration-150 border',
                       active
@@ -1334,7 +1190,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
             <aside className="w-[240px] shrink-0 bg-[hsl(var(--color-surface-base))] border-r border-[hsl(var(--color-border-subtle))] pr-6 p-4 space-y-4">
               <div>
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Tipo</Label>
-                <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => setFilterTipo(v)}>
+                <Select value={filterTipo} onValueChange={(v: 'all' | 'receita' | 'despesa') => { setCategoryFilter(null); setFilterTipo(v); }}>
                   <SelectTrigger className="mt-1.5 w-full border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))]">
                     <SelectValue />
                   </SelectTrigger>
@@ -1374,11 +1230,12 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                         <label key={cat} className="flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 hover:bg-muted">
                           <Checkbox
                             checked={filterCategories.includes(cat)}
-                            onCheckedChange={(checked) =>
+                            onCheckedChange={(checked) => {
+                              setCategoryFilter(null);
                               setFilterCategories((prev) =>
                                 checked ? [...prev, cat] : prev.filter((c) => c !== cat)
-                              )
-                            }
+                              );
+                            }}
                           />
                           <span className="text-sm truncate text-foreground">{cat}</span>
                         </label>
@@ -1499,7 +1356,20 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               />
             </div>
 
-            <CompromissosRecorrentesSection />
+            <LancamentosAnalyticsSection
+              selectedMonth={selectedMonth}
+              categoryFilter={categoryFilter}
+              onCategoryFilter={setCategoryFilter}
+            />
+
+            <RecorrentesSection
+              recorrrentes={contasRecorrentesList}
+              userId={user?.id}
+              onOpenNewRecorrente={handleOpenNewRecorrente}
+              onEditRecorrente={handleEditConta}
+              onDeleteRecorrente={deleteConta}
+              loading={loadingContas}
+            />
 
             <CategoryAssignmentCard
               title="Atribuir categorias aos lançamentos"
@@ -1507,6 +1377,8 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               count={filteredByMonth.filter(l => !l.is_category_confirmed).length}
               defaultTab="conta"
             />
+
+            <CompromissosRecorrentesSection />
 
             <CollapsibleModule
               title="Contas a Pagar"
@@ -1550,6 +1422,21 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               count={totalCount}
               useDialogOnDesktop
             >
+              {categoryFilter != null && (
+                <div className="flex items-center gap-2 px-4 py-2 mb-2 bg-muted/50 rounded-lg text-sm">
+                  <span>
+                    Filtrando por: <strong>{categoryFilter}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryFilter(null)}
+                    className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md"
+                    aria-label="Remover filtro de categoria"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {totalCount > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[hsl(var(--color-border-subtle))] mb-2">
                   <p className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">

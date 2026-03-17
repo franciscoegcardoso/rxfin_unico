@@ -112,7 +112,7 @@ export const RecorrentesSection: React.FC<RecorrentesSectionProps> = ({
               ) : (
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
-              <span className="font-semibold">Compromissos Recorrentes</span>
+              <span className="font-semibold">Lançamentos Recorrentes</span>
               <Badge variant="secondary" className="text-xs">
                 {count} {count === 1 ? 'ativo' : 'ativos'}
               </Badge>
