@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
@@ -168,21 +169,51 @@ export const CreditCardSpendingCard: React.FC = () => {
   );
 };
 
-// ─── Composição do Orçamento ────────────────────────────────
+// ─── Composição de gastos ───────────────────────────────────
+
+const BUDGET_COMPOSITION_PERIODS = [
+  { value: 'this_month', label: 'Este mês' },
+  { value: 'last_month', label: 'Mês passado' },
+  { value: 'last_2', label: 'Últimos 2 meses' },
+  { value: 'last_6', label: 'Últimos 6 meses' },
+  { value: 'last_12', label: 'Últimos 12 meses' },
+] as const;
+
+type BudgetCompositionPeriod = (typeof BUDGET_COMPOSITION_PERIODS)[number]['value'];
+
+function getMonthKeysForPeriod(period: BudgetCompositionPeriod): string[] {
+  const now = new Date();
+  const keys: string[] = [];
+  if (period === 'this_month') {
+    keys.push(format(now, 'yyyy-MM'));
+  } else if (period === 'last_month') {
+    keys.push(format(subMonths(now, 1), 'yyyy-MM'));
+  } else {
+    const n = period === 'last_2' ? 2 : period === 'last_6' ? 6 : 12;
+    for (let i = n - 1; i >= 0; i--) {
+      keys.push(format(subMonths(now, i), 'yyyy-MM'));
+    }
+  }
+  return keys;
+}
 
 export const BudgetCompositionCard: React.FC = () => {
   const { isHidden } = useVisibility();
   const { lancamentos } = useLancamentosRealizados();
   const isMobile = useIsMobile();
+  const [period, setPeriod] = useState<BudgetCompositionPeriod>('this_month');
 
-  const currentMonth = format(new Date(), 'yyyy-MM');
+  const allowedMonths = useMemo(() => getMonthKeysForPeriod(period), [period]);
 
   const treemapData: TreemapItem[] = useMemo(() => {
-    const monthExpenses = lancamentos.filter(
-      l => l.tipo === 'despesa' && l.mes_referencia === currentMonth && !isBillPaymentTransaction(l)
+    const periodExpenses = lancamentos.filter(
+      l =>
+        l.tipo === 'despesa' &&
+        allowedMonths.includes(l.mes_referencia) &&
+        !isBillPaymentTransaction(l)
     );
 
-    const byCategory = monthExpenses.reduce((acc, l) => {
+    const byCategory = periodExpenses.reduce((acc, l) => {
       const cat = l.categoria || 'Outros';
       acc[cat] = (acc[cat] || 0) + l.valor_realizado;
       return acc;
@@ -204,32 +235,48 @@ export const BudgetCompositionCard: React.FC = () => {
         value,
         color: colors[i % colors.length],
       }));
-  }, [lancamentos, currentMonth]);
+  }, [lancamentos, allowedMonths]);
 
   const fmt = (v: number) => {
     if (isHidden) return '••••••';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
   };
 
-  if (treemapData.length === 0) return null;
-
   return (
     <Card className="h-full flex flex-col min-h-0">
-      <CardHeader className="pb-2 p-3 sm:p-4 shrink-0">
+      <CardHeader className="pb-2 p-3 sm:p-4 shrink-0 flex flex-row items-center justify-between gap-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Wallet className="h-4 w-4 text-primary" /> Composição do Orçamento
+          <Wallet className="h-4 w-4 text-primary" /> Composição de gastos
         </CardTitle>
+        <Select value={period} onValueChange={(v) => setPeriod(v as BudgetCompositionPeriod)}>
+          <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {BUDGET_COMPOSITION_PERIODS.map((p) => (
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent className="p-3 sm:p-4 pt-0 flex-1 min-h-0">
-        <div className="w-full overflow-hidden">
-          <InteractiveTreemap
-            data={treemapData}
-            formatValue={fmt}
-            isHidden={isHidden}
-            height={isMobile ? 192 : 256}
-            showLegend={true}
-          />
-        </div>
+        {treemapData.length === 0 ? (
+          <div className="flex items-center justify-center text-sm text-muted-foreground py-8">
+            Nenhum gasto no período
+          </div>
+        ) : (
+          <div className="w-full overflow-hidden">
+            <InteractiveTreemap
+              data={treemapData}
+              formatValue={fmt}
+              isHidden={isHidden}
+              height={isMobile ? 192 : 256}
+              showLegend={true}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

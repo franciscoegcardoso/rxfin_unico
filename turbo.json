@@ -1,13 +1,13 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "remoteCache": {
-    "enabled": true
+    "enabled": false
   },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["src/**", "public/**", "index.html", "vite.config.*", "tsconfig.*", "package.json"],
-      "outputs": ["dist/**", ".next/**"],
+      "inputs": ["src/*", "public/", "index.html", "vite.config.", "tsconfig.*", "package.json", "package-lock.json"],
+      "outputs": ["dist/*", ".next/*"],
       "env": ["VERCEL_BUILD_ID"]
     },
     "dev": {

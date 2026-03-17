@@ -90,8 +90,9 @@ export const CashFlowChart: React.FC = () => {
 
   const data = useMemo(() => {
     const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
+    const MONTHS_TO_SHOW = 13;
+    const months: Array<{ monthKey: string; monthLabel: string; receitas: number; despesas: number }> = [];
+    for (let i = MONTHS_TO_SHOW - 1; i >= 0; i--) {
       const d = subMonths(now, i);
       const monthKey = format(d, 'yyyy-MM');
       const monthLabel = format(d, 'MMM/yy', { locale: ptBR });
@@ -99,6 +100,12 @@ export const CashFlowChart: React.FC = () => {
       const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + (l.valor_realizado ?? 0), 0);
       const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + (l.valor_realizado ?? 0), 0);
       months.push({ monthKey, monthLabel, receitas, despesas });
+    }
+    // Se houver menos de 13 meses com dado no histórico, exibir só os meses que existem (até 13)
+    const monthsWithData = new Set(lancamentos.filter(l => !isBillPaymentTransaction(l)).map(l => l.mes_referencia));
+    const sortedWithData = [...monthsWithData].sort().slice(-MONTHS_TO_SHOW);
+    if (sortedWithData.length > 0 && sortedWithData.length < MONTHS_TO_SHOW) {
+      return months.filter(m => sortedWithData.includes(m.monthKey));
     }
     return months;
   }, [lancamentos]);
@@ -108,7 +115,7 @@ export const CashFlowChart: React.FC = () => {
       <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))] flex items-center gap-2">
           <BarChart2 className="h-4 w-4 text-primary" />
-          Fluxo de caixa — últimos 6 meses
+          Fluxo de caixa — últimos 13 meses
         </CardTitle>
         <Link to="/movimentacoes" className="text-sm text-primary hover:underline flex items-center gap-1 font-medium">
           Ver relatório <ChevronRight className="h-3 w-3" />

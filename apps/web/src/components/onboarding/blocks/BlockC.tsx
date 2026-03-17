@@ -95,12 +95,37 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
   const [irGuideOpen, setIrGuideOpen] = useState(false);
   const [summaryYear, setSummaryYear] = useState<number | null>(null);
+  // Bens completos do banco via RPC get_ir_bens_direitos (resolve truncamento do PDF pelo AI)
+  const [irBensFromDb, setIrBensFromDb] = useState<any>(null);
 
-  /** Primeiro ir_import com bens_direitos não vazio (ano_exercicio DESC), para step Patrimônio. */
+  /**
+   * IR de referência para o step Patrimônio.
+   * SEMPRE usa o exercício mais recente (maior anoExercicio).
+   * Se o mais recente não tem bens (PDF truncado pelo AI), cai para o próximo com bens.
+   * Dados completos vêm do banco via loadPatrimonio() → get_ir_bens_direitos().
+   */
   const irPatrimonySource = useMemo(() => {
+    if (!irImportList.length) return null;
     const sorted = [...irImportList].sort((a, b) => b.anoExercicio - a.anoExercicio);
-    return sorted.find((imp) => (imp.bensDireitos?.length ?? 0) > 0) ?? null;
+    // Prioridade 1: mais recente que tem bens no estado local
+    const withBens = sorted.find((imp) => (imp.bensDireitos?.length ?? 0) > 0);
+    // Prioridade 2: mais recente mesmo sem bens (banco vai complementar)
+    return withBens ?? sorted[0];
   }, [irImportList]);
+
+  /**
+   * True quando o import mais recente é PDF com poucos bens (provável truncamento do AI).
+   * Nesse caso o banco (irBensFromDb) complementa com dados completos.
+   */
+  const irSourceIsIncomplete = useMemo(() => {
+    if (!irImportList.length || !irPatrimonySource) return false;
+    const sorted = [...irImportList].sort((a, b) => b.anoExercicio - a.anoExercicio);
+    const newest = sorted[0];
+    if (newest.id !== irPatrimonySource.id) return false;
+    const bensCount = irPatrimonySource.bensDireitos?.length ?? 0;
+    // PDF com menos de 3 bens em declaração grande → suspeito de truncamento
+    return newest.sourceType === 'pdf' && bensCount > 0 && bensCount < 3;
+  }, [irImportList, irPatrimonySource]);
 
   /** Bens do IR agrupados por tipo (Imóveis, Veículos, Investimentos, Outros) para step 2. */
   const bensByGroup = useMemo(() => {
@@ -118,10 +143,22 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const loadPatrimonio = async () => {
     if (patrimonioLoaded || !user?.id) return;
     try {
+      // Busca overview geral (veículos/bens/financiamentos cadastrados)
       const { data } = await supabase.rpc('get_patrimonio_overview', {
         p_user_id: user.id,
       });
       setPatrimonioData(data);
+
+      // Busca bens do IR mais recente do banco (sempre MAX(ano_calendario))
+      // Resolve o problema de PDF truncado: o banco tem todos os bens salvos corretamente
+      try {
+        const { data: irDb, error: irDbErr } = await supabase.rpc('get_ir_bens_direitos');
+        if (!irDbErr && irDb?.import_id) {
+          setIrBensFromDb(irDb);
+        }
+      } catch (irErr) {
+        console.warn('[BlockC] get_ir_bens_direitos erro:', irErr);
+      }
     } catch (err) {
       console.warn('[BlockC] loadPatrimonio erro:', err);
     } finally {
@@ -469,15 +506,33 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     const formatBRLFull = (v: number) =>
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 
-    const useIRData = irPatrimonySource != null && (irPatrimonySource.bensDireitos?.length ?? 0) > 0;
+    // Flag: banco retornou grupos de bens do IR
+    const hasIrBensFromDb = !!irBensFromDb && (irBensFromDb.grupos?.length ?? 0) > 0;
 
+    // useIRData: há dados de IR para exibir (do banco ou do estado local)
+    const useIRData = irPatrimonySource != null && (
+      hasIrBensFromDb
+        ? irBensFromDb.grupos.length > 0
+        : (irPatrimonySource.bensDireitos?.length ?? 0) > 0
+    );
+
+    // Total ativos: prefere banco (soma real) > estado local (pode estar truncado) > overview
     const totalAtivos = useIRData
-      ? (irPatrimonySource!.bensDireitos ?? []).reduce((s, b) => s + (b.situacaoAtual ?? 0), 0)
+      ? hasIrBensFromDb
+        ? (irBensFromDb.totais?.total_declarado ?? 0)
+        : (irPatrimonySource!.bensDireitos ?? []).reduce((s, b) => s + (b.situacaoAtual ?? 0), 0)
       : (patrimonioData?.net_worth?.total_assets ?? 0) + (patrimonioData?.net_worth?.total_vehicles ?? 0);
+
     const totalPassivos = useIRData
       ? (irPatrimonySource!.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0)
       : (patrimonioData?.net_worth?.total_debt ?? 0);
+
     const patrimonioLiquido = totalAtivos - totalPassivos;
+
+    // Ano de exercício para o subtítulo: banco usa ano_calendario, UI mostra exercício (+ 1)
+    const displayAnoExercicio: number | null = hasIrBensFromDb
+      ? (irBensFromDb.ano_calendario ?? 0) + 1
+      : irPatrimonySource?.anoExercicio ?? null;
 
     const assets: any[] = patrimonioData?.assets ?? [];
     const vehicles: any[] = patrimonioData?.vehicles ?? [];
@@ -485,7 +540,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     const consorcios: any[] = patrimonioData?.consorcios ?? [];
     const seguros: any[] = patrimonioData?.seguros ?? [];
 
-    const hasBensFromIR = useIRData && (irPatrimonySource!.bensDireitos?.length ?? 0) > 0;
+    const hasBensFromIR = useIRData && (hasIrBensFromDb || (irPatrimonySource!.bensDireitos?.length ?? 0) > 0);
     const hasAnyDataBens = assets.length > 0 || vehicles.length > 0 ||
       financiamentos.length > 0 || consorcios.length > 0;
     const hasAnyData = useIRData ? hasBensFromIR || totalPassivos > 0 : hasAnyDataBens;
@@ -510,7 +565,12 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           </h2>
           {useIRData && irPatrimonySource && (
             <p className="text-xs text-muted-foreground mb-1">
-              Baseado na declaração de IR — Exercício {irPatrimonySource.anoExercicio}
+              Baseado na declaração de IR — Exercício {displayAnoExercicio ?? irPatrimonySource.anoExercicio}
+              {irSourceIsIncomplete && !hasIrBensFromDb && (
+                <span className="ml-1 text-amber-500">
+                  · dados parciais — importe o XML/.dec para ver todos os bens
+                </span>
+              )}
             </p>
           )}
           <p className="text-sm text-muted-foreground">
@@ -536,10 +596,17 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
         )}
 
         <div className="space-y-3 mb-5">
-          {useIRData && bensByGroup && bensByGroup.length > 0 && (
+          {useIRData && (hasIrBensFromDb ? irBensFromDb.grupos?.length > 0 : bensByGroup && bensByGroup.length > 0) && (
             <>
-              {bensByGroup.map(({ label, items }) => {
-                const Icon = label === 'Imóveis' ? Home : label === 'Veículos' ? Car : label === 'Investimentos' ? Banknote : FileText;
+              {(hasIrBensFromDb ? irBensFromDb.grupos : bensByGroup!).map((grupo: any) => {
+                // Normaliza: banco usa { label, bens, total_declarado }, local usa { label, items }
+                const label: string = grupo.label ?? grupo.asset_type ?? 'Outros';
+                const items: any[] = grupo.bens ?? grupo.items ?? [];
+                const Icon =
+                  label === 'Imóveis' || label.toLowerCase().includes('imóv') ? Home
+                  : label === 'Veículos' || label.toLowerCase().includes('veíc') ? Car
+                  : label === 'Investimentos' ? Banknote
+                  : FileText;
                 return (
                   <div key={label} className="bg-card border border-border rounded-xl p-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -549,17 +616,23 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                       </p>
                     </div>
                     <div className="space-y-1.5">
-                      {items.slice(0, 5).map((b, idx) => (
-                        <div key={`${b.codigo}-${idx}`} className="flex items-center justify-between gap-2">
-                          <p className="text-xs text-muted-foreground truncate flex-1" title={b.descricao || b.discriminacao}>
-                            {(b.descricao || b.discriminacao || `Bem ${b.codigo}`).slice(0, 40)}
-                            {(b.descricao || b.discriminacao || '').length > 40 ? '…' : ''}
-                          </p>
-                          <p className="text-xs font-medium text-foreground shrink-0 tabular-nums">
-                            {formatBRLFull(b.situacaoAtual ?? 0)}
-                          </p>
-                        </div>
-                      ))}
+                      {items.slice(0, 5).map((b: any, idx: number) => {
+                        // Compatível com formato banco (situacao_atual) e local (situacaoAtual)
+                        const valor = b.situacao_atual ?? b.situacaoAtual ?? 0;
+                        const nome = b.descricao || b.discriminacao || b.real_name
+                          || `Bem ${b.ir_item_code ?? b.codigo ?? idx}`;
+                        return (
+                          <div key={`${b.ir_item_code ?? b.codigo ?? ''}-${idx}`}
+                            className="flex items-center justify-between gap-2">
+                            <p className="text-xs text-muted-foreground truncate flex-1" title={nome}>
+                              {nome.slice(0, 40)}{nome.length > 40 ? '…' : ''}
+                            </p>
+                            <p className="text-xs font-medium text-foreground shrink-0 tabular-nums">
+                              {formatBRLFull(valor)}
+                            </p>
+                          </div>
+                        );
+                      })}
                       {items.length > 5 && (
                         <p className="text-xs text-muted-foreground">+{items.length - 5} outros</p>
                       )}
