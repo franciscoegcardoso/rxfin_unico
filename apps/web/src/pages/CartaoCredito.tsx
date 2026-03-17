@@ -17,6 +17,7 @@ import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { CategoryAssignmentDialog } from '@/components/shared/CategoryAssignmentDialog';
 
 interface BillRow {
   id?: string;
@@ -58,22 +59,14 @@ interface CartaoCreditoProps {
   embedded?: boolean;
 }
 
-const scrollToSection = (id: string) => {
-  const container = document.querySelector('.overflow-y-auto') as HTMLElement | null;
-  const target = document.getElementById(id);
-  if (!container || !target) return;
-  let offsetTop = 0;
-  let el: HTMLElement | null = target;
-  while (el && el !== container) {
-    offsetTop += el.offsetTop;
-    el = el.offsetParent as HTMLElement | null;
-  }
-  container.scrollTo({ top: offsetTop - 16, behavior: 'smooth' });
-};
-
 const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [todasTransacoesDialogOpen, setTodasTransacoesDialogOpen] = useState(false);
+  const [categoriasDialogOpen, setCategoriasDialogOpen] = useState(false);
+  const [visaoMensalDialogOpen, setVisaoMensalDialogOpen] = useState(false);
+  const [gestaoFaturasDialogOpen, setGestaoFaturasDialogOpen] = useState(false);
+  const [comprasRecorrentesDialogOpen, setComprasRecorrentesDialogOpen] = useState(false);
+  const [projecaoParcelasDialogOpen, setProjecaoParcelasDialogOpen] = useState(false);
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
   const { transactions: allTransactions } = useCreditCardTransactions();
   const dashboard = data as DashboardData | null;
@@ -193,34 +186,70 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
-            {/* Botões de ação rápida */}
-            {(recentTransactions.length > 0 || pendentesCartao > 0) && (
-              <div className="flex flex-col gap-1 py-1">
-                {recentTransactions.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setTodasTransacoesDialogOpen(true)}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                  >
-                    <span className="text-primary font-medium">›</span>
-                    Ver todas as transações ({recentTransactions.length})
-                  </button>
-                )}
-                {pendentesCartao > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection('cc-section-categorias')}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                  >
-                    <span className="text-primary font-medium">›</span>
-                    Atribuir categorias às transações ({pendentesCartao} pendentes)
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Lista única de ações (benchmark: extrato — Ver todos, Atribuir categorias, etc.) */}
+            <div className="flex flex-col gap-1 py-1 border border-border rounded-xl px-3 py-3 bg-card">
+              {recentTransactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setTodasTransacoesDialogOpen(true)}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                >
+                  <span className="text-primary font-medium">›</span>
+                  Ver todas as transações ({recentTransactions.length})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setCategoriasDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Atribuir categorias às transações ({pendentesCartao} pendentes)
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisaoMensalDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Visão Mensal de Faturas
+              </button>
+              <button
+                type="button"
+                onClick={() => setGestaoFaturasDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Gestão de Faturas
+              </button>
+              <button
+                type="button"
+                onClick={() => setComprasRecorrentesDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Compras Recorrentes
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjecaoParcelasDialogOpen(true)}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Projeção de Parcelas Futuras
+              </button>
+            </div>
 
-            {/* Seções colapsáveis — Análises primeiro, depois demais seções (Compras Recorrentes está dentro) */}
-            <CartaoCreditoSection />
+            <CartaoCreditoSection
+              visaoMensalDialogOpen={visaoMensalDialogOpen}
+              onVisaoMensalDialogOpenChange={setVisaoMensalDialogOpen}
+              gestaoFaturasDialogOpen={gestaoFaturasDialogOpen}
+              onGestaoFaturasDialogOpenChange={setGestaoFaturasDialogOpen}
+              comprasRecorrentesDialogOpen={comprasRecorrentesDialogOpen}
+              onComprasRecorrentesDialogOpenChange={setComprasRecorrentesDialogOpen}
+              projecaoParcelasDialogOpen={projecaoParcelasDialogOpen}
+              onProjecaoParcelasDialogOpenChange={setProjecaoParcelasDialogOpen}
+            />
 
             {/* Visão de fatura consolidada (RPC get_credit_card_bills_detail) */}
             <CreditCardBillView showSummaryRow />
@@ -344,6 +373,12 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
                 <p className="mt-3 text-muted-foreground">Nenhuma fatura ou transação neste mês.</p>
               </Card>
             )}
+
+            <CategoryAssignmentDialog
+              open={categoriasDialogOpen}
+              onOpenChange={setCategoriasDialogOpen}
+              defaultTab="cartao"
+            />
           </>
         )}
         </div>

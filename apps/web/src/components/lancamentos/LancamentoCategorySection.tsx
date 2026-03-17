@@ -105,6 +105,7 @@ export function LancamentoCategorySection({
   // Fetch AI category suggestions for unvalidated lançamentos (conta)
   useEffect(() => {
     const unvalidated = lancamentos.filter((l) => !l.is_category_confirmed);
+    if (lancamentos.length === 0) return; // dados ainda não carregaram
     if (unvalidated.length === 0) {
       setSuggestionMap({});
       return;

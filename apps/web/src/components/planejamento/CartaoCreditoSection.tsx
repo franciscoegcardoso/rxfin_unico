@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
 import { getActiveBillingMonth } from '@/utils/billingCycleUtils';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,12 +8,11 @@ import { useVisibility } from '@/contexts/VisibilityContext';
 import { useSyncContext } from '@/contexts/SyncContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useRecurringDetection } from '@/hooks/useRecurringDetection';
-import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { SectionSkeleton } from '@/components/shared/PageSkeleton';
 
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Popover,
   PopoverContent,
@@ -207,7 +205,27 @@ const buildCardColorMap = (
   return colorMap;
 };
 
-export const CartaoCreditoSection: React.FC = () => {
+export interface CartaoCreditoSectionProps {
+  visaoMensalDialogOpen?: boolean;
+  onVisaoMensalDialogOpenChange?: (open: boolean) => void;
+  gestaoFaturasDialogOpen?: boolean;
+  onGestaoFaturasDialogOpenChange?: (open: boolean) => void;
+  comprasRecorrentesDialogOpen?: boolean;
+  onComprasRecorrentesDialogOpenChange?: (open: boolean) => void;
+  projecaoParcelasDialogOpen?: boolean;
+  onProjecaoParcelasDialogOpenChange?: (open: boolean) => void;
+}
+
+export const CartaoCreditoSection: React.FC<CartaoCreditoSectionProps> = ({
+  visaoMensalDialogOpen = false,
+  onVisaoMensalDialogOpenChange,
+  gestaoFaturasDialogOpen = false,
+  onGestaoFaturasDialogOpenChange,
+  comprasRecorrentesDialogOpen = false,
+  onComprasRecorrentesDialogOpenChange,
+  projecaoParcelasDialogOpen = false,
+  onProjecaoParcelasDialogOpenChange,
+}) => {
   const { config } = useFinancial();
   const { isHidden } = useVisibility();
   const { user } = useAuth();
@@ -713,81 +731,98 @@ export const CartaoCreditoSection: React.FC = () => {
         currentMonth={currentMonth}
       />
 
-      {/* Monthly Bills Overview Table */}
-      <CollapsibleModule
-        title="Visão Mensal de Faturas"
-        description="Resumo mensal por cartão"
-        icon={<Calendar className="h-4 w-4 text-primary" />}
-        useDialogOnDesktop
-      >
-        <CreditCardMonthlyTable
-          months={summaryMonths}
-          currentMonth={currentMonth}
-          activeMonth={activeBillingMonth}
-          isHidden={isHidden}
-          selectedCardIds={selectedCards}
-          availableCards={availableCards}
-          bills={bills}
-          transactions={transactions}
-        />
-      </CollapsibleModule>
+      {/* Dialogs abertos pela lista na página Cartão de Crédito (seções removidas) */}
+      {onVisaoMensalDialogOpenChange && (
+        <Dialog open={visaoMensalDialogOpen} onOpenChange={onVisaoMensalDialogOpenChange}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Visão Mensal de Faturas
+              </DialogTitle>
+              <DialogDescription>Resumo mensal por cartão</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+              <CreditCardMonthlyTable
+                months={summaryMonths}
+                currentMonth={currentMonth}
+                activeMonth={activeBillingMonth}
+                isHidden={isHidden}
+                selectedCardIds={selectedCards}
+                availableCards={availableCards}
+                bills={bills}
+                transactions={transactions}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
+      {onGestaoFaturasDialogOpenChange && (
+        <Dialog open={gestaoFaturasDialogOpen} onOpenChange={onGestaoFaturasDialogOpenChange}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+              <DialogTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Gestão de Faturas
+              </DialogTitle>
+              <DialogDescription>Transações agrupadas por fatura</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+              <BillTransactionsView
+                bills={bills}
+                transactions={transactions}
+                onRefreshBills={() => { fetchBills(); fetchTransactions(); }}
+                availableCards={availableCards}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Bill-grouped Transactions View */}
-      <CollapsibleModule
-        title="Gestão de Faturas"
-        description="Transações agrupadas por fatura"
-        icon={<CreditCard className="h-4 w-4 text-primary" />}
-        useDialogOnDesktop
-      >
-        <BillTransactionsView
-          bills={bills}
-          transactions={transactions}
-          onRefreshBills={() => { fetchBills(); fetchTransactions(); }}
-          availableCards={availableCards}
-        />
-      </CollapsibleModule>
+      {onComprasRecorrentesDialogOpenChange && (
+        <Dialog open={comprasRecorrentesDialogOpen} onOpenChange={onComprasRecorrentesDialogOpenChange}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+              <DialogTitle className="flex items-center gap-2">
+                <Repeat className="h-5 w-5 text-primary" />
+                Compras Recorrentes
+              </DialogTitle>
+              <DialogDescription>{recorrentesSummaryDescription}</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+              <RecurringPurchasesSection
+                transactions={filteredTransactions}
+                onToggleRecurring={handleToggleRecurring}
+                onDetectRecurring={async () => { const r = await detectRecurring(); if (r) await fetchTransactions(); return r; }}
+                detecting={detecting}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Category Assignment Card */}
-      <div id="cc-section-categorias">
-        <CategoryAssignmentCard
-          title="Atribuir gastos nas suas categorias"
-          description="Novos lançamentos do mês — compras parceladas aparecem no mês da compra original"
-          count={processedTransactions.filter(t => !t.is_category_confirmed).length}
-          defaultTab="cartao"
-        />
-      </div>
-
-
-      {/* Recurring Purchases Section */}
-      <CollapsibleModule
-        title="Compras Recorrentes"
-        description={recorrentesSummaryDescription}
-        icon={<Repeat className="h-4 w-4 text-primary" />}
-        useDialogOnDesktop
-      >
-        <RecurringPurchasesSection
-          transactions={filteredTransactions}
-          onToggleRecurring={handleToggleRecurring}
-          onDetectRecurring={async () => { const r = await detectRecurring(); if (r) await fetchTransactions(); return r; }}
-          detecting={detecting}
-        />
-      </CollapsibleModule>
-
-      {/* Installment Purchases Section */}
-      <CollapsibleModule
-        title="Projeção de Parcelas Futuras"
-        description="Compras parceladas e projeções de cobrança"
-        icon={<CalendarClock className="h-4 w-4 text-primary" />}
-        useDialogOnDesktop
-      >
-        <InstallmentPurchasesSection 
-          transactions={filteredTransactions}
-          bills={filteredBills}
-          creditCards={availableCards.map(c => ({ id: c.id, name: c.name }))}
-          onConsolidate={consolidateInstallmentGroups}
-        />
-      </CollapsibleModule>
+      {onProjecaoParcelasDialogOpenChange && (
+        <Dialog open={projecaoParcelasDialogOpen} onOpenChange={onProjecaoParcelasDialogOpenChange}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+            <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarClock className="h-5 w-5 text-primary" />
+                Projeção de Parcelas Futuras
+              </DialogTitle>
+              <DialogDescription>Compras parceladas e projeções de cobrança</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+              <InstallmentPurchasesSection
+                transactions={filteredTransactions}
+                bills={filteredBills}
+                creditCards={availableCards.map(c => ({ id: c.id, name: c.name }))}
+                onConsolidate={consolidateInstallmentGroups}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
