@@ -121,6 +121,8 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               style={{
                 fontSize: '22px',
                 fontWeight: 600,
+                letterSpacing: '-0.02em',
+                fontFamily: 'var(--font-numeric)',
                 color: 'hsl(var(--color-text-primary))',
               }}
             >

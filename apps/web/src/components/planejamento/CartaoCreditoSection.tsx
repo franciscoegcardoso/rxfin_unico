@@ -48,6 +48,7 @@ import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { usePluggyCreditCardSync } from '@/hooks/usePluggyCreditCardSync';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useRecurringPayments } from '@/hooks/useRecurringPayments';
+import { useRecorrentesCartao } from '@/hooks/useRecorrentesCartao';
 import { useFinanceMode } from '@/hooks/useFinanceMode';
 import { cn } from '@/lib/utils';
 import { financialInstitutions } from '@/data/defaultData';
@@ -239,6 +240,24 @@ export const CartaoCreditoSection: React.FC = () => {
   const { bills, fetchBills } = useCreditCardBills();
   const { detectRecurring, detecting } = useRecurringDetection();
   const { payments: recurringPayments, syncRecurringPayments } = useRecurringPayments();
+  const { data: recorrentesData } = useRecorrentesCartao();
+
+  const recorrentesSummaryDescription = useMemo(() => {
+    const list = recorrentesData?.compras_recorrentes ?? [];
+    let total_confirmadas = 0;
+    let total_sugestoes = 0;
+    let total_mensal_confirmado = 0;
+    for (const item of list) {
+      if (item.confirmed_by_user === true) {
+        total_confirmadas += 1;
+        total_mensal_confirmado += item.average_amount ?? 0;
+      } else {
+        total_sugestoes += 1;
+      }
+    }
+    const totalStr = isHidden ? '••••••' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(total_mensal_confirmado);
+    return `${total_confirmadas} confirmadas · ${total_sugestoes} sugestões · ${totalStr}/mês`;
+  }, [recorrentesData?.compras_recorrentes, isHidden]);
 
   // Auto-sync Open Finance credit card transactions on mount
   usePluggyCreditCardSync(true);
@@ -741,7 +760,7 @@ export const CartaoCreditoSection: React.FC = () => {
       {/* Recurring Purchases Section */}
       <CollapsibleModule
         title="Compras Recorrentes"
-        description="Assinaturas e cobranças automáticas detectadas"
+        description={recorrentesSummaryDescription}
         icon={<Repeat className="h-4 w-4 text-primary" />}
         useDialogOnDesktop
       >

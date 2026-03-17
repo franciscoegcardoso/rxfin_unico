@@ -18,6 +18,8 @@ export interface RecorrenteCartaoItem {
   item_id: string | null;
   connector_name: string | null;
   connector_image_url: string | null;
+  /** User confirmed this recurrence; only confirmed count toward monthly total. */
+  confirmed_by_user?: boolean;
 }
 
 export interface RecorrentesCartaoData {
@@ -40,10 +42,26 @@ async function fetchRecorrentesCartao(): Promise<RecorrentesCartaoData | null> {
   return data as RecorrentesCartaoData | null;
 }
 
+const QUERY_KEY = ['recorrentes-cartao'];
+
 export function useRecorrentesCartao() {
   return useQuery({
-    queryKey: ['recorrentes-cartao'],
+    queryKey: QUERY_KEY,
     queryFn: fetchRecorrentesCartao,
     staleTime: 2 * 60 * 1000,
   });
 }
+
+/** Confirm a recurrence (counts toward monthly total). Uses RPC confirmar_recorrente_cartao. */
+export async function confirmRecorrenteCartao(id: string): Promise<void> {
+  const { error } = await supabase.rpc('confirmar_recorrente_cartao', { p_id: id });
+  if (error) throw error;
+}
+
+/** Ignore/dismiss a suggestion (set is_active = false). Uses RPC ignorar_recorrente_cartao. */
+export async function ignorarRecorrenteCartao(id: string): Promise<void> {
+  const { error } = await supabase.rpc('ignorar_recorrente_cartao', { p_id: id });
+  if (error) throw error;
+}
+
+export { QUERY_KEY as RECORRENTES_CARTAO_QUERY_KEY };

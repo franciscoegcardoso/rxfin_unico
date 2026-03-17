@@ -111,6 +111,8 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
     totalPages,
     pageSize,
   } = useLancamentosRealizados({ paginated: true, mesReferencia: selectedMonth });
+  const { lancamentos: allLancamentosForAnalytics, loading: loadingAllForAnalytics } =
+    useLancamentosRealizados({ paginated: false });
   const {
     contas,
     rawContas,
@@ -1348,18 +1350,46 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               />
             </div>
 
+            {/* Botões de ação rápida */}
+            <div className="flex flex-col gap-1 py-1">
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById('section-todos-lancamentos')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Ver todos lançamentos ({totalCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById('section-atribuir-categorias')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Atribuir categorias aos lançamentos ({filteredByMonth.filter(l => !l.is_category_confirmed).length} pendentes)
+              </button>
+            </div>
+
             <LancamentosAnalyticsSection
               selectedMonth={selectedMonth}
               categoryFilter={categoryFilter}
               onCategoryFilter={setCategoryFilter}
+              allLancamentos={allLancamentosForAnalytics}
+              loadingHistory={loadingAllForAnalytics}
             />
 
-            <CategoryAssignmentCard
-              title="Atribuir categorias aos lançamentos"
-              description="Valide e organize suas receitas e despesas por categoria"
-              count={filteredByMonth.filter(l => !l.is_category_confirmed).length}
-              defaultTab="conta"
-            />
+            <div id="section-atribuir-categorias">
+              <CategoryAssignmentCard
+                title="Atribuir categorias aos lançamentos"
+                description="Valide e organize suas receitas e despesas por categoria"
+                count={filteredByMonth.filter(l => !l.is_category_confirmed).length}
+                defaultTab="conta"
+              />
+            </div>
 
             <CompromissosRecorrentesSection />
 
@@ -1399,6 +1429,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               </Button>
             </CollapsibleModule>
 
+            <div id="section-todos-lancamentos">
             <CollapsibleModule
               title="Todos os Lançamentos"
               icon={<Layers className="h-4 w-4 text-primary" />}
@@ -1593,6 +1624,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 </div>
               )}
             </CollapsibleModule>
+            </div>
           </TabsContent>
 
           {/* Entradas Tab */}

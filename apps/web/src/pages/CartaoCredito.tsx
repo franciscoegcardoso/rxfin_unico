@@ -170,6 +170,18 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
+            {/* Botões de ação rápida */}
+            <div className="flex flex-col gap-1 py-1">
+              <button
+                type="button"
+                onClick={() => document.getElementById('cc-section-transacoes')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+              >
+                <span className="text-primary font-medium">›</span>
+                Ver todas as transações ({recentTransactions.length})
+              </button>
+            </div>
+
             {/* Seções colapsáveis — Análises primeiro, depois demais seções (Compras Recorrentes está dentro) */}
             <CartaoCreditoSection />
 
@@ -208,7 +220,7 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
             {/* C) Últimas transações — tabela em desktop, cards empilhados em mobile */}
             {sortedTransactions.length > 0 && (
-              <section>
+              <section id="cc-section-transacoes">
                 <h2 className="mb-3 text-lg font-semibold">Últimas transações</h2>
                 {/* Mobile: cards empilhados */}
                 <div className="md:hidden space-y-3">

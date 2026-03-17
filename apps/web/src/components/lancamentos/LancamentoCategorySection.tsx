@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
 import { useTransactionCategories } from '@/hooks/useTransactionCategories';
@@ -73,6 +73,10 @@ const formatShortDate = (dateStr: string) => {
   return `${day}/${month}`;
 };
 
+const BATCH_SIZE = 50;
+
+type SuggestionEntry = { suggestedCategoryId: string; suggestedCategory: string; confidence: string };
+
 export function LancamentoCategorySection({
   lancamentos,
   onCategoryUpdated,
@@ -86,10 +90,69 @@ export function LancamentoCategorySection({
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showMobileSortMenu, setShowMobileSortMenu] = useState(false);
+  const [suggestionMap, setSuggestionMap] = useState<Record<string, SuggestionEntry>>({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   // Mobile edit dialog
   const [selectedLancamento, setSelectedLancamento] = useState<LancamentoRealizado | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+
+  // Fetch AI category suggestions for unvalidated lançamentos (conta)
+  useEffect(() => {
+    const unvalidated = lancamentos.filter((l) => !l.is_category_confirmed);
+    if (unvalidated.length === 0) {
+      setSuggestionMap({});
+      return;
+    }
+    let cancelled = false;
+    setLoadingSuggestions(true);
+    (async () => {
+      try {
+        const allResults: { id: string; entry: SuggestionEntry }[] = [];
+        for (let i = 0; i < unvalidated.length; i += BATCH_SIZE) {
+          if (cancelled) return;
+          const batch = unvalidated.slice(i, i + BATCH_SIZE);
+          const transactions = batch.map((l) => ({
+            storeName: (l.friendly_name || l.nome || '').trim() || 'Sem descrição',
+            value: l.valor_realizado ?? l.valor_previsto ?? 0,
+            date: l.data_pagamento || l.data_registro || l.mes_referencia + '-01',
+            isAccountTransaction: true as const,
+          }));
+          const { data, error } = await supabase.functions.invoke('categorize-transactions', {
+            body: { transactions },
+          });
+          if (error || !data?.categorizedTransactions) {
+            if (!cancelled) setSuggestionMap((prev) => prev);
+            return;
+          }
+          const categorized = data.categorizedTransactions as Array<{ suggestedCategoryId?: string; suggestedCategory?: string; confidence?: string }>;
+          batch.forEach((l, idx) => {
+            const c = categorized[idx];
+            const suggestedCategory = (c?.suggestedCategory || 'Outros').trim();
+            const suggestedCategoryId = c?.suggestedCategoryId || 'outros';
+            const confidence = c?.confidence || 'low';
+            allResults.push({ id: l.id, entry: { suggestedCategoryId, suggestedCategory, confidence } });
+          });
+        }
+        if (!cancelled) {
+          setSuggestionMap((prev) => {
+            const next = { ...prev };
+            allResults.forEach(({ id, entry }) => {
+              next[id] = entry;
+            });
+            return next;
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching category suggestions:', err);
+      } finally {
+        if (!cancelled) setLoadingSuggestions(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [lancamentos]);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -112,6 +175,19 @@ export function LancamentoCategorySection({
     return expenseCategoryNames.map((name) => ({ value: name, label: name }));
   };
 
+  const getCategoriesForItem = useCallback(
+    (item: LancamentoRealizado) => {
+      const base = getCategoriesForType(item.tipo);
+      const suggestion = suggestionMap[item.id]?.suggestedCategory;
+      if (!suggestion || base.some((c) => c.value === suggestion)) return base;
+      return [...base, { value: suggestion, label: suggestion }];
+    },
+    [suggestionMap, expenseCategoryNames, incomeCategories]
+  );
+
+  const getDisplayCategory = (item: LancamentoRealizado) =>
+    item.categoria?.trim() || suggestionMap[item.id]?.suggestedCategory || '';
+
   // Filter & sort
   const filteredAndSorted = useMemo(() => {
     let items = [...lancamentos];
@@ -133,7 +209,7 @@ export function LancamentoCategorySection({
           comparison = (a.valor_realizado ?? a.valor_previsto) - (b.valor_realizado ?? b.valor_previsto);
           break;
         case 'category':
-          comparison = a.categoria.localeCompare(b.categoria);
+          comparison = (a.categoria || '').localeCompare(b.categoria || '');
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
@@ -185,9 +261,18 @@ export function LancamentoCategorySection({
   const handleConfirmCategory = useCallback(async (item: LancamentoRealizado) => {
     setUpdatingId(item.id);
     try {
+      const categoryToSave = getDisplayCategory(item) || item.categoria;
+      const updates: Record<string, unknown> = {
+        is_category_confirmed: true,
+        updated_at: new Date().toISOString(),
+      };
+      if (categoryToSave) {
+        updates.categoria = categoryToSave;
+        updates.category_id = getCategoryId(categoryToSave);
+      }
       const { error } = await supabase
         .from('lancamentos_realizados_v')
-        .update({ is_category_confirmed: true, updated_at: new Date().toISOString() } as any)
+        .update(updates as any)
         .eq('id', item.id);
       if (error) throw error;
       onCategoryUpdated();
@@ -202,7 +287,7 @@ export function LancamentoCategorySection({
                 'apply_lancamento_category_rule' as any,
                 {
                   p_nome_pattern: item.nome,
-                  p_categoria: item.categoria,
+                  p_categoria: categoryToSave,
                   p_tipo: item.tipo,
                 }
               );
@@ -224,7 +309,7 @@ export function LancamentoCategorySection({
     } finally {
       setUpdatingId(null);
     }
-  }, [onCategoryUpdated]);
+  }, [onCategoryUpdated, suggestionMap]);
 
   const openEditDialog = (item: LancamentoRealizado) => {
     setSelectedLancamento(item);
@@ -390,7 +475,7 @@ export function LancamentoCategorySection({
             {selectedLancamento && (() => {
               const item = selectedLancamento;
               const isEntrada = item.tipo === 'receita';
-              const categories = getCategoriesForType(item.tipo);
+              const categories = getCategoriesForItem(item);
               const dateStr = item.data_pagamento || item.data_registro;
 
               return (
@@ -428,12 +513,19 @@ export function LancamentoCategorySection({
                     <div className="space-y-1.5">
                       <span className="text-sm text-muted-foreground">Categoria</span>
                       <Select
-                        value={item.categoria}
+                        value={getDisplayCategory(item) || undefined}
                         onValueChange={(value) => handleCategoryChange(item, value)}
                         disabled={updatingId === item.id}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Sugerindo…
+                            </span>
+                          ) : (
+                            <SelectValue placeholder="Selecionar" />
+                          )}
                         </SelectTrigger>
                         <SelectContent>
                           {categories.map((cat) => (
@@ -559,7 +651,6 @@ export function LancamentoCategorySection({
                   const isEntrada = item.tipo === 'receita';
                   const isUpdating = updatingId === item.id;
                   const isConfirmed = item.is_category_confirmed;
-                  const categories = getCategoriesForType(item.tipo);
                   const dateStr = item.data_pagamento || item.data_registro;
 
                   return (
@@ -588,9 +679,9 @@ export function LancamentoCategorySection({
 
                       {/* Category */}
                       <TableCell className="py-1.5 px-2">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <Select
-                            value={item.categoria}
+                            value={getDisplayCategory(item) || undefined}
                             onValueChange={(value) => handleCategoryChange(item, value)}
                             disabled={isUpdating}
                           >
@@ -600,18 +691,47 @@ export function LancamentoCategorySection({
                                 ? "border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800"
                                 : "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800"
                             )}>
-                              <SelectValue />
+                              {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
+                                <span className="flex items-center gap-1 text-muted-foreground">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Sugerindo…
+                                </span>
+                              ) : (
+                                <SelectValue placeholder="Selecionar" />
+                              )}
                             </SelectTrigger>
                             <SelectContent>
-                              {categories.map((cat) => (
+                              {getCategoriesForItem(item).map((cat) => (
                                 <SelectItem key={cat.value} value={cat.value} className="text-xs">
                                   {cat.label}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          {!isConfirmed && suggestionMap[item.id] && (
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span
+                                    className={cn(
+                                      "shrink-0 w-2 h-2 rounded-full",
+                                      suggestionMap[item.id].confidence === 'high'
+                                        ? "bg-emerald-500"
+                                        : suggestionMap[item.id].confidence === 'medium'
+                                          ? "bg-amber-500"
+                                          : "bg-muted-foreground/50"
+                                    )}
+                                    aria-label={`Confiança: ${suggestionMap[item.id].confidence}`}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">Sugestão IA — confiança {suggestionMap[item.id].confidence}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           {isUpdating && (
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin shrink-0" />
                           )}
                         </div>
                       </TableCell>
@@ -719,7 +839,7 @@ export function LancamentoCategorySection({
           {selectedLancamento && (() => {
             const item = selectedLancamento;
             const isEntrada = item.tipo === 'receita';
-            const categories = getCategoriesForType(item.tipo);
+            const categories = getCategoriesForItem(item);
             const dateStr = item.data_pagamento || item.data_registro;
 
             return (
@@ -744,12 +864,19 @@ export function LancamentoCategorySection({
                 <div>
                   <label className="text-xs text-muted-foreground block mb-2">Categoria</label>
                   <Select
-                    value={item.categoria}
+                    value={getDisplayCategory(item) || undefined}
                     onValueChange={(value) => handleCategoryChange(item, value)}
                     disabled={updatingId === item.id}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue />
+                      {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Sugerindo…
+                        </span>
+                      ) : (
+                        <SelectValue placeholder="Selecionar" />
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (

@@ -23,7 +23,7 @@ import {
   CHART_PALETTE,
 } from '@/components/charts/premiumChartTheme';
 import { useLancamentosSummary } from '@/hooks/useLancamentosSummary';
-import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import type { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,18 +57,22 @@ export interface LancamentosAnalyticsSectionProps {
   /** Filtro de categoria (controlado pela página — treemap e badge) */
   categoryFilter?: string | null;
   onCategoryFilter?: (category: string | null) => void;
+  /** Todos os lançamentos históricos — passados pela página pai para evitar fetch duplicado */
+  allLancamentos: LancamentoRealizado[];
+  loadingHistory: boolean;
 }
+
+const EVOLUTION_SKELETON_HEIGHTS = [40, 25, 60, 35, 75, 30, 80, 55, 45, 70, 65, 20];
 
 export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionProps> = ({
   selectedMonth,
   categoryFilter = null,
   onCategoryFilter,
+  allLancamentos: effectiveLancamentos,
+  loadingHistory: effectiveLoadingAll,
 }) => {
   const { isHidden } = useVisibility();
   const { data: summary, loading: loadingSummary } = useLancamentosSummary(selectedMonth);
-  const { lancamentos: allLancamentos, loading: loadingAll } = useLancamentosRealizados({
-    paginated: false,
-  });
 
   const handleCategoryClick = useCallback(
     (categoryName: string) => {
@@ -104,7 +108,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
     const keys = monthKeysEndingAt(selectedMonth, 12);
     const byMonth = new Map<string, { receitas: number; despesas: number }>();
     keys.forEach((k) => byMonth.set(k, { receitas: 0, despesas: 0 }));
-    for (const l of allLancamentos) {
+    for (const l of effectiveLancamentos) {
       if (!byMonth.has(l.mes_referencia)) continue;
       const v = Math.abs(Number(l.valor_realizado ?? l.valor_previsto) || 0);
       const row = byMonth.get(l.mes_referencia)!;
@@ -116,7 +120,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
       receitas: byMonth.get(ym)!.receitas,
       despesas: byMonth.get(ym)!.despesas,
     }));
-  }, [allLancamentos, selectedMonth]);
+  }, [effectiveLancamentos, selectedMonth]);
 
   const treemapData: TreemapItem[] = useMemo(() => {
     return topCategories
@@ -139,7 +143,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
       }));
   }, [byPaymentMethod]);
 
-  const loading = loadingSummary || loadingAll;
+  const showGridSkeleton = loadingSummary && !summary;
   const formatVal = (n: number) => (isHidden ? '••••' : formatCurrency(n));
 
   return (
@@ -149,7 +153,7 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
       icon={<BarChart3 className="h-4 w-4 text-primary" />}
       defaultOpen
     >
-      {loading && !summary ? (
+      {showGridSkeleton ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-[260px] w-full rounded-xl" />
@@ -164,24 +168,36 @@ export const LancamentosAnalyticsSection: React.FC<LancamentosAnalyticsSectionPr
                 <p className="text-xs text-muted-foreground">Últimos 12 meses</p>
               </CardHeader>
               <CardContent className="h-[240px] pb-4 px-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={evolutionData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border-default))" vertical={false} />
-                    <XAxis dataKey="mes" tick={premiumXAxis.tick} axisLine={premiumXAxis.axisLine} tickLine={false} />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: 'hsl(var(--color-text-tertiary))' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v) => (isHidden ? '••' : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`)}
-                    />
-                    <RechartsTooltip
-                      formatter={(v: number) => [isHidden ? '••••' : formatCurrency(v), '']}
-                      contentStyle={premiumTooltipStyle.contentStyle}
-                    />
-                    <Bar dataKey="receitas" name="Receitas" fill={chartColors.income} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                    <Bar dataKey="despesas" name="Despesas" fill={chartColors.expense} radius={[2, 2, 0, 0]} maxBarSize={28} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {effectiveLoadingAll ? (
+                  <div className="h-full w-full flex items-end gap-1 px-2 pb-4">
+                    {EVOLUTION_SKELETON_HEIGHTS.map((pct, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 rounded-t bg-muted animate-pulse"
+                        style={{ height: `${pct}%` }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={evolutionData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border-default))" vertical={false} />
+                      <XAxis dataKey="mes" tick={premiumXAxis.tick} axisLine={premiumXAxis.axisLine} tickLine={false} />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: 'hsl(var(--color-text-tertiary))' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => (isHidden ? '••' : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`)}
+                      />
+                      <RechartsTooltip
+                        formatter={(v: number) => [isHidden ? '••••' : formatCurrency(v), '']}
+                        contentStyle={premiumTooltipStyle.contentStyle}
+                      />
+                      <Bar dataKey="receitas" name="Receitas" fill={chartColors.income} radius={[2, 2, 0, 0]} maxBarSize={28} />
+                      <Bar dataKey="despesas" name="Despesas" fill={chartColors.expense} radius={[2, 2, 0, 0]} maxBarSize={28} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </AnimatedChartContainer>

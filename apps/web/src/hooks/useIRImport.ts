@@ -89,13 +89,22 @@ export const useIRImport = () => {
         throw new Error('Resposta inválida do servidor.');
       }
 
-      const data = result?.data as Record<string, unknown> | undefined;
+      if (result.success !== true) {
+        const errMsg = typeof result.error === 'string' ? result.error : 'Importação não concluída.';
+        throw new Error(errMsg);
+      }
+
+      const data = result.data as Record<string, unknown> | undefined;
       if (!data || typeof data.anoExercicio !== 'number') {
         console.error('[IR Import] Resposta sem dados válidos:', result);
         throw new Error('O servidor não devolveu os dados da declaração. Tente importar novamente.');
       }
 
-      toast.success((result.message as string) || 'Importação concluída!');
+      if (typeof result.warning === 'string' && result.warning.trim()) {
+        toast.warning(result.warning.trim());
+      } else {
+        toast.success((typeof result.message === 'string' && result.message.trim()) ? result.message.trim() : 'Importação concluída!');
+      }
 
       const importData: IRImportData = {
         id: String(result.savedId ?? ''),
@@ -111,6 +120,7 @@ export const useIRImport = () => {
         filePath: result.filePath as string | undefined,
       };
 
+      await fetchImports();
       return importData;
 
     } catch (error) {

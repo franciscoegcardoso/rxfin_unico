@@ -5,6 +5,8 @@ export interface ProcessIrImportResponse {
   success?: boolean;
   error?: string;
   message?: string;
+  /** Aviso quando arquivo foi registrado mas sem dados detalhados (ex: recibo) */
+  warning?: string;
   savedId?: string;
   data?: {
     anoExercicio?: number;

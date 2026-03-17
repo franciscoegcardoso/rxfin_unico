@@ -19,6 +19,14 @@ export function formatRegularity(pct: number): {
   return { label: 'Irregular', color: 'gray' };
 }
 
+/** Badge de confiança: ≥90 Altíssima, ≥70 Muito Alta, ≥50 Alta, <50 Média */
+export function formatRecorrenteConfidenceBadge(pct: number): { label: string; color: 'green' | 'amber' | 'gray' } {
+  if (pct >= 90) return { label: 'Altíssima', color: 'green' };
+  if (pct >= 70) return { label: 'Muito Alta', color: 'green' };
+  if (pct >= 50) return { label: 'Alta', color: 'amber' };
+  return { label: 'Média', color: 'gray' };
+}
+
 export function describeRecurring(item: RecurringPayment): string {
   const count = item.occurrence_count ?? 0;
   const avg = item.average_amount ?? 0;

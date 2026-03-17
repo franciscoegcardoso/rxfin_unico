@@ -206,6 +206,20 @@ export function ConsolidatedView() {
         />
       </div>
 
+      {/* Botão de ação rápida */}
+      {!loading && (
+        <div className="py-1">
+          <button
+            type="button"
+            onClick={() => document.getElementById('consolidated-transacoes')?.scrollIntoView({ behavior: 'smooth' })}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+          >
+            <span className="text-primary font-medium">›</span>
+            Ver todas as transações
+          </button>
+        </div>
+      )}
+
       <CollapsibleModule
         title="Análises consolidadas"
         description="Despesas por categoria — débito + crédito"
@@ -246,6 +260,7 @@ export function ConsolidatedView() {
         )}
       </CollapsibleModule>
 
+      <div id="consolidated-transacoes">
       <CollapsibleModule
         title="Todas as transações"
         description="Débito e crédito combinados"
@@ -273,6 +288,7 @@ export function ConsolidatedView() {
           sourceFilter={sourceFilter}
         />
       </CollapsibleModule>
+      </div>
     </div>
   );
 }
