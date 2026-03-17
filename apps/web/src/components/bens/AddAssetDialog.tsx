@@ -525,7 +525,7 @@ export const AddAssetDialog: React.FC<AddAssetDialogProps> = ({
         setNewAsset({
           ...initialFormState,
           type: defaultType,
-          ...(defaultType === 'obligations' ? { passivoSubtype: 'financing' as const } : {}),
+          ...(defaultType === 'obligations' ? { passivoSubtype: 'debt' as const } : {}),
         });
         setLinkedExpenses([]);
         setInsuranceData(defaultInsuranceData);
