@@ -19,11 +19,13 @@ import {
   TreesIcon,
   PieChartIcon,
   Info,
+  AlertTriangle,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePluggyInvestments, InvestmentCategoryData, InvestmentCategory } from '@/hooks/usePluggyInvestments';
+import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
@@ -50,8 +52,21 @@ const categoryConfig: Record<InvestmentCategory, { icon: React.ReactNode; color:
 };
 
 
-export const PluggyInvestmentsSection: React.FC = () => {
-  const { categories, totalBalance, totals, summaryByCategory, isLoading, refetch, investments, filters, setFilters, filterOptions, hasActiveFilters, allInvestments } = usePluggyInvestments();
+export interface PluggyInvestmentsSectionProps {
+  /** Incrementar após salvar investimento manual para atualizar totais v2 */
+  refreshTrigger?: number;
+  onAddManual?: () => void;
+}
+
+export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> = ({
+  refreshTrigger = 0,
+  onAddManual,
+}) => {
+  const { categories, totalBalance, totals, summaryByCategory, isLoading, refetch, investments, filters, setFilters, filterOptions, hasActiveFilters, allInvestments, syncAlertRows } = usePluggyInvestments();
+
+  React.useEffect(() => {
+    if (refreshTrigger > 0) void refetch();
+  }, [refreshTrigger, refetch]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [chartType, setChartType] = useState<'treemap' | 'pie'>('treemap');
@@ -79,8 +94,17 @@ export const PluggyInvestmentsSection: React.FC = () => {
     });
   };
 
-  if (allInvestments.length === 0 && !isLoading) {
+  const manualCount = totals?.manual_count ?? 0;
+  if (allInvestments.length === 0 && !isLoading && syncAlertRows.length === 0 && manualCount === 0) {
     return null;
+  }
+
+  if (allInvestments.length === 0 && !isLoading && syncAlertRows.length > 0 && manualCount === 0) {
+    return (
+      <div className="space-y-4">
+        <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
+      </div>
+    );
   }
 
   const showUserFilter = filterOptions.users.length > 1;
@@ -90,6 +114,8 @@ export const PluggyInvestmentsSection: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
+
       {/* Header */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
         <CardContent className="pt-6">
@@ -127,7 +153,7 @@ export const PluggyInvestmentsSection: React.FC = () => {
                       </Tooltip>
                     </div>
                     <p className="text-xl font-bold text-primary">{formatCurrency(totals.net_total)}</p>
-                    {totals.gross_net_spread > 0 && (
+                    {(totals.gross_net_spread ?? 0) !== 0 && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <p className="text-sm text-muted-foreground border-t border-primary/20 pt-1 mt-1">
@@ -138,6 +164,12 @@ export const PluggyInvestmentsSection: React.FC = () => {
                           Diferença entre valor bruto e líquido. Para Renda Fixa inclui IR estimado. Para Fundos pode refletir diferença de cota com o banco.
                         </TooltipContent>
                       </Tooltip>
+                    )}
+                    {(totals.manual_count ?? 0) > 0 && (
+                      <p className="text-xs text-muted-foreground flex items-start gap-1.5 mt-2 pt-2 border-t border-primary/10">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                        Inclui {formatCurrency(totals.manual_gross ?? 0)} em {totals.manual_count} item(ns) cadastrado(s) manualmente
+                      </p>
                     )}
                   </div>
                 </TooltipProvider>
@@ -163,6 +195,11 @@ export const PluggyInvestmentsSection: React.FC = () => {
                       {[filters.userId, filters.institution, filters.category].filter(Boolean).length}
                     </Badge>
                   )}
+                </Button>
+              )}
+              {onAddManual && (
+                <Button variant="outline" size="sm" className="text-xs h-8" onClick={onAddManual}>
+                  + Adicionar manual
                 </Button>
               )}
               <Button

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { PluggyInvestmentsSection } from './PluggyInvestmentsSection';
@@ -31,6 +31,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useManualInvestments } from '@/hooks/useManualInvestments';
+import { ManualInvestmentModal } from '@/components/investimentos/ManualInvestmentModal';
+import { ManualInvestmentsList } from '@/components/investimentos/ManualInvestmentsList';
+import type { ManualInvestment } from '@/types/investments';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -107,6 +111,25 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   const [expandedTypes, setExpandedTypes] = useState<Set<InvestmentType>>(new Set());
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [groupBy, setGroupBy] = useState<'type' | 'institution'>('type');
+  const manualInv = useManualInvestments();
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualEdit, setManualEdit] = useState<ManualInvestment | null>(null);
+  const [pluggyRefreshTrigger, setPluggyRefreshTrigger] = useState(0);
+  const [showManualList, setShowManualList] = useState(false);
+
+  const openManualModal = useCallback(() => {
+    setManualEdit(null);
+    setManualModalOpen(true);
+    setShowManualList(true);
+  }, []);
+
+  const onManualSaved = useCallback(() => {
+    setPluggyRefreshTrigger((n) => n + 1);
+  }, []);
+
+  useEffect(() => {
+    if (manualInv.items.length > 0) setShowManualList(true);
+  }, [manualInv.items.length]);
 
   // Função para verificar se uma instituição existe
   const isValidInstitution = (institutionId: string | undefined): boolean => {
@@ -313,7 +336,36 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   if (investments.length === 0) {
     return (
       <div className="space-y-6">
-        <PluggyInvestmentsSection />
+        <PluggyInvestmentsSection
+          refreshTrigger={pluggyRefreshTrigger}
+          onAddManual={openManualModal}
+        />
+        <ManualInvestmentsList
+          items={manualInv.items}
+          onEdit={(item) => {
+            setManualEdit(item);
+            setManualModalOpen(true);
+            setShowManualList(true);
+          }}
+          onRemove={async (id) => {
+            await manualInv.remove(id);
+            onManualSaved();
+          }}
+          onAdd={openManualModal}
+          showSection={showManualList || manualInv.items.length > 0}
+        />
+        <ManualInvestmentModal
+          open={manualModalOpen}
+          onClose={() => {
+            setManualModalOpen(false);
+            setManualEdit(null);
+          }}
+          onSaved={onManualSaved}
+          editItem={manualEdit ?? undefined}
+          add={manualInv.add}
+          update={manualInv.update}
+          remove={manualInv.remove}
+        />
         <Card>
           <CardContent className="p-0">
             <EmptyState
@@ -331,10 +383,40 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   return (
     <div className="space-y-6">
       {/* Investimentos via Open Finance (Pluggy) */}
-      <PluggyInvestmentsSection />
+      <PluggyInvestmentsSection
+        refreshTrigger={pluggyRefreshTrigger}
+        onAddManual={openManualModal}
+      />
 
-      {/* Investimentos manuais */}
-      <div className="space-y-4">
+      <ManualInvestmentsList
+        items={manualInv.items}
+        onEdit={(item) => {
+          setManualEdit(item);
+          setManualModalOpen(true);
+          setShowManualList(true);
+        }}
+        onRemove={async (id) => {
+          await manualInv.remove(id);
+          onManualSaved();
+        }}
+        onAdd={openManualModal}
+        showSection={showManualList || manualInv.items.length > 0}
+      />
+      <ManualInvestmentModal
+        open={manualModalOpen}
+        onClose={() => {
+          setManualModalOpen(false);
+          setManualEdit(null);
+        }}
+        onSaved={onManualSaved}
+        editItem={manualEdit ?? undefined}
+        add={manualInv.add}
+        update={manualInv.update}
+        remove={manualInv.remove}
+      />
+
+      {/* Investimentos manuais (config) */}
+      <div id="investimentos-manuais" className="scroll-mt-4 space-y-4">
       {/* Alerta de investimentos órfãos com sugestão de correção */}
       {!alertDismissed && orphanedInvestmentsWithSuggestion.length > 0 && (
         <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
