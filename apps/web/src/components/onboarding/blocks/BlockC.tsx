@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
-  Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles
+  Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
+  Home, Car, PiggyBank, CreditCard, Shield, Building2, Banknote, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,22 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const [irUploading, setIrUploading] = useState(false);
   const [irUploadError, setIrUploadError] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [patrimonioData, setPatrimonioData] = useState<any>(null);
+  const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
+
+  const loadPatrimonio = async () => {
+    if (patrimonioLoaded || !user?.id) return;
+    try {
+      const { data } = await supabase.rpc('get_patrimonio_overview', {
+        p_user_id: user.id,
+      });
+      setPatrimonioData(data);
+    } catch (err) {
+      console.warn('[BlockC] loadPatrimonio erro:', err);
+    } finally {
+      setPatrimonioLoaded(true);
+    }
+  };
 
   const loadIrImports = async () => {
     if (irLoaded || !user?.id) return;
@@ -118,7 +135,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   };
 
   useEffect(() => {
-    if (step === 5 && user?.id) {
+    if (step === 6 && user?.id) {
       supabase.rpc('calculate_milestone_cashflow', { p_user_id: user.id })
         .then(({ data }) => setMilestoneData(data));
     }
@@ -304,15 +321,230 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 2: Budget allocation ────────────────────────────────
+  // ─── Step 2: Patrimônio ─────────────────────────────────────
   if (step === 2) {
+    if (!patrimonioLoaded) {
+      loadPatrimonio();
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-sm text-muted-foreground">Carregando seu patrimônio...</p>
+        </div>
+      );
+    }
+
+    const assets: any[] = patrimonioData?.assets ?? [];
+    const vehicles: any[] = patrimonioData?.vehicles ?? [];
+    const financiamentos: any[] = patrimonioData?.financiamentos ?? [];
+    const consorcios: any[] = patrimonioData?.consorcios ?? [];
+    const seguros: any[] = patrimonioData?.seguros ?? [];
+    const netWorth = patrimonioData?.net_worth;
+
+    const totalAtivos = (netWorth?.total_assets ?? 0) + (netWorth?.total_vehicles ?? 0);
+    const totalPassivos = netWorth?.total_debt ?? 0;
+    const patrimonioLiquido = totalAtivos - totalPassivos;
+
+    const hasAnyData = assets.length > 0 || vehicles.length > 0 ||
+      financiamentos.length > 0 || consorcios.length > 0;
+
+    const formatBRLShort = (v: number) => {
+      if (v >= 1_000_000) return `R$ ${(v/1_000_000).toFixed(1)}M`;
+      if (v >= 1_000) return `R$ ${(v/1_000).toFixed(0)}k`;
+      return `R$ ${v.toLocaleString('pt-BR')}`;
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center mb-6">
+          <Button variant="ghost" size="sm" onClick={() => onStepChange(1)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+        </div>
+
+        <div className="mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-medium text-primary uppercase tracking-wide">
+              Seu patrimônio
+            </p>
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Confira o que identificamos
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {hasAnyData
+              ? 'Encontramos esses bens e obrigações no seu perfil. Confirme ou ajuste depois em Bens & Investimentos.'
+              : 'Nenhum bem cadastrado ainda. Você pode adicionar seus ativos depois em Bens & Investimentos.'}
+          </p>
+        </div>
+
+        {hasAnyData && (
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: 'Total ativos', value: totalAtivos, color: 'text-primary' },
+              { label: 'Dívidas', value: totalPassivos, color: 'text-destructive' },
+              { label: 'Patrimônio líquido', value: patrimonioLiquido, color: patrimonioLiquido >= 0 ? 'text-primary' : 'text-destructive' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-card border border-border rounded-xl p-3 text-center">
+                <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                <p className={`text-sm font-bold ${color}`}>{formatBRLShort(value)}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="space-y-3 mb-5">
+
+          {assets.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Home className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Bens ({assets.length})
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {assets.slice(0, 3).map((a: any) => (
+                  <div key={a.id} className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate flex-1">{a.name}</p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
+                      {formatBRLShort(a.current_value ?? 0)}
+                    </p>
+                  </div>
+                ))}
+                {assets.length > 3 && (
+                  <p className="text-xs text-muted-foreground">
+                    +{assets.length - 3} outros bens
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {vehicles.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Car className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Veículos ({vehicles.length})
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {vehicles.slice(0, 3).map((v: any) => (
+                  <div key={v.id} className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate flex-1">{v.display_name}</p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
+                      {formatBRLShort(v.fipe_value ?? 0)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {financiamentos.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="h-4 w-4 text-destructive" />
+                <p className="text-sm font-semibold text-foreground">
+                  Financiamentos ({financiamentos.length})
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {financiamentos.slice(0, 3).map((f: any) => (
+                  <div key={f.id} className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate flex-1">{f.nome}</p>
+                    <p className="text-xs font-medium text-destructive ml-2 shrink-0">
+                      -{formatBRLShort(f.saldo_devedor ?? 0)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {consorcios.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <PiggyBank className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Consórcios ({consorcios.length})
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {consorcios.slice(0, 2).map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate flex-1">{c.nome}</p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
+                      {formatBRLShort(c.valor_carta ?? 0)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {seguros.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="h-4 w-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground">
+                  Seguros ({seguros.filter((s: any) => s.is_active).length} ativos)
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {seguros.filter((s: any) => s.is_active).slice(0, 2).map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground truncate flex-1">{s.nome}</p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
+                      {formatBRLShort(s.premio_mensal ?? 0)}/mês
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!hasAnyData && (
+            <div className="bg-muted/30 rounded-xl p-6 text-center">
+              <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Conecte seus bancos ou importe o IR para identificar
+                seus bens automaticamente.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Você pode cadastrar e editar todos os seus bens em detalhes
+            na seção <strong>Bens & Investimentos</strong> após o onboarding.
+          </p>
+        </div>
+
+        <Button
+          variant="hero"
+          size="lg"
+          className="w-full"
+          onClick={() => onStepChange(3)}
+        >
+          Continuar para Orçamento <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Step 3: Budget allocation ────────────────────────────────
+  if (step === 3) {
     return (
       <div className="max-w-3xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(1)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(2)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('budget', {}); onStepChange(3); }}>
+          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('budget', {}); onStepChange(4); }}>
             Próximo: Metas <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
@@ -321,15 +553,15 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 3: Goals ────────────────────────────────────────────
-  if (step === 3) {
+  // ─── Step 4: Goals ────────────────────────────────────────────
+  if (step === 4) {
     return (
       <div className="max-w-3xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(2)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(3)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
-          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('goals', {}); onStepChange(4); }}>
+          <Button variant="hero" size="sm" onClick={() => { onSaveDraft('goals', {}); onStepChange(5); }}>
             Próximo: Revisão <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
@@ -338,12 +570,12 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     );
   }
 
-  // ─── Step 4: Review ───────────────────────────────────────────
-  if (step === 4) {
+  // ─── Step 5: Review ───────────────────────────────────────────
+  if (step === 5) {
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-4">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(3)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(4)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
@@ -351,15 +583,15 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           <h2 className="text-xl font-bold text-foreground mb-2">Quase lá!</h2>
           <p className="text-sm text-muted-foreground">Vamos ver o resultado do seu fluxo de caixa.</p>
         </div>
-        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(5)}>
+        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(6)}>
           Ver meu Fluxo de Caixa <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     );
   }
 
-  // ─── Step 5: Conquest Card ────────────────────────────────────
-  if (step === 5) {
+  // ─── Step 6: Conquest Card ────────────────────────────────────
+  if (step === 6) {
     const md = milestoneData as any;
     const variancePositive = md?.variance >= 0;
 
