@@ -262,12 +262,14 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                 </div>
                 {!imported && (
                   <label
+                    htmlFor={`ir-upload-${year}`}
                     className={cn(
                       'shrink-0 cursor-pointer',
                       irUploading && selectedYear === year && 'pointer-events-none opacity-80'
                     )}
                   >
                     <input
+                      id={`ir-upload-${year}`}
                       type="file"
                       accept=".pdf,.xml,.dec,application/pdf,text/xml,application/xml"
                       className="hidden"

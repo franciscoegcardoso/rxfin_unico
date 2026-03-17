@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,7 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [step, setStep] = useState<'terms' | 'upload' | 'result'>('terms');
   const [lastImport, setLastImport] = useState<IRImportData | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -62,25 +63,7 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
     }
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    const files = e.dataTransfer.files;
-    if (files?.[0]) {
-      await handleFileUpload(files[0]);
-    }
-  }, []);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      await handleFileUpload(file);
-    }
-  };
-
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     const result = await processFile(file);
     if (result) {
       setLastImport(result);
@@ -88,7 +71,26 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
       onImportComplete?.(result);
       fetchImports();
     }
-  };
+  }, [processFile, onImportComplete, fetchImports]);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const files = e.dataTransfer.files;
+    if (files?.[0]) {
+      await handleFileUpload(files[0]);
+    }
+  }, [handleFileUpload]);
+
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const input = e.target;
+    if (file) {
+      await handleFileUpload(file);
+      if (input) input.value = '';
+    }
+  }, [handleFileUpload]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -182,17 +184,20 @@ export const IRImportDialog: React.FC<IRImportDialogProps> = ({
               ou clique para selecionar
             </p>
             <input
+              ref={fileInputRef}
               type="file"
               id="ir-file"
               className="hidden"
               accept=".xml,.dec,.pdf"
               onChange={handleFileSelect}
             />
-            <Button variant="outline" asChild>
-              <label htmlFor="ir-file" className="cursor-pointer">
-                <FileText className="h-4 w-4 mr-2" />
-                Selecionar arquivo
-              </label>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Selecionar arquivo
             </Button>
           </>
         )}

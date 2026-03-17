@@ -27,6 +27,8 @@ export interface ProcessIrImportResponse {
 export async function uploadIRFileMultipart(
   file: File
 ): Promise<{ data: ProcessIrImportResponse | null; error: Error | null }> {
+  // eslint-disable-next-line no-console -- temporary log for IR upload flow verification
+  console.log('[IR Import] uploadIRFileMultipart called, file:', file.name, 'size:', file.size);
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData.session?.access_token;
   if (!token?.trim()) {
@@ -37,7 +39,10 @@ export async function uploadIRFileMultipart(
   formData.append('file', file, file.name);
 
   const baseUrl = String(SUPABASE_URL).replace(/\/$/, '');
-  const res = await fetch(`${baseUrl}/functions/v1/process-ir-import`, {
+  const url = `${baseUrl}/functions/v1/process-ir-import`;
+  // eslint-disable-next-line no-console -- temporary log for IR upload flow verification
+  console.log('[IR Import] POST', url);
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
