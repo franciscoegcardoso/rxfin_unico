@@ -55,7 +55,6 @@ const BensInvestimentosLayout = lazy(() => import("./pages/bens-investimentos/Be
 const ConsolidadoTab = lazy(() => import("./pages/bens-investimentos/ConsolidadoTab"));
 const PatrimonioTab = lazy(() => import("./pages/bens-investimentos/PatrimonioTab"));
 const InvestimentosTab = lazy(() => import("./pages/bens-investimentos/InvestimentosTab"));
-const PassivosTab = lazy(() => import("./pages/bens-investimentos/PassivosTab"));
 const PassivosPage = lazy(() => import("./pages/PassivosPage"));
 const SegurosTab = lazy(() => import("./pages/bens-investimentos/SegurosTab"));
 const ParticipacaoTab = lazy(() => import("./pages/bens-investimentos/ParticipacaoTab"));
@@ -214,8 +213,8 @@ const App = () => (
                                     <Route path="consolidado" element={<ConsolidadoTab />} />
                                     <Route path="patrimonio" element={<PatrimonioTab />} />
                                     <Route path="investimentos" element={<InvestimentosTab />} />
-                                    <Route path="passivos" element={<PassivosTab />} />
-                                    <Route path="credito" element={<Navigate to="/bens-investimentos/passivos" replace />} />
+                                    <Route path="passivos" element={<Navigate to="/passivos" replace />} />
+                                    <Route path="credito" element={<Navigate to="/passivos" replace />} />
                                     <Route path="dividas" element={<Navigate to="/passivos" replace />} />
                                     <Route path="seguros" element={<SegurosTab />} />
                                     <Route path="participacoes" element={<ParticipacaoTab />} />

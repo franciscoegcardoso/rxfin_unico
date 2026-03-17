@@ -79,7 +79,7 @@ const BensInvestimentosLayout: React.FC = () => {
     if (pathSegment === 'dividas') return 'dividas';
     if (pathSegment === 'overview') return 'consolidado';
     if (pathSegment === 'imoveis' || pathSegment === 'veiculos') return 'patrimonio';
-    if (pathSegment === 'financiamentos') return 'passivos';
+    if (pathSegment === 'financiamentos') return 'consolidado';
     return validTabs.includes(pathSegment) ? pathSegment : 'consolidado';
   })();
   const currentTab = tabFromUrl;
@@ -122,7 +122,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const [defaultAssetType, setDefaultAssetType] = useState<AssetType>('property');
   useEffect(() => {
     if (currentTab === 'participacoes' || currentTab === 'intangiveis') return;
-    const next: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : currentTab === 'passivos' ? 'obligations' : 'property';
+    const next: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : 'property';
     setDefaultAssetType(next);
   }, [currentTab, openAsVehicleOnly]);
 
@@ -629,7 +629,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Landmark className="h-4 w-4" /> Financiamentos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/passivos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/passivos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {financiamentosList.slice(0, 3).map((f: { nome?: string; saldo_devedor?: number; progress_pct?: number }, i: number) => (
@@ -963,75 +963,6 @@ const BensInvestimentosLayout: React.FC = () => {
                         </>
                       );
                     })()
-                  )}
-                </div>
-              )}
-
-              {currentTab === 'passivos' && (
-                <div className="space-y-4">
-                  <PluggyLiabilitySuggestionsSheet formatCurrency={formatCurrency} />
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Landmark className="h-5 w-5 text-primary" />
-                      Meus Financiamentos
-                    </h2>
-                    <Button
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => handleOpenAddDialog(undefined, undefined, 'obligations', true)}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Adicionar passivo
-                    </Button>
-                  </div>
-                  {financiamentosList.length === 0 && consorciosList.length === 0 ? (
-                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-                      <CardContent className="flex flex-col items-center justify-center text-center">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <Landmark className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium text-foreground">Nenhum financiamento ou consórcio</p>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre financiamentos e consórcios para acompanhar parcelas e saldo devedor no patrimônio.</p>
-                        <Button
-                          size="sm"
-                          className="gap-1.5 mt-4"
-                          onClick={() => handleOpenAddDialog(undefined, undefined, 'obligations', true)}
-                        >
-                          <Plus className="h-4 w-4" />
-                          Adicionar passivo
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <>
-                  {financiamentosList.map((fin: { nome?: string; instituicao?: string; saldo_devedor?: number; valor_parcela?: number; parcelas_pagas?: number; prazo_total?: number; progress_pct?: number; taxa_juros?: number }, i: number) => (
-                    <Card key={i} className="rounded-[14px] border border-border/80 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-bold">{fin.nome ?? '—'}</p>
-                        {fin.instituicao && <Badge variant="outline" className="text-xs">{fin.instituicao}</Badge>}
-                      </div>
-                      <p className="mt-2 font-semibold">Saldo devedor: {formatCurrency(fin.saldo_devedor ?? 0)}</p>
-                      <p className="text-sm text-muted-foreground">Parcela: {formatCurrency(fin.valor_parcela ?? 0)}/mês</p>
-                      {fin.taxa_juros != null && <p className="text-xs text-muted-foreground">Taxa: {fin.taxa_juros}% a.m.</p>}
-                      <div className="mt-2 flex items-center gap-2">
-                        <Progress value={fin.progress_pct ?? 0} className="h-2 flex-1" />
-                        <span className="text-xs text-muted-foreground shrink-0">{fin.parcelas_pagas ?? 0} de {fin.prazo_total ?? 0} parcelas ({(fin.progress_pct ?? 0)}%)</span>
-                      </div>
-                    </Card>
-                  ))}
-                  {consorciosList.map((c: { nome?: string; administradora?: string; valor_carta?: number; valor_parcela?: number; parcelas_pagas?: number; prazo_total?: number; contemplado?: boolean; grupo?: number; cota?: number }, i: number) => (
-                    <Card key={`c-${i}`} className="rounded-[14px] border border-border/80 p-4 bg-muted/20">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="font-bold">{c.nome ?? '—'}</p>
-                        <Badge variant={c.contemplado ? 'default' : 'secondary'} className={cn('text-xs border-0', c.contemplado && 'bg-green-600 text-white')}>{c.contemplado ? 'Contemplado' : 'Não contemplado'}</Badge>
-                      </div>
-                      {c.administradora && <p className="text-xs text-muted-foreground mt-1">Administradora: {c.administradora}</p>}
-                      <p className="mt-2 font-semibold">Carta: {formatCurrency(c.valor_carta ?? 0)}</p>
-                      <p className="text-sm text-muted-foreground">Parcela: {formatCurrency(c.valor_parcela ?? 0)}/mês</p>
-                      <p className="text-xs text-muted-foreground">{c.parcelas_pagas ?? 0} de {c.prazo_total ?? 0} · {c.grupo != null && c.cota != null && `Grupo ${c.grupo} Cota ${c.cota}`}</p>
-                    </Card>
-                  ))}
-                    </>
                   )}
                 </div>
               )}

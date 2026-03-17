@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { AddAssetDialog } from '@/components/bens/AddAssetDialog';
+import { DividaObrigacaoDialog } from './DividaObrigacaoDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { Asset } from '@/types/financial';
@@ -117,12 +117,10 @@ export const DividasObrigacoesSection: React.FC = () => {
         </Card>
       </div>
 
-      <AddAssetDialog
+      <DividaObrigacaoDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editingAsset={editingAsset}
-        defaultType="obligations"
-        lockedType={true}
       />
 
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>

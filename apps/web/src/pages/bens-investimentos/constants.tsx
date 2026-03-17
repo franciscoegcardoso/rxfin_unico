@@ -45,7 +45,6 @@ export const TABS = [
   { id: 'investimentos', label: 'Investimentos',   icon: TrendingUp      },
   { id: 'participacoes', label: 'Participações',   icon: Building2       },
   { id: 'intangiveis',   label: 'Intangíveis',     icon: Briefcase       },
-  { id: 'passivos',      label: 'Passivos',        icon: CreditCard      },
   { id: 'seguros',       label: 'Seguros',         icon: ShieldCheck     },
   { id: 'historico-ir',  label: 'Histórico IR',    icon: FileBarChart    },
 ] as const;
@@ -59,7 +58,6 @@ export const TAB_ASSET_TYPES: Record<BensTab, NewAssetType[]> = {
   'investimentos': ['investment', 'receivable'],
   'participacoes': ['company_stake'],
   'intangiveis':   ['intellectual_property', 'license', 'contract_right'],
-  'passivos':      ['financing', 'consortium', 'debt'],
   'seguros':       [],
   'historico-ir':  [],
 };
