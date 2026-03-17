@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
+import { ComprasRecorrentesSection } from '@/components/cartao/ComprasRecorrentesSection';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { formatCurrency } from '@/lib/utils';
@@ -136,6 +137,9 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
                 <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} className="hidden sm:block" />
               </div>
             </div>
+
+            {/* Compras recorrentes (RPC get_recorrentes_cartao) */}
+            <ComprasRecorrentesSection />
 
             {/* Visão de fatura consolidada (RPC get_credit_card_bills_detail) */}
             <CreditCardBillView showSummaryRow />

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useSyncExternalStore } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { invokePluggySync } from '@/lib/pluggySync';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +59,7 @@ const bankSyncStore = {
 
 export function usePluggyBankSync() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { fetchLancamentos } = useLancamentosRealizados();
   const { syncing, progress } = useSyncExternalStore(
     (l) => bankSyncStore.subscribe(l),
@@ -154,6 +156,7 @@ export function usePluggyBankSync() {
           processed: 0,
         });
         setTimeout(() => bankSyncStore.setProgress({ step: 'idle', stepLabel: '' }), 5000);
+        await queryClient.invalidateQueries({ queryKey: ['recorrentes-extrato'] });
         const summary = await getImportedSummary();
         if (summary.total_imported > 0) {
           toast.info(`Dados em dia. ${summary.total_imported} transações importadas de ${summary.months_covered} meses.`);
@@ -206,6 +209,7 @@ export function usePluggyBankSync() {
       }, 5000);
 
       toast.success(`${totalImported} transações bancárias sincronizadas!`);
+      await queryClient.invalidateQueries({ queryKey: ['recorrentes-extrato'] });
       await fetchLancamentos();
       return { imported: totalImported };
     } catch (err) {
@@ -217,7 +221,7 @@ export function usePluggyBankSync() {
       bankSyncStore.setSyncing(false);
       runningRef.current = false;
     }
-  }, [user, fetchLancamentos, getImportedSummary]);
+  }, [user, queryClient, fetchLancamentos, getImportedSummary]);
 
   return {
     syncing,

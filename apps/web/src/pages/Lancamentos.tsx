@@ -9,7 +9,7 @@ import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { CategoryAssignmentCard } from '@/components/shared/CategoryAssignmentDialog';
 import { ContasListSection } from '@/components/lancamentos/ContasListSection';
 import { ContaFormDialog } from '@/components/lancamentos/ContaFormDialog';
-import { RecorrentesSection } from '@/components/lancamentos/RecorrentesSection';
+import { CompromissosRecorrentesSection } from '@/components/extrato/CompromissosRecorrentesSection';
 import { ConfirmPaymentDialog } from '@/components/lancamentos/ConfirmPaymentDialog';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -1499,18 +1499,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               />
             </div>
 
-            <RecorrentesSection
-              recorrrentes={recorrrentes}
-              userId={user?.id}
-              onOpenNewRecorrente={handleOpenNewRecorrente}
-              onEditRecorrente={handleEditConta}
-              onDeleteRecorrente={async (id) => {
-                const ok = await deleteConta(id);
-                if (ok) fetchContas();
-                return ok;
-              }}
-              loading={loadingContas}
-            />
+            <CompromissosRecorrentesSection />
 
             <CategoryAssignmentCard
               title="Atribuir categorias aos lançamentos"
