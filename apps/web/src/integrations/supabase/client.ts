@@ -16,6 +16,9 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true,
+      // Evitar múltiplas getSession() no bootstrap: AuthContext usa getInitialSession() (uma única chamada).
+      // Em hooks/páginas, preferir useAuth().session em vez de supabase.auth.getSession() para reduzir
+      // contenção no lock do Gotrue e o aviso "Lock was not released within 5000ms".
     },
   }
 )

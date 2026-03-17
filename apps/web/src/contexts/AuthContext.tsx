@@ -19,6 +19,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/** Cache da primeira getSession() para evitar múltiplas chamadas (ex.: React Strict Mode monta 2x).
+ * Reduz contenção no lock do Gotrue e o aviso "Lock was not released within 5000ms". */
+let initialSessionPromise: Promise<{ data: { session: Session | null } }> | null = null;
+function getInitialSession() {
+  if (!initialSessionPromise) {
+    initialSessionPromise = supabase.auth.getSession();
+  }
+  return initialSessionPromise;
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
@@ -70,7 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
-    // THEN check for existing session (com timeout para não travar se Supabase não responder)
+    // THEN check for existing session (uma única getSession() compartilhada evita lock contention no Strict Mode)
     const SESSION_TIMEOUT_MS = 12_000;
     const timeoutId = setTimeout(() => {
       setSession(null);
@@ -79,7 +89,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
     }, SESSION_TIMEOUT_MS);
 
-    supabase.auth.getSession()
+    getInitialSession()
       .then(({ data: { session } }) => {
         setSession(session);
         setUser(session?.user ?? null);
