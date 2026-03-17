@@ -82,7 +82,7 @@ export const HeaderMetricCard: React.FC<HeaderMetricCardProps> = ({
           </p>
           <p
             className={cn(
-              'text-sm font-semibold truncate tabular-nums',
+              'text-sm font-semibold truncate tabular-nums font-numeric',
               styles.valueColor
             )}
           >

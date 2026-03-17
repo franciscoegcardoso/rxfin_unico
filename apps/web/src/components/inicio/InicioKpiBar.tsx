@@ -31,39 +31,14 @@ interface KpiCardProps {
 
 const KpiCard: React.FC<KpiCardProps> = ({ label, value, sub }) => (
   <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] px-4 py-3 flex flex-col gap-0.5">
-    <p
-      style={{
-        fontSize: '10px',
-        fontWeight: 500,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase' as const,
-        color: 'hsl(var(--color-text-secondary))',
-        fontFamily: 'var(--font-sans)',
-      }}
-    >
+    <p className="text-[10px] font-medium uppercase tracking-wide text-[hsl(var(--color-text-secondary))]">
       {label}
     </p>
-    <div
-      className="tabular-nums leading-tight mt-0.5"
-      style={{
-        fontSize: '22px',
-        fontWeight: 600,
-        letterSpacing: '-0.02em',
-        fontFamily: 'var(--font-numeric)',
-      }}
-    >
+    <div className="text-sm font-semibold tabular-nums font-numeric leading-tight mt-0.5 tracking-tight">
       {value}
     </div>
     {sub && (
-      <div
-        style={{
-          fontSize: '11px',
-          fontWeight: 400,
-          color: 'hsl(var(--color-text-tertiary))',
-          fontFamily: 'var(--font-sans)',
-          lineHeight: 1.4,
-        }}
-      >
+      <div className="text-[11px] font-normal text-[hsl(var(--color-text-tertiary))] leading-snug">
         {sub}
       </div>
     )}
