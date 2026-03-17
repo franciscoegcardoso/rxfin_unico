@@ -13,6 +13,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
+/**
+ * @deprecated Esta página foi substituída pelas seções integradas em:
+ * - /movimentacoes/extrato → CompromissosRecorrentesSection
+ * - /movimentacoes/cartao-credito → ComprasRecorrentesSection
+ * Rota /compromissos agora redireciona para /movimentacoes/extrato (App.tsx).
+ * Este arquivo pode ser removido após confirmação em produção.
+ */
+
 function SkeletonCard() {
   return (
     <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">

@@ -511,7 +511,7 @@ const Inicio: React.FC = () => {
             <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
               <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between">
                 <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))]">Compromissos do mês</CardTitle>
-                <Link to="/compromissos" className="text-sm text-primary hover:underline font-medium">Ver todos</Link>
+                <Link to="/movimentacoes/extrato" className="text-sm text-primary hover:underline font-medium">Ver todos</Link>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <ul className="space-y-2">

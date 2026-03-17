@@ -92,7 +92,6 @@ import RXSplit from "./pages/RXSplit";
 import DividirConta from "./pages/DividirConta";
 import Alertas from "./pages/Alertas";
 import Recorrentes from "./pages/Recorrentes";
-import Compromissos from "./pages/Compromissos";
 import Notificacoes from "./pages/Notificacoes";
 import Lixeira from "./pages/Lixeira";
 import AuthCallback from "./pages/AuthCallback";
@@ -197,7 +196,7 @@ const App = () => (
                   <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
                     <Route path="inicio" element={<Inicio />} />
                     <Route path="dashboard" element={<Navigate to="/inicio" replace />} />
-                    <Route path="compromissos" element={<Compromissos />} />
+                    <Route path="compromissos" element={<Navigate to="/movimentacoes/extrato" replace />} />
                     <Route path="parametros" element={<Parametros />} />
                     <Route path="movimentacoes" element={<MovimentacoesPage />} />
                     <Route path="movimentacoes/extrato" element={<MovimentacoesPage defaultTab="extrato" />} />

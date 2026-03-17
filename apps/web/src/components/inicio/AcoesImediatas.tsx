@@ -54,7 +54,7 @@ export const AcoesImediatas: React.FC = () => {
       badge: hasCompromissos && allCompromissosPaid ? (
         <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0 text-[10px]">✓ ok</Badge>
       ) : null,
-      href: '/compromissos',
+      href: '/movimentacoes/extrato',
     },
     {
       icon: Target,

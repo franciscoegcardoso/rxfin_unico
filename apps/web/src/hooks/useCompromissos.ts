@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * @deprecated Use useRecorrentesExtrato ou useRecorrentesCartao.
+ * Mantido apenas para compatibilidade até remoção de Compromissos.tsx.
+ */
+
 export interface CompromissoItem {
   id: string;
   description: string;
