@@ -39,6 +39,7 @@ import ConsolidadoTab from "./pages/bens-investimentos/ConsolidadoTab";
 import PatrimonioTab from "./pages/bens-investimentos/PatrimonioTab";
 import InvestimentosTab from "./pages/bens-investimentos/InvestimentosTab";
 import PassivosTab from "./pages/bens-investimentos/PassivosTab";
+import PassivosPage from "./pages/PassivosPage";
 import SegurosTab from "./pages/bens-investimentos/SegurosTab";
 import ParticipacaoTab from "./pages/bens-investimentos/ParticipacaoTab";
 import IntangiveisTab from "./pages/bens-investimentos/IntangiveisTab";
@@ -211,11 +212,13 @@ const App = () => (
                       <Route path="investimentos" element={<InvestimentosTab />} />
                       <Route path="passivos" element={<PassivosTab />} />
                       <Route path="credito" element={<Navigate to="/bens-investimentos/passivos" replace />} />
+                      <Route path="dividas" element={<Navigate to="/passivos" replace />} />
                       <Route path="seguros" element={<SegurosTab />} />
                       <Route path="participacoes" element={<ParticipacaoTab />} />
                       <Route path="intangiveis" element={<IntangiveisTab />} />
                       <Route path="historico-ir" element={<HistoricoIrTab />} />
                     </Route>
+                    <Route path="passivos" element={<PassivosPage />} />
                     <Route path="cartao-credito" element={<Navigate to="/movimentacoes/cartao-credito" replace />} />
                     <Route path="planejamento" element={<PlanejamentoLayout />}>
                       <Route index element={<Navigate to="visao-mensal" replace />} />
@@ -298,7 +301,7 @@ const App = () => (
                   <Route path="/renegociacao-dividas/portabilidade"     element={<Navigate to="/renegociacao-dividas/portabilidade" replace />} />
                   <Route path="/renegociacao-dividas/consolidacao"      element={<Navigate to="/renegociacao-dividas/consolidacao" replace />} />
                   <Route path="/balanco-patrimonial" element={<Navigate to="/bens-investimentos/consolidado" replace />} />
-                  <Route path="/credito" element={<Navigate to="/bens-investimentos/passivos" replace />} />
+                  <Route path="/credito" element={<Navigate to="/passivos" replace />} />
                   <Route path="/rxsplit" element={<Navigate to="/rx-split" replace />} />
                   {/* Admin Routes — all require MFA via AdminSecureLayout */}
                   <Route path="/admin" element={<AdminSecureLayout><Admin /></AdminSecureLayout>} />

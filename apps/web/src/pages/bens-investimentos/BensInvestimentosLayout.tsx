@@ -51,7 +51,6 @@ import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 import { InvestmentsSection } from '@/components/bens/InvestmentsSection';
-import { EndividamentoTab } from '@/components/bens/EndividamentoTab';
 
 /** Mapeamento tipo Pluggy → rótulo para "Meus Investimentos" (alinhado ao usePluggyInvestments) */
 const PLUGGY_TYPE_TO_CATEGORY: Record<string, string> = {
@@ -525,7 +524,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 icon={<Car className="h-4 w-4" />}
               />
               <HeaderMetricCard
-                label="Dívidas"
+                label="Passivos"
                 value={formatCurrency(Number(netWorth?.total_debt) || 0)}
                 variant="negative"
                 icon={<MinusCircle className="h-4 w-4" />}
@@ -776,12 +775,6 @@ const BensInvestimentosLayout: React.FC = () => {
                     </div>
                   )}
                 </div>
-                </div>
-              )}
-
-              {currentTab === 'dividas' && (
-                <div className="space-y-4">
-                  <EndividamentoTab />
                 </div>
               )}
 

@@ -80,6 +80,7 @@ const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'T
 const ICON_BY_PATH: Record<string, LucideIcon> = {
   '/inicio': Home,
   '/bens-investimentos': PiggyBank,
+  '/passivos': Wallet,
   '/movimentacoes': ArrowLeftRight,
   '/planejamento': Calendar,
   '/planejamento-anual': CalendarRange,
@@ -211,6 +212,7 @@ function getStaticFallbackItems(): { mainItems: NavMenuItem[]; groupedSections: 
   const mainItems: NavMenuItem[] = [
     { path: '/inicio', label: 'Início', icon: Home, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/bens-investimentos', label: 'Bens e Investimentos', icon: PiggyBank, accessLevel: 'free', canAccessAsAdmin: true },
+    { path: '/passivos', label: 'Passivos', icon: Wallet, accessLevel: 'free', canAccessAsAdmin: true },
     { path: '/movimentacoes', label: 'Movimentações', icon: ArrowLeftRight, accessLevel: 'free', canAccessAsAdmin: true },
   ];
 

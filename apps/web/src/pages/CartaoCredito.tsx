@@ -9,7 +9,6 @@ import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
-import { ComprasRecorrentesSection } from '@/components/cartao/ComprasRecorrentesSection';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
 import { Label } from '@/components/ui/label';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
@@ -171,8 +170,8 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
-            {/* Compras recorrentes (RPC get_recorrentes_cartao) */}
-            <ComprasRecorrentesSection />
+            {/* Seções colapsáveis — Análises primeiro, depois demais seções (Compras Recorrentes está dentro) */}
+            <CartaoCreditoSection />
 
             {/* Visão de fatura consolidada (RPC get_credit_card_bills_detail) */}
             <CreditCardBillView showSummaryRow />
@@ -292,8 +291,6 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
             )}
           </>
         )}
-
-        <CartaoCreditoSection />
         </div>
       </div>
     </AppLayout>
