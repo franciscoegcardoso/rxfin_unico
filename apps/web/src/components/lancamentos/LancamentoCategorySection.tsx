@@ -123,13 +123,15 @@ export function LancamentoCategorySection({
             date: l.data_pagamento || l.data_registro || l.mes_referencia + '-01',
             isAccountTransaction: true as const,
           }));
-          const incomeCategoriesList = incomeCategories.map((c) => c.name);
+          const incomeCategoriesList = incomeCategories?.map((c) => c.name) ?? [];
+          console.log('[cat] batch size:', batch.length, 'sending to categorize-transactions');
           const { data, error } = await supabase.functions.invoke('categorize-transactions', {
             body: { transactions: batchPayload, isAccountTransaction: true, incomeCategories: incomeCategoriesList },
           });
 
           if (!error && data?.categorizedTransactions) {
-            const newMap: Record<string, { suggestedCategoryId: string; suggestedCategory: string; confidence: string }> = {};
+            console.log('[cat] batch size:', batch.length, 'results:', data.categorizedTransactions.length);
+            const newMap: Record<string, SuggestionEntry> = {};
             data.categorizedTransactions.forEach((result: any, idx: number) => {
               const lancId = batch[idx]?.id;
               if (lancId) {
