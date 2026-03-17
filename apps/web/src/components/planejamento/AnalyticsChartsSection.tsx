@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SectionCard } from '@/components/shared/SectionCard';
 import { CardHealthAnalytics } from '@/components/cartao/CardHealthAnalytics';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { premiumXAxis, premiumTooltipStyle, CHART_PALETTE } from '@/components/charts/premiumChartTheme';
 import {
-  PieChart, Calendar, LayoutGrid, CalendarRange, ShoppingCart, TrendingUp,
+  PieChart, Calendar, LayoutGrid, CalendarRange, ShoppingCart, TrendingUp, ChevronDown,
 } from 'lucide-react';
 import { MonthlyPurchasesDetail } from './MonthlyPurchasesDetail';
 import { BillCompositionDetail } from './BillCompositionDetail';
@@ -653,13 +653,25 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
   }, [piePeriod, pieCustomStart, pieCustomEnd]);
 
   return (
-    <CollapsibleModule
-      title="Análises"
-      description="Gráficos de consumo e categorias"
-      icon={<PieChart className="h-4 w-4 text-primary" />}
-      useDialogOnDesktop
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <Collapsible defaultOpen={true}>
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors text-left border border-border/60 rounded-xl bg-card"
+        >
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <PieChart className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Análises</p>
+            <p className="text-xs text-muted-foreground">Gráficos de consumo e categorias</p>
+          </div>
+          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0 transition-transform [[data-state=open]_&]:rotate-180" />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="p-4 pt-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 1. Evolução Mensal - with period filter */}
         <SectionCard
           title="Evolução Mensal"
@@ -1033,7 +1045,9 @@ export const AnalyticsChartsSection: React.FC<AnalyticsChartsSectionProps> = ({
             </div>
           )}
         </SectionCard>
-      </div>
-    </CollapsibleModule>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };

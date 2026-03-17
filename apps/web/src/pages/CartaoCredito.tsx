@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
-import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -11,6 +10,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { ComprasRecorrentesSection } from '@/components/cartao/ComprasRecorrentesSection';
+import { MonthSelector } from '@/components/lancamentos/MonthSelector';
+import { Label } from '@/components/ui/label';
 import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { formatCurrency } from '@/lib/utils';
@@ -57,8 +58,8 @@ interface CartaoCreditoProps {
 }
 
 const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
-  const currentMonth = format(new Date(), 'yyyy-MM');
-  const { data, loading, error } = useCreditCardDashboard(currentMonth);
+  const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const { data, loading, error } = useCreditCardDashboard(selectedMonth);
   const dashboard = data as DashboardData | null;
 
   const totals = dashboard?.totals ?? dashboard?.summary;
@@ -66,6 +67,10 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const totalPaid = totals?.total_paid ?? 0;
   const pending = totalBills - totalPaid;
   const bills = dashboard?.bills ?? [];
+  const cartoesAtivos = useMemo(
+    () => new Set(bills.map((b) => b.card_id).filter(Boolean)).size,
+    [bills]
+  );
   const recentTransactions = (dashboard?.recent_transactions ?? dashboard?.transactions ?? []) as TransactionRow[];
   const sortedTransactions = [...recentTransactions]
     .sort((a, b) => {
@@ -112,8 +117,48 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
           subtitle="Faturas, lançamentos e sincronização"
         />
         )}
+
+        {/* Sticky: seletor de período + KPIs (paridade com extrato) */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border -mx-4 px-4 md:-mx-6 md:px-6">
+          <div className="py-3">
+            <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
+            <div className="mt-1.5">
+              <MonthSelector
+                selectedMonth={selectedMonth}
+                onMonthChange={setSelectedMonth}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-0 py-3">
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Total faturas</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {loading ? '—' : formatCurrency(totalBills)}
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Total pago</p>
+              <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {loading ? '—' : formatCurrency(totalPaid)}
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Pendente</p>
+              <p className="text-lg font-semibold text-destructive tabular-nums">
+                {loading ? '—' : formatCurrency(pending)}
+              </p>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Cartões ativos</p>
+              <p className="text-lg font-semibold tabular-nums">
+                {loading ? '—' : cartoesAtivos}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {loading && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground py-4">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <span>Carregando...</span>
           </div>
@@ -126,18 +171,6 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
 
         {!loading && !error && (
           <>
-            {/* Header: resumo do mês atual — sempre a primeira informação */}
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Dados do mês atual · {format(new Date(currentMonth + '-01'), 'MMMM yyyy', { locale: ptBR }).replace(/^\w/, (c) => c.toUpperCase())}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                <HeaderMetricCard label="Total faturas" value={formatCurrency(totalBills)} variant="blue" icon={<CreditCard className="h-4 w-4" />} />
-                <HeaderMetricCard label="Total pago" value={formatCurrency(totalPaid)} variant="positive" icon={<CheckCircle2 className="h-4 w-4" />} className="hidden sm:block" />
-                <HeaderMetricCard label="Pendente" value={formatCurrency(pending)} variant={pending > 0 ? 'amber' : 'positive'} icon={<Clock className="h-4 w-4" />} className="hidden sm:block" />
-              </div>
-            </div>
-
             {/* Compras recorrentes (RPC get_recorrentes_cartao) */}
             <ComprasRecorrentesSection />
 

@@ -682,6 +682,18 @@ export const CartaoCreditoSection: React.FC = () => {
         </div>
       </div>
 
+      {/* Análises — inline collapsible, first section */}
+      <AnalyticsChartsSection
+        bills={bills}
+        availableCards={availableCards}
+        cardColorMap={cardColorMap}
+        formatCurrency={formatCurrency}
+        isHidden={isHidden}
+        transactions={filteredTransactions}
+        billMonthMap={billMonthMap}
+        currentMonth={currentMonth}
+      />
+
       {/* Monthly Bills Overview Table */}
       <CollapsibleModule
         title="Visão Mensal de Faturas"
@@ -755,18 +767,6 @@ export const CartaoCreditoSection: React.FC = () => {
           onConsolidate={consolidateInstallmentGroups}
         />
       </CollapsibleModule>
-
-      {/* Charts Section - Last */}
-      <AnalyticsChartsSection
-        bills={bills}
-        availableCards={availableCards}
-        cardColorMap={cardColorMap}
-        formatCurrency={formatCurrency}
-        isHidden={isHidden}
-        transactions={filteredTransactions}
-        billMonthMap={billMonthMap}
-        currentMonth={currentMonth}
-      />
     </div>
   );
 };
