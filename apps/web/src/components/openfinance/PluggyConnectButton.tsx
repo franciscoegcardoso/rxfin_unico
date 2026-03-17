@@ -7,7 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 // Pluggy Connect Widget script URL - using versioned URL for stability
 const PLUGGY_CONNECT_SCRIPT = 'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js';
 
-const SESSION_STORAGE_PENDING_TOKEN = 'pluggy_pending_token';
+const PLUGGY_PENDING_KEY = 'pluggy_pending_token';
+
+interface PluggyPendingData {
+  connectToken: string;
+  cpf: string | null;
+}
 
 export interface PluggyConnectButtonProps {
   onSuccess?: (itemId?: string) => void;
@@ -112,11 +117,20 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
 
     if (!hasOAuthReturn) return;
 
-    const pendingToken = localStorage.getItem(SESSION_STORAGE_PENDING_TOKEN);
-    if (!pendingToken) return;
+    const pendingRaw = localStorage.getItem(PLUGGY_PENDING_KEY);
+    if (!pendingRaw) return;
 
     // Limpar imediatamente para evitar re-execução em recargas
-    localStorage.removeItem(SESSION_STORAGE_PENDING_TOKEN);
+    localStorage.removeItem(PLUGGY_PENDING_KEY);
+    const pending: PluggyPendingData | null = (() => {
+      try {
+        return JSON.parse(pendingRaw);
+      } catch {
+        return null;
+      }
+    })();
+    const pendingToken = pending?.connectToken ?? pendingRaw; // fallback se ainda for string simples
+    const pendingCpf = pending?.cpf ?? null;
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, '', cleanUrl);
 
@@ -132,6 +146,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
           connectToken: pendingToken,
           includeSandbox: false,
           ...(selectedConnectorId != null && { selectedConnectorId }),
+          ...(pendingCpf && { openFinanceParameters: { cpf: pendingCpf } }),
           onSuccess: async (data) => {
             setWidgetClosed();
             setIsOpening(false);
@@ -222,9 +237,9 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         throw new Error('Widget de conexão não disponível. Recarregue a página.');
       }
 
-      // No mobile Safari, salvar token antes do redirect OAuth do banco (localStorage: compartilhado entre abas)
+      // No mobile Safari, salvar token (e cpf) antes do redirect OAuth do banco (localStorage: compartilhado entre abas)
       if (isMobileSafari) {
-        localStorage.setItem(SESSION_STORAGE_PENDING_TOKEN, connectToken);
+        localStorage.setItem(PLUGGY_PENDING_KEY, JSON.stringify({ connectToken, cpf }));
       }
       setWidgetOpen();
       const pluggyConnect = new PluggyConnectCtor({
