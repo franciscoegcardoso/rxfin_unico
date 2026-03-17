@@ -24,6 +24,8 @@ export interface LancamentoRealizado {
   is_category_confirmed: boolean;
   created_at: string;
   updated_at: string;
+  /** Nome da conta/banco (quando vindo da view lancamentos_realizados_v com join). */
+  account_name?: string | null;
 }
 
 export interface LancamentoInput {

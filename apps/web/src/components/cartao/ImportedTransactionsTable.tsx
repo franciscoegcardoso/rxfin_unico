@@ -111,6 +111,8 @@ interface ImportedTransactionsTableProps {
   selectedCardId?: string;
   availableCards?: AvailableCardInfo[];
   onFriendlyNameAppliedAll?: () => void;
+  /** Quando true, não exibe filtros internos (período, status, cartão); usa transactions já filtrados pelo parent (ex.: Atribuir Categorias). */
+  hideFilters?: boolean;
 }
 
 type SortField = 'date' | 'storeName' | 'value' | 'category';
@@ -168,6 +170,7 @@ export function ImportedTransactionsTable({
   selectedCardId,
   availableCards = [],
   onFriendlyNameAppliedAll,
+  hideFilters = false,
 }: ImportedTransactionsTableProps) {
   const { isHidden } = useVisibility();
   const isMobile = useIsMobile();
@@ -283,14 +286,14 @@ export function ImportedTransactionsTable({
     return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
   }, []);
 
-  // Filter by selected card and exclude payment transactions
+  // Filter by selected card and exclude payment transactions (when !hideFilters; when hideFilters, parent already filtered)
   const cardFilteredTransactions = useMemo(() => {
     let result = transactions.filter(t => !isPaymentTransaction(t.store_name));
-    if (selectedCardId && selectedCardId !== 'all') {
+    if (!hideFilters && selectedCardId && selectedCardId !== 'all') {
       result = result.filter(t => t.card_id === selectedCardId);
     }
     return result;
-  }, [transactions, selectedCardId]);
+  }, [transactions, selectedCardId, hideFilters]);
 
   // Compute period date range from periodFilter
   const periodRange = useMemo(() => {
@@ -323,21 +326,20 @@ export function ImportedTransactionsTable({
     return 'período personalizado';
   }, [periodFilter, periodRange]);
 
-  // Filter and sort transactions
+  // Filter and sort transactions (when hideFilters, parent already applied period/status/card; only sort here)
   const filteredAndSortedTransactions = useMemo(() => {
     let result = [...cardFilteredTransactions];
 
-    // Apply period filter (by transaction_date month)
-    if (periodRange.startMonth) {
-      result = result.filter(t => t.transaction_date.substring(0, 7) >= periodRange.startMonth);
-    }
-    if (periodRange.endMonth) {
-      result = result.filter(t => t.transaction_date.substring(0, 7) <= periodRange.endMonth);
-    }
-
-    // Apply unvalidated filter
-    if (showUnvalidatedOnly) {
-      result = result.filter(t => !t.is_category_confirmed);
+    if (!hideFilters) {
+      if (periodRange.startMonth) {
+        result = result.filter(t => t.transaction_date.substring(0, 7) >= periodRange.startMonth);
+      }
+      if (periodRange.endMonth) {
+        result = result.filter(t => t.transaction_date.substring(0, 7) <= periodRange.endMonth);
+      }
+      if (showUnvalidatedOnly) {
+        result = result.filter(t => !t.is_category_confirmed);
+      }
     }
 
     // Sort
@@ -364,7 +366,7 @@ export function ImportedTransactionsTable({
     });
 
     return result;
-  }, [cardFilteredTransactions, periodRange, showUnvalidatedOnly, sortField, sortDirection]);
+  }, [cardFilteredTransactions, periodRange, showUnvalidatedOnly, sortField, sortDirection, hideFilters]);
 
   // Calculate totals
   const totals = useMemo(() => {
@@ -472,7 +474,7 @@ export function ImportedTransactionsTable({
     setShowUnvalidatedOnly(false);
   };
 
-  const hasActiveFilters = periodFilter !== 'thisMonth' || showUnvalidatedOnly;
+  const hasActiveFilters = !hideFilters && (periodFilter !== 'thisMonth' || showUnvalidatedOnly);
   
   // Friendly name handlers
   const handleEditFriendlyName = (transaction: CreditCardTransaction) => {
@@ -999,6 +1001,8 @@ export function ImportedTransactionsTable({
 
     return (
       <div className="space-y-3">
+        {!hideFilters && (
+        <>
         {/* Period Filter */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
@@ -1053,6 +1057,8 @@ export function ImportedTransactionsTable({
               <SelectContent>{availableYears.map(y => <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+        )}
+        </>
         )}
         {/* Sort Popover (mobile) */}
         <div className="flex items-center gap-2">
@@ -1331,7 +1337,7 @@ export function ImportedTransactionsTable({
   // Desktop view
   return (
     <div className="space-y-4">
-      {/* Period Filter */}
+      {!hideFilters && (
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
           {(['thisMonth', 'last2Months', 'custom'] as const).map((p) => (
@@ -1347,7 +1353,6 @@ export function ImportedTransactionsTable({
           ))}
         </div>
 
-        {/* Custom period selectors */}
         {periodFilter === 'custom' && (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-muted-foreground">De:</span>
@@ -1393,6 +1398,7 @@ export function ImportedTransactionsTable({
           </Button>
         )}
       </div>
+      )}
 
       {/* (Bulk selection bar removed - no delete in this section) */}
 

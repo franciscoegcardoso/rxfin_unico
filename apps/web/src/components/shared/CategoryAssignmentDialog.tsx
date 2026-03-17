@@ -12,8 +12,21 @@ import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  CategoryAssignmentFilters,
+  getPeriodBounds,
+  type PeriodFilterValue,
+  type StatusFilterValue,
+} from '@/components/shared/CategoryAssignmentFilters';
+import type { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
+import type { CreditCardTransaction } from '@/hooks/useCreditCardTransactions';
 
 export type CategoryAssignmentTab = 'cartao' | 'conta';
+
+function getBancoLabel(item: LancamentoRealizado): string {
+  const ext = item as LancamentoRealizado & { account_name?: string | null; conta_nome?: string | null; instituicao?: string | null };
+  return ext.account_name ?? ext.conta_nome ?? ext.instituicao ?? item.forma_pagamento ?? '—';
+}
 
 const useIsTabletOrMobile = () => {
   const [is, setIs] = useState(false);
@@ -50,6 +63,13 @@ const CategoryAssignmentContent: React.FC<{
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
   const [pluggyAccountNumbers, setPluggyAccountNumbers] = useState<Record<string, PluggyCardInfo>>({});
+
+  // Filtros unificados (período, status, banco, categoria, cartão)
+  const [period, setPeriod] = useState<PeriodFilterValue>('this_month');
+  const [status, setStatus] = useState<StatusFilterValue>('all');
+  const [bankValue, setBankValue] = useState<string>('all');
+  const [categoryValue, setCategoryValue] = useState<string>('all');
+  const [cardValue, setCardValue] = useState<string>('all');
 
   useEffect(() => {
     if (open) setActiveTab(defaultTab);
@@ -131,6 +151,65 @@ const CategoryAssignmentContent: React.FC<{
     });
   }, [transactions, bills, pluggyAccountNumbers]);
 
+  const periodBounds = useMemo(() => getPeriodBounds(period), [period]);
+
+  const bankOptions = useMemo(() => {
+    const labels = new Map<string, string>();
+    lancamentos.forEach(l => {
+      const label = getBancoLabel(l);
+      if (label && label !== '—') labels.set(label, label);
+    });
+    return Array.from(labels.entries()).map(([value, label]) => ({ value, label }));
+  }, [lancamentos]);
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    lancamentos.forEach(l => { if (l.categoria?.trim()) set.add(l.categoria.trim()); });
+    transactions.forEach((t: CreditCardTransaction) => { if (t.category?.trim()) set.add(t.category.trim()); });
+    return Array.from(set).sort().map(name => ({ value: name, label: name }));
+  }, [lancamentos, transactions]);
+
+  const filteredLancamentos = useMemo(() => {
+    let list = [...lancamentos];
+    if (periodBounds) {
+      list = list.filter(l => {
+        const dateStr = l.data_pagamento || l.data_registro || l.mes_referencia + '-01';
+        const d = dateStr.substring(0, 10);
+        return d >= periodBounds.start && d <= periodBounds.end;
+      });
+    }
+    if (status === 'pending') list = list.filter(l => !l.is_category_confirmed);
+    else if (status === 'confirmed') list = list.filter(l => l.is_category_confirmed);
+    if (bankValue !== 'all') list = list.filter(l => getBancoLabel(l) === bankValue);
+    if (categoryValue !== 'all') list = list.filter(l => (l.categoria || '').trim() === categoryValue);
+    return list;
+  }, [lancamentos, periodBounds, status, bankValue, categoryValue]);
+
+  const filteredTransactions = useMemo(() => {
+    let list = [...transactions];
+    if (periodBounds) {
+      list = list.filter(t => {
+        const d = (t as CreditCardTransaction).transaction_date?.substring(0, 10) ?? '';
+        return d >= periodBounds.start && d <= periodBounds.end;
+      });
+    }
+    if (status === 'pending') list = list.filter(t => !t.is_category_confirmed);
+    else if (status === 'confirmed') list = list.filter(t => t.is_category_confirmed);
+    if (cardValue !== 'all') list = list.filter(t => t.card_id === cardValue);
+    if (categoryValue !== 'all') list = list.filter(t => (t.category || '').trim() === categoryValue);
+    return list;
+  }, [transactions, periodBounds, status, cardValue, categoryValue]);
+
+  const hasActiveFilters = period !== 'this_month' || status !== 'all' || bankValue !== 'all' || categoryValue !== 'all' || cardValue !== 'all';
+
+  const clearFilters = useCallback(() => {
+    setPeriod('this_month');
+    setStatus('all');
+    setBankValue('all');
+    setCategoryValue('all');
+    setCardValue('all');
+  }, []);
+
   const handleUpdateCategory = useCallback(async (id: string, categoryId: string, categoryName: string) => {
     return await updateTransaction(id, { category_id: categoryId, category: categoryName, is_category_confirmed: true });
   }, [updateTransaction]);
@@ -156,16 +235,7 @@ const CategoryAssignmentContent: React.FC<{
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CategoryAssignmentTab)} className="flex flex-col min-h-0 flex-1">
-      <TabsList className="w-full">
-        <TabsTrigger value="cartao" className="flex-1 gap-1.5 text-xs">
-          <CreditCard className="h-3.5 w-3.5" />
-          Cartão de Crédito
-          {unconfirmedCCCount > 0 && (
-            <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
-              {unconfirmedCCCount}
-            </span>
-          )}
-        </TabsTrigger>
+      <TabsList className="w-full shrink-0">
         <TabsTrigger value="conta" className="flex-1 gap-1.5 text-xs">
           <Landmark className="h-3.5 w-3.5" />
           Lançamentos em Conta
@@ -175,12 +245,43 @@ const CategoryAssignmentContent: React.FC<{
             </span>
           )}
         </TabsTrigger>
+        <TabsTrigger value="cartao" className="flex-1 gap-1.5 text-xs">
+          <CreditCard className="h-3.5 w-3.5" />
+          Cartão de Crédito
+          {unconfirmedCCCount > 0 && (
+            <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+              {unconfirmedCCCount}
+            </span>
+          )}
+        </TabsTrigger>
       </TabsList>
 
+      <div className="shrink-0 mt-2">
+        <CategoryAssignmentFilters
+          activeTab={activeTab}
+          period={period}
+          onPeriodChange={setPeriod}
+          status={status}
+          onStatusChange={setStatus}
+          bankOptions={bankOptions}
+          bankValue={bankValue}
+          onBankChange={setBankValue}
+          categoryOptions={categoryOptions}
+          categoryValue={categoryValue}
+          onCategoryChange={setCategoryValue}
+          cardOptions={availableCards.map(c => ({ id: c.id, name: c.name }))}
+          cardValue={cardValue}
+          onCardChange={setCardValue}
+          onClearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+          compact
+        />
+      </div>
+
       <div className="overflow-y-auto flex-1 min-h-0 mt-2">
-        <TabsContent value="cartao" className="mt-0">
+        <TabsContent value="cartao" className="mt-0 h-full">
           <ImportedTransactionsTable
-            transactions={transactions}
+            transactions={filteredTransactions}
             bills={bills}
             loading={transactionsLoading}
             onUpdateCategory={handleUpdateCategory}
@@ -190,11 +291,12 @@ const CategoryAssignmentContent: React.FC<{
             onDelete={handleDelete}
             onDeleteMultiple={handleDeleteMultiple}
             availableCards={availableCards}
+            hideFilters
           />
         </TabsContent>
-        <TabsContent value="conta" className="mt-0">
+        <TabsContent value="conta" className="mt-0 h-full">
           <LancamentoCategorySection
-            lancamentos={lancamentos}
+            lancamentos={filteredLancamentos}
             onCategoryUpdated={fetchLancamentos}
           />
         </TabsContent>
@@ -206,7 +308,7 @@ const CategoryAssignmentContent: React.FC<{
 export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> = ({
   open,
   onOpenChange,
-  defaultTab = 'cartao',
+  defaultTab = 'conta',
   onComplete,
 }) => {
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -272,7 +374,7 @@ export const CategoryAssignmentCard: React.FC<CategoryAssignmentCardProps> = ({
   title,
   description,
   count,
-  defaultTab = 'cartao',
+  defaultTab = 'conta',
 }) => {
   const [open, setOpen] = useState(false);
 

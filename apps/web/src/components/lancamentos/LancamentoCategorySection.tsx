@@ -325,6 +325,12 @@ export function LancamentoCategorySection({
     return '—';
   };
 
+  /** Banco/conta para exibir na coluna Banco (prioriza account_name da view, depois forma de pagamento). */
+  const getBancoLabel = (item: LancamentoRealizado) => {
+    const extended = item as LancamentoRealizado & { account_name?: string | null; conta_nome?: string | null; instituicao?: string | null };
+    return extended.account_name ?? extended.conta_nome ?? extended.instituicao ?? getFormaPagamentoLabel(item);
+  };
+
   if (loadingCategories) {
     return (
       <RXFinLoadingSpinner height="py-8" />
@@ -509,7 +515,7 @@ export function LancamentoCategorySection({
                     {/* Forma de pagamento */}
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Forma de Pagamento</span>
-                      <span className="text-sm">{getFormaPagamentoLabel(item)}</span>
+                      <span className="text-sm">{getBancoLabel(item)}</span>
                     </div>
 
                     {/* Category */}
@@ -774,12 +780,12 @@ export function LancamentoCategorySection({
                         )}
                       </TableCell>
 
-                      {/* Banco / Forma de Pagamento */}
+                      {/* Banco */}
                       <TableCell className="py-1.5 px-2">
                         <div className="flex items-center gap-1.5">
                           <Wallet className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <span className="text-[10px] text-muted-foreground truncate">
-                            {getFormaPagamentoLabel(item)}
+                          <span className="text-[10px] text-muted-foreground truncate" title={getBancoLabel(item)}>
+                            {getBancoLabel(item)}
                           </span>
                         </div>
                       </TableCell>
@@ -862,7 +868,7 @@ export function LancamentoCategorySection({
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Forma de Pagamento</label>
-                    <p className="text-sm">{getFormaPagamentoLabel(item)}</p>
+                    <p className="text-sm">{getBancoLabel(item)}</p>
                   </div>
                 </div>
 

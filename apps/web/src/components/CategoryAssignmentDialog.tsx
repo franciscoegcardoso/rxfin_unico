@@ -80,21 +80,21 @@ const CategoryAssignmentContent: React.FC<{
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CategoryAssignmentTab)} className="flex flex-col min-h-0 flex-1">
       <TabsList className="w-full">
-        <TabsTrigger value="cartao" className="flex-1 gap-1.5 text-xs">
-          <CreditCard className="h-3.5 w-3.5" />
-          Cartão de Crédito
-          {unconfirmedCCCount > 0 && (
-            <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
-              {unconfirmedCCCount}
-            </span>
-          )}
-        </TabsTrigger>
         <TabsTrigger value="conta" className="flex-1 gap-1.5 text-xs">
           <Landmark className="h-3.5 w-3.5" />
           Lançamentos em Conta
           {unconfirmedLancCount > 0 && (
             <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
               {unconfirmedLancCount}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="cartao" className="flex-1 gap-1.5 text-xs">
+          <CreditCard className="h-3.5 w-3.5" />
+          Cartão de Crédito
+          {unconfirmedCCCount > 0 && (
+            <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+              {unconfirmedCCCount}
             </span>
           )}
         </TabsTrigger>
@@ -128,7 +128,7 @@ const CategoryAssignmentContent: React.FC<{
 export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> = ({
   open,
   onOpenChange,
-  defaultTab = 'cartao',
+  defaultTab = 'conta',
   onComplete,
 }) => {
   const isTabletOrMobile = useIsTabletOrMobile();
@@ -192,7 +192,7 @@ export const CategoryAssignmentCard: React.FC<CategoryAssignmentCardProps> = ({
   title,
   description,
   count,
-  defaultTab = 'cartao',
+  defaultTab = 'conta',
 }) => {
   const [open, setOpen] = useState(false);
 
