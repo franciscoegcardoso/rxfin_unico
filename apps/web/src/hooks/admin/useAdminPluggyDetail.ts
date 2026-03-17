@@ -59,8 +59,34 @@ export function useAdminPluggyDetail() {
     queryFn: async (): Promise<AdminPluggyDetail> => {
       const { data, error } = await supabase.rpc('get_admin_pluggy_detail');
       if (error) throw error;
-      const raw = Array.isArray(data) ? data[0] : data;
-      return raw as AdminPluggyDetail;
+      const raw = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+      if (!raw) return {} as AdminPluggyDetail;
+
+      // RPC may return "users" + "pluggy_connections" per row; normalize to per_user + connections
+      const rawPerUser = (raw.per_user ?? raw.users) as Array<Record<string, unknown>> | undefined;
+      const per_user = (rawPerUser ?? []).map((u) => ({
+        user_id: String(u.user_id ?? ''),
+        email: String(u.email ?? ''),
+        connections: Number(u.pluggy_connections ?? u.connections ?? 0),
+        last_sync: u.last_sync != null ? String(u.last_sync) : null,
+        last_sync_ago_h: u.last_sync_ago_h != null ? Number(u.last_sync_ago_h) : null,
+        investments: Number(u.investments ?? 0),
+        total_inv_balance: Number(u.total_inv_balance ?? 0),
+        recurring: Number(u.recurring ?? 0),
+        loans: Number(u.loans ?? 0),
+        has_insights: Boolean(u.has_insights),
+        has_errors: Boolean(u.has_errors),
+        has_login_error: Boolean(u.has_login_error),
+        consent_expiring: Boolean(u.consent_expiring),
+      }));
+
+      return {
+        system: (raw.system ?? { connections: {}, data_quality: {} }) as AdminPluggyDetail['system'],
+        per_user,
+        recent_syncs: (raw.recent_syncs ?? []) as AdminPluggyDetail['recent_syncs'],
+        crons: (raw.crons ?? []) as AdminPluggyDetail['crons'],
+        generated_at: String(raw.generated_at ?? ''),
+      } as AdminPluggyDetail;
     },
     staleTime: 2 * 60 * 1000,
   });

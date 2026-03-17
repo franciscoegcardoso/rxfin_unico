@@ -191,7 +191,7 @@ export const EconomicIndicators: React.FC = () => {
 
   return (
     <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
-      <CardHeader className="pb-2 p-4 flex flex-row items-center justify-between">
+      <CardHeader className="pb-2 p-3 sm:p-4 shrink-0 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold text-[hsl(var(--color-text-primary))] flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
           Indicadores Econômicos
@@ -214,7 +214,7 @@ export const EconomicIndicators: React.FC = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-3 sm:p-4 pt-0">
         {isLoading ? (
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
             {[...Array(6)].map((_, i) => (

@@ -236,7 +236,18 @@ export default function AdminPluggy() {
                     onClick={() => copyUserId(u.user_id)}
                   >
                     <TableCell className="font-medium">{maskEmail(u.email)}</TableCell>
-                    <TableCell>{u.connections}</TableCell>
+                    <TableCell>
+                      <span className={cn(Number(u.connections) > 0 ? 'text-foreground' : 'text-muted-foreground')}>
+                        {u.connections}
+                      </span>
+                      {Number(u.connections) > 0 ? (
+                        <Badge variant="secondary" className="ml-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px]">
+                          Ativo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="ml-1.5 text-[10px]">Inativo</Badge>
+                      )}
+                    </TableCell>
                     <TableCell><LastSyncCell hoursAgo={u.last_sync_ago_h} /></TableCell>
                     <TableCell>{u.investments}</TableCell>
                     <TableCell className="text-right text-emerald-600 tabular-nums">{currencyFmt.format(u.total_inv_balance ?? 0)}</TableCell>
