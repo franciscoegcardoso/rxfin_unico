@@ -42,32 +42,32 @@ interface EconomicIndicatorsResponse {
 const INDICATOR_INFO: Record<string, { description: string; color: string; icon: React.ReactNode }> = {
   selic: {
     description: 'Taxa básica de juros da economia brasileira, definida pelo COPOM. Influencia todas as outras taxas de juros do país.',
-    color: 'hsl(220, 90%, 56%)',
+    color: 'hsl(var(--color-info))',
     icon: <Percent className="h-3 w-3" />,
   },
   cdi: {
     description: 'Taxa de juros entre bancos, referência para investimentos de renda fixa como CDBs, LCIs e fundos DI.',
-    color: 'hsl(160, 84%, 39%)',
+    color: 'hsl(var(--color-income))',
     icon: <Percent className="h-3 w-3" />,
   },
   ipca: {
     description: 'Índice oficial de inflação do Brasil, calculado pelo IBGE. Mede a variação de preços ao consumidor.',
-    color: 'hsl(38, 92%, 50%)',
+    color: 'hsl(var(--color-warning))',
     icon: <TrendingUp className="h-3 w-3" />,
   },
   igpm: {
     description: 'Índice de preços calculado pela FGV, usado para reajuste de aluguéis e tarifas de energia.',
-    color: 'hsl(280, 70%, 50%)',
+    color: 'hsl(var(--chart-6))',
     icon: <TrendingUp className="h-3 w-3" />,
   },
   dollar: {
     description: 'Cotação oficial do dólar (PTAX) calculada pelo Banco Central, referência para contratos e comércio exterior.',
-    color: 'hsl(142, 76%, 36%)',
+    color: 'hsl(var(--color-brand-500))',
     icon: <DollarSign className="h-3 w-3" />,
   },
   tr: {
     description: 'Taxa Referencial usada para correção da poupança, FGTS e alguns financiamentos imobiliários.',
-    color: 'hsl(200, 70%, 50%)',
+    color: 'hsl(var(--chart-4))',
     icon: <Percent className="h-3 w-3" />,
   },
 };
@@ -143,7 +143,7 @@ export const EconomicIndicators: React.FC = () => {
             <YAxis
               hide={isMobile}
               {...premiumYAxis}
-              tick={{ fontSize: 12, fontWeight: 500, fill: 'hsl(var(--chart-axis))', fontFamily: 'Inter, system-ui, sans-serif' }}
+              tick={{ fontSize: 11, fontWeight: 500, fill: 'hsl(var(--color-text-tertiary))', fontFamily: 'var(--font-sans)' }}
               domain={['auto', 'auto']}
               tickFormatter={(value) => isDollar ? `${value.toFixed(2)}` : `${value.toFixed(1)}`}
               label={{ 
@@ -177,7 +177,7 @@ export const EconomicIndicators: React.FC = () => {
     return (
       <Card className="rounded-xl border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))]">
         <CardContent className="p-4">
-          <div className="text-center text-muted-foreground">
+          <div className="text-center text-[hsl(var(--color-text-tertiary))]">
             <p className="text-sm">Erro ao carregar indicadores</p>
             <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
               <RefreshCw className="h-3 w-3 mr-1" />
@@ -198,7 +198,7 @@ export const EconomicIndicators: React.FC = () => {
         </CardTitle>
         <div className="flex items-center gap-2">
           {fetchedAt && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <span className="text-[10px] text-[hsl(var(--color-text-tertiary))] flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               Atualizado: {format(new Date(fetchedAt), "dd/MM HH:mm", { locale: ptBR })}
             </span>
@@ -245,19 +245,19 @@ export const EconomicIndicators: React.FC = () => {
                     className={`relative p-2 rounded-lg text-center transition-all ${
                       isSelected 
                         ? 'bg-primary/10 ring-1 ring-primary/30' 
-                        : 'bg-muted/30 hover:bg-muted/50'
+                        : 'bg-[hsl(var(--color-surface-sunken))] hover:bg-[hsl(var(--color-surface-sunken))]/80'
                     }`}
                   >
                     <Popover>
                       <PopoverTrigger asChild>
                         <button className="absolute top-1 right-1 p-0.5 rounded hover:bg-background/50">
-                          <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                          <HelpCircle className="h-3 w-3 text-[hsl(var(--color-text-tertiary))]" />
                         </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 text-sm" side="top">
                         <p className="font-medium mb-1">{indicator.name}</p>
-                        <p className="text-xs text-muted-foreground">{info.description}</p>
-                        <p className="text-[10px] text-muted-foreground mt-2">
+                        <p className="text-xs text-[hsl(var(--color-text-tertiary))]">{info.description}</p>
+                        <p className="text-[10px] text-[hsl(var(--color-text-tertiary))] mt-2">
                           Última atualização: {formatLastUpdate(indicator.lastUpdate)}
                         </p>
                       </PopoverContent>
@@ -268,16 +268,16 @@ export const EconomicIndicators: React.FC = () => {
                       className="w-full"
                     >
                       <div className="flex items-center justify-center gap-1 mb-1">
-                        <span className="text-[10px] text-muted-foreground font-medium">
+                        <span className="text-[10px] text-[hsl(var(--color-text-tertiary))] font-medium">
                           {indicator.name}
                         </span>
                         {trend === 'up' && <TrendingUp className="h-2.5 w-2.5 text-expense" />}
                         {trend === 'down' && <TrendingDown className="h-2.5 w-2.5 text-income" />}
                       </div>
-                      <p className="text-sm font-bold" style={{ color: info.color }}>
+                      <p className="text-sm" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-numeric)', letterSpacing: '-0.01em', color: info.color }}>
                         {formatValue(indicator.currentValue, indicator.unit)}
                       </p>
-                      <p className="text-[9px] text-muted-foreground mt-0.5">
+                      <p className="text-[9px] text-[hsl(var(--color-text-tertiary))] mt-0.5">
                         {formatLastUpdate(indicator.lastUpdate)}
                       </p>
                     </button>
@@ -302,7 +302,7 @@ export const EconomicIndicators: React.FC = () => {
                     {indicators[selectedIndicator].name}
                   </Badge>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Desde:</span>
+                    <span className="text-xs text-[hsl(var(--color-text-tertiary))]">Desde:</span>
                     <Select value={startDate} onValueChange={setStartDate}>
                       <SelectTrigger className="h-7 w-24 text-xs">
                         <SelectValue />
@@ -327,7 +327,7 @@ export const EconomicIndicators: React.FC = () => {
                     INDICATOR_INFO[selectedIndicator].color
                   )}
                 </motion.div>
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
+                <p className="text-[10px] text-[hsl(var(--color-text-tertiary))] text-center mt-2">
                   {filteredHistory.length} registros • Fonte: Banco Central do Brasil
                 </p>
               </motion.div>

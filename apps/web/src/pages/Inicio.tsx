@@ -83,7 +83,7 @@ const CategoryGoalItem: React.FC<{
         <span
           className={cn(
             "text-xs sm:text-sm tabular-nums shrink-0",
-            isOverBudget ? "text-[hsl(var(--color-text-danger))]" : "text-[hsl(var(--color-text-muted))]"
+            isOverBudget ? "text-[hsl(var(--color-text-danger))]" : "text-[hsl(var(--color-text-tertiary))]"
           )}
         >
           {formatCurrencyLocal(spent)} / {goalLabel}
@@ -135,7 +135,7 @@ const RecentTransactionsList: React.FC<{
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-[hsl(var(--color-text-muted))] py-4 text-center">
+      <p className="text-sm text-[hsl(var(--color-text-tertiary))] py-4 text-center">
         Nenhuma transação recente.
       </p>
     );
@@ -150,13 +150,13 @@ const RecentTransactionsList: React.FC<{
         >
           <div className="flex items-center gap-2 min-w-0">
             <div className="h-8 w-8 rounded-full bg-[hsl(var(--color-surface-raised))] flex items-center justify-center shrink-0">
-              <Receipt className="h-4 w-4 text-[hsl(var(--color-text-muted))]" />
+              <Receipt className="h-4 w-4 text-[hsl(var(--color-text-tertiary))]" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] truncate">
                 {l.nome || "Sem nome"}
               </p>
-              <p className="text-xs text-[hsl(var(--color-text-muted))]">
+              <p className="text-xs text-[hsl(var(--color-text-tertiary))]">
                 {getDate(l)
                   ? dateFmt.format(new Date(getDate(l)))
                   : "—"}
@@ -521,7 +521,7 @@ const Inicio: React.FC = () => {
                         {(item.description ?? "").trim() || "Sem nome"}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs tabular-nums text-[hsl(var(--color-text-muted))]">
+                        <span className="text-xs tabular-nums text-[hsl(var(--color-text-tertiary))]">
                           {isHidden ? "••••" : formatCurrency(item.average_amount ?? 0)}
                         </span>
                         {item.seen_this_month ? (

@@ -36,7 +36,7 @@ export const RecurringBadge: React.FC<RecurringBadgeProps> = ({ info, className 
               navigate('/movimentacoes/extrato');
             }}
             className={cn(
-              'inline-flex items-center justify-center rounded p-0.5 text-[hsl(var(--color-text-muted))] hover:text-[hsl(var(--color-text-primary))] focus:outline-none focus:ring-2 focus:ring-primary',
+              'inline-flex items-center justify-center rounded p-0.5 text-[hsl(var(--color-text-tertiary))] hover:text-[hsl(var(--color-text-primary))] focus:outline-none focus:ring-2 focus:ring-primary',
               className
             )}
             aria-label={tooltipText(info)}

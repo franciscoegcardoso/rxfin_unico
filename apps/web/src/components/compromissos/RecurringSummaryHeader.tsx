@@ -42,7 +42,7 @@ export const RecurringSummaryHeader: React.FC<RecurringSummaryHeaderProps> = ({
             <Wallet className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">
               Despesas Fixas Esperadas
             </p>
             <p className="text-base font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
@@ -58,7 +58,7 @@ export const RecurringSummaryHeader: React.FC<RecurringSummaryHeaderProps> = ({
             <TrendingUp className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">
               Receitas Esperadas
             </p>
             <p className="text-base font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
@@ -74,7 +74,7 @@ export const RecurringSummaryHeader: React.FC<RecurringSummaryHeaderProps> = ({
             <CheckCircle className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">
               Confirmadas este mês
             </p>
             <p className="text-base font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
@@ -90,7 +90,7 @@ export const RecurringSummaryHeader: React.FC<RecurringSummaryHeaderProps> = ({
             <Clock className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">
               Última sincronização
             </p>
             <p className="text-base font-semibold text-[hsl(var(--color-text-primary))]">

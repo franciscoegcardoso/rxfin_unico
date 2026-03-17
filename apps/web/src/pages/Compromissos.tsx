@@ -104,11 +104,11 @@ export default function Compromissos() {
         {emptyNoSync && !isLoading && (
           <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
             <CardContent className="p-8 text-center">
-              <CalendarClock className="h-20 w-20 mx-auto text-[hsl(var(--color-text-muted))] mb-4" strokeWidth={1.5} />
+              <CalendarClock className="h-20 w-20 mx-auto text-[hsl(var(--color-text-tertiary))] mb-4" strokeWidth={1.5} />
               <h2 className="font-semibold text-lg text-[hsl(var(--color-text-primary))] mb-2">
                 Compromissos fixos não disponíveis ainda
               </h2>
-              <p className="text-sm text-[hsl(var(--color-text-muted))] mb-4 max-w-md mx-auto">
+              <p className="text-sm text-[hsl(var(--color-text-tertiary))] mb-4 max-w-md mx-auto">
                 Esta funcionalidade detecta automaticamente suas despesas e receitas recorrentes. Ela será ativada quando a sincronização com Open Finance estiver disponível.
               </p>
               <Badge variant="secondary" className="text-xs">Em breve</Badge>
@@ -119,8 +119,8 @@ export default function Compromissos() {
         {emptyAfterSync && !isLoading && (
           <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
             <CardContent className="p-8 text-center">
-              <CalendarClock className="h-12 w-12 mx-auto text-[hsl(var(--color-text-muted))] mb-4" />
-              <p className="text-sm text-[hsl(var(--color-text-muted))]">
+              <CalendarClock className="h-12 w-12 mx-auto text-[hsl(var(--color-text-tertiary))] mb-4" />
+              <p className="text-sm text-[hsl(var(--color-text-tertiary))]">
                 Nenhum compromisso recorrente detectado ainda. A sincronização ocorre semanalmente.
               </p>
             </CardContent>
@@ -168,7 +168,7 @@ export default function Compromissos() {
             )}
 
             {hasSyncedBefore && !hasData && (
-              <p className="text-sm text-[hsl(var(--color-text-muted))] text-center py-4">
+              <p className="text-sm text-[hsl(var(--color-text-tertiary))] text-center py-4">
                 Nenhum compromisso recorrente detectado ainda. A sincronização ocorre semanalmente.
               </p>
             )}

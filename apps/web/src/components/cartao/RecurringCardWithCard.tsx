@@ -64,7 +64,7 @@ export const RecurringCardWithCard: React.FC<RecurringCardWithCardProps> = ({
               <p className="font-medium text-[hsl(var(--color-text-primary))] truncate capitalize">
                 {(item.description || '').trim() || 'Sem nome'}
               </p>
-              <p className="text-sm tabular-nums text-[hsl(var(--color-text-muted))]">
+              <p className="text-sm tabular-nums text-[hsl(var(--color-text-tertiary))]">
                 {formatCurrency(item.average_amount)} / mês
               </p>
             </div>
@@ -74,7 +74,7 @@ export const RecurringCardWithCard: React.FC<RecurringCardWithCardProps> = ({
             <div className="flex items-center justify-between text-xs">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-[hsl(var(--color-text-muted))] cursor-default">
+                  <span className="text-[hsl(var(--color-text-tertiary))] cursor-default">
                     {label}
                   </span>
                 </TooltipTrigger>
@@ -82,7 +82,7 @@ export const RecurringCardWithCard: React.FC<RecurringCardWithCardProps> = ({
                   <p>Detectado em {item.occurrence_count} ocorrências</p>
                 </TooltipContent>
               </Tooltip>
-              <span className="tabular-nums text-[hsl(var(--color-text-muted))]">
+              <span className="tabular-nums text-[hsl(var(--color-text-tertiary))]">
                 {Math.round(item.regularity_pct ?? 0)}%
               </span>
             </div>

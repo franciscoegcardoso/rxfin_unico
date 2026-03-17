@@ -137,6 +137,8 @@
     --chart-grid: var(--color-border-subtle);
     --gradient-hero: linear-gradient(160deg, hsl(var(--color-brand-100)) 0%, hsl(0 0% 98%) 60%);
     --color-text-brand: var(--color-brand-700);
+    /* ── Alias backward-compat: --color-text-muted não existe no DS v2 ── */
+    --color-text-muted: var(--color-text-tertiary);
   }
 
   .dark,
@@ -228,6 +230,8 @@
     --chart-grid: var(--color-border-subtle);
     --gradient-hero: linear-gradient(160deg, hsl(var(--color-surface-base)) 0%, hsl(var(--color-surface-sunken)) 60%);
     --color-text-brand: var(--color-brand-400);
+    /* ── Alias backward-compat: --color-text-muted não existe no DS v2 ── */
+    --color-text-muted: var(--color-text-tertiary);
   }
 
   /* ── Card base style ── */
@@ -301,7 +305,30 @@
   .badge-income  { @apply bg-income/10 text-income  font-medium; }
   .badge-expense { @apply bg-expense/10 text-expense font-medium; }
   .badge-warning { @apply bg-warning/10 text-warning font-medium; }
-  .money { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* ── Tipografia financeira global ── */
+  /* Garante font-numeric em valores monetários e weight máximo 600 */
+  .money,
+  .font-numeric {
+    font-family: var(--font-numeric);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'kern' 1;
+    letter-spacing: -0.02em;
+  }
+  /* Previne peso ultra-bold em elementos tabular — enterprise usa max 600 */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Label padrão de KPI */
+  .kpi-label {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: hsl(var(--color-text-secondary));
+  }
+
   .mobile-hero-bg { background: var(--gradient-primary); }
 
   /* ─── Transição suave ao trocar tema ─── */

@@ -61,7 +61,7 @@ export const ContasBancarias: React.FC = () => {
         </CardTitle>
         {updatedLabel && (
           <span
-            className="text-[10px] text-[hsl(var(--color-text-muted))]"
+            className="text-[10px] text-[hsl(var(--color-text-tertiary))]"
           >
             Atualizado {updatedLabel}
           </span>
@@ -84,15 +84,18 @@ export const ContasBancarias: React.FC = () => {
               <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] truncate">
                 {acc.connector_name}
               </p>
-              <p className="text-xs text-[hsl(var(--color-text-muted))]">
+              <p className="text-xs text-[hsl(var(--color-text-tertiary))]">
                 {getAccountTypeLabel(acc.subtype)}
               </p>
             </div>
-            <p className="text-sm font-semibold tabular-nums text-[hsl(var(--color-text-primary))] shrink-0">
+            <p
+              className="text-sm font-semibold tabular-nums shrink-0"
+              style={{ color: 'hsl(var(--color-text-primary))', fontFamily: 'var(--font-numeric)', letterSpacing: '-0.01em' }}
+            >
               {formatCurrency(acc.balance ?? 0, isHidden)}
             </p>
             {acc.balance_age_minutes != null && (
-              <span className="text-[10px] text-[hsl(var(--color-text-muted))] shrink-0">
+              <span className="text-[10px] text-[hsl(var(--color-text-tertiary))] shrink-0">
                 {formatBalanceAge(acc.balance_age_minutes)}
               </span>
             )}

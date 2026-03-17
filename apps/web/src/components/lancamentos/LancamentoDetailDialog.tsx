@@ -46,12 +46,20 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
       {/* Header with value */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-semibold text-base">{item.friendly_name || item.nome}</p>
+          <p style={{ fontSize: '15px', fontWeight: 500, fontFamily: 'var(--font-sans)', color: 'hsl(var(--color-text-primary))' }}>{item.friendly_name || item.nome}</p>
           {item.friendly_name && item.friendly_name !== item.nome && (
-            <p className="text-xs text-muted-foreground mt-0.5">Original: {item.nome}</p>
+            <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-0.5">Original: {item.nome}</p>
           )}
         </div>
-        <p className={`font-bold text-lg ${isEntrada ? 'text-income' : 'text-expense'}`}>
+        <p
+          style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            letterSpacing: '-0.02em',
+            fontFamily: 'var(--font-numeric)',
+            color: isEntrada ? 'hsl(var(--color-income))' : 'hsl(var(--color-expense))',
+          }}
+        >
           {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
         </p>
       </div>
@@ -60,22 +68,22 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center gap-2 text-sm">
           <span className={`h-2 w-2 rounded-full ${isEntrada ? 'bg-income' : 'bg-expense'}`} />
-          <span className="text-muted-foreground">{isEntrada ? 'Receita' : 'Despesa'}</span>
+          <span className="text-[hsl(var(--color-text-tertiary))]">{isEntrada ? 'Receita' : 'Despesa'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+          <Calendar className="h-3.5 w-3.5 text-[hsl(var(--color-text-tertiary))]" />
           <span>{displayDate}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+          <Tag className="h-3.5 w-3.5 text-[hsl(var(--color-text-tertiary))]" />
           <span className="truncate">{item.categoria}</span>
         </div>
         {paymentMethod && (
           <div className="flex items-center gap-2 text-sm">
             {item.forma_pagamento?.includes('card') ? (
-              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+              <CreditCard className="h-3.5 w-3.5 text-[hsl(var(--color-text-tertiary))]" />
             ) : (
-              <Banknote className="h-3.5 w-3.5 text-muted-foreground" />
+              <Banknote className="h-3.5 w-3.5 text-[hsl(var(--color-text-tertiary))]" />
             )}
             <span className="truncate">{paymentMethod.label}</span>
           </div>
@@ -84,11 +92,11 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
 
       {/* Source info */}
       {sourceInfo && (
-        <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/50">
+        <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-[hsl(var(--color-surface-sunken))]">
           <ConnectorLogo imageUrl={sourceInfo.imageUrl} primaryColor={sourceInfo.primaryColor} connectorName={sourceInfo.institution} size="xs" />
-          <span className="text-muted-foreground">{sourceInfo.institution}</span>
-          <span className="text-muted-foreground/50">·</span>
-          <span className="text-muted-foreground text-xs">{sourceInfo.accountType}</span>
+          <span className="text-[hsl(var(--color-text-tertiary))]">{sourceInfo.institution}</span>
+          <span className="text-[hsl(var(--color-text-tertiary))]/50">·</span>
+          <span className="text-[hsl(var(--color-text-tertiary))] text-xs">{sourceInfo.accountType}</span>
         </div>
       )}
 
@@ -104,7 +112,7 @@ export const LancamentoDetailDialog: React.FC<LancamentoDetailDialogProps> = ({
 
       {/* Observations */}
       {item.observacoes && (
-        <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+        <div className="text-sm text-[hsl(var(--color-text-tertiary))] bg-[hsl(var(--color-surface-sunken))] p-3 rounded-lg">
           {item.observacoes}
         </div>
       )}

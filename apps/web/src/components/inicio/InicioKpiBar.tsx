@@ -1,5 +1,4 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, Wallet, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface InicioKpiBarProps {
@@ -24,6 +23,53 @@ const formatCurrency = (value: number, isHidden: boolean) => {
   }).format(value);
 };
 
+interface KpiCardProps {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+}
+
+const KpiCard: React.FC<KpiCardProps> = ({ label, value, sub }) => (
+  <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] px-4 py-3 flex flex-col gap-0.5">
+    <p
+      style={{
+        fontSize: '10px',
+        fontWeight: 500,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as const,
+        color: 'hsl(var(--color-text-secondary))',
+        fontFamily: 'var(--font-sans)',
+      }}
+    >
+      {label}
+    </p>
+    <div
+      className="tabular-nums leading-tight mt-0.5"
+      style={{
+        fontSize: '22px',
+        fontWeight: 600,
+        letterSpacing: '-0.02em',
+        fontFamily: 'var(--font-numeric)',
+      }}
+    >
+      {value}
+    </div>
+    {sub && (
+      <div
+        style={{
+          fontSize: '11px',
+          fontWeight: 400,
+          color: 'hsl(var(--color-text-tertiary))',
+          fontFamily: 'var(--font-sans)',
+          lineHeight: 1.4,
+        }}
+      >
+        {sub}
+      </div>
+    )}
+  </div>
+);
+
 export const InicioKpiBar: React.FC<InicioKpiBarProps> = ({
   receitas,
   despesasSemCartao,
@@ -43,156 +89,58 @@ export const InicioKpiBar: React.FC<InicioKpiBarProps> = ({
       role="region"
       aria-label="Indicadores do mês"
     >
-      {/* 1. Receitas do mês */}
-      <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-3">
-        <p
-          className="uppercase tracking-[0.5px]"
-          style={{
-            fontSize: '10px',
-            fontWeight: 400,
-            color: 'hsl(var(--color-text-secondary))',
-          }}
-        >
-          Receitas do mês
-        </p>
-        <p
-          className="tabular-nums mt-0.5"
-          style={{
-            fontSize: '20px',
-            fontWeight: 800,
-            color: 'hsl(var(--color-text-success))',
-          }}
-        >
-          {formatCurrency(receitas, isHidden)}
-        </p>
-        {deltaVsMesAnterior !== 0 && (
-          <span
-            className="inline-block mt-1 text-[10px] font-medium tabular-nums"
-            style={{
-              color: deltaPositive
-                ? 'hsl(var(--color-text-success))'
-                : 'hsl(var(--color-text-danger))',
-            }}
-          >
-            {deltaPositive ? '+' : ''}
-            {deltaVsMesAnterior.toFixed(1)}% vs mês anterior
+      <KpiCard
+        label="Receitas do mês"
+        value={
+          <span style={{ color: 'hsl(var(--color-income))' }}>
+            {formatCurrency(receitas, isHidden)}
           </span>
-        )}
-      </div>
-
-      {/* 2. Despesas (débito) */}
-      <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-3">
-        <p
-          className="uppercase tracking-[0.5px]"
-          style={{
-            fontSize: '10px',
-            fontWeight: 400,
-            color: 'hsl(var(--color-text-secondary))',
-          }}
-        >
-          Despesas (débito)
-        </p>
-        <p
-          className="tabular-nums mt-0.5"
-          style={{
-            fontSize: '20px',
-            fontWeight: 800,
-            color: 'hsl(var(--color-text-danger))',
-          }}
-        >
-          {formatCurrency(despesasSemCartao, isHidden)}
-        </p>
-        {totalCartao > 0 && (
-          <p
-            className="mt-1"
-            style={{
-              fontSize: '10px',
-              fontWeight: 400,
-              color: 'hsl(var(--color-text-secondary))',
-            }}
-          >
-            + cartão {formatCurrency(totalCartao, isHidden)} → total{' '}
-            {formatCurrency(totalDespesas, isHidden)}
-          </p>
-        )}
-      </div>
-
-      {/* 3. Saldo do mês */}
-      <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-3">
-        <p
-          className="uppercase tracking-[0.5px]"
-          style={{
-            fontSize: '10px',
-            fontWeight: 400,
-            color: 'hsl(var(--color-text-secondary))',
-          }}
-        >
-          Saldo do mês
-        </p>
-        <p
-          className={cn('tabular-nums mt-0.5')}
-          style={{
-            fontSize: '20px',
-            fontWeight: 800,
-            color:
-              saldoMensal >= 0
-                ? 'hsl(var(--color-text-success))'
-                : 'hsl(var(--color-text-danger))',
-          }}
-        >
-          {formatCurrency(saldoMensal, isHidden)}
-        </p>
-        {deltaVsMesAnterior !== 0 && (
-          <span
-            className="inline-block mt-1 text-[10px] font-medium tabular-nums"
-            style={{
-              color:
-                saldoMensal >= 0
-                  ? 'hsl(var(--color-text-success))'
-                  : 'hsl(var(--color-text-danger))',
-            }}
-          >
-            {deltaPositive ? '+' : ''}
-            {deltaVsMesAnterior.toFixed(1)}% vs mês anterior
+        }
+        sub={
+          deltaVsMesAnterior !== 0 ? (
+            <span style={{ color: deltaPositive ? 'hsl(var(--color-income))' : 'hsl(var(--color-expense))' }}>
+              {deltaPositive ? '+' : ''}{deltaVsMesAnterior.toFixed(1)}% vs mês anterior
+            </span>
+          ) : undefined
+        }
+      />
+      <KpiCard
+        label="Despesas (débito)"
+        value={
+          <span style={{ color: 'hsl(var(--color-expense))' }}>
+            {formatCurrency(despesasSemCartao, isHidden)}
           </span>
-        )}
-      </div>
-
-      {/* 4. Lançamentos */}
-      <div className="rounded-lg border border-[hsl(var(--color-border-subtle))] bg-[hsl(var(--color-surface-raised))] p-3">
-        <p
-          className="uppercase tracking-[0.5px]"
-          style={{
-            fontSize: '10px',
-            fontWeight: 400,
-            color: 'hsl(var(--color-text-secondary))',
-          }}
-        >
-          Lançamentos
-        </p>
-        <p
-          className="tabular-nums mt-0.5"
-          style={{
-            fontSize: '20px',
-            fontWeight: 800,
-            color: 'hsl(var(--color-text-primary))',
-          }}
-        >
-          {totalLancamentos}
-        </p>
-        {lancamentosSemCategoria > 0 && (
-          <p
-            className="mt-1"
-            style={{
-              fontSize: '10px',
-              fontWeight: 400,
-              color: 'hsl(var(--color-text-secondary))',
-            }}
-          >
-            {lancamentosSemCategoria} sem categoria
-          </p>
-        )}
-      </div>
+        }
+        sub={
+          totalCartao > 0 ? (
+            <>+ cartão {formatCurrency(totalCartao, isHidden)} — total {formatCurrency(totalDespesas, isHidden)}</>
+          ) : undefined
+        }
+      />
+      <KpiCard
+        label="Saldo do mês"
+        value={
+          <span style={{ color: saldoMensal >= 0 ? 'hsl(var(--color-income))' : 'hsl(var(--color-expense))' }}>
+            {formatCurrency(saldoMensal, isHidden)}
+          </span>
+        }
+        sub={
+          deltaVsMesAnterior !== 0 ? (
+            <span style={{ color: saldoMensal >= 0 ? 'hsl(var(--color-income))' : 'hsl(var(--color-expense))' }}>
+              {deltaPositive ? '+' : ''}{deltaVsMesAnterior.toFixed(1)}% vs mês anterior
+            </span>
+          ) : undefined
+        }
+      />
+      <KpiCard
+        label="Lançamentos"
+        value={
+          <span style={{ color: 'hsl(var(--color-text-primary))' }}>
+            {totalLancamentos}
+          </span>
+        }
+        sub={lancamentosSemCategoria > 0 ? `${lancamentosSemCategoria} sem categoria` : undefined}
+      />
     </div>
   );
 };

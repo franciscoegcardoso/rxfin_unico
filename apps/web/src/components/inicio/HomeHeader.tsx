@@ -62,7 +62,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     >
       <div className="flex items-center gap-3 min-w-0">
         <Avatar
-          className="h-10 w-10 shrink-0 border-2 border-[hsl(var(--color-text-success))]"
+          className="h-10 w-10 shrink-0 border-2 border-[hsl(var(--color-brand-500))]"
           style={{ borderRadius: '50%' }}
         >
           <AvatarImage src={avatarUrl} alt={firstName} />
@@ -78,7 +78,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             className="truncate"
             style={{
               fontSize: '18px',
-              fontWeight: 700,
+              fontWeight: 600,
+              letterSpacing: '-0.015em',
+              fontFamily: 'var(--font-sans)',
               color: 'hsl(var(--color-text-primary))',
             }}
           >
@@ -105,7 +107,10 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             <p
               style={{
                 fontSize: '10px',
-                fontWeight: 400,
+                fontWeight: 500,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                fontFamily: 'var(--font-sans)',
                 color: 'hsl(var(--color-text-secondary))',
               }}
             >
@@ -115,7 +120,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
               className="tabular-nums mt-0.5"
               style={{
                 fontSize: '22px',
-                fontWeight: 800,
+                fontWeight: 600,
                 color: 'hsl(var(--color-text-primary))',
               }}
             >

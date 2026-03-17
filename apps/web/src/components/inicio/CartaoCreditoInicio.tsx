@@ -67,17 +67,26 @@ export const CartaoCreditoInicio: React.FC = () => {
                 {bill.card_name ?? 'Cartão'}
               </span>
               {bill.status === 'paid' && (
-                <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
+                <span
+                  className="shrink-0 px-2 py-0.5 rounded-full"
+                  style={{ background: 'hsl(var(--color-income-bg))', color: 'hsl(var(--color-income))', fontSize: '10px', fontWeight: 600, borderRadius: 9999, fontFamily: 'var(--font-sans)' }}
+                >
                   Paga
                 </span>
               )}
               {bill.status !== 'paid' && bill.is_overdue && (
-                <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground">
+                <span
+                  className="shrink-0 px-2 py-0.5 rounded-full"
+                  style={{ background: 'hsl(var(--color-expense-bg))', color: 'hsl(var(--color-expense))', fontSize: '10px', fontWeight: 600, borderRadius: 9999, fontFamily: 'var(--font-sans)' }}
+                >
                   Vencida
                 </span>
               )}
               {bill.status !== 'paid' && !bill.is_overdue && (
-                <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))]">
+                <span
+                  className="shrink-0 px-2 py-0.5 rounded-full"
+                  style={{ background: 'hsl(var(--color-surface-sunken))', color: 'hsl(var(--color-text-tertiary))', border: '1px solid hsl(var(--color-border-subtle))', fontSize: '10px', fontWeight: 500, borderRadius: 9999, fontFamily: 'var(--font-sans)' }}
+                >
                   Aberta
                 </span>
               )}

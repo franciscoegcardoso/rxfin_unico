@@ -308,7 +308,7 @@ export const CreditCardMonthlyTable: React.FC<CreditCardMonthlyTableProps> = ({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr className="border-b border-[hsl(var(--color-border-default))]">
-            <th className="w-28 md:w-40 py-2 text-left text-[hsl(var(--color-text-muted))] font-normal text-xs">
+            <th className="w-28 md:w-40 py-2 text-left text-[hsl(var(--color-text-tertiary))] font-normal text-xs">
               <div className="flex items-center gap-1">
                 <CreditCard className="h-3 w-3" />
                 {!isMobile && <span>Cartão</span>}
@@ -326,7 +326,7 @@ export const CreditCardMonthlyTable: React.FC<CreditCardMonthlyTableProps> = ({
                   <span className={cn(
                     "text-xs",
                     isCurrent && "font-semibold text-[hsl(var(--color-text-primary))]",
-                    isProjection && !isCurrent && "text-[hsl(var(--color-text-muted))] italic"
+                    isProjection && !isCurrent && "text-[hsl(var(--color-text-tertiary))] italic"
                   )}>
                     {label}
                   </span>
@@ -336,7 +336,7 @@ export const CreditCardMonthlyTable: React.FC<CreditCardMonthlyTableProps> = ({
                     </span>
                   )}
                   {isProjection && !isCurrent && (
-                    <TrendingUp className="h-2.5 w-2.5 text-[hsl(var(--color-text-muted))]" />
+                    <TrendingUp className="h-2.5 w-2.5 text-[hsl(var(--color-text-tertiary))]" />
                   )}
                 </div>
               </th>
@@ -372,7 +372,7 @@ export const CreditCardMonthlyTable: React.FC<CreditCardMonthlyTableProps> = ({
                       )}
                       <span className={cn(
                         "text-xs font-mono tabular-nums font-medium",
-                        total > 0 ? "text-[hsl(var(--color-text-primary))]" : "text-[hsl(var(--color-text-muted))]",
+                        total > 0 ? "text-[hsl(var(--color-text-primary))]" : "text-[hsl(var(--color-text-tertiary))]",
                         isPaid && total > 0 && "text-[hsl(var(--color-text-success))]",
                         isProjection && !isCurrent && "italic opacity-75"
                       )}>
@@ -401,7 +401,7 @@ export const CreditCardMonthlyTable: React.FC<CreditCardMonthlyTableProps> = ({
                   >
                     <span className={cn(
                       "text-sm font-mono font-semibold tabular-nums",
-                      total > 0 ? "text-[hsl(var(--color-text-primary))]" : "text-[hsl(var(--color-text-muted))]",
+                      total > 0 ? "text-[hsl(var(--color-text-primary))]" : "text-[hsl(var(--color-text-tertiary))]",
                       isProjection && !isCurrent && "italic opacity-75"
                     )}>
                       {isHidden ? '••••' : total > 0 ? formatFullCurrency(total) : '-'}

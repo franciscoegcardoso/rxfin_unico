@@ -54,9 +54,9 @@ export function EndividamentoTab() {
     return (
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <TrendingDown className="h-14 w-14 text-[hsl(var(--color-text-muted))] mb-4" strokeWidth={1.5} />
+          <TrendingDown className="h-14 w-14 text-[hsl(var(--color-text-tertiary))] mb-4" strokeWidth={1.5} />
           <h3 className="font-semibold text-[hsl(var(--color-text-primary))] mb-2">Nenhum empréstimo ativo encontrado</h3>
-          <p className="text-sm text-[hsl(var(--color-text-muted))] max-w-sm">
+          <p className="text-sm text-[hsl(var(--color-text-tertiary))] max-w-sm">
             Empréstimos e financiamentos conectados via Open Finance ou cadastrados manualmente aparecerão aqui.
           </p>
         </CardContent>
@@ -88,7 +88,7 @@ export function EndividamentoTab() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">Total devedor</p>
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">Total devedor</p>
             <p className="text-xl font-semibold tabular-nums text-[hsl(var(--color-text-primary))] mt-0.5">
               {formatCurrency(summary?.total_outstanding ?? 0, isHidden)}
             </p>
@@ -96,7 +96,7 @@ export function EndividamentoTab() {
         </Card>
         <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">Empréstimos ativos</p>
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">Empréstimos ativos</p>
             <p className="text-xl font-semibold tabular-nums text-[hsl(var(--color-text-primary))] mt-0.5">
               {(summary?.pluggy_loans_count ?? 0) + (summary?.manual_loans_count ?? 0)}
             </p>
@@ -104,7 +104,7 @@ export function EndividamentoTab() {
         </Card>
         <Card className="bg-[hsl(var(--color-surface-raised))] border-[hsl(var(--color-border-default))]">
           <CardContent className="p-4">
-            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-muted))]">CET médio</p>
+            <p className="text-xs uppercase tracking-wide text-[hsl(var(--color-text-tertiary))]">CET médio</p>
             <p className="text-xl font-semibold tabular-nums text-[hsl(var(--color-text-primary))] mt-0.5">
               {summary?.avg_cet_annual_pct != null ? `${(summary.avg_cet_annual_pct).toFixed(1)}% a.a.` : '—'}
             </p>
@@ -128,12 +128,12 @@ export function EndividamentoTab() {
                       <img src={loan.connector_image_url} alt="" className="h-10 w-10 rounded-full object-contain bg-muted/50" />
                     ) : (
                       <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-[hsl(var(--color-text-muted))]" />
+                        <Building2 className="h-5 w-5 text-[hsl(var(--color-text-tertiary))]" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-[hsl(var(--color-text-primary))] truncate">{loan.product_name || 'Empréstimo'}</p>
-                      <p className="text-sm text-[hsl(var(--color-text-muted))]">{loan.connector_name}</p>
+                      <p className="text-sm text-[hsl(var(--color-text-tertiary))]">{loan.connector_name}</p>
                     </div>
                     {loan.is_overdue && (
                       <Badge variant="destructive" className="shrink-0 text-xs">Em atraso</Badge>
@@ -142,18 +142,18 @@ export function EndividamentoTab() {
                   <p className="mt-3 text-lg font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
                     {formatCurrency(loan.outstanding_balance ?? 0, isHidden)}
                   </p>
-                  <p className="text-xs text-[hsl(var(--color-text-muted))] mt-0.5">Saldo devedor</p>
+                  <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-0.5">Saldo devedor</p>
                   {(loan.total_installments != null && loan.paid_installments != null) && (
                     <>
                       <Progress value={loan.progress_pct ?? 0} className="h-2 mt-3" />
-                      <p className="text-xs text-[hsl(var(--color-text-muted))] mt-1.5">
+                      <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-1.5">
                         {loan.paid_installments} de {loan.total_installments} parcelas pagas
                         {loan.progress_pct != null && ` (${Math.round(loan.progress_pct)}%)`}
                       </p>
                     </>
                   )}
                   {loan.cet_annual_pct != null && (
-                    <p className="text-xs text-[hsl(var(--color-text-muted))] mt-1">
+                    <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-1">
                       CET ao ano: {(loan.cet_annual_pct).toFixed(1)}%
                     </p>
                   )}
@@ -184,14 +184,14 @@ export function EndividamentoTab() {
                   <p className="mt-2 text-lg font-semibold tabular-nums text-[hsl(var(--color-text-primary))]">
                     {formatCurrency(loan.saldo_devedor ?? 0, isHidden)}
                   </p>
-                  <p className="text-xs text-[hsl(var(--color-text-muted))]">Saldo devedor</p>
+                  <p className="text-xs text-[hsl(var(--color-text-tertiary))]">Saldo devedor</p>
                   {loan.valor_parcela != null && (
-                    <p className="text-sm text-[hsl(var(--color-text-muted))] mt-1">Parcela: {formatCurrency(loan.valor_parcela, isHidden)}/mês</p>
+                    <p className="text-sm text-[hsl(var(--color-text-tertiary))] mt-1">Parcela: {formatCurrency(loan.valor_parcela, isHidden)}/mês</p>
                   )}
                   {(loan.prazo_total != null && loan.parcelas_pagas != null) && (
                     <>
                       <Progress value={loan.progress_pct ?? 0} className="h-2 mt-3" />
-                      <p className="text-xs text-[hsl(var(--color-text-muted))] mt-1.5">
+                      <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-1.5">
                         {loan.parcelas_pagas} de {loan.prazo_total} parcelas ({(loan.progress_pct ?? 0).toFixed(0)}%)
                       </p>
                     </>
@@ -204,7 +204,7 @@ export function EndividamentoTab() {
       )}
 
       {lastPluggySync > 0 && (
-        <p className="text-xs text-[hsl(var(--color-text-muted))]">
+        <p className="text-xs text-[hsl(var(--color-text-tertiary))]">
           Dados automáticos via Open Finance · Atualizado {format(new Date(lastPluggySync), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
         </p>
       )}

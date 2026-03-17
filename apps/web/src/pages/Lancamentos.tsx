@@ -1506,7 +1506,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                     <RecurringBadge info={badgeMap[item.source_id]} />
                                   )}
                                 </div>
-                                <p className="text-xs text-[hsl(var(--color-text-muted))] mt-0.5">
+                                <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-0.5">
                                   {item.data_pagamento
                                     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                                     : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}

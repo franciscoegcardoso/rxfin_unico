@@ -41,7 +41,7 @@ export const AcoesImediatas: React.FC = () => {
       title: 'Categorização pendente',
       subtitle: uncategorizedCount > 0 ? `${uncategorizedCount} itens sem categoria` : 'Tudo categorizado',
       badge: uncategorizedCount > 0 ? (
-        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-0 text-[10px]">
+        <Badge style={{ background: 'hsl(var(--color-warning-bg))', color: 'hsl(var(--color-warning))' }} className="border-0 text-[10px]">
           {uncategorizedCount}
         </Badge>
       ) : null,
@@ -52,7 +52,7 @@ export const AcoesImediatas: React.FC = () => {
       title: 'Compromissos do mês',
       subtitle: hasCompromissos ? (allCompromissosPaid ? 'Todos pagos' : 'Ver pendências') : 'Open Finance',
       badge: hasCompromissos && allCompromissosPaid ? (
-        <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0 text-[10px]">✓ ok</Badge>
+        <Badge style={{ background: 'hsl(var(--color-income-bg))', color: 'hsl(var(--color-income))' }} className="border-0 text-[10px]">✓ ok</Badge>
       ) : null,
       href: '/movimentacoes/extrato',
     },
@@ -61,7 +61,7 @@ export const AcoesImediatas: React.FC = () => {
       title: 'Metas do mês',
       subtitle: hasMetas ? 'Acompanhar metas' : 'Definir metas por categoria',
       badge: !hasMetas ? (
-        <Badge variant="ghost" className="text-[10px] text-[hsl(var(--color-text-muted))]">
+        <Badge variant="ghost" className="text-[10px] text-[hsl(var(--color-text-tertiary))]">
           Configurar
         </Badge>
       ) : null,
@@ -84,18 +84,18 @@ export const AcoesImediatas: React.FC = () => {
               className="flex items-center gap-3 px-4 py-3 hover:bg-[hsl(var(--color-surface-sunken))] transition-colors"
             >
               <div className="h-9 w-9 rounded-full bg-[hsl(var(--color-surface-sunken))] flex items-center justify-center shrink-0">
-                <Icon className="h-4 w-4 text-[hsl(var(--color-text-muted))]" />
+                <Icon className="h-4 w-4 text-[hsl(var(--color-text-tertiary))]" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[hsl(var(--color-text-primary))] truncate">
                   {row.title}
                 </p>
-                <p className="text-xs text-[hsl(var(--color-text-muted))] truncate">
+                <p className="text-xs text-[hsl(var(--color-text-tertiary))] truncate">
                   {row.subtitle}
                 </p>
               </div>
               {row.badge}
-              <ChevronRight className="h-4 w-4 text-[hsl(var(--color-text-muted))] shrink-0" />
+              <ChevronRight className="h-4 w-4 text-[hsl(var(--color-text-tertiary))] shrink-0" />
             </Link>
           );
         })}

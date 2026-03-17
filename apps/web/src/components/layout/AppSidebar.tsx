@@ -180,7 +180,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
       indent && isActive  && 'ml-3 pl-3 border-l-2 border-primary',
       isActive
         ? 'bg-accent text-accent-foreground'
-        : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+        : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
       isVisuallyDisabled && !item.canAccessAsAdmin && 'opacity-50',
     );
 
@@ -191,7 +191,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <item.icon
             className={cn(
               iconSizeClass,
-              isActive ? 'text-primary' : 'text-[hsl(var(--color-text-muted))] group-hover:text-foreground',
+              isActive ? 'text-primary' : 'text-[hsl(var(--color-text-tertiary))] group-hover:text-foreground',
             )}
           />
         )}
@@ -199,7 +199,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <span className="flex-1 truncate leading-tight">{item.label}</span>
         )}
         {!collapsed && item.isComingSoon && (
-          <span className="ml-auto flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))] border border-[hsl(var(--color-border))] font-semibold">
+          <span className="ml-auto flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-tertiary))] border border-[hsl(var(--color-border))] font-semibold">
             <Rocket className="h-2.5 w-2.5" />
             Em breve
           </span>
@@ -276,7 +276,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
     if (isConfiguracoesCta) {
       const configClass = cn(
         'flex w-full items-center rounded-md text-sm font-medium transition-all duration-150',
-        isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+        isConfiguracoesActive ? 'bg-accent text-accent-foreground' : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
       );
       // Em páginas de simulador, usar navegação programática para evitar travamento ao ir para Configurações
       const isOnSimulator = location.pathname.startsWith('/simuladores');
@@ -354,7 +354,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                     'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
                     isGroupActive
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+                      : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
                   )}
                   onClick={() => {
                     setCollapsed(false);
@@ -378,7 +378,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           onClick={() => toggleSection(section.slug)}
           className={cn(
             'flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
-            isGroupActive ? 'text-foreground' : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+            isGroupActive ? 'text-foreground' : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
           )}
         >
           {section.icon && (
@@ -437,7 +437,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          className="rounded-md p-1.5 text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors shrink-0"
+          className="rounded-md p-1.5 text-[hsl(var(--color-text-tertiary))] hover:bg-accent hover:text-foreground transition-colors shrink-0"
           aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
         >
           {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -466,7 +466,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                         'flex w-full items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all',
                         isAdminActive
                           ? 'bg-primary/10 text-primary'
-                          : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+                          : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
                       )}
                       onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
                       aria-current={isAdminActive ? 'page' : undefined}
@@ -484,7 +484,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                   'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all',
                   isAdminActive
                     ? 'bg-primary/10 text-primary'
-                    : 'text-[hsl(var(--color-text-muted))] hover:bg-accent/60 hover:text-foreground',
+                    : 'text-[hsl(var(--color-text-tertiary))] hover:bg-accent/60 hover:text-foreground',
                 )}
                 onClick={(e) => { e.preventDefault(); navigate('/admin'); }}
                 aria-current={isAdminActive ? 'page' : undefined}
@@ -516,7 +516,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             <span className={cn(
               'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-[hsl(var(--color-border))]',
               isStaging
-                ? 'bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-muted))]'
+                ? 'bg-[hsl(var(--color-surface-raised))] text-[hsl(var(--color-text-tertiary))]'
                 : 'bg-primary/10 text-primary',
             )}>
               {isStaging ? 'Staging' : 'Produção'}
@@ -535,7 +535,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="flex items-center justify-center rounded-md p-2 text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors w-full"
+                  className="flex items-center justify-center rounded-md p-2 text-[hsl(var(--color-text-tertiary))] hover:bg-accent hover:text-foreground transition-colors w-full"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -547,7 +547,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-[hsl(var(--color-text-muted))] hover:bg-accent hover:text-foreground transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-[hsl(var(--color-text-tertiary))] hover:bg-accent hover:text-foreground transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             <span>Sair</span>
