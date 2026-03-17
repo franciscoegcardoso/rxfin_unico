@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
   Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
-  Home, Car, PiggyBank, CreditCard, Shield, Building2, Banknote, BarChart3
+  Home, Car, PiggyBank, CreditCard, Shield, Building2, Banknote, BarChart3,
+  Zap, HelpCircle
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { IrDownloadGuideContent } from '@/components/shared/IrDownloadGuide';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -15,6 +18,27 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+const readFileAsBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve(base64 ?? '');
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const getFileType = (file: File): 'pdf' | 'xml' | null => {
+  const name = file.name.toLowerCase();
+  const mime = file.type.toLowerCase();
+  if (name.endsWith('.pdf') || mime === 'application/pdf') return 'pdf';
+  if (name.endsWith('.xml') || name.endsWith('.dec') || mime.includes('xml')) return 'xml';
+  return null;
+};
 
 interface BlockCProps {
   step: number;
@@ -63,6 +87,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [patrimonioData, setPatrimonioData] = useState<any>(null);
   const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
+  const [irGuideOpen, setIrGuideOpen] = useState(false);
 
   const loadPatrimonio = async () => {
     if (patrimonioLoaded || !user?.id) return;
@@ -101,34 +126,33 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     }
   };
 
-  const handleIrFileUpload = async (file: File) => {
+  const handleIRUpload = async (file: File, anoExercicio: number) => {
     if (!user?.id || !file) return;
+    const fileType = getFileType(file);
+    if (!fileType) {
+      toast.error('Formato inválido. Use PDF, XML ou .DEC');
+      return;
+    }
+    setSelectedYear(anoExercicio);
     setIrUploading(true);
     setIrUploadError('');
     try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      const fileContent = await readFileAsBase64(file);
+      const { data, error } = await supabase.functions.invoke('process-ir-import', {
+        body: { fileContent, fileType, fileName: file.name },
       });
-      const { data, error } = await supabase.functions.invoke('fiscal-organizer', {
-        body: {
-          action: 'import_ir_pdf',
-          user_id: user.id,
-          file_name: file.name,
-          file_base64: base64,
-        },
-      });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
+      const payload = data as { success?: boolean; error?: string; data?: { anoExercicio?: number } } | null;
+      if (!payload?.success) throw new Error(payload?.error ?? 'Erro desconhecido');
+      const ano = payload.data?.anoExercicio ?? anoExercicio;
+      toast.success(`Declaração ${ano} importada com sucesso!`);
       setIrLoaded(false);
       await loadIrImports();
     } catch (err: unknown) {
-      console.error('[BlockC] handleIrFileUpload erro:', err);
-      setIrUploadError('Erro ao processar o arquivo. Verifique se é um PDF válido do IR.');
+      const msg = err instanceof Error ? err.message : 'Erro ao importar';
+      toast.error(msg);
+      setIrUploadError(msg);
+      console.error('[BlockC] IR import error:', err);
     } finally {
       setIrUploading(false);
     }
@@ -215,6 +239,23 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             preciso. Importe o PDF da declaração de cada ano disponível.
           </p>
         </div>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/[0.04] p-4 mb-5">
+          <div className="flex gap-3">
+            <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Zap className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">
+                Importe pelo menos os últimos 2 anos
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Com 2 ou mais declarações, o RXFin consegue reconstruir sua evolução patrimonial,
+                calcular sua taxa de poupança histórica e detectar inconsistências. Com apenas 1 ano,
+                a análise fica limitada.
+              </p>
+            </div>
+          </div>
+        </div>
         <div className="space-y-2 mb-5">
           {years.map(year => {
             const imported = importedYears.has(year);
@@ -250,29 +291,43 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
                   )}
                 </div>
                 {!imported && (
-                  <label className="shrink-0 cursor-pointer">
+                  <label
+                    className={cn(
+                      'shrink-0 cursor-pointer',
+                      irUploading && selectedYear === year && 'pointer-events-none opacity-80'
+                    )}
+                  >
                     <input
                       type="file"
-                      accept=".pdf"
+                      accept=".pdf,.xml,.dec,application/pdf,text/xml,application/xml"
                       className="hidden"
                       onChange={e => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          setSelectedYear(year);
-                          handleIrFileUpload(file);
+                          handleIRUpload(file, year);
+                          e.target.value = '';
                         }
                       }}
                     />
-                    <span className={cn(
-                      'text-xs font-medium px-3 py-1.5 rounded-lg border transition-all',
-                      irUploading && selectedYear === year
-                        ? 'border-primary/40 text-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
-                    )}>
-                      {irUploading && selectedYear === year
-                        ? <><Loader2 className="h-3 w-3 animate-spin inline mr-1" />Processando...</>
-                        : <><Upload className="h-3 w-3 inline mr-1" />PDF</>
-                      }
+                    <span
+                      className={cn(
+                        'inline-flex items-center text-xs font-medium px-3 py-1.5 rounded-lg border transition-all',
+                        irUploading && selectedYear === year
+                          ? 'border-primary/40 text-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50 text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {irUploading && selectedYear === year ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin shrink-0 mr-1" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-3 w-3 shrink-0 mr-1" />
+                          PDF
+                        </>
+                      )}
                     </span>
                   </label>
                 )}
@@ -294,14 +349,26 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             </p>
           </div>
         )}
-        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Como obter o PDF:</strong> No programa do IR (IRPF), vá em
-            &quot;Imprimir&quot; → &quot;Declaração Completa&quot; → salve como PDF. Faça isso
-            para cada ano disponível.
-          </p>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-4 gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => setIrGuideOpen(true)}
+        >
+          <HelpCircle className="h-4 w-4" />
+          Como obter o PDF?
+        </Button>
+        <Dialog open={irGuideOpen} onOpenChange={setIrGuideOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Como baixar sua declaração do IR
+              </DialogTitle>
+            </DialogHeader>
+            <IrDownloadGuideContent />
+          </DialogContent>
+        </Dialog>
         <Button
           variant="hero"
           size="lg"
