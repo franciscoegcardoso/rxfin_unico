@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 // Pluggy Connect Widget script URL - using versioned URL for stability
 const PLUGGY_CONNECT_SCRIPT = 'https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js';
 
+// Chave do localStorage para retomada OAuth no Safari iOS
+// Armazena { connectToken, cpf } para restaurar o CPF no widget após redirect do banco
 const PLUGGY_PENDING_KEY = 'pluggy_pending_token';
 
 interface PluggyPendingData {
@@ -39,15 +41,8 @@ declare global {
   }
 }
 
-/** Signal that the Pluggy widget is open (used by failsafe to skip checks). */
-function setWidgetOpen() {
-  window.__pluggyWidgetOpen = true;
-}
-
-/** Signal that the Pluggy widget has closed. */
-function setWidgetClosed() {
-  window.__pluggyWidgetOpen = false;
-}
+function setWidgetOpen() { window.__pluggyWidgetOpen = true; }
+function setWidgetClosed() { window.__pluggyWidgetOpen = false; }
 
 export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   onSuccess,
@@ -62,20 +57,17 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const scriptLoadedRef = useRef(false);
+
   const isMobileSafari =
     typeof navigator !== 'undefined' &&
     /iP(hone|ad|od)/.test(navigator.userAgent) &&
     /WebKit/.test(navigator.userAgent) &&
     !/CriOS|FxiOS|OPiOS|mercury/.test(navigator.userAgent);
+
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load Pluggy Connect script
-    if (scriptLoadedRef.current) {
-      setScriptLoaded(true);
-      return;
-    }
-
+    if (scriptLoadedRef.current) { setScriptLoaded(true); return; }
     const existingScript = document.querySelector(`script[src="${PLUGGY_CONNECT_SCRIPT}"]`);
     if (existingScript) {
       scriptLoadedRef.current = true;
@@ -83,7 +75,6 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       console.log('Pluggy Connect script already exists');
       return;
     }
-
     const script = document.createElement('script');
     script.src = PLUGGY_CONNECT_SCRIPT;
     script.async = true;
@@ -94,62 +85,50 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
     };
     script.onerror = () => {
       console.error('Failed to load Pluggy Connect script');
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar o widget de conexão.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'Não foi possível carregar o widget de conexão.', variant: 'destructive' });
     };
     document.body.appendChild(script);
-
-    return () => {
-      setWidgetClosed();
-    };
+    return () => { setWidgetClosed(); };
   }, [toast]);
 
   // Retomada do fluxo OAuth no Safari iOS após redirect do banco
+  // Fix: salvar e restaurar o CPF junto com o connectToken para pré-preenchimento
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const hasOAuthReturn =
-      urlParams.has('code') ||
-      urlParams.has('oauth_state_id') ||
-      urlParams.has('pluggy_oauth');
-
+      urlParams.has('code') || urlParams.has('oauth_state_id') || urlParams.has('pluggy_oauth');
     if (!hasOAuthReturn) return;
 
     const pendingRaw = localStorage.getItem(PLUGGY_PENDING_KEY);
     if (!pendingRaw) return;
 
-    // Limpar imediatamente para evitar re-execução em recargas
     localStorage.removeItem(PLUGGY_PENDING_KEY);
-    const pending: PluggyPendingData | null = (() => {
-      try {
-        return JSON.parse(pendingRaw);
-      } catch {
-        return null;
-      }
-    })();
-    const pendingToken = pending?.connectToken ?? pendingRaw; // fallback se ainda for string simples
-    const pendingCpf = pending?.cpf ?? null;
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, '', cleanUrl);
+    window.history.replaceState({}, '', window.location.pathname);
+
+    // Suportar formato antigo (string simples) e novo (JSON com cpf)
+    let pendingToken: string;
+    let pendingCpf: string | null = null;
+    try {
+      const parsed: PluggyPendingData = JSON.parse(pendingRaw);
+      pendingToken = parsed.connectToken;
+      pendingCpf = parsed.cpf ?? null;
+    } catch {
+      pendingToken = pendingRaw; // formato legado
+    }
+    if (!pendingToken) return;
 
     let attempts = 0;
-
-    // Aguardar o script da Pluggy carregar (máx 10s) antes de inicializar
     const waitForPluggyAndInit = () => {
       if (window.PluggyConnect) {
         setIsOpening(true);
         setWidgetOpen();
-
         const pluggyConnect = new window.PluggyConnect({
           connectToken: pendingToken,
           includeSandbox: false,
           ...(selectedConnectorId != null && { selectedConnectorId }),
           ...(pendingCpf && { openFinanceParameters: { cpf: pendingCpf } }),
           onSuccess: async (data) => {
-            setWidgetClosed();
-            setIsOpening(false);
+            setWidgetClosed(); setIsOpening(false);
             if (onSaving) onSaving();
             setTimeout(async () => {
               const success = await saveConnection(data.item.id);
@@ -157,90 +136,58 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
             }, 300);
           },
           onError: (err) => {
-            setWidgetClosed();
-            setIsOpening(false);
-            const message =
-              typeof err === 'object' && err && 'message' in err
-                ? String((err as any).message)
-                : 'Ocorreu um erro ao conectar.';
+            setWidgetClosed(); setIsOpening(false);
+            const message = typeof err === 'object' && err && 'message' in err
+              ? String((err as any).message) : 'Ocorreu um erro ao conectar.';
             toast({ title: 'Erro na conexão', description: message, variant: 'destructive' });
           },
-          onClose: () => {
-            setWidgetClosed();
-            setIsOpening(false);
-          },
+          onClose: () => { setWidgetClosed(); setIsOpening(false); },
         });
         pluggyConnect.init();
         return;
       }
-      // Script ainda não carregou — tentar de novo em 300ms (máx 10s = ~33 tentativas)
       attempts++;
-      if (attempts < 33) {
-        setTimeout(waitForPluggyAndInit, 300);
-      } else {
-        toast({
-          title: 'Erro',
-          description: 'Widget de conexão não disponível. Recarregue a página.',
-          variant: 'destructive',
-        });
-      }
+      if (attempts < 33) { setTimeout(waitForPluggyAndInit, 300); }
+      else { toast({ title: 'Erro', description: 'Widget de conexão não disponível. Recarregue a página.', variant: 'destructive' }); }
     };
-
     waitForPluggyAndInit();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConnect = useCallback(async () => {
     console.log('handleConnect called, scriptLoaded:', scriptLoaded, 'PluggyConnect:', !!window.PluggyConnect);
-    
-    if (!scriptLoaded) {
-      toast({
-        title: 'Aguarde',
-        description: 'Carregando widget de conexão...',
-      });
-      return;
-    }
-
+    if (!scriptLoaded) { toast({ title: 'Aguarde', description: 'Carregando widget de conexão...' }); return; }
     if (!window.PluggyConnect) {
       console.error('Pluggy Connect not available on window');
-      toast({
-        title: 'Erro',
-        description: 'Widget de conexão não disponível. Recarregue a página.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: 'Widget de conexão não disponível. Recarregue a página.', variant: 'destructive' });
       return;
     }
 
     setIsOpening(true);
-
     const redirectUrl = isMobileSafari ? window.location.href : undefined;
 
-    // Get connect token from our edge function (must be JWT string, not boolean)
     const tokenResult = await getConnectToken(updateItemId, redirectUrl);
     const connectToken: string | null =
       tokenResult?.connectToken != null && typeof tokenResult.connectToken === 'string'
-        ? tokenResult.connectToken
-        : null;
+        ? tokenResult.connectToken : null;
     const cpf = tokenResult?.cpf ?? null;
-    console.log('Got connect token:', !!connectToken);
 
-    if (!connectToken) {
-      setIsOpening(false);
-      return;
-    }
+    console.log('Got connect token:', !!connectToken, '| CPF prefill:', !!cpf);
+    if (!connectToken) { setIsOpening(false); return; }
 
     try {
       console.log('Initializing Pluggy Connect widget...');
-
       const PluggyConnectCtor = window.PluggyConnect;
       if (!PluggyConnectCtor || typeof PluggyConnectCtor !== 'function') {
         throw new Error('Widget de conexão não disponível. Recarregue a página.');
       }
 
-      // No mobile Safari, salvar token (e cpf) antes do redirect OAuth do banco (localStorage: compartilhado entre abas)
+      // No mobile Safari, salvar token E CPF antes do redirect OAuth do banco
       if (isMobileSafari) {
-        localStorage.setItem(PLUGGY_PENDING_KEY, JSON.stringify({ connectToken, cpf }));
+        const pendingData: PluggyPendingData = { connectToken, cpf };
+        localStorage.setItem(PLUGGY_PENDING_KEY, JSON.stringify(pendingData));
       }
+
       setWidgetOpen();
       const pluggyConnect = new PluggyConnectCtor({
         connectToken,
@@ -248,8 +195,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         ...(cpf && { openFinanceParameters: { cpf } }),
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
-          setWidgetClosed();
-          setIsOpening(false);
+          setWidgetClosed(); setIsOpening(false);
           if (onSaving) onSaving();
           setTimeout(async () => {
             const success = await saveConnection(data.item.id);
@@ -258,24 +204,13 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         },
         onError: (err) => {
           console.error('Pluggy Connect error:', err);
-          setWidgetClosed();
-          setIsOpening(false);
-          const message =
-            typeof err === 'object' && err && 'message' in err
-              ? String((err as any).message)
-              : 'Ocorreu um erro ao conectar.';
-          toast({
-            title: 'Erro na conexão',
-            description: message,
-            variant: 'destructive',
-          });
+          setWidgetClosed(); setIsOpening(false);
+          const message = typeof err === 'object' && err && 'message' in err
+            ? String((err as any).message) : 'Ocorreu um erro ao conectar.';
+          toast({ title: 'Erro na conexão', description: message, variant: 'destructive' });
         },
         onClose: () => {
-          if (!isMobileSafari) {
-            console.log('Pluggy Connect closed');
-            setWidgetClosed();
-            setIsOpening(false);
-          }
+          if (!isMobileSafari) { console.log('Pluggy Connect closed'); setWidgetClosed(); setIsOpening(false); }
         },
       });
 
@@ -283,8 +218,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       await pluggyConnect.init();
     } catch (error) {
       console.error('Error initializing Pluggy Connect:', error);
-      setWidgetClosed();
-      setIsOpening(false);
+      setWidgetClosed(); setIsOpening(false);
       toast({
         title: 'Erro',
         description: error instanceof Error ? error.message : 'Não foi possível abrir o widget de conexão.',
@@ -307,22 +241,12 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       className={className}
     >
       {isLoading || isOpening ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {isOpening ? 'Abrindo...' : 'Conectando...'}
-        </>
+        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isOpening ? 'Abrindo...' : 'Conectando...'}</>
       ) : !scriptLoaded ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Carregando...
-        </>
+        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</>
       ) : (
-        <>
-          <Link2 className="mr-2 h-4 w-4" />
-          {updateItemId ? 'Reconectar' : 'Conectar Banco'}
-        </>
+        <><Link2 className="mr-2 h-4 w-4" />{updateItemId ? 'Reconectar' : 'Conectar Banco'}</>
       )}
     </Button>
   );
 };
-// sync
