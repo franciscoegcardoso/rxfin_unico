@@ -1,10 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
   Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
   Home, Car, PiggyBank, CreditCard, Shield, Building2, Banknote, BarChart3,
   Zap, HelpCircle
 } from 'lucide-react';
+import type { BemDireito } from '@/hooks/useIRImport';
+
+/** Agrupa bem do IR por tipo (código 01–19 imóvel, 21–29 veículo, 31–99 investimento). */
+function getBemGroupLabel(codigo: string | number): string {
+  const n = typeof codigo === 'number' ? codigo : parseInt(String(codigo), 10);
+  if (n >= 1 && n <= 19) return 'Imóveis';
+  if (n >= 21 && n <= 29) return 'Veículos';
+  if (n >= 31 && n <= 99) return 'Investimentos';
+  return 'Outros';
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IrDownloadGuideContent } from '@/components/shared/IrDownloadGuide';
 import { Button } from '@/components/ui/button';
@@ -85,6 +95,25 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
   const [patrimonioLoaded, setPatrimonioLoaded] = useState(false);
   const [irGuideOpen, setIrGuideOpen] = useState(false);
   const [summaryYear, setSummaryYear] = useState<number | null>(null);
+
+  /** Primeiro ir_import com bens_direitos não vazio (ano_exercicio DESC), para step Patrimônio. */
+  const irPatrimonySource = useMemo(() => {
+    const sorted = [...irImportList].sort((a, b) => b.anoExercicio - a.anoExercicio);
+    return sorted.find((imp) => (imp.bensDireitos?.length ?? 0) > 0) ?? null;
+  }, [irImportList]);
+
+  /** Bens do IR agrupados por tipo (Imóveis, Veículos, Investimentos, Outros) para step 2. */
+  const bensByGroup = useMemo(() => {
+    if (!irPatrimonySource?.bensDireitos?.length) return null;
+    const groups: Record<string, BemDireito[]> = {};
+    irPatrimonySource.bensDireitos!.forEach((b) => {
+      const label = getBemGroupLabel(b.codigo);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(b);
+    });
+    const order = ['Imóveis', 'Veículos', 'Investimentos', 'Outros'];
+    return order.filter((k) => groups[k]?.length).map((k) => ({ label: k, items: groups[k]! }));
+  }, [irPatrimonySource]);
 
   const loadPatrimonio = async () => {
     if (patrimonioLoaded || !user?.id) return;
@@ -432,25 +461,34 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
       );
     }
 
-    const assets: any[] = patrimonioData?.assets ?? [];
-    const vehicles: any[] = patrimonioData?.vehicles ?? [];
-    const financiamentos: any[] = patrimonioData?.financiamentos ?? [];
-    const consorcios: any[] = patrimonioData?.consorcios ?? [];
-    const seguros: any[] = patrimonioData?.seguros ?? [];
-    const netWorth = patrimonioData?.net_worth;
-
-    const totalAtivos = (netWorth?.total_assets ?? 0) + (netWorth?.total_vehicles ?? 0);
-    const totalPassivos = netWorth?.total_debt ?? 0;
-    const patrimonioLiquido = totalAtivos - totalPassivos;
-
-    const hasAnyData = assets.length > 0 || vehicles.length > 0 ||
-      financiamentos.length > 0 || consorcios.length > 0;
-
     const formatBRLShort = (v: number) => {
       if (v >= 1_000_000) return `R$ ${(v/1_000_000).toFixed(1)}M`;
       if (v >= 1_000) return `R$ ${(v/1_000).toFixed(0)}k`;
       return `R$ ${v.toLocaleString('pt-BR')}`;
     };
+    const formatBRLFull = (v: number) =>
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+
+    const useIRData = irPatrimonySource != null && (irPatrimonySource.bensDireitos?.length ?? 0) > 0;
+
+    const totalAtivos = useIRData
+      ? (irPatrimonySource!.bensDireitos ?? []).reduce((s, b) => s + (b.situacaoAtual ?? 0), 0)
+      : (patrimonioData?.net_worth?.total_assets ?? 0) + (patrimonioData?.net_worth?.total_vehicles ?? 0);
+    const totalPassivos = useIRData
+      ? (irPatrimonySource!.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0)
+      : (patrimonioData?.net_worth?.total_debt ?? 0);
+    const patrimonioLiquido = totalAtivos - totalPassivos;
+
+    const assets: any[] = patrimonioData?.assets ?? [];
+    const vehicles: any[] = patrimonioData?.vehicles ?? [];
+    const financiamentos: any[] = patrimonioData?.financiamentos ?? [];
+    const consorcios: any[] = patrimonioData?.consorcios ?? [];
+    const seguros: any[] = patrimonioData?.seguros ?? [];
+
+    const hasBensFromIR = useIRData && (irPatrimonySource!.bensDireitos?.length ?? 0) > 0;
+    const hasAnyDataBens = assets.length > 0 || vehicles.length > 0 ||
+      financiamentos.length > 0 || consorcios.length > 0;
+    const hasAnyData = useIRData ? hasBensFromIR || totalPassivos > 0 : hasAnyDataBens;
 
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -470,6 +508,11 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           <h2 className="text-2xl font-bold text-foreground mb-2">
             Confira o que identificamos
           </h2>
+          {useIRData && irPatrimonySource && (
+            <p className="text-xs text-muted-foreground mb-1">
+              Baseado na declaração de IR — Exercício {irPatrimonySource.anoExercicio}
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             {hasAnyData
               ? 'Encontramos esses bens e obrigações no seu perfil. Confirme ou ajuste depois em Bens & Investimentos.'
@@ -493,111 +536,120 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
         )}
 
         <div className="space-y-3 mb-5">
+          {useIRData && bensByGroup && bensByGroup.length > 0 && (
+            <>
+              {bensByGroup.map(({ label, items }) => {
+                const Icon = label === 'Imóveis' ? Home : label === 'Veículos' ? Car : label === 'Investimentos' ? Banknote : FileText;
+                return (
+                  <div key={label} className="bg-card border border-border rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-semibold text-foreground">
+                        {label} ({items.length})
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {items.slice(0, 5).map((b, idx) => (
+                        <div key={`${b.codigo}-${idx}`} className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-muted-foreground truncate flex-1" title={b.descricao || b.discriminacao}>
+                            {(b.descricao || b.discriminacao || `Bem ${b.codigo}`).slice(0, 40)}
+                            {(b.descricao || b.discriminacao || '').length > 40 ? '…' : ''}
+                          </p>
+                          <p className="text-xs font-medium text-foreground shrink-0 tabular-nums">
+                            {formatBRLFull(b.situacaoAtual ?? 0)}
+                          </p>
+                        </div>
+                      ))}
+                      {items.length > 5 && (
+                        <p className="text-xs text-muted-foreground">+{items.length - 5} outros</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
 
-          {assets.length > 0 && (
+          {!useIRData && assets.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Home className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">
-                  Bens ({assets.length})
-                </p>
+                <p className="text-sm font-semibold text-foreground">Bens ({assets.length})</p>
               </div>
               <div className="space-y-1.5">
                 {assets.slice(0, 3).map((a: any) => (
                   <div key={a.id} className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground truncate flex-1">{a.name}</p>
-                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
-                      {formatBRLShort(a.current_value ?? 0)}
-                    </p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">{formatBRLShort(a.current_value ?? 0)}</p>
                   </div>
                 ))}
-                {assets.length > 3 && (
-                  <p className="text-xs text-muted-foreground">
-                    +{assets.length - 3} outros bens
-                  </p>
-                )}
+                {assets.length > 3 && <p className="text-xs text-muted-foreground">+{assets.length - 3} outros bens</p>}
               </div>
             </div>
           )}
 
-          {vehicles.length > 0 && (
+          {!useIRData && vehicles.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Car className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">
-                  Veículos ({vehicles.length})
-                </p>
+                <p className="text-sm font-semibold text-foreground">Veículos ({vehicles.length})</p>
               </div>
               <div className="space-y-1.5">
                 {vehicles.slice(0, 3).map((v: any) => (
                   <div key={v.id} className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground truncate flex-1">{v.display_name}</p>
-                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
-                      {formatBRLShort(v.fipe_value ?? 0)}
-                    </p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">{formatBRLShort(v.fipe_value ?? 0)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {financiamentos.length > 0 && (
+          {!useIRData && financiamentos.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <CreditCard className="h-4 w-4 text-destructive" />
-                <p className="text-sm font-semibold text-foreground">
-                  Financiamentos ({financiamentos.length})
-                </p>
+                <p className="text-sm font-semibold text-foreground">Financiamentos ({financiamentos.length})</p>
               </div>
               <div className="space-y-1.5">
                 {financiamentos.slice(0, 3).map((f: any) => (
                   <div key={f.id} className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground truncate flex-1">{f.nome}</p>
-                    <p className="text-xs font-medium text-destructive ml-2 shrink-0">
-                      -{formatBRLShort(f.saldo_devedor ?? 0)}
-                    </p>
+                    <p className="text-xs font-medium text-destructive ml-2 shrink-0">-{formatBRLShort(f.saldo_devedor ?? 0)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {consorcios.length > 0 && (
+          {!useIRData && consorcios.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <PiggyBank className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">
-                  Consórcios ({consorcios.length})
-                </p>
+                <p className="text-sm font-semibold text-foreground">Consórcios ({consorcios.length})</p>
               </div>
               <div className="space-y-1.5">
                 {consorcios.slice(0, 2).map((c: any) => (
                   <div key={c.id} className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground truncate flex-1">{c.nome}</p>
-                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
-                      {formatBRLShort(c.valor_carta ?? 0)}
-                    </p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">{formatBRLShort(c.valor_carta ?? 0)}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {seguros.length > 0 && (
+          {!useIRData && seguros.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Shield className="h-4 w-4 text-primary" />
-                <p className="text-sm font-semibold text-foreground">
-                  Seguros ({seguros.filter((s: any) => s.is_active).length} ativos)
-                </p>
+                <p className="text-sm font-semibold text-foreground">Seguros ({seguros.filter((s: any) => s.is_active).length} ativos)</p>
               </div>
               <div className="space-y-1.5">
                 {seguros.filter((s: any) => s.is_active).slice(0, 2).map((s: any) => (
                   <div key={s.id} className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground truncate flex-1">{s.nome}</p>
-                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">
-                      {formatBRLShort(s.premio_mensal ?? 0)}/mês
-                    </p>
+                    <p className="text-xs font-medium text-foreground ml-2 shrink-0">{formatBRLShort(s.premio_mensal ?? 0)}/mês</p>
                   </div>
                 ))}
               </div>
@@ -608,8 +660,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
             <div className="bg-muted/30 rounded-xl p-6 text-center">
               <TrendingUp className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">
-                Conecte seus bancos ou importe o IR para identificar
-                seus bens automaticamente.
+                Conecte seus bancos ou importe o IR para identificar seus bens automaticamente.
               </p>
             </div>
           )}
