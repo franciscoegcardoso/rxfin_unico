@@ -241,7 +241,9 @@ export function useDefaultExpenseItemMutations() {
 
   return {
     create: createMutation.mutate,
+    createAsync: createMutation.mutateAsync,
     update: updateMutation.mutate,
+    updateAsync: updateMutation.mutateAsync,
     toggleActive: toggleActiveMutation.mutate,
     isLoading: createMutation.isPending || updateMutation.isPending || toggleActiveMutation.isPending,
   };

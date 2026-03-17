@@ -240,16 +240,21 @@ export const AdminDefaultExpenseInline: React.FC = () => {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.category_id) return;
     const category = categories.find(c => c.id === form.category_id);
     const formData = { ...form, category_name: category?.name || form.category_id };
-    if (editingItem) {
-      expenseMutations.update({ id: editingItem.id, updates: formData });
-    } else {
-      expenseMutations.create(formData as any);
+    try {
+      if (editingItem) {
+        await expenseMutations.updateAsync({ id: editingItem.id, updates: formData });
+      } else {
+        await expenseMutations.createAsync(formData as any);
+      }
+      setDialogOpen(false);
+    } catch (err) {
+      console.error('[AdminDefaultsInline] Erro ao salvar despesa default:', err);
+      // toast já é exibido em onError do mutation
     }
-    setDialogOpen(false);
   };
 
   if (isLoading) return null;

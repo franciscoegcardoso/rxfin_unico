@@ -190,22 +190,25 @@ export const AdminParametersSection: React.FC = () => {
     setIncomeDialogOpen(false);
   };
 
-  const handleSaveExpense = () => {
+  const handleSaveExpense = async () => {
     if (!expenseForm.name.trim() || !expenseForm.category_id) return;
     
-    // Get category name
     const category = categories.find(c => c.id === expenseForm.category_id);
     const formData = {
       ...expenseForm,
       category_name: category?.name || expenseForm.category_id,
     };
     
-    if (editingExpense) {
-      expenseMutations.update({ id: editingExpense.id, updates: formData });
-    } else {
-      expenseMutations.create(formData as any);
+    try {
+      if (editingExpense) {
+        await expenseMutations.updateAsync({ id: editingExpense.id, updates: formData });
+      } else {
+        await expenseMutations.createAsync(formData as any);
+      }
+      setExpenseDialogOpen(false);
+    } catch (err) {
+      console.error('[AdminParametersSection] Erro ao salvar despesa default:', err);
     }
-    setExpenseDialogOpen(false);
   };
 
   const getCategoryName = (categoryId: string) => {
