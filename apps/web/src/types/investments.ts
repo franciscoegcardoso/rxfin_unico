@@ -1,4 +1,4 @@
-/** Row from RPC get_investment_sync_status (per Pluggy connection). */
+/** Sync por conexão Pluggy (campo `sync_status` em get_investments_page_data). */
 export type InvestmentSyncState = 'syncing' | 'login_error' | 'maturing' | 'suspect_zero' | 'ok';
 
 export type InvestmentSyncAlertLevel = 'info' | 'warning' | 'error' | 'none';
@@ -74,7 +74,7 @@ export interface ManualInvestmentInsert {
   notes?: string;
 }
 
-/** get_investments_totals_v2 */
+/** Linha de `totals` em get_investments_page_data */
 export interface InvestmentTotalsV2 {
   gross_total: number;
   net_total: number;
@@ -89,7 +89,7 @@ export interface InvestmentTotalsV2 {
   sync_coverage_pct: number | null;
 }
 
-/** get_investments_summary_v3 */
+/** Linha de `summary` em get_investments_page_data */
 export interface InvestmentSummaryV3Row {
   inv_type: string;
   inv_subtype: string;
@@ -107,7 +107,7 @@ export interface InvestmentSummaryV3Row {
   sync_coverage_pct: number | null;
 }
 
-/** get_investment_onboarding_status — F5 card contextual */
+/** Onboarding (campo `onboarding` em get_investments_page_data). */
 export interface OnboardingStatus {
   should_show: boolean;
   already_seen: boolean;

@@ -13,6 +13,7 @@ export interface MesAnual {
   saldo_planejado: number;
   saldo_realizado: number;
   has_data: boolean;
+  has_planning: boolean; // true somente se monthly_goals foi configurado para o mês
   variacao_saldo: number;
 }
 
@@ -45,6 +46,7 @@ export function usePlanejamentoAnual(year: number) {
           saldo_planejado: Number(r.saldo_planejado ?? saldoPlanejado),
           saldo_realizado: Number(r.saldo_realizado ?? saldoRealizado),
           has_data: Boolean(r.has_data),
+          has_planning: Boolean(r.has_planning),
           variacao_saldo: (Number(r.saldo_realizado ?? saldoRealizado) - Number(r.saldo_planejado ?? saldoPlanejado)),
         } as MesAnual;
       });

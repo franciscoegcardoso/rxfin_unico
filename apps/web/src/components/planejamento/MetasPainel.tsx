@@ -158,6 +158,17 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
                     </AlertDescription>
                   </Alert>
                 )}
+                {/* Aviso de capacidade de renda: required_monthly > 30% da receita média */}
+                {meta.risk_level !== 'concluida' &&
+                  meta.required_monthly > 0 &&
+                  (metas[0]?.receita_media_3m ?? 0) > 0 &&
+                  meta.required_monthly > (metas[0]?.receita_media_3m ?? 0) * 0.3 && (
+                    <Alert className="p-2 bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+                      <AlertDescription className="text-xs text-amber-700 dark:text-amber-400">
+                        ⚠ Aporte necessário excede 30% da sua receita média.
+                      </AlertDescription>
+                    </Alert>
+                )}
 
                 {meta.risk_level !== 'concluida' && meta.required_monthly > 0 && (
                   <div className="flex items-center justify-end gap-2">
@@ -175,6 +186,16 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
               </div>
             );
           })}
+          {/* Rodapé: contexto de receita média */}
+          {metas.length > 0 && (metas[0]?.receita_media_3m ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground pt-2 border-t border-border/40">
+              Baseado em receita média de{' '}
+              <span className="font-medium text-foreground">
+                {formatCurrency(metas[0].receita_media_3m)}
+              </span>
+              /mês (últimos 3 meses)
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -216,6 +237,16 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
                   ⚠ Aporte excede 50% do seu saldo disponível.
                 </AlertDescription>
               </Alert>
+            )}
+            {selectedMeta &&
+              (selectedMeta.receita_media_3m ?? 0) > 0 &&
+              selectedMeta.required_monthly > selectedMeta.receita_media_3m * 0.3 && (
+                <Alert className="p-2 bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+                  <AlertDescription className="text-xs text-amber-700 dark:text-amber-400">
+                    ⚠ Aporte necessário excede 30% da sua receita média (
+                    {formatCurrency(selectedMeta.receita_media_3m)}/mês).
+                  </AlertDescription>
+                </Alert>
             )}
 
             <div className="flex justify-end gap-2 pt-1">

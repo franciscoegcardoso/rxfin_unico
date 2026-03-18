@@ -1,79 +1,97 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import * as lancamentosService from '@/core/services/lancamentos';
 import type { LancamentoRealizado, LancamentoInput } from '@/core/types/lancamentos';
+import {
+  STALE,
+  lancamentosListQueryKey,
+  lancamentosPaginatedQueryKey,
+  lancamentosQueryFilter,
+} from '@/hooks/queryKeys';
 
-// Re-export types for backward compatibility
 export type { LancamentoRealizado, LancamentoInput };
 
 const PAGE_SIZE = 50;
 
 export type UseLancamentosRealizadosOptions = {
-  /** Se true, busca apenas uma página (evita travar com muitos registros). */
   paginated?: boolean;
   pageSize?: number;
-  /** Filtro por mês (yyyy-MM); ao mudar, page é resetada para 0. */
   mesReferencia?: string | null;
 };
+
+type LancamentosQueryResult =
+  | { mode: 'full'; list: LancamentoRealizado[] }
+  | { mode: 'paginated'; list: LancamentoRealizado[]; count: number };
 
 export function useLancamentosRealizados(options: UseLancamentosRealizadosOptions = {}) {
   const { paginated = false, pageSize = PAGE_SIZE, mesReferencia } = options;
   const { user } = useAuth();
-  const [lancamentos, setLancamentos] = useState<LancamentoRealizado[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
 
-  const fetchLancamentos = useCallback(async (pageIndex?: number) => {
-    if (!user) {
-      setLancamentos([]);
-      setTotalCount(0);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      if (paginated) {
-        const p = pageIndex ?? page;
-        const { data, count } = await lancamentosService.fetchLancamentosPaginated(
-          user.id,
-          p,
-          pageSize,
-          mesReferencia ?? undefined
-        );
-        setLancamentos(data);
-        setTotalCount(count);
-      } else {
-        const data = await lancamentosService.fetchLancamentos(user.id);
-        setLancamentos(data);
-        setTotalCount(data.length);
-      }
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching lancamentos:', err);
-      setError('Erro ao carregar lançamentos');
-    } finally {
-      setLoading(false);
-    }
-  }, [user, paginated, pageSize, mesReferencia, ...(paginated ? [page] : [])]);
+  const uid = user?.id ?? '';
 
   useEffect(() => {
     setPage(0);
   }, [mesReferencia]);
 
-  useEffect(() => {
-    fetchLancamentos();
-  }, [fetchLancamentos]);
+  const queryKey = useMemo(
+    () =>
+      paginated && uid
+        ? lancamentosPaginatedQueryKey(uid, page, pageSize, mesReferencia)
+        : lancamentosListQueryKey(uid || '__none__'),
+    [paginated, uid, page, pageSize, mesReferencia]
+  );
+
+  const { data, isPending, isFetching, error: queryError } = useQuery({
+    queryKey,
+    queryFn: async (): Promise<LancamentosQueryResult> => {
+      if (!user?.id) {
+        return paginated ? { mode: 'paginated', list: [], count: 0 } : { mode: 'full', list: [] };
+      }
+      if (paginated) {
+        const { data: rows, count } = await lancamentosService.fetchLancamentosPaginated(
+          user.id,
+          page,
+          pageSize,
+          mesReferencia ?? undefined
+        );
+        return { mode: 'paginated', list: rows, count };
+      }
+      const list = await lancamentosService.fetchLancamentos(user.id);
+      return { mode: 'full', list };
+    },
+    enabled: !!user?.id,
+    staleTime: STALE.LANCAMENTOS,
+    gcTime: STALE.GC_LANCAMENTOS,
+  });
+
+  const invalidateLancamentos = useCallback(async () => {
+    if (!user?.id) return;
+    await queryClient.invalidateQueries(lancamentosQueryFilter(user.id));
+  }, [queryClient, user?.id]);
+
+  const lancamentos =
+    data?.mode === 'full' ? data.list : data?.mode === 'paginated' ? data.list : [];
+  const totalCount = data?.mode === 'paginated' ? data.count : data?.mode === 'full' ? data.list.length : 0;
+  const loading = isPending || (isFetching && !data);
+  const error = queryError ? 'Erro ao carregar lançamentos' : null;
+
+  const fetchLancamentos = useCallback(
+    async (pageIndex?: number) => {
+      if (paginated && pageIndex !== undefined) setPage(pageIndex);
+      await invalidateLancamentos();
+    },
+    [paginated, invalidateLancamentos]
+  );
 
   const addLancamento = async (input: LancamentoInput) => {
     if (!user) {
-      toast.error('Usu?rio n?o autenticado');
+      toast.error('Utilizador não autenticado');
       return null;
     }
-
     try {
       await lancamentosService.createLancamentoRpc({
         p_tipo: input.tipo,
@@ -88,34 +106,33 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
         p_observacoes: input.observacoes ?? null,
         p_category_id: input.category_id ?? null,
       });
-      await fetchLancamentos();
-      toast.success('Lan?amento criado');
+      await invalidateLancamentos();
+      toast.success('Lançamento criado');
       return {} as LancamentoRealizado;
     } catch (err) {
       console.error('Error adding lancamento:', err);
-      toast.error('Erro ao adicionar lan?amento');
+      toast.error('Erro ao adicionar lançamento');
       return null;
     }
   };
 
   const addMultipleLancamentos = async (inputs: LancamentoInput[]) => {
     if (!user) {
-      toast.error('Usu?rio n?o autenticado');
+      toast.error('Utilizador não autenticado');
       return false;
     }
-
     try {
       const safeInputs = inputs.map((input) => ({
         ...input,
         valor_realizado: input.valor_realizado ?? input.valor_previsto,
       }));
-      const created = await lancamentosService.createMultipleLancamentos(user.id, safeInputs);
-      setLancamentos(prev => [...created, ...prev]);
-      toast.success(`${inputs.length} lan?amento(s) consolidado(s) com sucesso`);
+      await lancamentosService.createMultipleLancamentos(user.id, safeInputs);
+      await invalidateLancamentos();
+      toast.success(`${inputs.length} lançamento(s) consolidado(s) com sucesso`);
       return true;
     } catch (err) {
       console.error('Error adding multiple lancamentos:', err);
-      toast.error('Erro ao consolidar lan?amentos');
+      toast.error('Erro ao consolidar lançamentos');
       return false;
     }
   };
@@ -131,13 +148,13 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
       if (updates.data_pagamento !== undefined) p_data.data_pagamento = updates.data_pagamento;
       if (updates.forma_pagamento !== undefined) p_data.forma_pagamento = updates.forma_pagamento;
       if (updates.observacoes !== undefined) p_data.observacoes = updates.observacoes;
-      await lancamentosService.updateLancamentoRpc(id, p_data as any);
-      await fetchLancamentos();
-      toast.success('Lan?amento atualizado');
+      await lancamentosService.updateLancamentoRpc(id, p_data as never);
+      await invalidateLancamentos();
+      toast.success('Lançamento atualizado');
       return {} as LancamentoRealizado;
     } catch (err) {
       console.error('Error updating lancamento:', err);
-      toast.error('Erro ao atualizar lan?amento');
+      toast.error('Erro ao atualizar lançamento');
       return null;
     }
   };
@@ -145,7 +162,7 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
   const deleteLancamento = async (id: string) => {
     try {
       await lancamentosService.deleteLancamento(id);
-      if (paginated) await fetchLancamentos(); else setLancamentos(prev => prev.filter(l => l.id !== id));
+      await invalidateLancamentos();
       toast.success('Lançamento removido');
       return true;
     } catch (err) {
@@ -158,12 +175,12 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
   const softDeleteLancamento = async (id: string) => {
     try {
       await lancamentosService.softDeleteLancamentoRpc(id);
-      await fetchLancamentos();
-      toast.success('Lan?amento movido para a lixeira');
+      await invalidateLancamentos();
+      toast.success('Lançamento movido para a lixeira');
       return true;
     } catch (err) {
       console.error('Error soft deleting lancamento:', err);
-      toast.error('Erro ao excluir lan?amento');
+      toast.error('Erro ao excluir lançamento');
       return false;
     }
   };
@@ -171,7 +188,7 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
   const markLancamentoPaid = async (id: string, paid: boolean) => {
     try {
       await lancamentosService.markLancamentoPaidRpc(id, paid);
-      await fetchLancamentos();
+      await invalidateLancamentos();
       toast.success(paid ? 'Marcado como pago/recebido' : 'Desmarcado');
       return true;
     } catch (err) {
@@ -194,8 +211,8 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
         p_data_pagamento: dataPagamento,
         p_forma_pagamento: formaPagamento,
       });
-      await fetchLancamentos();
-      toast.success('Lan?amento atualizado com valor e data');
+      await invalidateLancamentos();
+      toast.success('Lançamento atualizado com valor e data');
       return true;
     } catch (err) {
       console.error('Error marking lancamento paid with values:', err);
@@ -207,17 +224,16 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
   const duplicateLancamentoNextMonth = async (id: string) => {
     try {
       const created = await lancamentosService.duplicateLancamentoNextMonthRpc(id);
+      await invalidateLancamentos();
       if (created) {
-        setLancamentos(prev => [created, ...prev]);
-        toast.success('Lan?amento duplicado para o pr?ximo m?s');
+        toast.success('Lançamento duplicado para o próximo mês');
         return created;
       }
-      await fetchLancamentos();
-      toast.success('Lan?amento duplicado para o pr?ximo m?s');
+      toast.success('Lançamento duplicado para o próximo mês');
       return null;
     } catch (err) {
       console.error('Error duplicating lancamento:', err);
-      toast.error('Erro ao duplicar lan?amento');
+      toast.error('Erro ao duplicar lançamento');
       return null;
     }
   };
@@ -225,23 +241,17 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
   const updateFriendlyName = async (id: string, friendlyName: string): Promise<boolean> => {
     try {
       await lancamentosService.updateFriendlyName(id, friendlyName);
-      setLancamentos(prev => prev.map(l => l.id === id ? { ...l, friendly_name: friendlyName } : l));
+      await invalidateLancamentos();
       return true;
     } catch (err) {
       console.error('Error updating friendly name:', err);
-      toast.error('Erro ao atualizar nome amig?vel');
+      toast.error('Erro ao atualizar nome amigável');
       return false;
     }
   };
 
-  const getLancamentosByMonth = (mes: string) => {
-    return lancamentos.filter(l => l.mes_referencia === mes);
-  };
-
-  const isMonthConsolidated = (mes: string) => {
-    return lancamentos.some(l => l.mes_referencia === mes);
-  };
-
+  const getLancamentosByMonth = (mes: string) => lancamentos.filter((l) => l.mes_referencia === mes);
+  const isMonthConsolidated = (mes: string) => lancamentos.some((l) => l.mes_referencia === mes);
   const totalPages = paginated && pageSize > 0 ? Math.ceil(totalCount / pageSize) : 1;
 
   return {

@@ -39,6 +39,8 @@ export function usePublicSimulators() {
       return isExpired ? 'free' : (data.subscription_plans as any)?.slug || 'free';
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
   const effectiveRole = isImpersonating && impersonatedRole
@@ -82,6 +84,8 @@ export function usePublicSimulators() {
           isComingSoon: effectiveAdmin ? false : !page.is_active_users,
         })) as SimulatorItem[];
     },
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   return {

@@ -25,7 +25,16 @@ export function useLatestSnapshot() {
         .maybeSingle();
 
       if (error) throw error;
-      return data as PortfolioSnapshot | null;
+      if (!data) return null;
+      const row = data as PortfolioSnapshot & {
+        portfolio_snapshot_items?: PortfolioSnapshot['items'];
+      };
+      return {
+        ...row,
+        items: row.items ?? row.portfolio_snapshot_items ?? [],
+        completeness_pct:
+          row.completeness_pct != null ? Number(row.completeness_pct) : null,
+      };
     },
   });
 }

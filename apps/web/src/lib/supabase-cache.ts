@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const TTL = {
-  LONG:   30 * 60 * 1000,
+  /** subscription_plans, pages (menu) — alinhado a staleTime React Query */
+  LONG:   15 * 60 * 1000,
   MEDIUM:  5 * 60 * 1000,
 } as const;
 

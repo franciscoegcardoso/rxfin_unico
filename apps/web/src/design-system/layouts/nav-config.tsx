@@ -6,6 +6,7 @@ import {
   User,
   type LucideIcon,
 } from "lucide-react";
+import { INVESTIMENTOS_ALOCACAO_PATH } from "@/constants/appPaths";
 
 /** Itens da bottom nav (mobile) e sidebar. Compromissos integrado em /movimentacoes/extrato e /movimentacoes/cartao-credito. */
 export const NAV_ITEMS: { path: string; label: string; icon: LucideIcon }[] = [
@@ -33,7 +34,7 @@ const TITLE_MAP: Record<string, string> = {
   "/bens-investimentos/fgts": "FGTS",
   "/bens-investimentos/credito": "Crédito",
   "/bens-investimentos/seguros": "Seguros",
-  "/bens-investimentos/investimentos/alocacao": "Alocação de Ativos",
+  [INVESTIMENTOS_ALOCACAO_PATH]: "Alocação de Ativos",
   "/simuladores": "Simuladores",
   "/simuladores/veiculos/simulador-fipe": "Simulador FIPE",
   "/minha-conta": "Minha Conta",

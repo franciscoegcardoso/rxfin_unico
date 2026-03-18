@@ -30,7 +30,12 @@ export function useAllocationPolicy() {
         .maybeSingle();
 
       if (error) throw error;
-      return data as AllocationPolicy | null;
+      if (!data) return null;
+      const row = data as AllocationPolicy & { allocation_targets?: AllocationTarget[] };
+      return {
+        ...row,
+        targets: row.targets ?? row.allocation_targets ?? [],
+      };
     },
   });
 }

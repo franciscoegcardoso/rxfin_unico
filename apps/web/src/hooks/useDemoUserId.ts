@@ -17,8 +17,8 @@ export function useDemoUserId(): string | null {
       if (error || !row) return null;
       return row.value as string;
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
   return data ?? null;
 }

@@ -220,6 +220,7 @@ const PlanejamentoAnual: React.FC = () => {
                     {chartData.map((row, i) => {
                       const plan = planejamentoAnual?.[i];
                       const hasData = plan?.has_data ?? false;
+                      const hasPlanning = plan?.has_planning ?? false;
                       const realizadoReceita = (plan?.realizado_receita ?? row.receita) as number;
                       const realizadoDespesaExtrato = (plan?.realizado_despesa_extrato ?? 0) as number;
                       const realizadoCartao = (plan?.realizado_cartao ?? 0) as number;
@@ -261,7 +262,21 @@ const PlanejamentoAnual: React.FC = () => {
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-medium text-sm text-foreground">{row.month}</span>
-                            <Badge variant={status.variant as any}>{status.label}</Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={status.variant as any}>{status.label}</Badge>
+                              {hasData && !hasPlanning && (
+                                <span
+                                  className="text-[10px] text-muted-foreground underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate('/planejamento/visao-mensal');
+                                  }}
+                                  title="Configurar planejamento mensal"
+                                >
+                                  Configurar
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-xs mt-1">

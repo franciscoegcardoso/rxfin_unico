@@ -29,6 +29,7 @@ import { MobileCtaBar } from "@/components/landing/MobileCtaBar";
 import { CanonicalLink } from "@/components/seo/CanonicalLink";
 import { RaioXChat } from "./components/ai/RaioXChat";
 import { useAuth } from "@/contexts/AuthContext";
+import { INVESTIMENTOS_ALOCACAO_PATH, LEGACY_ALOCACAO_ROUTE_SEGMENT } from "@/constants/appPaths";
 
 // ─── ESTÁTICO: carregado em TODA sessão ──────────────────────────────────────
 import Login from "./pages/Login";
@@ -221,6 +222,7 @@ const App = () => (
                                     <Route path="imoveis" element={<MeusImoveis />} />
                                     <Route path="veiculos" element={<MeusVeiculos />} />
                                     <Route path="investimentos" element={<InvestimentosTab />} />
+                                    {/* Alocação: sub-rota de B&I > Investimentos (padrão tipo movimentacoes/cartao-credito) */}
                                     <Route path="investimentos/alocacao" element={<Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AlocacaoRoute /></Suspense>} />
                                     <Route path="fgts" element={<FGTSPage />} />
                                     <Route path="passivos" element={<Navigate to="/passivos" replace />} />
@@ -280,7 +282,7 @@ const App = () => (
                                   <Route path="instituicoes" element={<InstituicoesFinanceiras />} />
                                   <Route path="dados-financeiros" element={<DadosFinanceiros />} />
                                   <Route path="dados" element={<DadosFinanceiros />} />
-                                  <Route path="alocacao" element={<Navigate to="/bens-investimentos/investimentos/alocacao" replace />} />
+                                  <Route path={LEGACY_ALOCACAO_ROUTE_SEGMENT} element={<Navigate to={INVESTIMENTOS_ALOCACAO_PATH} replace />} />
 
                                   <Route path="financeiro" element={<FinanceiroLayout />}>
                                     <Route index element={<Navigate to="planos" replace />} />

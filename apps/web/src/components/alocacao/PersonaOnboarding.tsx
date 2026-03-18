@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import type { AssetClass, OnboardingPersona } from '@/types/allocation';
 import {
   PERSONA_DEFAULTS,
-  useCreateAllocationPolicy,
-} from '@/hooks/useAllocationPolicy';
+  useUpsertAllocationPolicy,
+} from '@/hooks/useAllocationDashboard';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const PERSONAS: {
   id: OnboardingPersona;
@@ -14,25 +17,25 @@ const PERSONAS: {
   {
     id: 'acumulador',
     title: 'Acumulador Sistemático',
-    desc: 'Aporto todo mês e quero saber onde colocar para manter minha estratégia',
+    desc: 'Aporto todo mês, quero saber onde colocar',
     emoji: '📊',
   },
   {
     id: 'engenheiro',
     title: 'Engenheiro de Portfolio',
-    desc: 'Já gerencio minha carteira em planilha e quero automatizar o controle',
+    desc: 'Gerencio minha carteira e quero automatizar',
     emoji: '⚙️',
   },
   {
     id: 'fii_dependente',
-    title: 'Renda Passiva FIIs',
-    desc: 'Tenho foco em renda passiva com Fundos Imobiliários',
+    title: 'Renda Passiva com FIIs',
+    desc: 'Foco em FIIs para renda passiva',
     emoji: '🏢',
   },
   {
     id: 'iniciante',
     title: 'Iniciante Assessorado',
-    desc: 'Tenho carteira mas quero entender melhor minha alocação',
+    desc: 'Tenho carteira mas quero entender melhor',
     emoji: '🎓',
   },
 ];
@@ -46,12 +49,7 @@ const CLASS_LABELS: Record<AssetClass, string> = {
   alternativo: 'Alternativo',
 };
 
-const ACTIVE_CLASSES: AssetClass[] = [
-  'renda_fixa',
-  'acoes',
-  'fii',
-  'internacional',
-];
+const ACTIVE_CLASSES: AssetClass[] = ['renda_fixa', 'acoes', 'fii', 'internacional'];
 
 interface Props {
   onComplete: () => void;
@@ -61,15 +59,10 @@ export function PersonaOnboarding({ onComplete }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [persona, setPersona] = useState<OnboardingPersona | null>(null);
   const [targets, setTargets] = useState<Record<AssetClass, number>>({
-    renda_fixa: 40,
-    acoes: 35,
-    fii: 20,
-    internacional: 5,
-    cripto: 0,
-    alternativo: 0,
+    ...PERSONA_DEFAULTS.acumulador,
   });
 
-  const createPolicy = useCreateAllocationPolicy();
+  const upsert = useUpsertAllocationPolicy();
 
   function selectPersona(p: OnboardingPersona) {
     setPersona(p);
@@ -81,36 +74,36 @@ export function PersonaOnboarding({ onComplete }: Props) {
     setTargets((prev) => ({ ...prev, [cls]: value }));
   }
 
-  const totalPct = ACTIVE_CLASSES.reduce(
-    (sum, cls) => sum + (targets[cls] ?? 0),
-    0
-  );
-  const isValid = Math.abs(totalPct - 100) < 1;
+  const totalPct = ACTIVE_CLASSES.reduce((sum, cls) => sum + (targets[cls] ?? 0), 0);
+  const isValid = Math.abs(totalPct - 100) < 0.01;
 
   async function handleConfirm() {
     if (!persona || !isValid) return;
-    await createPolicy.mutateAsync({ persona, targets });
-    setStep(3);
+    try {
+      await upsert.mutateAsync({ persona, targets });
+      setStep(3);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Não foi possível salvar a política.');
+    }
   }
 
   if (step === 3) {
     return (
-      <div className="flex flex-col items-center gap-4 py-8 text-center">
-        <div className="text-5xl">✅</div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
-          Política configurada!
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400 max-w-sm">
-          Agora conecte sua corretora para ver como sua carteira real se
-          compara com sua estratégia.
+      <div className="flex flex-col items-center gap-5 py-10 text-center px-4">
+        <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center border-2 border-emerald-500/40">
+          <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Política configurada!</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Sua estratégia de alocação está ativa. Conecte sua corretora para acompanhar o alinhamento
+          em tempo real.
         </p>
         <button
           type="button"
           onClick={onComplete}
-          className="mt-2 px-6 py-2.5 bg-[#00C896] hover:bg-[#00b085] text-white
-                     font-semibold rounded-lg transition-colors"
+          className="mt-2 px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-colors"
         >
-          Ver minha carteira
+          Ver minha alocação
         </button>
       </div>
     );
@@ -118,13 +111,11 @@ export function PersonaOnboarding({ onComplete }: Props) {
 
   if (step === 2) {
     return (
-      <div className="flex flex-col gap-6 max-w-md mx-auto">
+      <div className="flex flex-col gap-6 max-w-md mx-auto px-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
-            Ajuste seus alvos
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Defina quanto quer em cada classe. Total deve ser 100%.
+          <h2 className="text-xl font-bold text-foreground">Ajuste sua alocação</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Os percentuais devem somar exatamente 100%.
           </p>
         </div>
 
@@ -132,10 +123,8 @@ export function PersonaOnboarding({ onComplete }: Props) {
           {ACTIVE_CLASSES.map((cls) => (
             <div key={cls} className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {CLASS_LABELS[cls]}
-                </label>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200 w-12 text-right">
+                <label className="text-sm font-medium text-foreground">{CLASS_LABELS[cls]}</label>
+                <span className="text-sm font-bold text-foreground w-12 text-right tabular-nums">
                   {targets[cls]}%
                 </span>
               </div>
@@ -146,23 +135,23 @@ export function PersonaOnboarding({ onComplete }: Props) {
                 step={5}
                 value={targets[cls]}
                 onChange={(e) => updateTarget(cls, Number(e.target.value))}
-                className="w-full accent-[#00C896]"
+                className="w-full accent-primary h-2"
               />
             </div>
           ))}
         </div>
 
         <div
-          className={`flex items-center justify-between rounded-lg px-4 py-2.5 font-semibold text-sm
-          ${
+          className={cn(
+            'flex items-center justify-between rounded-lg px-4 py-2.5 font-semibold text-sm border',
             isValid
-              ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-              : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-          }`}
+              ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+              : 'bg-destructive/10 text-destructive border-destructive/30'
+          )}
         >
           <span>Total</span>
-          <span>
-            {totalPct}% {isValid ? '✓' : `(faltam ${100 - totalPct}%)`}
+          <span className="tabular-nums">
+            {totalPct.toFixed(0)}% {isValid ? '✓' : `(ajuste ${100 - totalPct}%)`}
           </span>
         </div>
 
@@ -170,19 +159,18 @@ export function PersonaOnboarding({ onComplete }: Props) {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="flex-1 px-4 py-2.5 border border-slate-200 dark:border-slate-600
-                       text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium"
+            className="flex-1 px-4 py-2.5 border border-border text-foreground rounded-lg text-sm font-medium inline-flex items-center justify-center gap-2 hover:bg-muted/80"
           >
+            <ChevronLeft className="w-4 h-4" />
             Voltar
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            disabled={!isValid || createPolicy.isPending}
-            className="flex-1 px-4 py-2.5 bg-[#00C896] hover:bg-[#00b085] disabled:opacity-50
-                       text-white font-semibold rounded-lg text-sm transition-colors"
+            disabled={!isValid || upsert.isPending}
+            className="flex-1 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground font-semibold rounded-lg text-sm transition-colors"
           >
-            {createPolicy.isPending ? 'Salvando...' : 'Confirmar'}
+            {upsert.isPending ? 'Salvando…' : 'Confirmar'}
           </button>
         </div>
       </div>
@@ -190,13 +178,11 @@ export function PersonaOnboarding({ onComplete }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-md mx-auto">
+    <div className="flex flex-col gap-6 max-w-lg mx-auto px-4">
       <div>
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
-          Qual é o seu perfil?
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Isso define a estratégia inicial da sua carteira.
+        <h2 className="text-xl font-bold text-foreground">Como você investe?</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Escolha o perfil que mais combina com você — ajuste os percentuais no próximo passo.
         </p>
       </div>
 
@@ -206,20 +192,17 @@ export function PersonaOnboarding({ onComplete }: Props) {
             key={p.id}
             type="button"
             onClick={() => selectPersona(p.id)}
-            className="flex items-start gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700
-                       bg-white dark:bg-slate-800/50 hover:border-[#00C896] hover:bg-green-50
-                       dark:hover:bg-green-900/10 dark:hover:border-[#00C896]
-                       text-left transition-all group"
+            className={cn(
+              'w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card',
+              'hover:border-primary/60 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all text-left group'
+            )}
           >
-            <span className="text-2xl mt-0.5">{p.emoji}</span>
-            <div>
-              <p className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#00C896]">
-                {p.title}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                {p.desc}
-              </p>
+            <span className="text-2xl shrink-0">{p.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground group-hover:text-primary">{p.title}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{p.desc}</p>
             </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary shrink-0" />
           </button>
         ))}
       </div>

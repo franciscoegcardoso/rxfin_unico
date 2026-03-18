@@ -7,6 +7,7 @@ import { useSubscriptionPermissions } from '@/hooks/useSubscriptionPermissions';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
 import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart, ArrowLeftRight } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
+import { LEGACY_ALOCACAO_PATH } from '@/constants/appPaths';
 
 export interface NavPage {
   id: string;
@@ -267,7 +268,7 @@ export function useNavMenuPages(): NavMenuData {
   const effectiveAdmin = confirmedAdmin && (!isImpersonating || impersonatedRole === 'admin');
   
   const { data, isLoading, error } = useQuery({
-    queryKey: ['nav-menu-pages', user?.id, subscriptionRole, isAdmin],
+    queryKey: ['pages', 'nav-menu-full'],
     queryFn: async () => {
       // Buscar TODAS as páginas (ativas e inativas) com informações do grupo
       const { data: pages, error: pagesError } = await supabase
@@ -320,7 +321,8 @@ export function useNavMenuPages(): NavMenuData {
       return transformedPages;
     },
     enabled: true, // Sempre ativo, mesmo sem usuário logado (para páginas públicas)
-    staleTime: 5 * 60 * 1000, // 5 minutos de cache
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -342,7 +344,7 @@ export function useNavMenuPages(): NavMenuData {
   const seenMainPaths = new Set<string>();
   const mainItems: NavMenuItem[] = pages
     .filter(page => page.group_slug === MAIN_NAV_GROUP_SLUG)
-    .filter(page => page.path !== '/alocacao') // Alocação movida para B&I > Investimentos
+    .filter((page) => page.path !== LEGACY_ALOCACAO_PATH) // canonical: /bens-investimentos/investimentos/alocacao
     .filter(page => !isPageHiddenFromMenu(page))
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)

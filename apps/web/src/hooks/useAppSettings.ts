@@ -64,6 +64,7 @@ export function useAppSettings() {
       return settingsMap as unknown as AppSettings;
     },
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const updateSetting = useMutation({

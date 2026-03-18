@@ -13,6 +13,7 @@ export interface MetaComProgresso {
   months_remaining: number | null;
   required_monthly: number;
   risk_level: 'ok' | 'atencao' | 'critica' | 'concluida' | 'sem_prazo' | 'vencida';
+  receita_media_3m: number; // média de receita dos últimos 3 meses — vem da RPC
 }
 
 export function useMetas() {

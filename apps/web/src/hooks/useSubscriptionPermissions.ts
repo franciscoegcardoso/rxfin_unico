@@ -1,4 +1,5 @@
-import { useEffect, useState, useMemo, useContext } from 'react';
+import { useMemo, useContext } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
@@ -6,15 +7,13 @@ import { ImpersonationContext } from '@/contexts/ImpersonationContext';
 
 export type SubscriptionRole = 'sem_cadastro' | 'free' | 'starter' | 'pro' | 'premium' | 'admin';
 
-// Plan hierarchy: lower index = more restricted, higher = more access
-// (1) Sem Cadastro → (2) Free → (3) RX Starter → (4) RX Pro
 const PLAN_HIERARCHY: Record<string, number> = {
   sem_cadastro: 1,
   free: 2,
-  starter: 3, // RX Starter
-  basic: 3,   // Legacy alias for starter
-  pro: 4,     // RX Pro
-  premium: 4, // Legacy, same as pro
+  starter: 3,
+  basic: 3,
+  pro: 4,
+  premium: 4,
 };
 
 interface PageWithPlan {
@@ -28,11 +27,57 @@ export const useSubscriptionPermissions = () => {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const impersonationContext = useContext(ImpersonationContext);
-  const [realSubscriptionRole, setRealSubscriptionRole] = useState<SubscriptionRole>('free');
-  const [pages, setPages] = useState<PageWithPlan[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Determine effective subscription role (real or impersonated)
+  const { data: pages = [], isLoading: pagesLoading } = useQuery({
+    queryKey: ['pages', 'permission-slugs'],
+    queryFn: async () => {
+      const { data: pagesData, error } = await supabase
+        .from('pages')
+        .select('slug, path, min_plan_slug, is_active_users');
+      if (error) {
+        console.error('Error fetching pages for permissions:', error);
+        return [];
+      }
+      return (pagesData ?? []) as PageWithPlan[];
+    },
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
+
+  const { data: fetchedRole, isLoading: roleLoading } = useQuery({
+    queryKey: ['workspace-subscription-role', user?.id],
+    queryFn: async (): Promise<SubscriptionRole> => {
+      const { data: workspaceData, error: wsError } = await supabase
+        .from('workspaces')
+        .select(
+          `
+            plan_id,
+            plan_expires_at,
+            subscription_plans:plan_id(slug, order_index)
+          `
+        )
+        .eq('owner_id', user!.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (wsError) {
+        console.error('Error fetching workspace plan:', wsError);
+        return 'free';
+      }
+      if (!workspaceData || !workspaceData.subscription_plans) return 'free';
+      const planSlug = (workspaceData.subscription_plans as { slug?: string })?.slug || 'free';
+      const isExpired = workspaceData.plan_expires_at
+        ? new Date(workspaceData.plan_expires_at) < new Date()
+        : false;
+      return (isExpired ? 'free' : planSlug) as SubscriptionRole;
+    },
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+  });
+
+  const realSubscriptionRole: SubscriptionRole = !user?.id ? 'sem_cadastro' : (fetchedRole ?? 'free');
+
   const subscriptionRole = useMemo((): SubscriptionRole => {
     if (impersonationContext?.isImpersonating && impersonationContext.impersonatedRole) {
       return impersonationContext.impersonatedRole as SubscriptionRole;
@@ -40,81 +85,19 @@ export const useSubscriptionPermissions = () => {
     return realSubscriptionRole;
   }, [impersonationContext?.isImpersonating, impersonationContext?.impersonatedRole, realSubscriptionRole]);
 
-  // Get user's plan hierarchy level
   const userPlanLevel = useMemo(() => {
     if (impersonationContext?.impersonatedRole === 'admin') return Infinity;
     if (!impersonationContext?.isImpersonating && isAdmin) return Infinity;
     return PLAN_HIERARCHY[subscriptionRole] || PLAN_HIERARCHY.free;
   }, [subscriptionRole, isAdmin, impersonationContext?.isImpersonating, impersonationContext?.impersonatedRole]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // Fetch pages with path and min_plan_slug for dynamic permission checking
-      const { data: pagesData } = await supabase
-        .from('pages')
-        .select('slug, path, min_plan_slug, is_active_users');
-      
-      if (pagesData) {
-        setPages(pagesData as PageWithPlan[]);
-      }
-
-      if (!user?.id) {
-        setRealSubscriptionRole('sem_cadastro');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Derive subscription role from workspace → subscription_plans
-        const { data: workspaceData, error: wsError } = await supabase
-          .from('workspaces')
-          .select(`
-            plan_id,
-            plan_expires_at,
-            subscription_plans:plan_id(slug, order_index)
-          `)
-          .eq('owner_id', user.id)
-          .eq('is_active', true)
-          .maybeSingle();
-
-        if (wsError) {
-          console.error('Error fetching workspace plan:', wsError);
-          setRealSubscriptionRole('free');
-          setLoading(false);
-          return;
-        }
-
-        if (!workspaceData || !workspaceData.subscription_plans) {
-          setRealSubscriptionRole('free');
-          setLoading(false);
-          return;
-        }
-
-        const planSlug = (workspaceData.subscription_plans as any)?.slug || 'free';
-        
-        // Check if plan is expired - if so, treat as free
-        const isExpired = workspaceData.plan_expires_at 
-          ? new Date(workspaceData.plan_expires_at) < new Date()
-          : false;
-
-        const role = (isExpired ? 'free' : planSlug) as SubscriptionRole;
-        setRealSubscriptionRole(role);
-      } catch (error) {
-        console.error('Error fetching subscription data:', error);
-        setRealSubscriptionRole('free');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user?.id]);
+  const loading = !!user?.id && (pagesLoading || roleLoading);
 
   const hasPermission = (featureSlug: string): boolean => {
     if (impersonationContext?.impersonatedRole === 'admin') return true;
     if (!impersonationContext?.isImpersonating && isAdmin) return true;
 
-    const page = pages.find(p => p.slug === featureSlug);
+    const page = pages.find((p) => p.slug === featureSlug);
     if (!page) return true;
     if (!page.is_active_users) return false;
 
@@ -127,7 +110,7 @@ export const useSubscriptionPermissions = () => {
     if (impersonationContext?.impersonatedRole === 'admin') return true;
     if (!impersonationContext?.isImpersonating && isAdmin) return true;
 
-    const page = pages.find(p => p.path === route);
+    const page = pages.find((p) => p.path === route);
     if (!page) return true;
     if (!page.is_active_users) return false;
 
@@ -137,7 +120,7 @@ export const useSubscriptionPermissions = () => {
   };
 
   const getRequiredPlanForRoute = (route: string): string | null => {
-    const page = pages.find(p => p.path === route);
+    const page = pages.find((p) => p.path === route);
     return page?.min_plan_slug || null;
   };
 

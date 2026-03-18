@@ -106,6 +106,8 @@ import { CarComparisonVerdict } from '@/components/simuladores/CarComparisonVerd
 import { ComparisonCardGenerator } from '@/components/simuladores/ComparisonCardGenerator';
 import { CarABOwnershipCostSection } from '@/components/simuladores/CarABOwnershipCostSection';
 import { Scale as ScaleIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { buildVehicleFipeComparisonSeries } from '@/utils/buildFipeHistoryComparisonSeries';
 import { useFipeFavorites } from '@/hooks/useFipeFavorites';
 import { useUserKV } from '@/hooks/useUserKV';
 
@@ -383,6 +385,10 @@ const SimuladorCarroAB: React.FC = () => {
   // HISTÓRICO FIPE - Fetch full price history for each vehicle
   // ============================================================================
   useEffect(() => {
+    if (configA.isZeroKm) {
+      fipeHistoryA.reset();
+      return;
+    }
     if (fipeA.price?.CodigoFipe && fipeA.selectedYear && fipeA.price?.AnoModelo) {
       const vehicleTypeV2 = mapVehicleTypeToV2(fipeA.vehicleType);
       const parsedModelYear = Number(String(fipeA.selectedYear).split('-')[0]);
@@ -391,9 +397,13 @@ const SimuladorCarroAB: React.FC = () => {
     } else {
       fipeHistoryA.reset();
     }
-  }, [fipeA.price?.CodigoFipe, fipeA.selectedYear, fipeA.vehicleType, fipeA.price?.AnoModelo]);
+  }, [configA.isZeroKm, fipeA.price?.CodigoFipe, fipeA.selectedYear, fipeA.vehicleType, fipeA.price?.AnoModelo]);
 
   useEffect(() => {
+    if (configB.isZeroKm) {
+      fipeHistoryB.reset();
+      return;
+    }
     if (fipeB.price?.CodigoFipe && fipeB.selectedYear && fipeB.price?.AnoModelo) {
       const vehicleTypeV2 = mapVehicleTypeToV2(fipeB.vehicleType);
       const parsedModelYear = Number(String(fipeB.selectedYear).split('-')[0]);
@@ -402,7 +412,16 @@ const SimuladorCarroAB: React.FC = () => {
     } else {
       fipeHistoryB.reset();
     }
-  }, [fipeB.price?.CodigoFipe, fipeB.selectedYear, fipeB.vehicleType, fipeB.price?.AnoModelo]);
+  }, [configB.isZeroKm, fipeB.price?.CodigoFipe, fipeB.selectedYear, fipeB.vehicleType, fipeB.price?.AnoModelo]);
+
+  const hasZeroKmVehicle = configA.isZeroKm || configB.isZeroKm;
+  const [showProjectionAB, setShowProjectionAB] = useState(
+    () => configA.isZeroKm || configB.isZeroKm
+  );
+  useEffect(() => {
+    if (hasZeroKmVehicle) setShowProjectionAB(true);
+    else setShowProjectionAB(false);
+  }, [hasZeroKmVehicle]);
 
   // COST OVERRIDES - permite usuário editar custos estimados na tabela comparativa
   // ============================================================================
@@ -468,6 +487,53 @@ const SimuladorCarroAB: React.FC = () => {
   // Só usa customValue quando sourceType é 'manual', caso contrário precisa de FIPE selecionado
   const valueA = configA.sourceType === 'manual' ? configA.customValue : fipeA.priceValue;
   const valueB = configB.sourceType === 'manual' ? configB.customValue : fipeB.priceValue;
+
+  const fullSeriesA = useMemo(
+    () =>
+      buildVehicleFipeComparisonSeries({
+        priceHistory: configA.isZeroKm ? [] : fipeHistoryA.priceHistory,
+        currentPrice: valueA,
+        isZeroKm: configA.isZeroKm,
+        modelYear: fipeInfoA.modelYear,
+        engineV2Result: depreciationEngineA.result,
+        cohortData: fipeHistoryA.cohortData,
+      }),
+    [
+      configA.isZeroKm,
+      fipeHistoryA.priceHistory,
+      fipeHistoryA.cohortData,
+      valueA,
+      fipeInfoA.modelYear,
+      depreciationEngineA.result,
+    ]
+  );
+  const fullSeriesB = useMemo(
+    () =>
+      buildVehicleFipeComparisonSeries({
+        priceHistory: configB.isZeroKm ? [] : fipeHistoryB.priceHistory,
+        currentPrice: valueB,
+        isZeroKm: configB.isZeroKm,
+        modelYear: fipeInfoB.modelYear,
+        engineV2Result: depreciationEngineB.result,
+        cohortData: fipeHistoryB.cohortData,
+      }),
+    [
+      configB.isZeroKm,
+      fipeHistoryB.priceHistory,
+      fipeHistoryB.cohortData,
+      valueB,
+      fipeInfoB.modelYear,
+      depreciationEngineB.result,
+    ]
+  );
+  const chartDataA = useMemo(
+    () => (showProjectionAB ? fullSeriesA : fullSeriesA.filter((d) => !d.isProjection)),
+    [fullSeriesA, showProjectionAB]
+  );
+  const chartDataB = useMemo(
+    () => (showProjectionAB ? fullSeriesB : fullSeriesB.filter((d) => !d.isProjection)),
+    [fullSeriesB, showProjectionAB]
+  );
 
   // Unlock Car B when Car A has a valid value
   useEffect(() => {
@@ -1391,22 +1457,49 @@ const SimuladorCarroAB: React.FC = () => {
         </div>
 
         {/* Histórico FIPE - Combined chart */}
-        {(fipeA.price || fipeB.price) && (fipeHistoryA.hasHistory || fipeHistoryA.loading || fipeHistoryB.hasHistory || fipeHistoryB.loading) && (
+        {(fipeA.price || fipeB.price) &&
+          ((!configA.isZeroKm && (fipeHistoryA.hasHistory || fipeHistoryA.loading)) ||
+            (!configB.isZeroKm && (fipeHistoryB.hasHistory || fipeHistoryB.loading)) ||
+            (configA.isZeroKm && valueA > 0 && !!fipeA.price) ||
+            (configB.isZeroKm && valueB > 0 && !!fipeB.price)) && (
           <MobileSectionDrawer
             title="Histórico FIPE"
             icon={<BarChart3 className="h-4 w-4 text-primary" />}
             isTabletOrMobile={isTabletOrMobile}
           >
-            <FipeHistoryComparisonChart
-              historyA={fipeHistoryA.priceHistory}
-              historyB={fipeHistoryB.priceHistory}
-              loadingA={fipeHistoryA.loading}
-              loadingB={fipeHistoryB.loading}
-              nameA={fipeA.price ? `${fipeA.price.Marca} ${fipeA.price.Modelo}` : 'Carro A'}
-              nameB={fipeB.price ? `${fipeB.price.Marca} ${fipeB.price.Modelo}` : 'Carro B'}
-              hasHistoryA={fipeHistoryA.hasHistory}
-              hasHistoryB={fipeHistoryB.hasHistory}
-            />
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2 text-sm px-1">
+                <Switch
+                  id="show-projection-ab"
+                  checked={showProjectionAB}
+                  onCheckedChange={(val) => {
+                    if (!hasZeroKmVehicle) setShowProjectionAB(val);
+                  }}
+                  disabled={hasZeroKmVehicle}
+                />
+                <label
+                  htmlFor="show-projection-ab"
+                  className={cn('cursor-pointer', hasZeroKmVehicle && 'text-muted-foreground')}
+                >
+                  Mostrar projeção
+                </label>
+                {hasZeroKmVehicle && (
+                  <span className="text-xs text-muted-foreground">
+                    (obrigatório quando há veículo 0 km)
+                  </span>
+                )}
+              </div>
+              <FipeHistoryComparisonChart
+                historyA={chartDataA}
+                historyB={chartDataB}
+                loadingA={!configA.isZeroKm && !!fipeA.price?.CodigoFipe && fipeHistoryA.loading}
+                loadingB={!configB.isZeroKm && !!fipeB.price?.CodigoFipe && fipeHistoryB.loading}
+                nameA={fipeA.price ? `${fipeA.price.Marca} ${fipeA.price.Modelo}` : 'Carro A'}
+                nameB={fipeB.price ? `${fipeB.price.Marca} ${fipeB.price.Modelo}` : 'Carro B'}
+                hasHistoryA={chartDataA.length > 0}
+                hasHistoryB={chartDataB.length > 0}
+              />
+            </div>
           </MobileSectionDrawer>
         )}
 

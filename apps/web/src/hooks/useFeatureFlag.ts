@@ -13,7 +13,8 @@ export function useFeatureFlag(flag: string): boolean {
       if (error) return false;
       return row?.value === 'true';
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
   return data ?? false;
 }

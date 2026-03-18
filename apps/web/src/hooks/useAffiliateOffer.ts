@@ -32,7 +32,8 @@ export function useAffiliateOffer() {
         ativo: typeof val.ativo === 'boolean' ? val.ativo : FALLBACK.ativo,
       };
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   return {

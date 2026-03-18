@@ -28,7 +28,8 @@ export function usePageAvailability(routes: string[]) {
 
       return (data || []) as PageAvailability[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 
   const isRouteAvailable = (route: string): boolean => {

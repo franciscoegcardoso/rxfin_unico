@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -26,7 +27,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { usePluggyInvestments, InvestmentCategoryData, InvestmentCategory } from '@/hooks/usePluggyInvestments';
+import { usePluggyInvestments, InvestmentCategory, InvestmentCategoryData } from '@/hooks/usePluggyInvestments';
+import { useInvestmentsList } from '@/hooks/useInvestmentsList';
+import { groupInvestments } from '@/utils/groupInvestments';
+import { InvestmentGroupHeader } from '@/components/bens-investimentos/InvestmentGroupHeader';
+import { InvestmentListItemRow } from '@/components/bens-investimentos/InvestmentListItemRow';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
@@ -45,6 +50,19 @@ const formatCurrency = (value: number) =>
 
 const formatPercent = (value: number | null) =>
   value != null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
+
+function pluggyCategoryForGroupLabel(label: string): InvestmentCategory {
+  const m: Record<string, InvestmentCategory> = {
+    Ações: 'Ações',
+    FIIs: 'FIIs',
+    ETFs: 'ETFs',
+    'Renda Fixa': 'Renda Fixa',
+    Fundos: 'Fundos',
+    Previdência: 'Outros',
+    Outros: 'Outros',
+  };
+  return m[label] ?? 'Outros';
+}
 
 const categoryConfig: Record<InvestmentCategory, { icon: React.ReactNode; color: string; chartColor: string }> = {
   'Renda Fixa': { icon: <PiggyBank className="h-5 w-5" />, color: 'bg-blue-500', chartColor: '#3b82f6' },
@@ -84,6 +102,28 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     onboardingStatus,
   } = usePluggyInvestments();
 
+  const queryClient = useQueryClient();
+  const investmentsListQuery = useInvestmentsList();
+
+  const rpcItems = investmentsListQuery.data;
+  const rpcGrouped = useMemo(() => {
+    if (!rpcItems?.length) return null;
+    return groupInvestments(rpcItems);
+  }, [rpcItems]);
+
+  const hasPluggyListData =
+    allInvestments.length > 0 ||
+    totalBalance > 0 ||
+    categories.some((c) => c.items.length > 0);
+  /** Evita lista legada (nome/logo errados) enquanto get_investments_list carrega */
+  const showRpcListSkeleton =
+    !!user?.id &&
+    !rpcItems?.length &&
+    investmentsListQuery.isLoading &&
+    hasPluggyListData;
+
+  const useRpcListLayout = !!rpcGrouped && rpcGrouped.length > 0;
+
   const [showOnboardingCard, setShowOnboardingCard] = useState(true);
   const showOnboarding = showOnboardingCard && onboardingStatus?.should_show === true;
 
@@ -91,31 +131,53 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     setShowOnboardingCard(false);
     if (user?.id) {
       await supabase.rpc('mark_investment_onboarding_seen', { p_user_id: user.id });
-      refetch();
+      void refetch();
+      void queryClient.invalidateQueries({ queryKey: ['investments-list'] });
     }
-  }, [user?.id, refetch]);
+  }, [user?.id, refetch, queryClient]);
 
   React.useEffect(() => {
-    if (refreshTrigger > 0) void refetch();
-  }, [refreshTrigger, refetch]);
+    if (refreshTrigger > 0) {
+      void refetch();
+      void queryClient.invalidateQueries({ queryKey: ['investments-list'] });
+    }
+  }, [refreshTrigger, refetch, queryClient]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [chartType, setChartType] = useState<'treemap' | 'pie'>('treemap');
 
   const treemapData: TreemapItem[] = useMemo(() => {
-    return categories.map(cat => ({
+    if (rpcGrouped && rpcGrouped.length > 0) {
+      return rpcGrouped.map((g) => {
+        const catKey = pluggyCategoryForGroupLabel(g.label);
+        const color = categoryConfig[catKey]?.chartColor ?? '#6b7280';
+        return {
+          id: g.label,
+          name: g.label,
+          value: g.totalBalance,
+          color,
+          children: g.items.map((item) => ({
+            id: item.id,
+            name: item.display_name,
+            value: item.balance,
+            color,
+          })),
+        };
+      });
+    }
+    return categories.map((cat) => ({
       id: cat.category,
       name: cat.category,
       value: cat.totalBalance,
       color: categoryConfig[cat.category]?.chartColor,
-      children: cat.items.map(inv => ({
+      children: cat.items.map((inv) => ({
         id: inv.id,
         name: inv.name || inv.code || 'Sem nome',
         value: inv.balance,
         color: categoryConfig[cat.category]?.chartColor,
       })),
     }));
-  }, [categories]);
+  }, [categories, rpcGrouped]);
 
   const toggleCategory = (cat: string) => {
     setExpandedCategories(prev => {
@@ -136,7 +198,13 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         {showOnboarding && onboardingStatus && (
           <InvestmentOnboardingCard onboarding={onboardingStatus} onDismiss={handleOnboardingDismiss} />
         )}
-        <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
+        <InvestmentSyncAlert
+          rows={syncAlertRows}
+          onRefresh={() => {
+            void refetch();
+            void queryClient.invalidateQueries({ queryKey: ['investments-list'] });
+          }}
+        />
       </div>
     );
   }
@@ -395,151 +463,211 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         </CardContent>
       </Card>
 
-      {/* Category cards */}
-      {categories.map(cat => {
-        const config = categoryConfig[cat.category];
-        const isExpanded = expandedCategories.has(cat.category);
-        const summaryRow = summaryByCategory[cat.category];
-        const showGrossNet = summaryRow && summaryRow.gross_net_spread > 0;
-        const deltaLabel = cat.category === 'Renda Fixa' ? 'IR est.' : cat.category === 'Fundos' ? 'lag de cota' : '';
+      {/* Category list — RPC compact layout quando disponível */}
+      {showRpcListSkeleton ? (
+        <div className="w-full md:max-w-3xl md:mx-auto lg:max-w-4xl rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border-b border-border p-4 space-y-2">
+              <div className="h-5 bg-muted rounded w-1/3" />
+              <div className="h-12 bg-muted/60 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : useRpcListLayout && rpcGrouped ? (
+        <div className="w-full md:max-w-3xl md:mx-auto lg:max-w-4xl rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+          {rpcGrouped.map((g) => {
+            const catKey = pluggyCategoryForGroupLabel(g.label);
+            const summaryRow = summaryByCategory[catKey];
+            const pluggyCat = categories.find((c) => c.category === catKey);
+            const netTotal = totals?.net_total ?? totalBalance;
+            const allocationPct = netTotal > 0 ? (g.totalBalance / netTotal) * 100 : null;
+            const isExpanded = expandedCategories.has(g.label);
+            const coverageBadge =
+              summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100
+                ? `${summaryRow.sync_coverage_pct}% coberto`
+                : undefined;
 
-        return (
-          <Card key={cat.category}>
-            <button
-              onClick={() => toggleCategory(cat.category)}
-              className="w-full text-left"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white", config.color)}>
-                      {config.icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-base">{cat.category}</CardTitle>
-                        {summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100 && (
-                          <span
-                            title={`${summaryRow.sync_coverage_pct}% dos ativos desta classe foram retornados pelo Open Finance. Verifique o app do banco.`}
-                            className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40"
-                            style={{ cursor: 'default' }}
-                          >
-                            {summaryRow.sync_coverage_pct}% coberto
-                          </span>
-                        )}
-                        {summaryRow?.has_stale_data && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40">
-                            Cota desatualizada
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {cat.items.length} {cat.items.length === 1 ? 'ativo' : 'ativos'}
-                      </p>
-                    </div>
+            return (
+              <div key={g.label}>
+                <InvestmentGroupHeader
+                  label={g.label}
+                  count={g.items.length}
+                  totalBalance={g.totalBalance}
+                  isExpanded={isExpanded}
+                  onToggle={() => toggleCategory(g.label)}
+                  badge={summaryRow?.has_stale_data ? 'Cota desatualizada' : undefined}
+                  coverageBadge={coverageBadge}
+                  allocationPercent={allocationPct}
+                  avgLast12MonthsRate={pluggyCat?.avgLast12MonthsRate ?? null}
+                />
+                {isExpanded && (
+                  <div className="bg-card">
+                    {g.items.map((item) => (
+                      <InvestmentListItemRow key={item.id} item={item} />
+                    ))}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      {showGrossNet && summaryRow ? (
-                        <>
-                          <p className="text-[11px] text-muted-foreground">Bruto</p>
-                          <p className="font-semibold text-sm">{formatCurrency(summaryRow.gross_balance)}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">Líq.</p>
-                          <p className="font-semibold text-sm">{formatCurrency(summaryRow.net_balance)}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            (−{formatCurrency(summaryRow.gross_net_spread)} {deltaLabel})
-                          </p>
-                        </>
-                      ) : (
-                        <p className="font-semibold text-lg">{formatCurrency(cat.totalBalance)}</p>
-                      )}
-                      <div className="flex items-center gap-2 justify-end mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {cat.allocationPercent.toFixed(1)}%
-                        </Badge>
-                        {cat.avgLast12MonthsRate != null && (
-                          <span className={cn(
-                            "text-xs font-medium",
-                            cat.avgLast12MonthsRate >= 0 ? "text-income" : "text-expense"
-                          )}>
-                            12m: {formatPercent(cat.avgLast12MonthsRate)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-            </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        categories.map((cat) => {
+          const config = categoryConfig[cat.category];
+          const isExpanded = expandedCategories.has(cat.category);
+          const summaryRow = summaryByCategory[cat.category];
+          const showGrossNet = summaryRow && summaryRow.gross_net_spread > 0;
+          const deltaLabel =
+            cat.category === 'Renda Fixa' ? 'IR est.' : cat.category === 'Fundos' ? 'lag de cota' : '';
 
-            {isExpanded && (
-              <CardContent className="pt-0">
-                <Separator className="mb-3" />
-                <div className="space-y-2">
-                  {cat.items.map(inv => (
-                    <div
-                      key={inv.id}
-                      className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <AssetLogo
-                          ticker={inv.code ?? undefined}
-                          assetType={inv.type}
-                          logoUrl={inv.logo_url}
-                          name={inv.name}
-                          size="md"
-                          showTooltip
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate">{inv.name}</p>
-                          {inv.code && (
-                            <p className="text-xs text-muted-foreground">{inv.code}</p>
+          return (
+            <Card key={cat.category}>
+              <button
+                onClick={() => toggleCategory(cat.category)}
+                className="w-full text-left"
+                type="button"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          'h-10 w-10 rounded-full flex items-center justify-center text-white',
+                          config.color
+                        )}
+                      >
+                        {config.icon}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CardTitle className="text-base">{cat.category}</CardTitle>
+                          {summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100 && (
+                            <span
+                              title={`${summaryRow.sync_coverage_pct}% dos ativos desta classe foram retornados pelo Open Finance. Verifique o app do banco.`}
+                              className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40"
+                              style={{ cursor: 'default' }}
+                            >
+                              {summaryRow.sync_coverage_pct}% coberto
+                            </span>
                           )}
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            {inv.issuer && <span>{inv.issuer}</span>}
-                            {inv.quantity && inv.unit_value && (
-                              <span>
-                                {inv.quantity.toLocaleString('pt-BR')} × {formatCurrency(inv.unit_value)}
+                          {summaryRow?.has_stale_data && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40">
+                              Cota desatualizada
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {cat.items.length} {cat.items.length === 1 ? 'ativo' : 'ativos'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        {showGrossNet && summaryRow ? (
+                          <>
+                            <p className="text-[11px] text-muted-foreground">Bruto</p>
+                            <p className="font-semibold text-sm">{formatCurrency(summaryRow.gross_balance)}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Líq.</p>
+                            <p className="font-semibold text-sm">{formatCurrency(summaryRow.net_balance)}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              (−{formatCurrency(summaryRow.gross_net_spread)} {deltaLabel})
+                            </p>
+                          </>
+                        ) : (
+                          <p className="font-semibold text-lg">{formatCurrency(cat.totalBalance)}</p>
+                        )}
+                        <div className="flex items-center gap-2 justify-end mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {cat.allocationPercent.toFixed(1)}%
+                          </Badge>
+                          {cat.avgLast12MonthsRate != null && (
+                            <span
+                              className={cn(
+                                'text-xs font-medium',
+                                cat.avgLast12MonthsRate >= 0 ? 'text-income' : 'text-expense'
+                              )}
+                            >
+                              12m: {formatPercent(cat.avgLast12MonthsRate)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+              </button>
+
+              {isExpanded && (
+                <CardContent className="pt-0">
+                  <Separator className="mb-3" />
+                  <div className="space-y-2">
+                    {cat.items.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <AssetLogo
+                            ticker={inv.code ?? undefined}
+                            assetType={inv.type}
+                            logoUrl={inv.logo_url}
+                            name={inv.name}
+                            size="md"
+                            showTooltip
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm truncate">{inv.name}</p>
+                            {inv.code && <p className="text-xs text-muted-foreground">{inv.code}</p>}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                              {inv.issuer && <span>{inv.issuer}</span>}
+                              {inv.quantity && inv.unit_value && (
+                                <span>
+                                  {inv.quantity.toLocaleString('pt-BR')} × {formatCurrency(inv.unit_value)}
+                                </span>
+                              )}
+                              {inv.fixed_annual_rate != null && (
+                                <span>Taxa: {inv.fixed_annual_rate.toFixed(2)}% a.a.</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0 ml-3">
+                          <p className="font-semibold text-sm">{formatCurrency(inv.balance)}</p>
+                          <div className="flex items-center gap-2 justify-end text-xs">
+                            {inv.last_month_rate != null && (
+                              <span
+                                className={cn(
+                                  inv.last_month_rate >= 0 ? 'text-income' : 'text-expense'
+                                )}
+                              >
+                                1m: {formatPercent(inv.last_month_rate)}
                               </span>
                             )}
-                            {inv.fixed_annual_rate != null && (
-                              <span>Taxa: {inv.fixed_annual_rate.toFixed(2)}% a.a.</span>
+                            {inv.last_twelve_months_rate != null && (
+                              <span
+                                className={cn(
+                                  inv.last_twelve_months_rate >= 0 ? 'text-income' : 'text-expense'
+                                )}
+                              >
+                                12m: {formatPercent(inv.last_twelve_months_rate)}
+                              </span>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <p className="font-semibold text-sm">{formatCurrency(inv.balance)}</p>
-                        <div className="flex items-center gap-2 justify-end text-xs">
-                          {inv.last_month_rate != null && (
-                            <span className={cn(
-                              inv.last_month_rate >= 0 ? "text-income" : "text-expense"
-                            )}>
-                              1m: {formatPercent(inv.last_month_rate)}
-                            </span>
-                          )}
-                          {inv.last_twelve_months_rate != null && (
-                            <span className={cn(
-                              inv.last_twelve_months_rate >= 0 ? "text-income" : "text-expense"
-                            )}>
-                              12m: {formatPercent(inv.last_twelve_months_rate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-          </Card>
-        );
-      })}
+                    ))}
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })
+      )}
 
       {/* Alerta global de posições suspeitas */}
       {totals != null && totals.suspect_zero_total > 0 && (

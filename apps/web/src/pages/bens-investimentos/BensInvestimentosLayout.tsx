@@ -51,6 +51,10 @@ import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 import { InvestmentsSection } from '@/components/bens/InvestmentsSection';
+import { INVESTIMENTOS_ALOCACAO_PATH } from '@/constants/appPaths';
+import { useInvestmentsList } from '@/hooks/useInvestmentsList';
+import { enrichPatrimonioInvestRow } from '@/utils/investmentDisplay';
+import { InvestmentAvatar } from '@/components/bens-investimentos/InvestmentAvatar';
 
 /** Mapeamento tipo Pluggy → rótulo para "Meus Investimentos" (alinhado ao usePluggyInvestments) */
 const PLUGGY_TYPE_TO_CATEGORY: Record<string, string> = {
@@ -75,7 +79,7 @@ const BensInvestimentosLayout: React.FC = () => {
   const pathname = location.pathname;
   const pathSegment = pathname.split('/').filter(Boolean).pop() || '';
   const validTabs = VALID_TABS as readonly string[];
-  const isInvestimentosAlocacao = pathname.includes('/investimentos/alocacao');
+  const isInvestimentosAlocacao = pathname === INVESTIMENTOS_ALOCACAO_PATH;
   const tabFromUrl = (() => {
     if (isInvestimentosAlocacao) return 'investimentos';
     if (pathSegment === 'dividas') return 'dividas';
@@ -681,7 +685,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     </h2>
                     <div className="flex flex-wrap items-center gap-2">
                       <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                        <Link to="/bens-investimentos/investimentos/alocacao">Alocação de Ativos</Link>
+                        <Link to={INVESTIMENTOS_ALOCACAO_PATH}>Alocação de Ativos</Link>
                       </Button>
                       <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
                         <Plus className="h-4 w-4" />
@@ -753,26 +757,29 @@ const BensInvestimentosLayout: React.FC = () => {
                               </ResponsiveContainer>
                             </div>
                             <div className="space-y-3">
-                              {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string; _source?: 'pluggy' | 'manual' }, i: number) => {
+                              {investimentosListMerged.map((a: { id?: string; name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string; _source?: 'pluggy' | 'manual' }, i: number) => {
                                 const cur = a.current_value ?? 0;
                                 const buy = a.purchase_value ?? cur;
                                 const returnVal = cur - buy;
                                 const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
-                                const source = (a as any)._source;
+                                const source = (a as { _source?: string })._source;
+                                const en = enrichPatrimonioInvestRow(a, rpcById);
                                 return (
-                                  <div key={(a as any).id ?? `pluggy-${i}`} className="relative">
+                                  <div key={a.id ?? `inv-${i}`} className="relative">
                                     {source && (
                                       <Badge className={cn('absolute top-2 right-2 text-[10px]', source === 'pluggy' ? 'bg-blue-600 text-white border-0' : 'bg-muted text-muted-foreground')}>
                                         {source === 'pluggy' ? 'Open Finance' : 'Manual'}
                                       </Badge>
                                     )}
                                     <InvestmentCard
-                                      name={a.name ?? '—'}
-                                      ticker={(a as any).ticker}
+                                      name={en.displayName}
+                                      detailLine={en.detailLine}
+                                      ticker={en.tickerColumn !== '—' ? en.tickerColumn : undefined}
+                                      logoUrl={en.logoUrl}
                                       currentValue={cur}
                                       returnPercent={returnPct}
                                       returnValue={returnVal}
-                                      category={(a as any).category ?? 'Investimentos'}
+                                      category={(a as { category?: string }).category ?? 'Investimentos'}
                                     />
                                   </div>
                                 );
@@ -808,21 +815,32 @@ const BensInvestimentosLayout: React.FC = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {investimentosListMerged.map((a: { name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
+                                  {investimentosListMerged.map((a: { id?: string; name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string }, i: number) => {
                                     const cur = a.current_value ?? 0;
                                     const buy = a.purchase_value ?? cur;
                                     const returnVal = cur - buy;
                                     const returnPct = a.appreciation_pct ?? (buy > 0 ? (returnVal / buy) * 100 : 0);
+                                    const en = enrichPatrimonioInvestRow(a, rpcById);
                                     return (
                                       <tr
-                                        key={(a as any).id ?? `pluggy-${i}`}
+                                        key={a.id ?? `inv-row-${i}`}
                                         className={cn(
                                           'border-t border-border transition-colors hover:bg-accent/50',
                                           i % 2 === 0 ? 'bg-card' : 'bg-muted/30'
                                         )}
                                       >
-                                        <td className="p-3 font-medium text-foreground">{a.name ?? '—'}</td>
-                                        <td className="p-3 text-muted-foreground text-xs">{(a as any).ticker ?? '—'}</td>
+                                        <td className="p-3">
+                                          <div className="flex items-center gap-2 min-w-0 max-w-[220px]">
+                                            <InvestmentAvatar
+                                              logoUrl={en.logoUrl}
+                                              ticker={en.tickerForAvatar}
+                                              type={en.typeForLogo}
+                                              displayName={en.displayName}
+                                            />
+                                            <span className="font-medium text-foreground truncate">{en.displayName}</span>
+                                          </div>
+                                        </td>
+                                        <td className="p-3 text-muted-foreground text-xs whitespace-nowrap">{en.tickerColumn}</td>
                                         <td className="p-3 text-right font-syne font-bold text-foreground tabular-nums">{formatCurrency(cur)}</td>
                                         <td className={cn('p-3 text-right font-syne font-bold tabular-nums', returnPct >= 0 ? 'text-income' : 'text-expense')}>
                                           {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(2)}%

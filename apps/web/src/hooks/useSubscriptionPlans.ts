@@ -45,8 +45,8 @@ export function useSubscriptionPlans(includePrivate = false) {
       if (error) throw error;
       return data as SubscriptionPlan[];
     },
-    staleTime: 0, // Always fetch fresh data
-    refetchOnMount: 'always', // Refetch when component mounts
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   });
 }
 
