@@ -73,6 +73,19 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
     return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
   }, [historyA, historyB]);
 
+  /** Deve ficar antes de qualquer return — evita violar regras dos hooks (erro ao sair de loading → gráfico). */
+  const yDomain = useMemo(() => {
+    const values = mergedData.flatMap((d) =>
+      [d.priceA, d.priceB].filter((v): v is number => typeof v === 'number')
+    );
+    if (values.length === 0) return undefined;
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    const min = Math.min(dataMin - 5000, dataMax * 0.8);
+    const max = dataMax + 5000;
+    return [min, max] as [number, number];
+  }, [mergedData]);
+
   // Simplify X axis labels: show only Jan of each year as 'YY
   const tickFormatter = (value: string) => {
     // monthLabel format varies: "jan/23", "fev/24", etc.
@@ -110,19 +123,6 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
   }
 
   if (mergedData.length === 0) return null;
-
-  // Escala do eixo Y: mesmo critério do Histórico FIPE (simulador FIPE)
-  // Mínimo: menor entre (menor valor exibido - 5000) e (80% do valor máximo da série)
-  // Máximo: maior valor exibido + 5000
-  const yDomain = useMemo(() => {
-    const values = mergedData.flatMap((d) => [d.priceA, d.priceB].filter((v): v is number => typeof v === 'number'));
-    if (values.length === 0) return undefined;
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
-    const min = Math.min(dataMin - 5000, dataMax * 0.8);
-    const max = dataMax + 5000;
-    return [min, max] as [number, number];
-  }, [mergedData]);
 
   return (
     <Card>

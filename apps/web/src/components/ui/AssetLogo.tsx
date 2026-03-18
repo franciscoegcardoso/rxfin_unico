@@ -10,7 +10,26 @@ const SIZE_MAP = {
   xl: { box: 56, text: 16 },
 } as const;
 
-const BRAPI_TYPES = ['STOCK', 'REAL_ESTATE_FUND', 'ETF', 'BDR'];
+/** Tipos com ícone público em icons.brapi.dev (SVG, sem token). */
+const BRAPI_TYPES_UPPER = new Set(['STOCK', 'REAL_ESTATE_FUND', 'ETF', 'BDR']);
+const BRAPI_TYPES_RAW = new Set(['stock_br', 'fii', 'etf_br', 'bdr']);
+
+/** Tickers típicos B3 (ações, FII, BDR) para tentar icons.brapi.dev mesmo com tipo Pluggy "EQUITY". */
+function isLikelyBrazilianListingTicker(ticker: string): boolean {
+  const s = ticker.trim().toUpperCase();
+  if (s.length < 4 || s.length > 9) return false;
+  if (s.endsWith('11') && /^[A-Z0-9]+$/.test(s)) return true;
+  return /^[A-Z][A-Z0-9]*\d{1,2}$/.test(s);
+}
+
+function isBrapiTickerType(assetType: string, ticker?: string | null): boolean {
+  if (!assetType) return false;
+  if (BRAPI_TYPES_RAW.has(assetType)) return true;
+  const u = assetType.toUpperCase();
+  if (BRAPI_TYPES_UPPER.has(u)) return true;
+  if (u === 'EQUITY' && ticker && isLikelyBrazilianListingTicker(ticker)) return true;
+  return false;
+}
 
 function getAvatarColor(seed: string): string {
   const colors = [
@@ -66,19 +85,22 @@ export function AssetLogo({
 
   const typeUpper = (assetType || '').toUpperCase();
   const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
-  const isBrapiType = BRAPI_TYPES.includes(typeUpper);
+  const useBrapi = isBrapiTickerType(assetType, ticker);
   const logodevToken = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN;
 
   const fallbackUrls = useMemo(() => {
     const list: string[] = [];
     if (logoUrl?.trim()) list.push(logoUrl.trim());
+    // 1. Brapi CDN — ações, FIIs, ETFs, BDRs BR (SVG público)
+    if (useBrapi && ticker?.trim()) {
+      list.push(`https://icons.brapi.dev/icons/${ticker.trim().toUpperCase()}.svg`);
+    }
+    // 2. Cripto — mapa local
     if (isCrypto && ticker) {
       const url = CRYPTO_LOGO_MAP[ticker.toUpperCase()];
       if (url) list.push(url);
     }
-    if (isBrapiType && ticker) {
-      list.push(`https://brapi.dev/favicon/${ticker.toUpperCase()}.png`);
-    }
+    // 3. Logo.dev + 4. Clearbit
     if (companyDomain?.trim()) {
       const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
       if (domain) {
@@ -89,7 +111,7 @@ export function AssetLogo({
       }
     }
     return list;
-  }, [logoUrl, isCrypto, ticker, isBrapiType, companyDomain, logodevToken]);
+  }, [logoUrl, isCrypto, ticker, useBrapi, companyDomain, logodevToken]);
 
   const currentUrl = fallbackUrls[fallbackIndex];
   const failed = fallbackIndex >= fallbackUrls.length;
