@@ -9,6 +9,8 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { BrandSearchSelect } from '@/components/ui/brand-search-select';
 import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, TrendingUp, BarChart3, Sparkles, DollarSign, RefreshCw, Star, FileDown } from 'lucide-react';
 import { useFipe, VehicleType, formatFipeYearName, formatFipeAnoModelo } from '@/hooks/useFipe';
+import { useFipeBrandLogosByType } from '@/hooks/useFipeBrandLogo';
+import { FipeBrandLogo } from '@/components/simuladores/FipeBrandLogo';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
 import { useDepreciationEngineV2 } from '@/hooks/useDepreciationEngineV2';
@@ -57,6 +59,9 @@ import {
 } from './FipePdfReportContent';
 import { exportFipeReportToPdf } from './fipePdfExport';
 import type { FipeOwnershipExportData } from './FipeOwnershipCostCard';
+
+// Map FIPE vehicle type string to numeric type for brand logos (1=carros, 2=motos, 3=caminhoes)
+const FIPE_VEHICLE_TYPE_MAP: Record<string, 1 | 2 | 3> = { carros: 1, motos: 2, caminhoes: 3 };
 
 // ============================================================================
 // HELPER: Check if device is tablet or larger (not strictly mobile)
@@ -128,6 +133,8 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
   
   const fipe = useFipe();
   const fipeFavoritesProps = useFipeFavorites(fipe);
+  const vehicleTypeNum = FIPE_VEHICLE_TYPE_MAP[fipe.vehicleType] ?? 1;
+  useFipeBrandLogosByType(vehicleTypeNum);
   const fipeHistory = useFipeFullHistory();
   const cohortMatrix = useCohortMatrix();
   const isMobile = useIsMobile();
@@ -968,9 +975,18 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                         <p className="font-syne font-extrabold text-3xl sm:text-4xl text-foreground leading-tight">
                           {fipe.price.Valor}
                         </p>
-                        <p className="font-syne font-bold text-lg sm:text-xl text-foreground">
-                          {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <FipeBrandLogo
+                            vehicleType={vehicleTypeNum}
+                            brandId={fipe.selectedBrand ? (parseInt(fipe.selectedBrand, 10) || null) : null}
+                            brandName={fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome}
+                            size="md"
+                            className="shrink-0"
+                          />
+                          <p className="font-syne font-bold text-lg sm:text-xl text-foreground">
+                            {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
+                          </p>
+                        </div>
                         <p className="text-sm text-muted-foreground">Mês de referência: {fipe.price.MesReferencia}</p>
                         {/* Variação mensal (últimos 2 pontos do histórico) — mantida conforme solicitado */}
                         {(() => {
