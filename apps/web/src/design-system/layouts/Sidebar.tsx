@@ -61,6 +61,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 src={logoSrc}
                 alt="RXFin"
                 className="h-6 w-6 object-contain"
+                width={24}
+                height={24}
               />
             </button>
             {!collapsed && (

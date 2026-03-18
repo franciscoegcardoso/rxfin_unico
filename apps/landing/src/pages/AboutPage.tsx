@@ -26,7 +26,14 @@ const AboutPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logoRxFin} alt="RXFin" className="h-8" />
+              <img
+                src={logoRxFin}
+                alt="RXFin"
+                width={120}
+                height={32}
+                className="h-8 w-auto object-contain"
+                style={{ width: 'auto' }}
+              />
             </Link>
             <div className="flex items-center gap-2">
               <Link to="/">
@@ -391,7 +398,14 @@ const AboutPage: React.FC = () => {
       {/* Footer compacto */}
       <footer className="py-6 px-4 sm:px-6 lg:px-8 bg-[hsl(161,79%,12%)] text-white">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <img src={logoRxFin} alt="RXFin" className="h-6" />
+          <img
+            src={logoRxFin}
+            alt="RXFin"
+            width={90}
+            height={24}
+            className="h-6 w-auto object-contain"
+            style={{ width: 'auto' }}
+          />
           <p className="text-[11px] text-white/50">© {new Date().getFullYear()} RXFin. Todos os direitos reservados.</p>
           <div className="flex items-center gap-4 text-[11px] text-white/50">
             <a href={`${APP_URL}/termos-de-uso`} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Termos de Uso</a>

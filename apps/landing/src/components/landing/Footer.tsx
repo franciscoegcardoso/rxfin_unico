@@ -43,7 +43,12 @@ export function Footer() {
           </div>
 
           <div className="flex items-center gap-2">
-            <a href={`${APP_URL}/simuladores/veiculos/simulador-fipe`} target="_blank" rel="noopener noreferrer">
+            <a
+              href={`${APP_URL}/simuladores/veiculos/simulador-fipe`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir simulador FIPE: custo real do seu carro"
+            >
               <Button size="sm" className="bg-white text-[hsl(145,30%,15%)] hover:bg-white/90 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
                 Testar Simulador
               </Button>

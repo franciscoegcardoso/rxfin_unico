@@ -29,7 +29,14 @@ const ManifestoPage: React.FC = () => (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <a href="/">
-            <img src={logoRxFin} alt="RXFin" className="h-8" />
+            <img
+              src={logoRxFin}
+              alt="RXFin"
+              width={120}
+              height={32}
+              className="h-8 w-auto object-contain"
+              style={{ width: 'auto' }}
+            />
           </a>
           <div className="flex items-center gap-2">
             <a href={`${APP_URL}/login`}>
@@ -249,7 +256,14 @@ const ManifestoPage: React.FC = () => (
           {/* Document footer / signature */}
           <div className="px-6 sm:px-10 py-6 border-t border-border bg-muted/20">
             <div className="flex items-center justify-between">
-              <img src={logoRxFin} alt="RXFin" className="h-5 opacity-40" />
+              <img
+                src={logoRxFin}
+                alt="RXFin"
+                width={75}
+                height={20}
+                className="h-5 w-auto object-contain opacity-40"
+                style={{ width: 'auto' }}
+              />
               <p className="text-[10px] text-muted-foreground/50">© {new Date().getFullYear()} RXFin. Todos os direitos reservados.</p>
             </div>
           </div>
@@ -287,7 +301,7 @@ const ManifestoPage: React.FC = () => (
 
     {/* Footer mínimo */}
     <footer className="py-6 px-4 bg-[hsl(161,79%,10%)] dark:bg-[hsl(161,60%,4%)] text-center">
-      <p className="text-[11px] text-white/40">© {new Date().getFullYear()} RXFin. Todos os direitos reservados.</p>
+      <p className="text-[11px] text-[#8fb89a]">© {new Date().getFullYear()} RXFin. Todos os direitos reservados.</p>
     </footer>
   </div>
 );

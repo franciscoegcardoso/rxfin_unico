@@ -18,12 +18,24 @@ export const ThemedLogo: React.FC<ThemedLogoProps> = ({
 }) => {
   const { resolvedTheme } = useTheme();
   const src = resolvedTheme === 'dark' ? logoWhite : logoIcon;
+
+  const extractTailwindSize = (prefix: 'h' | 'w'): number | undefined => {
+    const match = className.match(new RegExp(`\\b${prefix}-(\\d+)\\b`));
+    return match ? Number(match[1]) * 4 : undefined;
+  };
+
+  const h = extractTailwindSize('h');
+  const w = extractTailwindSize('w');
+  const width = w ?? h ?? 64;
+  const height = h ?? w ?? 64;
   
   return (
     <img 
       src={src} 
       alt="RXFin" 
       className={className}
+      width={width}
+      height={height}
     />
   );
 };

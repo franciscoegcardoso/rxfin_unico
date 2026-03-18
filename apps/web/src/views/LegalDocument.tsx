@@ -98,7 +98,14 @@ const LegalDocumentPage: React.FC<LegalDocumentPageProps> = ({ slug: propSlug })
             <div className="flex items-center justify-between h-14">
               <Link to="/" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
-                <img src={logoFull} alt="RXFin" className="h-6 object-contain" />
+                <img
+                  src={logoFull}
+                  alt="RXFin"
+                  width={90}
+                  height={24}
+                  className="h-6 w-auto object-contain"
+                  style={{ width: 'auto' }}
+                />
               </Link>
             </div>
           </div>
@@ -141,7 +148,14 @@ const LegalDocumentPage: React.FC<LegalDocumentPageProps> = ({ slug: propSlug })
           <div className="flex items-center justify-between h-14">
             <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" />
-              <img src={logoFull} alt="RXFin" className="h-6 object-contain" />
+              <img
+                src={logoFull}
+                alt="RXFin"
+                width={90}
+                height={24}
+                className="h-6 w-auto object-contain"
+                style={{ width: 'auto' }}
+              />
             </Link>
             
             <div className="flex items-center gap-2">

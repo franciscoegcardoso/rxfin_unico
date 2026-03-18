@@ -51,9 +51,26 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
  * Logo component for onboarding - exports the white version
  */
 export const OnboardingWhiteLogo: React.FC<{ className?: string }> = ({ className }) => (
-  <img 
-    src={logoRxfinWhite} 
-    alt="RXFin" 
-    className={className || "h-16 w-16 object-contain"}
-  />
+  (() => {
+    const cn = className || "h-16 w-16 object-contain";
+    const extractTailwindSize = (prefix: 'h' | 'w'): number | undefined => {
+      const match = cn.match(new RegExp(`\\b${prefix}-(\\d+)\\b`));
+      return match ? Number(match[1]) * 4 : undefined;
+    };
+
+    const h = extractTailwindSize('h');
+    const w = extractTailwindSize('w');
+    const width = w ?? h ?? 64;
+    const height = h ?? w ?? 64;
+
+    return (
+      <img
+        src={logoRxfinWhite}
+        alt="RXFin"
+        className={cn}
+        width={width}
+        height={height}
+      />
+    );
+  })()
 );

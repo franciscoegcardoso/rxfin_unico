@@ -421,7 +421,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             className="flex items-center gap-2 min-w-0"
             onClick={(e) => { e.preventDefault(); navigate('/'); }}
           >
-            <img src={currentLogo} alt="RXFin" className="h-7 w-7 object-contain shrink-0" />
+            <img
+              src={currentLogo}
+              alt="RXFin"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain shrink-0"
+            />
             <span className="font-semibold text-sm text-[hsl(var(--color-text-primary))] truncate">RXFin</span>
           </a>
         )}
@@ -431,7 +437,13 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             className="flex items-center justify-center"
             onClick={(e) => { e.preventDefault(); navigate('/'); }}
           >
-            <img src={currentLogo} alt="RXFin" className="h-7 w-7 object-contain" />
+            <img
+              src={currentLogo}
+              alt="RXFin"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+            />
           </a>
         )}
         <button

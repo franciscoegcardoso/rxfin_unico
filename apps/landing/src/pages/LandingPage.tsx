@@ -157,7 +157,14 @@ const LandingPage: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[hsl(161,79%,12%)] dark:bg-[hsl(161,60%,6%)] backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-            <img src={logoRxFin} alt="RXFin" className="h-8" />
+            <img
+              src={logoRxFin}
+              alt="RXFin"
+              width={120}
+              height={32}
+              className="h-8 w-auto object-contain"
+              style={{ width: 'auto' }}
+            />
             <nav className="hidden md:flex items-center gap-6">
               <a href="#simuladores" className="text-sm text-white/70 hover:text-white transition-colors">Simuladores</a>
               <a href="#precos" className="text-sm text-white/70 hover:text-white transition-colors">Preços</a>
@@ -214,7 +221,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex flex-col items-center sm:items-start gap-1">
-              <img src={logoRxFin} alt="RXFin" className="h-8" />
+              <img
+                src={logoRxFin}
+                alt="RXFin"
+                width={120}
+                height={32}
+                className="h-8 w-auto object-contain"
+                style={{ width: 'auto' }}
+              />
               <p className="text-xs text-white/60">Seu Raio-X Financeiro Completo</p>
             </div>
             <div className="flex items-center gap-4">

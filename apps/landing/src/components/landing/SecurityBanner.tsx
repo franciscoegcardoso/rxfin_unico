@@ -18,12 +18,12 @@ export const SecurityBanner: React.FC = () => (
         <p className="text-sm sm:text-base font-semibold text-white/95 tracking-wide">
           Segurança de Nível Bancário
         </p>
-        <Lock className="h-3.5 w-3.5 text-white/40" />
+        <Lock className="h-3.5 w-3.5 text-[#8fb89a]" />
       </div>
       <p className="text-xs sm:text-sm text-white/60 leading-relaxed max-w-xl mx-auto">
         Seus dados protegidos com criptografia e infraestrutura de classe mundial.
       </p>
-      <div className="flex items-center justify-center gap-3 mt-2 text-[11px] sm:text-xs text-white/40">
+      <div className="flex items-center justify-center gap-3 mt-2 text-[11px] sm:text-xs text-[#8fb89a]">
         <span className="flex items-center gap-1">
           <Server className="h-3 w-3" />
           Tecnologia AWS + Supabase

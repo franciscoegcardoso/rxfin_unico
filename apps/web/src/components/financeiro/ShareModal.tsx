@@ -31,7 +31,13 @@ const ShareImage: React.FC<{ userName: string; referralLink: string; imageRef: R
     }}
   >
     {/* Logo */}
-    <img src={logoWhite} alt="RXFin" className="h-7 mb-5 object-contain self-start" />
+    <img
+      src={logoWhite}
+      alt="RXFin"
+      width={28}
+      height={28}
+      className="h-7 mb-5 object-contain self-start"
+    />
 
     {/* Headline */}
     <h2 className="text-white text-[18px] font-bold leading-tight mb-2">

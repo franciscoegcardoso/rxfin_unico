@@ -48,6 +48,8 @@ export const DemoModeWelcomeModal: React.FC<DemoModeWelcomeModalProps> = ({
               <img
                 src={logoRxfinWhite}
                 alt="RXFin"
+                width={28}
+                height={28}
                 className="h-7 w-auto object-contain"
               />
               <span className="text-white font-bold text-lg tracking-tight">RXFin</span>

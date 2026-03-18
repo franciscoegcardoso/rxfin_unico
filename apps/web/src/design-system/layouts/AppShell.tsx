@@ -28,11 +28,11 @@ export const AppShell: React.FC = () => {
       <AccountNavigationGuard />
       <MobileMenuProvider>
         {isMobile ? (
-          <div className="min-h-screen">
+          <main id="main-content" className="min-h-screen">
             <MobileShell>
               <Outlet />
             </MobileShell>
-          </div>
+          </main>
         ) : (
           <div className="flex h-screen overflow-hidden bg-background">
             <DesktopShell userName={userName} userEmail={userEmail} />

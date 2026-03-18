@@ -36,7 +36,13 @@ export function OnboardingTransitionModal({ isOpen, onConfirm, onClose }: Onboar
               <X className="w-4 h-4" />
             </button>
           )}
-          <img src={logoRxfinWhite} alt="RXFin" className="h-8 w-auto mx-auto mb-4 opacity-90" />
+          <img
+            src={logoRxfinWhite}
+            alt="RXFin"
+            width={32}
+            height={32}
+            className="h-8 w-auto mx-auto mb-4 opacity-90"
+          />
           <h2 className="text-xl font-bold text-white flex items-center justify-center gap-0.5">
             Preparando seu RXFin
             <span className="inline-flex gap-0.5 ml-1">

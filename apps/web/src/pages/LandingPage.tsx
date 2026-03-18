@@ -164,7 +164,14 @@ const LandingPage: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[hsl(145,30%,15%)] dark:bg-[hsl(145,25%,8%)] backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-            <img src={logoHorizontal} alt="RXFin" className="h-8 object-contain" />
+            <img
+              src={logoHorizontal}
+              alt="RXFin"
+              width={120}
+              height={32}
+              className="h-8 w-auto object-contain"
+              style={{ width: 'auto' }}
+            />
             <div className="flex items-center gap-2">
               <Link to="/simuladores/veiculos/simulador-fipe">
                 <Button variant="ghost" size="sm" className="hidden sm:flex text-white/80 hover:text-white hover:bg-white/10">
@@ -291,9 +298,9 @@ const LandingPage: React.FC = () => {
                           Gratuito
                         </Badge>
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
+                      <h2 className="text-xl sm:text-2xl font-bold mb-2 group-hover:text-primary transition-colors">
                         Simulador: Custo Real do Seu Carro
-                      </h3>
+                      </h2>
                       <p className="text-muted-foreground">
                         Calcule todos os custos: IPVA, seguro, manutenção, combustível, depreciação e custo de oportunidade. 
                         Resultado detalhado em minutos.
@@ -615,7 +622,14 @@ const LandingPage: React.FC = () => {
             {/* Col 1 — Marca + Redes sociais */}
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <img src={logoHorizontal} alt="RXFin" className="h-8 object-contain" />
+                <img
+                  src={logoHorizontal}
+                  alt="RXFin"
+                  width={120}
+                  height={32}
+                  className="h-8 w-auto object-contain"
+                  style={{ width: 'auto' }}
+                />
               </div>
               <p className="text-sm text-white/60 leading-relaxed max-w-xs">
                 Seu Raio-X Financeiro Completo. Conecte seus bancos e tome decisões com clareza.
@@ -648,7 +662,7 @@ const LandingPage: React.FC = () => {
 
             {/* Col 2 — Produto */}
             <div>
-              <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">
+              <h3 className="text-xs font-semibold text-[#8fb89a] uppercase tracking-wider mb-4">
                 Produto
               </h3>
               <ul className="flex flex-col gap-3">
@@ -671,7 +685,7 @@ const LandingPage: React.FC = () => {
 
             {/* Col 3 — Legal */}
             <div>
-              <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider mb-4">
+              <h3 className="text-xs font-semibold text-[#8fb89a] uppercase tracking-wider mb-4">
                 Legal
               </h3>
               <ul className="flex flex-col gap-3">
@@ -693,10 +707,10 @@ const LandingPage: React.FC = () => {
 
           {/* Bottom bar */}
           <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-[11px] text-white/40">
+            <p className="text-[11px] text-[#8fb89a]">
               © 2025 RXFin · Todos os direitos reservados
             </p>
-            <p className="text-[11px] text-white/30 text-center sm:text-right">
+            <p className="text-[11px] text-[#7aa386] text-center sm:text-right">
               Dados protegidos com criptografia bancária via Open Finance regulamentado pelo Banco Central do Brasil.
             </p>
           </div>

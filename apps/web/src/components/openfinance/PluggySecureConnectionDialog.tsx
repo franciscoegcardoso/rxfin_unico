@@ -47,7 +47,13 @@ export const PluggySecureConnectionDialog: React.FC<PluggySecureConnectionDialog
         <div className="flex items-center justify-center gap-2 py-4">
           <div className="flex flex-col items-center gap-2">
             <div className="h-14 w-14 rounded-xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden">
-              <img src={rxfinIcon} alt="RXFin" className="h-9 w-9 object-contain" />
+              <img
+                src={rxfinIcon}
+                alt="RXFin"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+              />
             </div>
             <span className="text-xs font-medium text-foreground">RXFin</span>
           </div>
