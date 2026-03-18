@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+﻿import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { CreditCardTransaction } from '@/hooks/useCreditCardTransactions';
 import { useUserCategories } from '@/hooks/useUserCategories';
@@ -139,7 +139,7 @@ export function CreditCardCategorySection({
           if (cancelled) return;
           const batch = unvalidated.slice(i, i + BATCH_SIZE);
           const batchPayload = batch.map((t) => ({
-            storeName: (t.friendly_name || t.store_name || '').trim() || 'Sem descrição',
+            storeName: (t.friendly_name || t.store_name || '').trim() || 'Sem descriÃ§Ã£o',
             value: t.value,
             date: t.transaction_date,
           }));
@@ -182,7 +182,7 @@ export function CreditCardCategorySection({
   }, [unvalidatedIdsKey, userCatsLoading]);
 
   const formatCurrency = (value: number) => {
-    if (isHidden) return '••••••';
+    if (isHidden) return 'â€¢â€¢â€¢â€¢â€¢â€¢';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(value);
   };
 
@@ -325,7 +325,7 @@ export function CreditCardCategorySection({
   const mobileSubtitle = (t: CreditCardTransaction) => {
     if (isIncomeTx(t)) {
       const id = selectedItems[t.id] ?? t.category_id ?? suggestionMap[t.id]?.suggestedCategoryId;
-      return userCats?.incomeItems.find((i) => i.id === id)?.name ?? t.category ?? '—';
+      return userCats?.incomeItems.find((i) => i.id === id)?.name ?? t.category ?? 'â€”';
     }
     const gid =
       selectedGroups[t.id] ??
@@ -336,7 +336,7 @@ export function CreditCardCategorySection({
     const itm = g?.items.find((x) => x.id === iid);
     const gn = g?.category_name ?? '';
     const nn = itm?.name ?? t.category ?? '';
-    return gn && nn ? `${gn} › ${nn}` : nn || gn || '—';
+    return gn && nn ? `${gn} â€º ${nn}` : nn || gn || 'â€”';
   };
 
   const renderIncomeSelect = (t: CreditCardTransaction, compact: boolean) => {
@@ -371,7 +371,7 @@ export function CreditCardCategorySection({
           {loadingRow ? (
             <span className="flex gap-1 text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Sugerindo…
+              Sugerindoâ€¦
             </span>
           ) : (
             <SelectValue placeholder="Receita" />
@@ -487,7 +487,7 @@ export function CreditCardCategorySection({
   }
 
   if (transactions.length === 0) {
-    return <div className="text-center py-8 text-muted-foreground text-sm">Nenhuma transação neste período.</div>;
+    return <div className="text-center py-8 text-muted-foreground text-sm">Nenhuma transaÃ§Ã£o neste perÃ­odo.</div>;
   }
 
   const totals = {
@@ -507,7 +507,7 @@ export function CreditCardCategorySection({
             onClick={() => setShowUnvalidatedOnly(!showUnvalidatedOnly)}
           >
             <Filter className="h-3 w-3" />
-            Não validados
+            NÃ£o validados
             {unvalidatedCount > 0 && (
               <Badge variant="secondary" className="h-4 min-w-4 p-0 text-[9px] ml-0.5">
                 {unvalidatedCount}
@@ -533,7 +533,7 @@ export function CreditCardCategorySection({
                     setShowMobileSortMenu(false);
                   }}
                 >
-                  {field === 'date' ? 'Data' : field === 'name' ? 'Descrição' : field === 'value' ? 'Valor' : 'Categoria'}
+                  {field === 'date' ? 'Data' : field === 'name' ? 'DescriÃ§Ã£o' : field === 'value' ? 'Valor' : 'Categoria'}
                 </Button>
               ))}
             </PopoverContent>
@@ -542,7 +542,7 @@ export function CreditCardCategorySection({
         <ScrollArea className="h-[400px]">
           <div className="space-y-1">
             {filteredAndSorted.length === 0 ? (
-              <EmptyState description="Nenhuma transação" className="py-6" />
+              <EmptyState description="Nenhuma transaÃ§Ã£o" className="py-6" />
             ) : (
               filteredAndSorted.map((t) => {
                 const inc = isIncomeTx(t);
@@ -577,7 +577,7 @@ export function CreditCardCategorySection({
         </ScrollArea>
         <div className="border-t pt-2 flex justify-between text-xs">
           <span>
-            <span className="font-medium">{totals.filteredCount}</span> transação(ões)
+            <span className="font-medium">{totals.filteredCount}</span> transaÃ§Ã£o(Ãµes)
           </span>
           <span className="font-bold text-primary">{formatCurrency(totals.filteredTotal)}</span>
         </div>
@@ -593,7 +593,7 @@ export function CreditCardCategorySection({
                     ) : (
                       <TrendingDown className="h-3 w-3 text-expense" />
                     )}
-                    {isIncomeTx(selectedTx) ? 'Receita' : 'Despesa'} · {getCardLabel(selectedTx.card_id)}
+                    {isIncomeTx(selectedTx) ? 'Receita' : 'Despesa'} Â· {getCardLabel(selectedTx.card_id)}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
@@ -656,7 +656,7 @@ export function CreditCardCategorySection({
           onClick={() => setShowUnvalidatedOnly(!showUnvalidatedOnly)}
         >
           <Filter className="h-3 w-3" />
-          Não validados
+          NÃ£o validados
           {unvalidatedCount > 0 && <Badge className="ml-0.5 h-4 text-[9px]">{unvalidatedCount}</Badge>}
         </Button>
       </div>
@@ -669,23 +669,23 @@ export function CreditCardCategorySection({
                   Data {getSortIcon('date')}
                 </TableHead>
                 <TableHead className="cursor-pointer py-2 px-2" onClick={() => handleSort('name')}>
-                  Descrição {getSortIcon('name')}
+                  DescriÃ§Ã£o {getSortIcon('name')}
                 </TableHead>
                 <TableHead className="py-2 px-2 w-32">Grupo</TableHead>
                 <TableHead className="py-2 px-2 w-32">Item</TableHead>
                 <TableHead className="py-2 px-1 w-12 text-center">Status</TableHead>
-                <TableHead className="py-2 px-2 w-28">Cartão</TableHead>
+                <TableHead className="py-2 px-2 w-28">CartÃ£o</TableHead>
                 <TableHead className="text-right py-2 px-2 w-24" onClick={() => handleSort('value')}>
                   Valor {getSortIcon('value')}
                 </TableHead>
-                <TableHead className="text-center w-14">Ações</TableHead>
+                <TableHead className="text-center w-14">AÃ§Ãµes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSorted.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
-                    Nenhuma transação
+                    Nenhuma transaÃ§Ã£o
                   </TableCell>
                 </TableRow>
               ) : (
@@ -769,7 +769,7 @@ export function CreditCardCategorySection({
       </ScrollArea>
       <div className="border-t pt-2 flex justify-between text-xs">
         <span>
-          <span className="font-medium">{totals.filteredCount}</span> transação(ões)
+          <span className="font-medium">{totals.filteredCount}</span> transaÃ§Ã£o(Ãµes)
         </span>
         <span className="font-bold text-primary">{formatCurrency(totals.filteredTotal)}</span>
       </div>
@@ -822,8 +822,3 @@ export function CreditCardCategorySection({
     </div>
   );
 }
-</think>
-Corrigindo erro em `renderItemSelect` de `CreditCardCategorySection.tsx`.
-
-<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>
-StrReplace
