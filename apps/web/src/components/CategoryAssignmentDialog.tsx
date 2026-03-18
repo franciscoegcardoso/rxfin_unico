@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Landmark, ChevronRight, FileText, X } from 'lucide-react';
-import { ImportedTransactionsTable } from '@/components/cartao/ImportedTransactionsTable';
+import { CreditCardCategorySection } from '@/components/lancamentos/CreditCardCategorySection';
 import { LancamentoCategorySection } from '@/components/lancamentos/LancamentoCategorySection';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
@@ -43,36 +43,17 @@ const CategoryAssignmentContent: React.FC<{
     if (open) setActiveTab(defaultTab);
   }, [open, defaultTab]);
 
-  const {
-    transactions,
-    loading: transactionsLoading,
-    updateTransaction,
-    deleteTransaction,
-    deleteMultipleTransactions,
-    fetchTransactions,
-  } = useCreditCardTransactions();
+  const { transactions, loading: transactionsLoading, fetchTransactions } = useCreditCardTransactions();
   const { bills } = useCreditCardBills();
   const { lancamentos, fetchLancamentos } = useLancamentosRealizados();
 
-  const handleUpdateCategory = useCallback(async (id: string, categoryId: string, categoryName: string) => {
-    return await updateTransaction(id, { category_id: categoryId, category: categoryName, is_category_confirmed: true });
-  }, [updateTransaction]);
-
-  const handleConfirmCategory = useCallback(async (id: string) => {
-    return await updateTransaction(id, { is_category_confirmed: true });
-  }, [updateTransaction]);
-
-  const handleDelete = useCallback(async (id: string) => {
-    return await deleteTransaction(id);
-  }, [deleteTransaction]);
-
-  const handleDeleteMultiple = useCallback(async (ids: string[]) => {
-    return await deleteMultipleTransactions(ids);
-  }, [deleteMultipleTransactions]);
-
-  const handleUpdateFriendlyName = useCallback(async (id: string, friendlyName: string) => {
-    return await updateTransaction(id, { friendly_name: friendlyName });
-  }, [updateTransaction]);
+  const getCardLabel = useCallback(
+    (cardId: string | null) => {
+      if (!cardId) return '—';
+      return bills.find((b) => b.card_id === cardId)?.card_name || 'Cartão';
+    },
+    [bills]
+  );
 
   const unconfirmedCCCount = transactions.filter(t => !t.is_category_confirmed).length;
   const unconfirmedLancCount = lancamentos.filter(l => !l.is_category_confirmed).length;
@@ -102,16 +83,11 @@ const CategoryAssignmentContent: React.FC<{
 
       <div className="overflow-y-auto flex-1 min-h-0 mt-2">
         <TabsContent value="cartao" className="mt-0">
-          <ImportedTransactionsTable
+          <CreditCardCategorySection
             transactions={transactions}
-            bills={bills}
             loading={transactionsLoading}
-            onUpdateCategory={handleUpdateCategory}
-            onUpdateFriendlyName={handleUpdateFriendlyName}
-            onFriendlyNameAppliedAll={fetchTransactions}
-            onConfirmCategory={handleConfirmCategory}
-            onDelete={handleDelete}
-            onDeleteMultiple={handleDeleteMultiple}
+            onUpdated={fetchTransactions}
+            getCardLabel={getCardLabel}
           />
         </TabsContent>
         <TabsContent value="conta" className="mt-0">

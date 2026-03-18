@@ -26,6 +26,9 @@ export interface LancamentoRealizado {
   updated_at: string;
   /** Nome da conta/banco (quando vindo da view lancamentos_realizados_v com join). */
   account_name?: string | null;
+  /** Grupo de despesa (nível 1), quando exposto pela view. */
+  group_category_id?: string | null;
+  group_category_name?: string | null;
 }
 
 export interface LancamentoInput {

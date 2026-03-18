@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
-import { useTransactionCategories } from '@/hooks/useTransactionCategories';
+import { useUserCategories } from '@/hooks/useUserCategories';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getCategoryId } from '@/utils/categoryUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -75,7 +74,18 @@ const formatShortDate = (dateStr: string) => {
 
 const BATCH_SIZE = 50;
 
-type SuggestionEntry = { suggestedCategoryId: string; suggestedCategory: string; confidence: string };
+interface SuggestionEntry {
+  suggestedGroupId: string | null;
+  suggestedGroupName: string | null;
+  suggestedCategoryId: string;
+  suggestedCategory: string;
+  confidence: 'high' | 'medium' | 'low';
+  isIncome: boolean;
+}
+
+function isIncomeLancamento(item: LancamentoRealizado): boolean {
+  return item.tipo === 'receita' || (item.valor_realizado ?? item.valor_previsto ?? 0) > 0;
+}
 
 export function LancamentoCategorySection({
   lancamentos,
@@ -83,7 +93,7 @@ export function LancamentoCategorySection({
 }: LancamentoCategorySectionProps) {
   const { isHidden } = useVisibility();
   const isMobile = useIsMobile();
-  const { incomeCategories, expenseGroups, isLoading: loadingCategories } = useTransactionCategories();
+  const { data: userCats, loading: userCatsLoading } = useUserCategories();
 
   const [showUnvalidatedOnly, setShowUnvalidatedOnly] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -92,8 +102,9 @@ export function LancamentoCategorySection({
   const [showMobileSortMenu, setShowMobileSortMenu] = useState(false);
   const [suggestionMap, setSuggestionMap] = useState<Record<string, SuggestionEntry>>({});
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [selectedGroups, setSelectedGroups] = useState<Record<string, string>>({});
+  const [selectedItems, setSelectedItems] = useState<Record<string, string>>({});
 
-  // Mobile edit dialog
   const [selectedLancamento, setSelectedLancamento] = useState<LancamentoRealizado | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -102,10 +113,10 @@ export function LancamentoCategorySection({
     [lancamentos]
   );
 
-  // Fetch AI category suggestions for unvalidated lançamentos (conta)
   useEffect(() => {
     const unvalidated = lancamentos.filter((l) => !l.is_category_confirmed);
-    if (lancamentos.length === 0) return; // dados ainda não carregaram
+    if (lancamentos.length === 0) return;
+    if (userCatsLoading) return;
     if (unvalidated.length === 0) {
       setSuggestionMap({});
       return;
@@ -123,22 +134,28 @@ export function LancamentoCategorySection({
             date: l.data_pagamento || l.data_registro || l.mes_referencia + '-01',
             isAccountTransaction: true as const,
           }));
-          const incomeCategoriesList = incomeCategories?.map((c) => c.name) ?? [];
-          console.log('[cat] batch size:', batch.length, 'sending to categorize-transactions');
           const { data, error } = await supabase.functions.invoke('categorize-transactions', {
-            body: { transactions: batchPayload, isAccountTransaction: true, incomeCategories: incomeCategoriesList },
+            body: {
+              transactions: batchPayload,
+              isAccountTransaction: true,
+              expenseGroups: userCats?.expenseGroups ?? [],
+              incomeItems: userCats?.incomeItems ?? [],
+            },
           });
 
           if (!error && data?.categorizedTransactions) {
-            console.log('[cat] batch size:', batch.length, 'results:', data.categorizedTransactions.length);
             const newMap: Record<string, SuggestionEntry> = {};
-            data.categorizedTransactions.forEach((result: any, idx: number) => {
+            data.categorizedTransactions.forEach((result: Record<string, unknown>, idx: number) => {
               const lancId = batch[idx]?.id;
               if (lancId) {
+                const inc = isIncomeLancamento(batch[idx]);
                 newMap[lancId] = {
-                  suggestedCategoryId: result?.suggestedCategoryId ?? 'outros',
-                  suggestedCategory: (result?.suggestedCategory ?? 'Outros').trim(),
-                  confidence: result?.confidence ?? 'low',
+                  suggestedGroupId: (result?.suggestedGroupId as string) ?? null,
+                  suggestedGroupName: (result?.suggestedGroupName as string) ?? null,
+                  suggestedCategoryId: String(result?.suggestedCategoryId ?? ''),
+                  suggestedCategory: String(result?.suggestedCategory ?? '').trim(),
+                  confidence: (result?.confidence as SuggestionEntry['confidence']) ?? 'low',
+                  isIncome: typeof result?.isIncome === 'boolean' ? (result.isIncome as boolean) : inc,
                 };
               }
             });
@@ -155,7 +172,7 @@ export function LancamentoCategorySection({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unvalidatedIdsKey]);
+  }, [unvalidatedIdsKey, userCatsLoading]);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -166,45 +183,25 @@ export function LancamentoCategorySection({
     }).format(value);
   };
 
-  const expenseCategoryNames = useMemo(
-    () => [...new Set(expenseGroups.map((g) => g.name))],
-    [expenseGroups]
-  );
-
-  const getCategoriesForType = (tipo: 'receita' | 'despesa') => {
-    if (tipo === 'receita') {
-      return incomeCategories.map((c) => ({ value: c.name, label: c.name }));
+  const getSortCategoryLabel = (item: LancamentoRealizado) => {
+    if (isIncomeLancamento(item)) {
+      const id = item.category_id ?? selectedItems[item.id] ?? suggestionMap[item.id]?.suggestedCategoryId;
+      const name =
+        userCats?.incomeItems.find((i) => i.id === id)?.name ??
+        item.categoria ??
+        suggestionMap[item.id]?.suggestedCategory ??
+        '';
+      return name;
     }
-    return expenseCategoryNames.map((name) => ({ value: name, label: name }));
+    const gid = item.group_category_id ?? selectedGroups[item.id] ?? suggestionMap[item.id]?.suggestedGroupId;
+    const group = userCats?.expenseGroups.find((g) => g.category_id === gid);
+    const iid = item.category_id ?? selectedItems[item.id] ?? suggestionMap[item.id]?.suggestedCategoryId;
+    const itm = group?.items.find((x) => x.id === iid);
+    const gname = group?.category_name ?? item.group_category_name ?? '';
+    const iname = itm?.name ?? item.categoria ?? '';
+    return `${gname} ${iname}`.trim();
   };
 
-  const getCategoriesForItem = useCallback(
-    (item: LancamentoRealizado) => {
-      const base = getCategoriesForType(item.tipo);
-      const suggestion = suggestionMap[item.id]?.suggestedCategory;
-      if (!suggestion || base.some((c) => c.value === suggestion)) return base;
-      return [...base, { value: suggestion, label: suggestion }];
-    },
-    [suggestionMap, expenseCategoryNames, incomeCategories]
-  );
-
-  const getDisplayCategory = (item: LancamentoRealizado) => {
-    const currentName = item.categoria?.trim() || '';
-    const suggested = suggestionMap[item.id]?.suggestedCategory?.trim() || '';
-
-    // Para lançamentos não confirmados, quando a "categoria atual" é apenas o placeholder
-    // (ex.: não atribuída / sem category_id), priorizamos a sugestão da IA.
-    const isUnconfirmed = item.is_category_confirmed !== true;
-    const hasCategoryId =
-      item.category_id !== null && item.category_id !== undefined && item.category_id !== '';
-    const isPlaceholder =
-      currentName === 'Não atribuído' || currentName === 'Outros' || currentName === 'outros';
-
-    if (isUnconfirmed && suggested && (!hasCategoryId || isPlaceholder)) return suggested;
-    return currentName || suggested || '';
-  };
-
-  // Filter & sort
   const filteredAndSorted = useMemo(() => {
     let items = [...lancamentos];
     if (showUnvalidatedOnly) {
@@ -225,19 +222,19 @@ export function LancamentoCategorySection({
           comparison = (a.valor_realizado ?? a.valor_previsto) - (b.valor_realizado ?? b.valor_previsto);
           break;
         case 'category':
-          comparison = (a.categoria || '').localeCompare(b.categoria || '');
+          comparison = getSortCategoryLabel(a).localeCompare(getSortCategoryLabel(b));
           break;
       }
       return sortDirection === 'asc' ? comparison : -comparison;
     });
     return items;
-  }, [lancamentos, showUnvalidatedOnly, sortField, sortDirection]);
+  }, [lancamentos, showUnvalidatedOnly, sortField, sortDirection, userCats, selectedGroups, selectedItems, suggestionMap]);
 
   const unvalidatedCount = lancamentos.filter((l) => !l.is_category_confirmed).length;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortDirection(field === 'date' ? 'desc' : 'asc');
@@ -248,84 +245,167 @@ export function LancamentoCategorySection({
     if (sortField !== field) {
       return <ArrowUpDown className="h-3 w-3 text-muted-foreground/50" />;
     }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="h-3 w-3 text-primary" />
-      : <ArrowDown className="h-3 w-3 text-primary" />;
+    return sortDirection === 'asc' ? (
+      <ArrowUp className="h-3 w-3 text-primary" />
+    ) : (
+      <ArrowDown className="h-3 w-3 text-primary" />
+    );
   };
 
-  const handleCategoryChange = useCallback(async (item: LancamentoRealizado, newCategory: string) => {
-    setUpdatingId(item.id);
-    try {
-      const { error } = await supabase
-        .from('lancamentos_realizados_v')
-        .update({
-          categoria: newCategory,
-          category_id: getCategoryId(newCategory),
-          updated_at: new Date().toISOString(),
-        } as any)
-        .eq('id', item.id);
+  const applyCategory = useCallback(
+    async (payload: {
+      transaction_id: string;
+      group_category_id: string | null;
+      group_category_name: string | null;
+      category_id: string;
+      category_name: string;
+    }) => {
+      const { error } = await supabase.rpc('apply_batch_categories', { p_items: [payload] });
       if (error) throw error;
-      onCategoryUpdated();
-    } catch (err) {
-      console.error('Error updating category:', err);
-      toast.error('Erro ao atualizar categoria');
-    } finally {
-      setUpdatingId(null);
-    }
-  }, [onCategoryUpdated]);
+    },
+    []
+  );
 
-  const handleConfirmCategory = useCallback(async (item: LancamentoRealizado) => {
-    setUpdatingId(item.id);
-    try {
-      const categoryToSave = getDisplayCategory(item) || item.categoria;
-      const updates: Record<string, unknown> = {
-        is_category_confirmed: true,
-        updated_at: new Date().toISOString(),
-      };
-      if (categoryToSave) {
-        updates.categoria = categoryToSave;
-        updates.category_id = getCategoryId(categoryToSave);
-      }
-      const { error } = await supabase
-        .from('lancamentos_realizados_v')
-        .update(updates as any)
-        .eq('id', item.id);
-      if (error) throw error;
-      onCategoryUpdated();
+  const handleConfirm = useCallback(
+    async (item: LancamentoRealizado) => {
+      const isIncome = isIncomeLancamento(item);
+      const sugg = suggestionMap[item.id];
 
-      const label = item.nome.length > 25 ? item.nome.substring(0, 25) + '…' : item.nome;
-      toast.success('Categoria confirmada!', {
-        action: {
-          label: `Sempre aplicar para "${label}"`,
-          onClick: async () => {
-            try {
-              const { data, error: rpcError } = await supabase.rpc(
-                'apply_lancamento_category_rule' as any,
-                {
-                  p_nome_pattern: item.nome,
-                  p_categoria: categoryToSave,
-                  p_tipo: item.tipo,
+      if (isIncome) {
+        const incomeId = selectedItems[item.id] ?? sugg?.suggestedCategoryId ?? item.category_id ?? '';
+        const incomeName = userCats?.incomeItems.find((i) => i.id === incomeId)?.name ?? '';
+        if (!incomeId) {
+          toast.error('Selecione uma categoria de receita');
+          return;
+        }
+        setUpdatingId(item.id);
+        try {
+          await applyCategory({
+            transaction_id: item.id,
+            group_category_id: null,
+            group_category_name: null,
+            category_id: incomeId,
+            category_name: incomeName,
+          });
+          onCategoryUpdated();
+          const label = item.nome.length > 25 ? item.nome.substring(0, 25) + '…' : item.nome;
+          toast.success('Categoria confirmada!', {
+            action: {
+              label: `Sempre aplicar para "${label}"`,
+              onClick: async () => {
+                try {
+                  const { data, error: rpcError } = await supabase.rpc('apply_lancamento_category_rule' as never, {
+                    p_nome_pattern: item.nome,
+                    p_categoria: incomeName,
+                    p_tipo: item.tipo,
+                  });
+                  if (rpcError) throw rpcError;
+                  const updated = (data as { updated?: number })?.updated ?? 0;
+                  toast.success(`Regra aplicada! ${updated} lançamento(s) atualizado(s).`);
+                  onCategoryUpdated();
+                } catch (err) {
+                  console.error('Error applying rule:', err);
+                  toast.error('Erro ao aplicar regra');
                 }
-              );
-              if (rpcError) throw rpcError;
-              const updated = (data as any)?.updated || 0;
-              toast.success(`Regra aplicada! ${updated} lançamento(s) atualizado(s).`);
-              onCategoryUpdated();
-            } catch (err) {
-              console.error('Error applying rule:', err);
-              toast.error('Erro ao aplicar regra');
-            }
+              },
+            },
+            duration: 8000,
+          });
+        } catch (err) {
+          console.error(err);
+          toast.error('Erro ao confirmar categoria');
+        } finally {
+          setUpdatingId(null);
+        }
+        return;
+      }
+
+      const groupId =
+        selectedGroups[item.id] ?? sugg?.suggestedGroupId ?? item.group_category_id ?? '';
+      const itemId =
+        selectedItems[item.id] ?? sugg?.suggestedCategoryId ?? item.category_id ?? '';
+      const group = userCats?.expenseGroups.find((g) => g.category_id === groupId);
+      const itm = group?.items.find((i) => i.id === itemId);
+      if (!groupId || !itemId) {
+        toast.error('Selecione grupo e item de despesa');
+        return;
+      }
+      setUpdatingId(item.id);
+      try {
+        await applyCategory({
+          transaction_id: item.id,
+          group_category_id: groupId,
+          group_category_name: group?.category_name ?? '',
+          category_id: itemId,
+          category_name: itm?.name ?? '',
+        });
+        onCategoryUpdated();
+        const label = item.nome.length > 25 ? item.nome.substring(0, 25) + '…' : item.nome;
+        toast.success('Categoria confirmada!', {
+          action: {
+            label: `Sempre aplicar para "${label}"`,
+            onClick: async () => {
+              try {
+                const { data, error: rpcError } = await supabase.rpc('apply_lancamento_category_rule' as never, {
+                  p_nome_pattern: item.nome,
+                  p_categoria: itm?.name ?? '',
+                  p_tipo: item.tipo,
+                });
+                if (rpcError) throw rpcError;
+                const updated = (data as { updated?: number })?.updated ?? 0;
+                toast.success(`Regra aplicada! ${updated} lançamento(s) atualizado(s).`);
+                onCategoryUpdated();
+              } catch (err) {
+                console.error('Error applying rule:', err);
+                toast.error('Erro ao aplicar regra');
+              }
+            },
           },
-        },
-        duration: 8000,
-      });
-    } catch (err) {
-      console.error('Error confirming category:', err);
-      toast.error('Erro ao confirmar categoria');
-    } finally {
-      setUpdatingId(null);
-    }
-  }, [onCategoryUpdated, suggestionMap]);
+          duration: 8000,
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao confirmar categoria');
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [applyCategory, onCategoryUpdated, selectedGroups, selectedItems, suggestionMap, userCats]
+  );
+
+  /** Atualização imediata ao mudar categoria em lançamento já confirmado (edição). */
+  const handleConfirmedChange = useCallback(
+    async (item: LancamentoRealizado, isIncome: boolean, groupId: string | null, itemId: string, itemName: string) => {
+      setUpdatingId(item.id);
+      try {
+        if (isIncome) {
+          await applyCategory({
+            transaction_id: item.id,
+            group_category_id: null,
+            group_category_name: null,
+            category_id: itemId,
+            category_name: itemName,
+          });
+        } else {
+          const group = userCats?.expenseGroups.find((g) => g.category_id === groupId);
+          await applyCategory({
+            transaction_id: item.id,
+            group_category_id: groupId,
+            group_category_name: group?.category_name ?? '',
+            category_id: itemId,
+            category_name: itemName,
+          });
+        }
+        onCategoryUpdated();
+      } catch (err) {
+        console.error(err);
+        toast.error('Erro ao atualizar categoria');
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [applyCategory, onCategoryUpdated, userCats]
+  );
 
   const openEditDialog = (item: LancamentoRealizado) => {
     setSelectedLancamento(item);
@@ -338,16 +418,32 @@ export function LancamentoCategorySection({
     return '—';
   };
 
-  /** Banco/conta para exibir na coluna Banco (prioriza account_name da view, depois forma de pagamento). */
   const getBancoLabel = (item: LancamentoRealizado) => {
-    const extended = item as LancamentoRealizado & { account_name?: string | null; conta_nome?: string | null; instituicao?: string | null };
+    const extended = item as LancamentoRealizado & {
+      account_name?: string | null;
+      conta_nome?: string | null;
+      instituicao?: string | null;
+    };
     return extended.account_name ?? extended.conta_nome ?? extended.instituicao ?? getFormaPagamentoLabel(item);
   };
 
-  if (loadingCategories) {
-    return (
-      <RXFinLoadingSpinner height="py-8" />
-    );
+  const mobileCategorySubtitle = (item: LancamentoRealizado) => {
+    if (isIncomeLancamento(item)) {
+      const id = selectedItems[item.id] ?? item.category_id ?? suggestionMap[item.id]?.suggestedCategoryId;
+      return userCats?.incomeItems.find((i) => i.id === id)?.name ?? item.categoria ?? '—';
+    }
+    const gid = selectedGroups[item.id] ?? item.group_category_id ?? suggestionMap[item.id]?.suggestedGroupId;
+    const group = userCats?.expenseGroups.find((g) => g.category_id === gid);
+    const iid = selectedItems[item.id] ?? item.category_id ?? suggestionMap[item.id]?.suggestedCategoryId;
+    const itm = group?.items.find((x) => x.id === iid);
+    const g = group?.category_name ?? item.group_category_name ?? '';
+    const n = itm?.name ?? item.categoria ?? '';
+    if (g && n) return `${g} › ${n}`;
+    return n || g || '—';
+  };
+
+  if (userCatsLoading) {
+    return <RXFinLoadingSpinner height="py-8" />;
   }
 
   if (lancamentos.length === 0) {
@@ -364,11 +460,164 @@ export function LancamentoCategorySection({
     unvalidatedCount,
   };
 
-  // ── Mobile View ──
+  const renderIncomeSelect = (item: LancamentoRealizado, compact: boolean) => {
+    const sugg = suggestionMap[item.id];
+    const val =
+      selectedItems[item.id] ??
+      (item.is_category_confirmed ? item.category_id : undefined) ??
+      sugg?.suggestedCategoryId ??
+      '';
+    const loadingRow = loadingSuggestions && !sugg && !item.is_category_confirmed;
+    return (
+      <Select
+        key={`inc-${item.id}-${sugg?.suggestedCategoryId ?? 'empty'}`}
+        value={val || undefined}
+        onValueChange={(v) => {
+          setSelectedItems((prev) => ({ ...prev, [item.id]: v }));
+          if (item.is_category_confirmed) {
+            const name = userCats?.incomeItems.find((i) => i.id === v)?.name ?? '';
+            if (name) handleConfirmedChange(item, true, null, v, name);
+          }
+        }}
+        disabled={updatingId === item.id}
+      >
+        <SelectTrigger
+          className={cn(
+            compact ? 'w-full h-9' : 'w-full min-w-[140px] h-6 text-[10px]',
+            item.is_category_confirmed
+              ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20'
+              : 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+          )}
+        >
+          {loadingRow ? (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Sugerindo…
+            </span>
+          ) : (
+            <SelectValue placeholder="Selecionar receita" />
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {(userCats?.incomeItems ?? []).map((inc) => (
+            <SelectItem key={inc.id} value={inc.id} className={compact ? '' : 'text-xs'}>
+              {inc.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
+  const renderExpenseGroupSelect = (item: LancamentoRealizado, compact: boolean) => {
+    const sugg = suggestionMap[item.id];
+    const val =
+      selectedGroups[item.id] ??
+      (item.is_category_confirmed ? item.group_category_id : undefined) ??
+      sugg?.suggestedGroupId ??
+      '';
+    const loadingRow = loadingSuggestions && !sugg && !item.is_category_confirmed;
+    return (
+      <Select
+        key={`grp-${item.id}-${sugg?.suggestedGroupId ?? 'empty'}`}
+        value={val || undefined}
+        onValueChange={(v) => {
+          setSelectedGroups((prev) => ({ ...prev, [item.id]: v }));
+          setSelectedItems((prev) => {
+            const n = { ...prev };
+            delete n[item.id];
+            return n;
+          });
+          if (item.is_category_confirmed) {
+            const group = userCats?.expenseGroups.find((g) => g.category_id === v);
+            const curId = item.category_id ?? '';
+            const itm = group?.items.find((i) => i.id === curId);
+            if (group && itm) {
+              handleConfirmedChange(item, false, v, itm.id, itm.name);
+            }
+          }
+        }}
+        disabled={updatingId === item.id}
+      >
+        <SelectTrigger
+          className={cn(
+            compact ? 'w-full h-9' : 'w-[130px] h-6 text-[10px]',
+            item.is_category_confirmed
+              ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20'
+              : 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+          )}
+        >
+          {loadingRow ? (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              …
+            </span>
+          ) : (
+            <SelectValue placeholder="Grupo" />
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {(userCats?.expenseGroups ?? []).map((g) => (
+            <SelectItem key={g.category_id} value={g.category_id} className={compact ? '' : 'text-xs'}>
+              {g.category_name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
+  const renderExpenseItemSelect = (item: LancamentoRealizado, compact: boolean) => {
+    const sugg = suggestionMap[item.id];
+    const groupId =
+      selectedGroups[item.id] ??
+      (item.is_category_confirmed ? item.group_category_id : undefined) ??
+      sugg?.suggestedGroupId ??
+      '';
+    const group = (userCats?.expenseGroups ?? []).find((g) => g.category_id === groupId);
+    const items = group?.items ?? [];
+    const val =
+      selectedItems[item.id] ??
+      (item.is_category_confirmed ? item.category_id : undefined) ??
+      sugg?.suggestedCategoryId ??
+      '';
+    return (
+      <Select
+        key={`itm-${item.id}-${groupId}-${sugg?.suggestedCategoryId ?? 'empty'}`}
+        value={val || undefined}
+        onValueChange={(v) => {
+          setSelectedItems((prev) => ({ ...prev, [item.id]: v }));
+          if (item.is_category_confirmed && group) {
+            const itm = group.items.find((i) => i.id === v);
+            if (itm) handleConfirmedChange(item, false, groupId, v, itm.name);
+          }
+        }}
+        disabled={items.length === 0 || updatingId === item.id}
+      >
+        <SelectTrigger
+          className={cn(
+            compact ? 'w-full h-9' : 'w-[130px] h-6 text-[10px]',
+            item.is_category_confirmed
+              ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20'
+              : 'border-amber-300 bg-amber-50/50 dark:bg-amber-950/20'
+          )}
+        >
+          <SelectValue placeholder="Item" />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((i) => (
+            <SelectItem key={i.id} value={i.id} className={compact ? '' : 'text-xs'}>
+              {i.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   if (isMobile) {
     return (
       <div className="space-y-3">
-        {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant={showUnvalidatedOnly ? 'default' : 'outline'}
@@ -395,21 +644,27 @@ export function LancamentoCategorySection({
             <PopoverContent className="w-48 p-2" align="start">
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground px-2 py-1">Ordenar por</p>
-                {([
-                  { field: 'date' as SortField, label: 'Data' },
-                  { field: 'name' as SortField, label: 'Nome (A-Z)' },
-                  { field: 'value' as SortField, label: 'Valor' },
-                  { field: 'category' as SortField, label: 'Categoria' },
-                ]).map(({ field, label }) => (
+                {(
+                  [
+                    { field: 'date' as SortField, label: 'Data' },
+                    { field: 'name' as SortField, label: 'Nome (A-Z)' },
+                    { field: 'value' as SortField, label: 'Valor' },
+                    { field: 'category' as SortField, label: 'Categoria' },
+                  ] as const
+                ).map(({ field, label }) => (
                   <Button
                     key={field}
-                    variant={sortField === field ? "secondary" : "ghost"}
+                    variant={sortField === field ? 'secondary' : 'ghost'}
                     size="sm"
                     className="w-full justify-between h-8 text-xs"
-                    onClick={() => { handleSort(field); setShowMobileSortMenu(false); }}
+                    onClick={() => {
+                      handleSort(field);
+                      setShowMobileSortMenu(false);
+                    }}
                   >
                     {label}
-                    {sortField === field && (sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+                    {sortField === field &&
+                      (sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
                   </Button>
                 ))}
               </div>
@@ -417,17 +672,13 @@ export function LancamentoCategorySection({
           </Popover>
         </div>
 
-        {/* Mobile List */}
         <ScrollArea className="h-[400px]">
           <div className="space-y-1">
             {filteredAndSorted.length === 0 ? (
-              <EmptyState
-                description="Nenhum lançamento encontrado"
-                className="py-6"
-              />
+              <EmptyState description="Nenhum lançamento encontrado" className="py-6" />
             ) : (
               filteredAndSorted.map((item) => {
-                const isEntrada = item.tipo === 'receita';
+                const isEntrada = isIncomeLancamento(item);
                 const isConfirmed = item.is_category_confirmed;
                 const dateStr = item.data_pagamento || item.data_registro;
 
@@ -435,10 +686,10 @@ export function LancamentoCategorySection({
                   <div
                     key={item.id}
                     className={cn(
-                      "p-2.5 rounded-lg border transition-colors cursor-pointer active:scale-[0.98]",
+                      'p-2.5 rounded-lg border transition-colors cursor-pointer active:scale-[0.98]',
                       isConfirmed
-                        ? "bg-emerald-50/60 border-emerald-200/60 dark:bg-emerald-950/20 dark:border-emerald-800/40"
-                        : "bg-card border-border"
+                        ? 'bg-emerald-50/60 border-emerald-200/60 dark:bg-emerald-950/20 dark:border-emerald-800/40'
+                        : 'bg-card border-border'
                     )}
                     onClick={() => openEditDialog(item)}
                   >
@@ -446,26 +697,23 @@ export function LancamentoCategorySection({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
                           <span className="text-[10px] text-muted-foreground">{dateStr ? formatShortDate(dateStr) : '—'}</span>
-                          {isConfirmed && (
-                            <Check className="h-3 w-3 text-emerald-500/60" strokeWidth={2.5} />
-                          )}
+                          {isConfirmed && <Check className="h-3 w-3 text-emerald-500/60" strokeWidth={2.5} />}
                           <Badge
                             variant="outline"
                             className={cn(
-                              "h-3.5 px-1 text-[8px]",
-                              isEntrada ? "bg-income/10 border-income/20 text-income" : "bg-expense/10 border-expense/20 text-expense"
+                              'h-3.5 px-1 text-[8px]',
+                              isEntrada ? 'bg-income/10 border-income/20 text-income' : 'bg-expense/10 border-expense/20 text-expense'
                             )}
                           >
                             {isEntrada ? <TrendingUp className="h-2 w-2" /> : <TrendingDown className="h-2 w-2" />}
                           </Badge>
                         </div>
                         <p className="text-xs font-medium truncate">{item.nome}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{item.categoria}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{mobileCategorySubtitle(item)}</p>
                       </div>
-                      <span className={cn(
-                        "font-medium text-xs tabular-nums whitespace-nowrap",
-                        isEntrada ? "text-income" : "text-expense"
-                      )}>
+                      <span
+                        className={cn('font-medium text-xs tabular-nums whitespace-nowrap', isEntrada ? 'text-income' : 'text-expense')}
+                      >
                         {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </span>
                     </div>
@@ -476,7 +724,6 @@ export function LancamentoCategorySection({
           </div>
         </ScrollArea>
 
-        {/* Mobile Summary */}
         <div className="border-t pt-2 space-y-1">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">
@@ -491,13 +738,11 @@ export function LancamentoCategorySection({
           )}
         </div>
 
-        {/* Mobile Edit Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="max-w-[90vw] sm:max-w-md rounded-xl" hideCloseButton={false}>
             {selectedLancamento && (() => {
               const item = selectedLancamento;
-              const isEntrada = item.tipo === 'receita';
-              const categories = getCategoriesForItem(item);
+              const isEntrada = isIncomeLancamento(item);
               const dateStr = item.data_pagamento || item.data_registro;
 
               return (
@@ -511,54 +756,39 @@ export function LancamentoCategorySection({
                   </DialogHeader>
 
                   <div className="space-y-3">
-                    {/* Value */}
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Valor</span>
-                      <span className={cn("text-lg font-bold", isEntrada ? "text-income" : "text-expense")}>
+                      <span className={cn('text-lg font-bold', isEntrada ? 'text-income' : 'text-expense')}>
                         {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </span>
                     </div>
-
-                    {/* Date */}
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Data</span>
                       <span className="text-sm font-medium">{dateStr ? formatDate(dateStr) : '—'}</span>
                     </div>
-
-                    {/* Forma de pagamento */}
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-sm text-muted-foreground">Forma de Pagamento</span>
                       <span className="text-sm">{getBancoLabel(item)}</span>
                     </div>
 
-                    {/* Category */}
-                    <div className="space-y-1.5">
-                      <span className="text-sm text-muted-foreground">Categoria</span>
-                      <Select
-                        key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
-                        value={getDisplayCategory(item) || undefined}
-                        onValueChange={(value) => handleCategoryChange(item, value)}
-                        disabled={updatingId === item.id}
-                      >
-                        <SelectTrigger className="w-full">
-                          {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Sugerindo…
-                            </span>
-                          ) : (
-                            <SelectValue placeholder="Selecionar" />
-                          )}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {isEntrada ? (
+                      <div className="space-y-1.5">
+                        <span className="text-sm text-muted-foreground">Categoria (receita)</span>
+                        {renderIncomeSelect(item, true)}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-1.5">
+                          <span className="text-sm text-muted-foreground">Grupo</span>
+                          {renderExpenseGroupSelect(item, true)}
+                        </div>
+                        <div className="space-y-1.5">
+                          <span className="text-sm text-muted-foreground">Item</span>
+                          {renderExpenseItemSelect(item, true)}
+                        </div>
+                      </>
+                    )}
 
-                    {/* Observações */}
                     {item.observacoes && (
                       <div className="space-y-1">
                         <span className="text-xs text-muted-foreground">Observações</span>
@@ -567,14 +797,13 @@ export function LancamentoCategorySection({
                     )}
                   </div>
 
-                  {/* Actions */}
                   <div className="flex gap-2 pt-2">
                     {!item.is_category_confirmed && (
                       <Button
                         variant="default"
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                         onClick={() => {
-                          handleConfirmCategory(item);
+                          handleConfirm(item);
                           setSelectedLancamento({ ...item, is_category_confirmed: true });
                         }}
                         disabled={updatingId === item.id}
@@ -602,10 +831,8 @@ export function LancamentoCategorySection({
     );
   }
 
-  // ── Desktop / Tablet View ──
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <Button
           variant={showUnvalidatedOnly ? 'default' : 'outline'}
@@ -623,35 +850,29 @@ export function LancamentoCategorySection({
         </Button>
       </div>
 
-      {/* Table */}
       <ScrollArea className="h-[400px] border rounded-lg">
-        <div className="min-w-[800px]">
+        <div className="min-w-[920px]">
           <Table className="text-xs">
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 transition-colors py-2 px-2 w-24"
-                  onClick={() => handleSort('date')}
-                >
+                <TableHead className="cursor-pointer hover:bg-muted/50 py-2 px-2 w-24" onClick={() => handleSort('date')}>
                   <div className="flex items-center gap-1 font-semibold">
                     Data
                     {getSortIcon('date')}
                   </div>
                 </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 transition-colors py-2 px-2"
-                  onClick={() => handleSort('name')}
-                >
+                <TableHead className="cursor-pointer hover:bg-muted/50 py-2 px-2" onClick={() => handleSort('name')}>
                   <div className="flex items-center gap-1">
                     Descrição
                     {getSortIcon('name')}
                   </div>
                 </TableHead>
-                <TableHead className="py-2 px-2 w-56">Categoria</TableHead>
+                <TableHead className="py-2 px-2 w-36">Grupo</TableHead>
+                <TableHead className="py-2 px-2 w-36">Item</TableHead>
                 <TableHead className="py-2 px-1 w-14 text-center">Status</TableHead>
                 <TableHead className="py-2 px-2 w-28">Banco</TableHead>
                 <TableHead
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors py-2 px-2 w-28"
+                  className="text-right cursor-pointer hover:bg-muted/50 py-2 px-2 w-28"
                   onClick={() => handleSort('value')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -665,105 +886,87 @@ export function LancamentoCategorySection({
             <TableBody>
               {filteredAndSorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                     Nenhum lançamento encontrado com os filtros aplicados
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAndSorted.map((item) => {
-                  const isEntrada = item.tipo === 'receita';
+                  const isEntrada = isIncomeLancamento(item);
                   const isUpdating = updatingId === item.id;
                   const isConfirmed = item.is_category_confirmed;
                   const dateStr = item.data_pagamento || item.data_registro;
+                  const sugg = suggestionMap[item.id];
 
                   return (
                     <TableRow key={item.id} className="text-xs">
-                      {/* Date */}
                       <TableCell className="whitespace-nowrap py-1.5 px-2 font-semibold text-foreground">
                         {dateStr ? formatDate(dateStr) : '—'}
                       </TableCell>
-
-                      {/* Name / Description */}
-                      <TableCell className="font-medium max-w-[220px] py-1.5 px-2">
+                      <TableCell className="font-medium max-w-[200px] py-1.5 px-2">
                         <div className="truncate flex items-center gap-1.5">
-                          <div className={cn(
-                            "h-5 w-5 rounded-full flex items-center justify-center shrink-0",
-                            isEntrada ? "bg-income/10" : "bg-expense/10"
-                          )}>
+                          <div
+                            className={cn(
+                              'h-5 w-5 rounded-full flex items-center justify-center shrink-0',
+                              isEntrada ? 'bg-income/10' : 'bg-expense/10'
+                            )}
+                          >
                             {isEntrada ? (
                               <TrendingUp className="h-3 w-3 text-income" />
                             ) : (
                               <TrendingDown className="h-3 w-3 text-expense" />
                             )}
                           </div>
-                          <span className="truncate" title={item.nome}>{item.nome}</span>
+                          <span className="truncate" title={item.nome}>
+                            {item.nome}
+                          </span>
                         </div>
                       </TableCell>
-
-                      {/* Category */}
-                      <TableCell className="py-1.5 px-2">
-                        <div className="flex items-center gap-1.5">
-                          <Select
-                            key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
-                            value={getDisplayCategory(item) || undefined}
-                            onValueChange={(value) => handleCategoryChange(item, value)}
-                            disabled={isUpdating}
-                          >
-                            <SelectTrigger className={cn(
-                              "w-[200px] h-6 text-[10px] border",
-                              isConfirmed
-                                ? "border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800"
-                                : "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800"
-                            )}>
-                              {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
-                                <span className="flex items-center gap-1 text-muted-foreground">
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  Sugerindo…
-                                </span>
-                              ) : (
-                                <SelectValue placeholder="Selecionar" />
+                      {isEntrada ? (
+                        <TableCell colSpan={2} className="py-1.5 px-2">
+                          <div className="flex items-center gap-1.5 max-w-[280px]">{renderIncomeSelect(item, false)}</div>
+                        </TableCell>
+                      ) : (
+                        <>
+                          <TableCell className="py-1.5 px-2 align-top">
+                            <div className="flex items-center gap-1">{renderExpenseGroupSelect(item, false)}</div>
+                          </TableCell>
+                          <TableCell className="py-1.5 px-2 align-top">
+                            <div className="flex items-center gap-1">
+                              {renderExpenseItemSelect(item, false)}
+                              {!isConfirmed && sugg && (
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span
+                                        className={cn(
+                                          'shrink-0 w-2 h-2 rounded-full',
+                                          sugg.confidence === 'high'
+                                            ? 'bg-emerald-500'
+                                            : sugg.confidence === 'medium'
+                                              ? 'bg-amber-500'
+                                              : 'bg-muted-foreground/50'
+                                        )}
+                                        aria-label={`Confiança: ${sugg.confidence}`}
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">Sugestão IA — confiança {sugg.confidence}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getCategoriesForItem(item).map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value} className="text-xs">
-                                  {cat.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {!isConfirmed && suggestionMap[item.id] && (
-                            <TooltipProvider delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    className={cn(
-                                      "shrink-0 w-2 h-2 rounded-full",
-                                      suggestionMap[item.id].confidence === 'high'
-                                        ? "bg-emerald-500"
-                                        : suggestionMap[item.id].confidence === 'medium'
-                                          ? "bg-amber-500"
-                                          : "bg-muted-foreground/50"
-                                    )}
-                                    aria-label={`Confiança: ${suggestionMap[item.id].confidence}`}
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                  <p className="text-xs">Sugestão IA — confiança {suggestionMap[item.id].confidence}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )}
-                          {isUpdating && (
-                            <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Status */}
+                              {isUpdating && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}
+                            </div>
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell className="text-center py-1.5 px-1">
                         {isConfirmed ? (
-                          <Badge variant="outline" className="text-[8px] px-1 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+                          <Badge
+                            variant="outline"
+                            className="text-[8px] px-1 py-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400"
+                          >
                             <Check className="h-2 w-2 mr-0.5" />
                             Ok
                           </Badge>
@@ -775,14 +978,10 @@ export function LancamentoCategorySection({
                                   variant="ghost"
                                   size="icon"
                                   className="h-6 w-6 text-amber-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                  onClick={() => handleConfirmCategory(item)}
+                                  onClick={() => handleConfirm(item)}
                                   disabled={isUpdating}
                                 >
-                                  {isUpdating ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Check className="h-3.5 w-3.5" />
-                                  )}
+                                  {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent side="top">
@@ -792,8 +991,6 @@ export function LancamentoCategorySection({
                           </TooltipProvider>
                         )}
                       </TableCell>
-
-                      {/* Banco */}
                       <TableCell className="py-1.5 px-2">
                         <div className="flex items-center gap-1.5">
                           <Wallet className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -802,16 +999,14 @@ export function LancamentoCategorySection({
                           </span>
                         </div>
                       </TableCell>
-
-                      {/* Value */}
-                      <TableCell className={cn(
-                        "text-right font-medium tabular-nums py-1.5 px-2",
-                        isEntrada ? "text-income" : "text-expense"
-                      )}>
+                      <TableCell
+                        className={cn(
+                          'text-right font-medium tabular-nums py-1.5 px-2',
+                          isEntrada ? 'text-income' : 'text-expense'
+                        )}
+                      >
                         {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                       </TableCell>
-
-                      {/* Actions */}
                       <TableCell className="text-center py-1.5 px-1">
                         <Button
                           variant="ghost"
@@ -831,7 +1026,6 @@ export function LancamentoCategorySection({
         </div>
       </ScrollArea>
 
-      {/* Summary */}
       <div className="border-t pt-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="text-xs text-muted-foreground space-y-0.5">
@@ -846,26 +1040,21 @@ export function LancamentoCategorySection({
           </div>
           <div className="text-right">
             <p className="text-[10px] text-muted-foreground">Total do período</p>
-            <p className="text-base font-bold text-primary">
-              {formatCurrency(totals.filteredTotal)}
-            </p>
+            <p className="text-base font-bold text-primary">{formatCurrency(totals.filteredTotal)}</p>
           </div>
         </div>
       </div>
 
-      {/* Desktop Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-md rounded-xl" hideCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Editar Lançamento</DialogTitle>
-            <DialogDescription>Altere a categoria do lançamento</DialogDescription>
+            <DialogDescription>Altere grupo e item de categoria</DialogDescription>
           </DialogHeader>
           {selectedLancamento && (() => {
             const item = selectedLancamento;
-            const isEntrada = item.tipo === 'receita';
-            const categories = getCategoriesForItem(item);
+            const isEntrada = isIncomeLancamento(item);
             const dateStr = item.data_pagamento || item.data_registro;
-
             return (
               <div className="space-y-4">
                 <div className="space-y-3">
@@ -875,7 +1064,7 @@ export function LancamentoCategorySection({
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground">Valor</label>
-                    <p className={cn("font-bold text-lg", isEntrada ? "text-income" : "text-expense")}>
+                    <p className={cn('font-bold text-lg', isEntrada ? 'text-income' : 'text-expense')}>
                       {formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                     </p>
                   </div>
@@ -884,46 +1073,35 @@ export function LancamentoCategorySection({
                     <p className="text-sm">{getBancoLabel(item)}</p>
                   </div>
                 </div>
-
-                <div>
-                  <label className="text-xs text-muted-foreground block mb-2">Categoria</label>
-                  <Select
-                    key={`${item.id}-${suggestionMap[item.id]?.suggestedCategoryId ?? 'empty'}`}
-                    value={getDisplayCategory(item) || undefined}
-                    onValueChange={(value) => handleCategoryChange(item, value)}
-                    disabled={updatingId === item.id}
-                  >
-                    <SelectTrigger className="w-full">
-                      {loadingSuggestions && !suggestionMap[item.id] && !item.categoria?.trim() ? (
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Sugerindo…
-                        </span>
-                      ) : (
-                        <SelectValue placeholder="Selecionar" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {item.observacoes && (
+                {isEntrada ? (
+                  <div>
+                    <label className="text-xs text-muted-foreground block mb-2">Receita</label>
+                    {renderIncomeSelect(item, true)}
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-2">Grupo</label>
+                      {renderExpenseGroupSelect(item, true)}
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground block mb-2">Item</label>
+                      {renderExpenseItemSelect(item, true)}
+                    </div>
+                  </>
+                )}
+                {selectedLancamento.observacoes && (
                   <div className="p-2 bg-muted/40 rounded-lg">
-                    <p className="text-xs text-muted-foreground">{item.observacoes}</p>
+                    <p className="text-xs text-muted-foreground">{selectedLancamento.observacoes}</p>
                   </div>
                 )}
-
                 <div className="flex gap-2 pt-2">
                   {!item.is_category_confirmed && (
                     <Button
                       variant="default"
                       className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                       onClick={() => {
-                        handleConfirmCategory(item);
+                        handleConfirm(item);
                         setSelectedLancamento({ ...item, is_category_confirmed: true });
                       }}
                       disabled={updatingId === item.id}

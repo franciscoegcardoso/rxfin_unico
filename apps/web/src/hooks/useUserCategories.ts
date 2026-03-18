@@ -1,38 +1,39 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface CategoryItem {
+  id: string;
+  name: string;
+}
 export interface ExpenseGroup {
   category_id: string;
   category_name: string;
-  items: { id: string; name: string }[];
+  items: CategoryItem[];
 }
-
 export interface UserCategories {
   expenseGroups: ExpenseGroup[];
-  incomeItems: { id: string; name: string }[];
+  incomeItems: CategoryItem[];
 }
 
 export function useUserCategories() {
   const [data, setData] = useState<UserCategories | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
     supabase.functions
       .invoke('get-user-categories')
-      .then(({ data }) => {
-        if (!isMounted) return;
-        if (data) setData(data as UserCategories);
+      .then(({ data: d }) => {
+        if (!cancelled && d) setData(d as UserCategories);
+      })
+      .catch(() => {
+        if (!cancelled) setData({ expenseGroups: [], incomeItems: [] });
       })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
-
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
   }, []);
-
   return { data, loading };
 }
-
