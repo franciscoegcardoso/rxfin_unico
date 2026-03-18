@@ -21,10 +21,16 @@ const TITLE_MAP: Record<string, string> = {
   "/movimentacoes": "Movimentações",
   "/movimentacoes/extrato": "Extrato de conta",
   "/movimentacoes/cartao-credito": "Cartão de Crédito",
+  "/passivos": "Passivos",
+  "/passivos/dividas": "Dívidas",
+  "/passivos/financiamentos": "Financiamentos",
+  "/passivos/consorcios": "Consórcios",
   "/bens-investimentos": "Bens e Investimentos",
-  "/bens-investimentos/consolidado": "Consolidado",
-  "/bens-investimentos/patrimonio": "Patrimônio",
+  "/bens-investimentos/consolidado": "Visão Geral",
+  "/bens-investimentos/imoveis": "Meus Imóveis",
+  "/bens-investimentos/veiculos": "Meus Veículos",
   "/bens-investimentos/investimentos": "Investimentos",
+  "/bens-investimentos/fgts": "FGTS",
   "/bens-investimentos/credito": "Crédito",
   "/bens-investimentos/seguros": "Seguros",
   "/simuladores": "Simuladores",
@@ -44,5 +50,6 @@ export function getPageTitle(pathname: string): string {
 export function isNavActive(pathname: string, itemPath: string): boolean {
   if (itemPath === "/inicio") return pathname === "/inicio";
   if (itemPath === "/movimentacoes") return pathname === "/movimentacoes" || pathname.startsWith("/movimentacoes/");
+  if (itemPath === "/passivos") return pathname === "/passivos" || pathname.startsWith("/passivos/");
   return pathname === itemPath || pathname.startsWith(itemPath + "/");
 }

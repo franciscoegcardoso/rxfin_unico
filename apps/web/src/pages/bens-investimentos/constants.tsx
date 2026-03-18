@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Home, Car, TrendingUp, Building2, Gem, FileCode2,
   Scale, CreditCard, ShieldCheck, LayoutDashboard,
-  Briefcase, Landmark, Package
+  Briefcase, Landmark, Package, Wallet
 } from 'lucide-react';
 
 // ─── Grupos ─────────────────────────────────────────────────────────────────
@@ -41,11 +41,13 @@ export type NewAssetType = keyof typeof ASSET_TYPES;
 
 export const TABS = [
   { id: 'consolidado',   label: 'Visão Geral',    icon: LayoutDashboard },
-  { id: 'patrimonio',    label: 'Patrimônio Real', icon: Home            },
-  { id: 'investimentos', label: 'Investimentos',   icon: TrendingUp      },
-  { id: 'participacoes', label: 'Participações',   icon: Building2       },
-  { id: 'intangiveis',   label: 'Intangíveis',     icon: Briefcase       },
-  { id: 'seguros',       label: 'Seguros',         icon: ShieldCheck     },
+  { id: 'imoveis',      label: 'Meus Imóveis',   icon: Home             },
+  { id: 'veiculos',     label: 'Meus Veículos',  icon: Car              },
+  { id: 'investimentos', label: 'Investimentos', icon: TrendingUp        },
+  { id: 'fgts',         label: 'FGTS',           icon: Wallet           },
+  { id: 'participacoes', label: 'Participações', icon: Building2         },
+  { id: 'intangiveis',  label: 'Intangíveis',    icon: Briefcase        },
+  { id: 'seguros',      label: 'Seguros',        icon: ShieldCheck      },
 ] as const;
 
 export type BensTab = typeof TABS[number]['id'];
@@ -53,8 +55,10 @@ export type BensTab = typeof TABS[number]['id'];
 // Mapeamento tab → asset_types que ela exibe
 export const TAB_ASSET_TYPES: Record<BensTab, NewAssetType[]> = {
   'consolidado':   [],
-  'patrimonio':    ['property', 'vehicle', 'valuables', 'equipment', 'other'],
+  'imoveis':       ['property'],
+  'veiculos':      ['vehicle'],
   'investimentos': ['investment', 'receivable'],
+  'fgts':          [],
   'participacoes': ['company_stake'],
   'intangiveis':   ['intellectual_property', 'license', 'contract_right'],
   'seguros':       [],

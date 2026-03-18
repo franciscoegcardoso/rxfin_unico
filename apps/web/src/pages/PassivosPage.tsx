@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { AlertCircle, FileText, Landmark, TrendingUp } from 'lucide-react';
+import { AlertCircle, FileText, Landmark, TrendingUp, LayoutDashboard } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,18 +13,22 @@ const PassivosPage: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const VALID_TABS = useMemo(() => ['dividas', 'financiamentos', 'consorcios'] as const, []);
+  const VALID_TABS = useMemo(() => ['visao-geral', 'dividas', 'financiamentos', 'consorcios'] as const, []);
   const rawTab = pathname.split('/').filter(Boolean).pop();
-  const currentTab = VALID_TABS.includes(rawTab as any)
-    ? (rawTab as (typeof VALID_TABS)[number])
-    : 'dividas';
+  const isRoot = rawTab === 'passivos' || pathname === '/passivos';
+  const currentTab = isRoot
+    ? 'visao-geral'
+    : VALID_TABS.includes(rawTab as any)
+      ? (rawTab as (typeof VALID_TABS)[number])
+      : 'visao-geral';
 
   const { data: header, isLoading, error } = usePassivosHeader();
 
   useEffect(() => {
     if (!rawTab) return;
+    if (rawTab === 'passivos') return;
     if (!VALID_TABS.includes(rawTab as any)) {
-      navigate('/passivos/dividas', { replace: true });
+      navigate('/passivos', { replace: true });
     }
   }, [navigate, rawTab, VALID_TABS]);
 
@@ -76,41 +80,48 @@ const PassivosPage: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Summary (mesmo padrão visual que Bens e Investimentos) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-          <HeaderMetricCard
-            label="Dívidas"
-            value={formatMoney(header?.total_dividas ?? 0)}
-            variant="negative"
-            icon={<FileText className="h-4 w-4" />}
-          />
-          <HeaderMetricCard
-            label="Financiamentos"
-            value={formatMoney(header?.total_financiamentos ?? 0)}
-            variant="blue"
-            icon={<Landmark className="h-4 w-4" />}
-          />
-          <HeaderMetricCard
-            label="Consórcios"
-            value={formatMoney(header?.total_consorcios ?? 0)}
-            variant="neutral"
-            icon={<TrendingUp className="h-4 w-4" />}
-          />
-          <HeaderMetricCard
-            label="Parcela Mensal"
-            value={formatMoney(header?.parcela_mensal_total ?? 0)}
-            variant="amber"
-            icon={<span className="text-sm">R$</span>}
-          />
-        </div>
-
-        <p className="text-[10px] text-muted-foreground -mt-2">
-          {header?.dividas_count ?? 0} dívidas · {header?.financiamentos_count ?? 0} financiamentos · {header?.consorcios_count ?? 0} consórcio(s)
-        </p>
+        {/* Summary: oculto na visão geral (a tab já exibe os cards) */}
+        {currentTab !== 'visao-geral' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <HeaderMetricCard
+                label="Dívidas"
+                value={formatMoney(header?.total_dividas ?? 0)}
+                variant="negative"
+                icon={<FileText className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Financiamentos"
+                value={formatMoney(header?.total_financiamentos ?? 0)}
+                variant="blue"
+                icon={<Landmark className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Consórcios"
+                value={formatMoney(header?.total_consorcios ?? 0)}
+                variant="neutral"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+              <HeaderMetricCard
+                label="Parcela Mensal"
+                value={formatMoney(header?.parcela_mensal_total ?? 0)}
+                variant="amber"
+                icon={<span className="text-sm">R$</span>}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground -mt-2">
+              {header?.dividas_count ?? 0} dívidas · {header?.financiamentos_count ?? 0} financiamentos · {header?.consorcios_count ?? 0} consórcio(s)
+            </p>
+          </>
+        )}
 
         {/* Tabs orientadas por rota */}
-        <Tabs value={currentTab} onValueChange={(val) => navigate(`/passivos/${val}`)}>
+        <Tabs value={currentTab} onValueChange={(val) => navigate(val === 'visao-geral' ? '/passivos' : `/passivos/${val}`)}>
           <TabsList>
+            <TabsTrigger value="visao-geral" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Visão geral
+            </TabsTrigger>
             <TabsTrigger value="dividas" className="gap-2">
               <FileText className="h-4 w-4" />
               Dívidas
@@ -148,7 +159,7 @@ const PassivosPage: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Conteudo vem via sub-rotas */}
+          {/* Conteúdo vem via sub-rotas */}
           <Outlet />
         </Tabs>
       </div>

@@ -53,9 +53,12 @@ const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 
 const BensInvestimentosLayout = lazy(() => import("./pages/bens-investimentos/BensInvestimentosLayout"));
 const ConsolidadoTab = lazy(() => import("./pages/bens-investimentos/ConsolidadoTab"));
-const PatrimonioTab = lazy(() => import("./pages/bens-investimentos/PatrimonioTab"));
+const MeusImoveis = lazy(() => import("./pages/bens-investimentos/imoveis/MeusImoveis"));
+const MeusVeiculos = lazy(() => import("./pages/bens-investimentos/veiculos/MeusVeiculos"));
 const InvestimentosTab = lazy(() => import("./pages/bens-investimentos/InvestimentosTab"));
+const FGTSPage = lazy(() => import("./pages/bens-investimentos/fgts/FGTSPage"));
 const PassivosPage = lazy(() => import("./pages/PassivosPage"));
+const PassivosConsolidadoTab = lazy(() => import("./pages/passivos/PassivosConsolidadoTab"));
 const PassivosDividasTab = lazy(() => import("./pages/passivos/PassivosDividasTab"));
 const PassivosFinanciamentosTab = lazy(() => import("./pages/passivos/PassivosFinanciamentosTab"));
 const PassivosConsorciosTab = lazy(() => import("./pages/passivos/PassivosConsorciosTab"));
@@ -202,10 +205,10 @@ const App = () => (
                                   <Route path="dashboard" element={<Navigate to="/inicio" replace />} />
                                   <Route path="compromissos" element={<Navigate to="/movimentacoes/extrato" replace />} />
                                   <Route path="parametros" element={<Parametros />} />
-                                  <Route path="movimentacoes" element={<MovimentacoesPage />} />
+                                  <Route path="movimentacoes" element={<MovimentacoesPage defaultTab="visao-geral" />} />
                                   <Route path="movimentacoes/extrato" element={<MovimentacoesPage defaultTab="extrato" />} />
                                   <Route path="movimentacoes/cartao-credito" element={<MovimentacoesPage defaultTab="cartao-credito" />} />
-                                  <Route path="movimentacoes/consolidado" element={<MovimentacoesPage defaultTab="consolidado" />} />
+                                  <Route path="movimentacoes/consolidado" element={<Navigate to="/movimentacoes" replace />} />
                                   <Route path="lancamentos" element={<Navigate to="/movimentacoes/extrato" replace />} />
                                   <Route path="contas" element={<Contas />} />
                                   <Route path="fluxo-financeiro" element={<FluxoFinanceiro />} />
@@ -213,8 +216,11 @@ const App = () => (
                                   <Route path="bens-investimentos" element={<BensInvestimentosLayout />}>
                                     <Route index element={<Navigate to="consolidado" replace />} />
                                     <Route path="consolidado" element={<ConsolidadoTab />} />
-                                    <Route path="patrimonio" element={<PatrimonioTab />} />
+                                    <Route path="patrimonio" element={<Navigate to="/bens-investimentos/imoveis" replace />} />
+                                    <Route path="imoveis" element={<MeusImoveis />} />
+                                    <Route path="veiculos" element={<MeusVeiculos />} />
                                     <Route path="investimentos" element={<InvestimentosTab />} />
+                                    <Route path="fgts" element={<FGTSPage />} />
                                     <Route path="passivos" element={<Navigate to="/passivos" replace />} />
                                     <Route path="credito" element={<Navigate to="/passivos" replace />} />
                                     <Route path="dividas" element={<Navigate to="/passivos" replace />} />
@@ -225,7 +231,8 @@ const App = () => (
                                   </Route>
 
                                   <Route path="passivos" element={<PassivosPage />}>
-                                    <Route index element={<Navigate to="dividas" replace />} />
+                                    <Route index element={<PassivosConsolidadoTab />} />
+                                    <Route path="visao-geral" element={<Navigate to="/passivos" replace />} />
                                     <Route path="dividas" element={<PassivosDividasTab />} />
                                     <Route path="financiamentos" element={<PassivosFinanciamentosTab />} />
                                     <Route path="consorcios" element={<PassivosConsorciosTab />} />

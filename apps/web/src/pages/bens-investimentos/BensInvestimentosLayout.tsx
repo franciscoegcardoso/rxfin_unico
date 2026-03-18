@@ -75,10 +75,8 @@ const BensInvestimentosLayout: React.FC = () => {
   const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
   const validTabs = VALID_TABS as readonly string[];
   const tabFromUrl = (() => {
-    // 'dividas' é tratada pelo React Router via <Navigate to="/passivos"> — não forçar consolidado
     if (pathSegment === 'dividas') return 'dividas';
     if (pathSegment === 'overview') return 'consolidado';
-    if (pathSegment === 'imoveis' || pathSegment === 'veiculos') return 'patrimonio';
     if (pathSegment === 'financiamentos') return 'consolidado';
     return validTabs.includes(pathSegment) ? pathSegment : 'consolidado';
   })();
@@ -121,8 +119,8 @@ const BensInvestimentosLayout: React.FC = () => {
 
   const [defaultAssetType, setDefaultAssetType] = useState<AssetType>('property');
   useEffect(() => {
-    if (currentTab === 'participacoes' || currentTab === 'intangiveis') return;
-    const next: AssetType = currentTab === 'investimentos' ? 'investment' : openAsVehicleOnly ? 'vehicle' : 'property';
+    if (currentTab === 'participacoes' || currentTab === 'intangiveis' || currentTab === 'fgts') return;
+    const next: AssetType = currentTab === 'investimentos' ? 'investment' : currentTab === 'veiculos' || openAsVehicleOnly ? 'vehicle' : 'property';
     setDefaultAssetType(next);
   }, [currentTab, openAsVehicleOnly]);
 
@@ -590,7 +588,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Home className="h-4 w-4" /> Imóveis</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/patrimonio')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/imoveis')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {imoveis.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -603,7 +601,7 @@ const BensInvestimentosLayout: React.FC = () => {
                     <Card className="rounded-[14px] border border-border/80 p-4 h-full">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <h3 className="font-semibold flex items-center gap-2"><Car className="h-4 w-4" /> Veículos</h3>
-                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/patrimonio')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="sm" className="text-primary h-auto py-1 gap-1" onClick={() => navigate('/bens-investimentos/veiculos')}>Ver todos <ChevronRight className="h-3 w-3" /></Button>
                       </div>
                       <ul className="space-y-1.5 text-sm">
                         {veiculosList.slice(0, 4).map((a: { name?: string; current_value?: number }, i: number) => (
@@ -657,128 +655,7 @@ const BensInvestimentosLayout: React.FC = () => {
                 </>
               )}
 
-              {currentTab === 'patrimonio' && (
-                <div className="space-y-8">
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Home className="h-5 w-5 text-primary" />
-                      Meus Imóveis
-                    </h2>
-                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
-                      <Plus className="h-4 w-4" />
-                      Adicionar imóvel
-                    </Button>
-                  </div>
-                  {imoveis.length === 0 ? (
-                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-                      <CardContent className="flex flex-col items-center justify-center text-center">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <Home className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium text-foreground">Nenhum imóvel cadastrado</p>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus imóveis para acompanhar valor, valorização e aluguel no patrimônio.</p>
-                        <Button size="sm" className="gap-1.5 mt-4" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
-                          <Plus className="h-4 w-4" />
-                          Adicionar imóvel
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {imoveis.map((a: { name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; is_rental?: boolean; rental_value?: number; monthly_cost?: number }, i: number) => {
-                        const roi = a.is_rental && (a.rental_value ?? 0) > 0 && (a.current_value ?? 0) > 0
-                          ? ((a.rental_value! * 12) / a.current_value! * 100).toFixed(1)
-                          : null;
-                        return (
-                          <Card key={i} className="rounded-[14px] border border-border/80 overflow-hidden">
-                            <CardContent className="p-4">
-                              <p className="text-base font-semibold text-foreground truncate">{a.name ?? '—'}</p>
-                              <p className="mt-3 text-2xl font-bold text-primary tabular-nums">{formatCurrency(a.current_value ?? 0)}</p>
-                              {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
-                              {a.appreciation_pct != null && <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>}
-                              {a.is_rental && a.rental_value != null && <p className="mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-400">Renda: {formatCurrency(a.rental_value)}/mês</p>}
-                              {(a.monthly_cost ?? 0) > 0 && <p className="text-sm text-muted-foreground">Custo: {formatCurrency(a.monthly_cost!)}/mês</p>}
-                              {roi != null && <p className="text-xs text-muted-foreground mt-1">ROI: {roi}% a.a.</p>}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                      <Car className="h-5 w-5 text-primary" />
-                      Meus Veículos
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                        <Link to="/gestao-veiculos">
-                          <Car className="h-4 w-4" />
-                          Gestão de Veículos
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </Link>
-                      </Button>
-                      <Button size="sm" className="gap-1.5" onClick={() => { setOpenAsVehicleOnly(true); setEditingAsset(null); setIsDialogOpen(true); }}>
-                        <Plus className="h-4 w-4" />
-                        Adicionar veículo
-                      </Button>
-                    </div>
-                  </div>
-                  {veiculosList.length === 0 ? (
-                    <Card className="rounded-[14px] border border-dashed border-border/80 p-8">
-                      <CardContent className="flex flex-col items-center justify-center text-center">
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                          <Car className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <p className="font-medium text-foreground">Nenhum veículo cadastrado</p>
-                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">Cadastre seus veículos para acompanhar valor, custos e depreciação no patrimônio.</p>
-                        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                          <Button size="sm" className="gap-1.5" onClick={() => { setOpenAsVehicleOnly(true); setEditingAsset(null); setIsDialogOpen(true); }}>
-                            <Plus className="h-4 w-4" />
-                            Adicionar veículo
-                          </Button>
-                          <Button variant="outline" size="sm" className="gap-1.5" asChild>
-                            <Link to="/gestao-veiculos">Gestão de Veículos <ChevronRight className="h-3.5 w-3.5" /></Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {veiculosList.map((a: { id?: string; name?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number }, i: number) => (
-                        <Card key={a.id ?? i} className="rounded-[14px] border border-border/80 overflow-hidden">
-                          <CardContent className="p-4">
-                            <p className="text-base font-semibold text-foreground truncate">{a.name ?? '—'}</p>
-                            <p className="mt-3 text-2xl font-bold text-primary tabular-nums">{formatCurrency(a.current_value ?? 0)}</p>
-                            {a.purchase_value != null && <p className="text-sm text-muted-foreground tabular-nums">Compra: {formatCurrency(a.purchase_value)}</p>}
-                            {a.appreciation_pct != null && (
-                              <Badge className="mt-1 bg-green-600 text-white text-xs border-0">+{a.appreciation_pct}% valorização</Badge>
-                            )}
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary" onClick={() => { const full = config.assets.find((x: Asset) => x.id === (a as { id?: string }).id); if (full) handleEditAsset(full); }}>
-                                <Pencil className="h-3.5 w-3.5" />
-                                Editar
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => (a as { id?: string }).id && handleAddSeguro((a as { id?: string }).id!)}>
-                                <Shield className="h-3.5 w-3.5" />
-                                Seguro
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 gap-1" asChild>
-                                <Link to="/gestao-veiculos">Custos <ChevronRight className="h-3 w-3" /></Link>
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                </div>
-              )}
+              {(currentTab === 'imoveis' || currentTab === 'veiculos' || currentTab === 'fgts') && <Outlet />}
 
               {currentTab === 'investimentos' && (
                 <div className="space-y-6">

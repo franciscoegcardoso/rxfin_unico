@@ -6,7 +6,7 @@ import CartaoCredito from './CartaoCredito';
 import { ConsolidatedView } from '@/components/movimentacoes/ConsolidatedView';
 import { cn } from '@/lib/utils';
 
-type Tab = 'extrato' | 'cartao-credito' | 'consolidado';
+type Tab = 'visao-geral' | 'extrato' | 'cartao-credito';
 
 interface MovimentacoesPageProps {
   defaultTab?: Tab;
@@ -16,26 +16,29 @@ export default function MovimentacoesPage({ defaultTab }: MovimentacoesPageProps
   const navigate = useNavigate();
   const location = useLocation();
 
-  const activeTab: Tab = location.pathname.includes('cartao-credito')
-    ? 'cartao-credito'
-    : location.pathname.includes('consolidado')
-      ? 'consolidado'
-      : (defaultTab ?? 'extrato');
+  const isRoot = location.pathname === '/movimentacoes' || location.pathname.endsWith('/movimentacoes');
+  const activeTab: Tab = isRoot
+    ? 'visao-geral'
+    : location.pathname.includes('cartao-credito')
+      ? 'cartao-credito'
+      : location.pathname.includes('extrato')
+        ? 'extrato'
+        : (defaultTab ?? 'visao-geral');
 
   const handleTabChange = (tab: Tab) => {
-    if (tab === 'extrato') {
+    if (tab === 'visao-geral') {
+      navigate('/movimentacoes', { replace: true });
+    } else if (tab === 'extrato') {
       navigate('/movimentacoes/extrato', { replace: true });
-    } else if (tab === 'cartao-credito') {
-      navigate('/movimentacoes/cartao-credito', { replace: true });
     } else {
-      navigate('/movimentacoes/consolidado', { replace: true });
+      navigate('/movimentacoes/cartao-credito', { replace: true });
     }
   };
 
   const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
+    { id: 'visao-geral', label: 'Visão geral', icon: LayoutDashboard },
     { id: 'extrato', label: 'Extrato de conta', icon: Receipt },
     { id: 'cartao-credito', label: 'Cartão de crédito', icon: CreditCard },
-    { id: 'consolidado', label: 'Visão consolidada', icon: LayoutDashboard },
   ];
 
   return (
