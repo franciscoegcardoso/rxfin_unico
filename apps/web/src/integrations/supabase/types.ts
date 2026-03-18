@@ -7862,6 +7862,33 @@ export type Database = {
         }[]
       }
       get_label_mismatch_stats: { Args: never; Returns: Json }
+      get_lancamentos_com_banco: {
+        Args: {
+          p_date_from?: string | null
+          p_date_to?: string | null
+          p_source: string
+        }
+        Returns: {
+          account_name: string | null
+          ai_sugestao_categoria: string | null
+          ai_sugestao_id: string | null
+          amount: number
+          categoria_id: string | null
+          categoria_nome: string | null
+          connector_image_url: string | null
+          connector_name: string
+          estabelecimento: string
+          grupo_categoria_id: string | null
+          grupo_categoria_nome: string | null
+          is_category_confirmed: boolean
+          is_income: boolean
+          is_pending: boolean
+          transaction_id: string
+          transaction_type: string
+          tx_date: string
+          card_id: string | null
+        }[]
+      }
       get_onboarding_categories: { Args: never; Returns: Json }
       get_onboarding_contextual_insight: {
         Args: { p_user_id: string }

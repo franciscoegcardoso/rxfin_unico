@@ -2,18 +2,25 @@ import * as React from "react";
 
 const MOBILE_BREAKPOINT = 1024;
 
+function getIsMobile(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+/**
+ * Evita 1º render como "desktop" e 2º como "mobile" (isso remontava AppShell inteiro
+ * e disparava todos os requests do Início 2× no telefone).
+ */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
+  const [isMobile, setIsMobile] = React.useState(getIsMobile);
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
+    const onChange = () => setIsMobile(getIsMobile());
     mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    setIsMobile(getIsMobile());
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }

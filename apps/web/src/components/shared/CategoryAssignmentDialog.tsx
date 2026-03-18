@@ -5,15 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CreditCard, Landmark, ChevronRight, FileText, X, Sparkles } from 'lucide-react';
-import { CreditCardCategorySection } from '@/components/lancamentos/CreditCardCategorySection';
-import { LancamentoCategorySection } from '@/components/lancamentos/LancamentoCategorySection';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpenseCategories } from '@/hooks/useDefaultParameters';
 import { ConsolidarTab } from '@/components/movimentacoes/ConsolidarTab';
+import { LancamentosTab } from '@/components/movimentacoes/LancamentosTab';
 import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
+import { useLancamentosComBanco } from '@/hooks/useLancamentosComBanco';
 import { supabase } from '@/integrations/supabase/client';
 import {
   CategoryAssignmentFilters,
@@ -22,7 +22,6 @@ import {
   type StatusFilterValue,
 } from '@/components/shared/CategoryAssignmentFilters';
 import type { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
-import type { CreditCardTransaction } from '@/hooks/useCreditCardTransactions';
 import { toast } from 'sonner';
 
 export type CategoryAssignmentTab = 'cartao' | 'conta' | 'consolidar';
@@ -66,7 +65,19 @@ const CategoryAssignmentContent: React.FC<{
   onSaveConsolidarComplete?: (establishmentsUpdated: number, transactionsUpdated: number) => void;
   onCloseModal?: () => void;
   consolidarRequestCloseRef?: React.RefObject<(() => void) | null>;
-}> = ({ defaultTab, open, onSaveConsolidarComplete, onCloseModal, consolidarRequestCloseRef }) => {
+  lancamentosContaCloseRef?: React.RefObject<(() => void) | null>;
+  lancamentosCartaoCloseRef?: React.RefObject<(() => void) | null>;
+  tabForDirtyCloseRef?: React.MutableRefObject<CategoryAssignmentTab>;
+}> = ({
+  defaultTab,
+  open,
+  onSaveConsolidarComplete,
+  onCloseModal,
+  consolidarRequestCloseRef,
+  lancamentosContaCloseRef,
+  lancamentosCartaoCloseRef,
+  tabForDirtyCloseRef,
+}) => {
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
   const [pluggyAccountNumbers, setPluggyAccountNumbers] = useState<Record<string, PluggyCardInfo>>({});
@@ -87,7 +98,11 @@ const CategoryAssignmentContent: React.FC<{
     if (open) setActiveTab(defaultTab);
   }, [open, defaultTab]);
 
-  const { transactions, loading: transactionsLoading, fetchTransactions } = useCreditCardTransactions();
+  useEffect(() => {
+    if (tabForDirtyCloseRef) tabForDirtyCloseRef.current = activeTab;
+  }, [activeTab, tabForDirtyCloseRef]);
+
+  const { transactions, fetchTransactions } = useCreditCardTransactions();
   const { bills } = useCreditCardBills();
   const { lancamentos, fetchLancamentos } = useLancamentosRealizados();
 
@@ -157,6 +172,14 @@ const CategoryAssignmentContent: React.FC<{
   }, [transactions, bills, pluggyAccountNumbers]);
 
   const periodBounds = useMemo(() => getPeriodBounds(period), [period]);
+  const periodStart = periodBounds?.start ?? null;
+  const periodEnd = periodBounds?.end ?? null;
+  const { pendingCount: pendingContaTab } = useLancamentosComBanco('bank', periodStart, periodEnd, {
+    enabled: open,
+  });
+  const { pendingCount: pendingCartaoTab } = useLancamentosComBanco('card', periodStart, periodEnd, {
+    enabled: open,
+  });
 
   const bankOptions = useMemo(() => {
     const labels = new Map<string, string>();
@@ -170,40 +193,9 @@ const CategoryAssignmentContent: React.FC<{
   const categoryOptions = useMemo(() => {
     const set = new Set<string>();
     lancamentos.forEach(l => { if (l.categoria?.trim()) set.add(l.categoria.trim()); });
-    transactions.forEach((t: CreditCardTransaction) => { if (t.category?.trim()) set.add(t.category.trim()); });
+    transactions.forEach(t => { if (t.category?.trim()) set.add(t.category.trim()); });
     return Array.from(set).sort().map(name => ({ value: name, label: name }));
   }, [lancamentos, transactions]);
-
-  const filteredLancamentos = useMemo(() => {
-    let list = [...lancamentos];
-    if (periodBounds) {
-      list = list.filter(l => {
-        const dateStr = l.data_pagamento || l.data_registro || l.mes_referencia + '-01';
-        const d = dateStr.substring(0, 10);
-        return d >= periodBounds.start && d <= periodBounds.end;
-      });
-    }
-    if (status === 'pending') list = list.filter(l => !l.is_category_confirmed);
-    else if (status === 'confirmed') list = list.filter(l => l.is_category_confirmed);
-    if (bankValue !== 'all') list = list.filter(l => getBancoLabel(l) === bankValue);
-    if (categoryValue !== 'all') list = list.filter(l => (l.categoria || '').trim() === categoryValue);
-    return list;
-  }, [lancamentos, periodBounds, status, bankValue, categoryValue]);
-
-  const filteredTransactions = useMemo(() => {
-    let list = [...transactions];
-    if (periodBounds) {
-      list = list.filter(t => {
-        const d = (t as CreditCardTransaction).transaction_date?.substring(0, 10) ?? '';
-        return d >= periodBounds.start && d <= periodBounds.end;
-      });
-    }
-    if (status === 'pending') list = list.filter(t => !t.is_category_confirmed);
-    else if (status === 'confirmed') list = list.filter(t => t.is_category_confirmed);
-    if (cardValue !== 'all') list = list.filter(t => t.card_id === cardValue);
-    if (categoryValue !== 'all') list = list.filter(t => (t.category || '').trim() === categoryValue);
-    return list;
-  }, [transactions, periodBounds, status, cardValue, categoryValue]);
 
   const hasActiveFilters = period !== 'this_month' || status !== 'all' || bankValue !== 'all' || categoryValue !== 'all' || cardValue !== 'all';
 
@@ -215,27 +207,24 @@ const CategoryAssignmentContent: React.FC<{
     setCardValue('all');
   }, []);
 
-  const unconfirmedCCCount = transactions.filter(t => !t.is_category_confirmed).length;
-  const unconfirmedLancCount = lancamentos.filter(l => !l.is_category_confirmed).length;
-
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CategoryAssignmentTab)} className="flex flex-col min-h-0 flex-1">
       <TabsList className="w-full shrink-0 grid grid-cols-3">
         <TabsTrigger value="conta" className="gap-1.5 text-xs">
           <Landmark className="h-3.5 w-3.5" />
           Por lançamento (Conta)
-          {unconfirmedLancCount > 0 && (
+          {pendingContaTab > 0 && (
             <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
-              {unconfirmedLancCount}
+              {pendingContaTab}
             </span>
           )}
         </TabsTrigger>
         <TabsTrigger value="cartao" className="gap-1.5 text-xs">
           <CreditCard className="h-3.5 w-3.5" />
           Por lançamento (Cartão)
-          {unconfirmedCCCount > 0 && (
+          {pendingCartaoTab > 0 && (
             <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
-              {unconfirmedCCCount}
+              {pendingCartaoTab}
             </span>
           )}
         </TabsTrigger>
@@ -293,21 +282,42 @@ const CategoryAssignmentContent: React.FC<{
           />
         ) : (
           <>
-            <TabsContent value="cartao" className="mt-0 h-full">
-              <CreditCardCategorySection
-                transactions={filteredTransactions}
-                loading={transactionsLoading}
-                onUpdated={fetchTransactions}
-                getCardLabel={(cardId) => {
-                  const c = availableCards.find((x) => x.id === cardId);
-                  return c?.name || c?.connectorName || '—';
+            <TabsContent value="cartao" className="mt-0 flex-1 min-h-0 flex flex-col data-[state=inactive]:hidden">
+              <LancamentosTab
+                source="card"
+                dateFrom={periodStart}
+                dateTo={periodEnd}
+                categories={categoriesForConsolidar}
+                statusFilter={status}
+                bankOrCardValue={cardValue}
+                categoryFilterValue={categoryValue}
+                onSaveComplete={() => {
+                  void fetchLancamentos();
+                  void fetchTransactions();
+                  toast.success('Categorias salvas');
                 }}
+                onClose={onCloseModal}
+                requestCloseRef={lancamentosCartaoCloseRef}
+                enabled={open && activeTab === 'cartao'}
               />
             </TabsContent>
-            <TabsContent value="conta" className="mt-0 h-full">
-              <LancamentoCategorySection
-                lancamentos={filteredLancamentos}
-                onCategoryUpdated={fetchLancamentos}
+            <TabsContent value="conta" className="mt-0 flex-1 min-h-0 flex flex-col data-[state=inactive]:hidden">
+              <LancamentosTab
+                source="bank"
+                dateFrom={periodStart}
+                dateTo={periodEnd}
+                categories={categoriesForConsolidar}
+                statusFilter={status}
+                bankOrCardValue={bankValue}
+                categoryFilterValue={categoryValue}
+                onSaveComplete={() => {
+                  void fetchLancamentos();
+                  void fetchTransactions();
+                  toast.success('Categorias salvas');
+                }}
+                onClose={onCloseModal}
+                requestCloseRef={lancamentosContaCloseRef}
+                enabled={open && activeTab === 'conta'}
               />
             </TabsContent>
           </>
@@ -325,6 +335,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
 }) => {
   const isTabletOrMobile = useIsTabletOrMobile();
   const consolidarRequestCloseRef = useRef<(() => void) | null>(null);
+  const lancamentosContaCloseRef = useRef<(() => void) | null>(null);
+  const lancamentosCartaoCloseRef = useRef<(() => void) | null>(null);
+  const tabForDirtyCloseRef = useRef<CategoryAssignmentTab>(defaultTab);
 
   const handleClose = (value: boolean) => {
     onOpenChange(value);
@@ -332,9 +345,20 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
   };
 
   const handleOpenChange = (value: boolean) => {
-    if (!value && consolidarRequestCloseRef.current) {
-      consolidarRequestCloseRef.current();
-      return;
+    if (!value) {
+      const tab = tabForDirtyCloseRef.current;
+      if (tab === 'consolidar' && consolidarRequestCloseRef.current) {
+        consolidarRequestCloseRef.current();
+        return;
+      }
+      if (tab === 'conta' && lancamentosContaCloseRef.current) {
+        lancamentosContaCloseRef.current();
+        return;
+      }
+      if (tab === 'cartao' && lancamentosCartaoCloseRef.current) {
+        lancamentosCartaoCloseRef.current();
+        return;
+      }
     }
     handleClose(value);
   };
@@ -369,6 +393,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
               onSaveConsolidarComplete={onSaveConsolidar}
               onCloseModal={() => handleClose(false)}
               consolidarRequestCloseRef={consolidarRequestCloseRef}
+              lancamentosContaCloseRef={lancamentosContaCloseRef}
+              lancamentosCartaoCloseRef={lancamentosCartaoCloseRef}
+              tabForDirtyCloseRef={tabForDirtyCloseRef}
             />
           </div>
         </DrawerContent>
@@ -394,6 +421,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
             onSaveConsolidarComplete={onSaveConsolidar}
             onCloseModal={() => handleClose(false)}
             consolidarRequestCloseRef={consolidarRequestCloseRef}
+            lancamentosContaCloseRef={lancamentosContaCloseRef}
+            lancamentosCartaoCloseRef={lancamentosCartaoCloseRef}
+            tabForDirtyCloseRef={tabForDirtyCloseRef}
           />
         </div>
       </DialogContent>

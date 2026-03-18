@@ -159,7 +159,16 @@ function RootRoute() {
   );
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      /** Mantém cache após sair da página (observers = 0) — evita refetch ao voltar ao Início */
+      gcTime: 60 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

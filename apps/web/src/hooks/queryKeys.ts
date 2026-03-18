@@ -13,7 +13,7 @@ export const STALE = {
   GC_APP_CONFIG: 60 * 60 * 1000,
   /** lancamentos por utilizador */
   LANCAMENTOS: 60 * 1000,
-  GC_LANCAMENTOS: 5 * 60 * 1000,
+  GC_LANCAMENTOS: 60 * 60 * 1000,
 } as const;
 
 /** Lista completa de lançamentos (deduplicada entre N componentes no Início). */

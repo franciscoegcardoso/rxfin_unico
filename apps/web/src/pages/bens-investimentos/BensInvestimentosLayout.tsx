@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useLocation, useSearchParams, useNavigate, Link, Outlet } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart, Briefcase } from 'lucide-react';
@@ -50,7 +50,7 @@ import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
-import { InvestmentsSection } from '@/components/bens/InvestmentsSection';
+import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { INVESTIMENTOS_ALOCACAO_PATH } from '@/constants/appPaths';
 import { useInvestmentsList } from '@/hooks/useInvestmentsList';
 import { enrichPatrimonioInvestRow } from '@/utils/investmentDisplay';
@@ -673,11 +673,9 @@ const BensInvestimentosLayout: React.FC = () => {
                       Dados podem estar desatualizados
                     </Badge>
                   )}
-                  <InvestmentsSection
-                    onAddInvestment={handleOpenAddDialog}
-                    onEditInvestment={handleEditAsset}
-                    onDeleteInvestment={handleDeleteAsset}
-                  />
+                  <Suspense fallback={<RXFinLoadingSpinner height="py-12" />}>
+                    <Outlet />
+                  </Suspense>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -716,20 +714,55 @@ const BensInvestimentosLayout: React.FC = () => {
                         const buy = a.purchase_value ?? cur;
                         return sum + (cur - buy);
                       }, 0);
-                      const donutData = bensData?.by_type && bensData.by_type.length > 0
-                        ? bensData.by_type.map((t: { type: string; total: number }) => ({
-                            name: formatPluggyType(t.type),
-                            value: Number(t.total) || 0,
-                          })).filter((d: { value: number }) => d.value > 0)
-                        : investimentosListMerged.reduce((acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
-                            const cat = (a as any).category ?? 'Investimentos';
-                            const existing = acc.find((x) => x.name === cat);
-                            const val = a.current_value ?? 0;
-                            if (existing) existing.value += val;
-                            else acc.push({ name: cat, value: val });
-                            return acc;
-                          }, []);
+                      const donutFromByType =
+                        bensData?.by_type?.length > 0
+                          ? bensData.by_type
+                              .map((t: { type: string; total: number }) => ({
+                                name: formatPluggyType(t.type),
+                                value: Number(t.total) || 0,
+                              }))
+                              .filter((d: { value: number }) => d.value > 0)
+                          : [];
+                      const donutFromMerged = investimentosListMerged.reduce(
+                        (acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
+                          const cat = (a as { category?: string }).category ?? 'Investimentos';
+                          const existing = acc.find((x) => x.name === cat);
+                          const val = a.current_value ?? 0;
+                          if (existing) existing.value += val;
+                          else acc.push({ name: cat, value: val });
+                          return acc;
+                        },
+                        []
+                      );
+                      /** Evita Pie com data=[] (Recharts pode quebrar a página) quando by_type veio vazio após filtro */
+                      const donutData = donutFromByType.length > 0 ? donutFromByType : donutFromMerged;
+                      const donutChartData = donutData.filter((d) => d.value > 0);
                       const CHART_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+                      const pieChartEl =
+                        donutChartData.length > 0 ? (
+                          <PieChart>
+                            <Pie
+                              data={donutChartData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              paddingAngle={2}
+                              dataKey="value"
+                              nameKey="name"
+                            >
+                              {donutChartData.map((_, i) => (
+                                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
+                            <Legend />
+                          </PieChart>
+                        ) : (
+                          <div className="flex h-full min-h-[160px] items-center justify-center text-sm text-muted-foreground px-4 text-center">
+                            Gráfico de distribuição indisponível para estes valores.
+                          </div>
+                        );
                       return (
                         <>
                           {/* Resumo rentabilidade — estilo enterprise: label discreto + valor legível */}
@@ -744,17 +777,7 @@ const BensInvestimentosLayout: React.FC = () => {
                           {/* Mobile: donut no topo + lista de InvestmentCard */}
                           <div className="flex flex-col gap-6 md:hidden">
                             <div className="h-[240px] w-full rounded-xl border border-border bg-card p-4">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" nameKey="name">
-                                    {donutData.map((_, i) => (
-                                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                                  <Legend />
-                                </PieChart>
-                              </ResponsiveContainer>
+                              <ResponsiveContainer width="100%" height="100%">{pieChartEl}</ResponsiveContainer>
                             </div>
                             <div className="space-y-3">
                               {investimentosListMerged.map((a: { id?: string; name?: string; ticker?: string; current_value?: number; purchase_value?: number; appreciation_pct?: number; category?: string; _source?: 'pluggy' | 'manual' }, i: number) => {
@@ -789,17 +812,7 @@ const BensInvestimentosLayout: React.FC = () => {
                           {/* Desktop: donut à esquerda + tabela detalhada à direita */}
                           <div className="hidden md:grid md:grid-cols-[280px_1fr] md:gap-6">
                             <div className="h-[240px] w-full rounded-xl border border-border bg-card p-4">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value" nameKey="name">
-                                    {donutData.map((_, i) => (
-                                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip formatter={(v: number) => [formatCurrency(v), '']} />
-                                  <Legend />
-                                </PieChart>
-                              </ResponsiveContainer>
+                              <ResponsiveContainer width="100%" height="100%">{pieChartEl}</ResponsiveContainer>
                             </div>
                             <div className="overflow-x-auto rounded-xl border border-border bg-card min-w-0">
                               <table className="w-full text-sm">
