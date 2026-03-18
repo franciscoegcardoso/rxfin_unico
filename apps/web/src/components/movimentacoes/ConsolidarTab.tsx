@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   CheckCircle2,
   ChevronRight,
@@ -10,6 +10,12 @@ import {
   CreditCard,
   Shuffle,
   Building2,
+  CheckSquare,
+  RotateCcw,
+  Save,
+  Zap,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react';
 import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
 import {
@@ -36,16 +42,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import type { ConsolidarFilters } from '@/types/consolidar';
 
 interface ConsolidarTabProps {
   sourceFilter: 'bank' | 'card' | null;
   categories: { id: string; name: string }[];
   onSaveComplete: (establishmentsUpdated: number, transactionsUpdated: number) => void;
+  onClose?: () => void;
+  requestCloseRef?: React.RefObject<(() => void) | null>;
 }
 
 const defaultFilters: ConsolidarFilters = {
@@ -106,7 +123,7 @@ function BancoLogo({
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(value);
 
-export function ConsolidarTab({ sourceFilter, categories, onSaveComplete }: ConsolidarTabProps) {
+export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClose, requestCloseRef }: ConsolidarTabProps) {
   const [filters, setFilters] = useState<ConsolidarFilters>(defaultFilters);
   const [selectedEstabelecimentos, setSelectedEstabelecimentos] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -114,6 +131,11 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete }: Cons
   const [showAllMap, setShowAllMap] = useState<Record<string, boolean>>({});
   const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
   const [bulkCategoryName, setBulkCategoryName] = useState<string>('');
+  const [massGrupoId, setMassGrupoId] = useState<string>('');
+  const [massCatId, setMassCatId] = useState<string>('');
+  const [massSubcats, setMassSubcats] = useState<{ id: string; name: string }[]>([]);
+  const [isMassAssigning, setIsMassAssigning] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
 
   const {
     filteredData,
@@ -124,6 +146,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete }: Cons
     isLoading,
     setCategory,
     saveAll,
+    reset,
   } = useConsolidarEstabelecimentos(sourceFilter, filters);
 
   const { data: expenseGroups = [] } = useQuery({
@@ -206,6 +229,73 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete }: Cons
   const getItemsForGroup = (grupoNome: string | null) => {
     if (!grupoNome) return [];
     return expenseItemsByGroup.filter((i) => i.category_name === grupoNome);
+  };
+
+  useEffect(() => {
+    if (!massGrupoId) {
+      setMassSubcats([]);
+      setMassCatId('');
+      return;
+    }
+    const grupoNome = categories.find((c) => c.id === massGrupoId)?.name ?? '';
+    setMassSubcats(expenseItemsByGroup.filter((i) => i.category_name === grupoNome));
+    setMassCatId('');
+  }, [massGrupoId, categories, expenseItemsByGroup]);
+
+  const handleRequestClose = useCallback(() => {
+    if (dirtyCount > 0) {
+      setShowExitDialog(true);
+    } else {
+      onClose?.();
+    }
+  }, [dirtyCount, onClose]);
+
+  useEffect(() => {
+    if (requestCloseRef) {
+      requestCloseRef.current = handleRequestClose;
+    }
+    return () => {
+      if (requestCloseRef) requestCloseRef.current = null;
+    };
+  }, [requestCloseRef, handleRequestClose]);
+
+  const handleMassAssign = async () => {
+    if (!massGrupoId) return;
+    const grupoNome = categories.find((c) => c.id === massGrupoId)?.name ?? '';
+    const finalCatId = massCatId || massGrupoId;
+    const finalCatNome = massCatId
+      ? (massSubcats.find((s) => s.id === massCatId)?.name ?? grupoNome)
+      : grupoNome;
+    const storeNames = Array.from(selectedEstabelecimentos);
+    setIsMassAssigning(true);
+    try {
+      const { data: rpcData, error } = await supabase.rpc('bulk_assign_category_to_stores', {
+        p_store_names: storeNames,
+        p_category_id: finalCatId,
+        p_category_name: finalCatNome,
+        p_apply_historical: true,
+        p_source_filter: sourceFilter,
+      });
+      if (error) throw error;
+      storeNames.forEach((store) => {
+        setCategory(store, massGrupoId, grupoNome, finalCatId, finalCatNome);
+      });
+      setSelectedEstabelecimentos(new Set());
+      setMassGrupoId('');
+      setMassCatId('');
+      toast.success(
+        `Categoria aplicada em massa: ${(rpcData as { stores_updated?: number })?.stores_updated ?? storeNames.length} estabelecimentos · ${(rpcData as { total_updated_transactions?: number })?.total_updated_transactions ?? 0} lançamentos atualizados`
+      );
+    } catch {
+      toast.error('Não foi possível aplicar a categoria.');
+    } finally {
+      setIsMassAssigning(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    reset();
+    setSelectedEstabelecimentos(new Set());
   };
 
   const handleSaveAll = async () => {
@@ -676,80 +766,177 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete }: Cons
         </table>
       </div>
 
-      {/* Barra de ação em lote quando há seleção */}
-      {selectedEstabelecimentos.size > 0 && (
-        <div className="sticky bottom-0 mt-3 py-2 px-3 rounded-lg border border-border bg-muted/50 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium">
-            {selectedEstabelecimentos.size} selecionado(s)
-          </span>
-          <Select
-            value={bulkCategoryId}
-            onValueChange={(val) => {
-              const g = expenseGroups.find((x) => x.id === val);
-              if (g) {
-                setBulkCategoryId(g.id);
-                setBulkCategoryName(g.name);
-              } else {
-                const item = expenseItemsByGroup.find((x) => x.id === val);
-                if (item) {
-                  setBulkCategoryId(item.id);
-                  setBulkCategoryName(item.name);
-                }
-              }
-            }}
-          >
-            <SelectTrigger className="h-8 w-44 text-xs">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              {expenseGroups.map((g) => (
-                <SelectItem key={g.id} value={g.id}>
-                  {g.name}
-                </SelectItem>
-              ))}
-              {expenseItemsByGroup.map((i) => (
-                <SelectItem key={i.id} value={i.id}>
-                  {i.category_name} → {i.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            className="h-8 text-xs"
-            disabled={!bulkCategoryId}
-            onClick={() => {
-              selectedEstabelecimentos.forEach((est) => {
-                setCategory(est, null, null, bulkCategoryId, bulkCategoryName);
-              });
-              setBulkCategoryId('');
-              setBulkCategoryName('');
-            }}
-          >
-            Aplicar a selecionados
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 text-xs"
+      {/* Barra flutuante de seleção múltipla — só quando >= 2 selecionados */}
+      {selectedEstabelecimentos.size >= 2 && (
+        <div className="mx-0 mb-3 rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-primary flex items-center gap-1.5">
+              <CheckSquare className="w-4 h-4" />
+              {selectedEstabelecimentos.size} estabelecimentos selecionados
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedEstabelecimentos(new Set())}
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              Limpar seleção
+            </button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground shrink-0">Aplicar categoria a todos:</span>
+            <Select
+              value={massGrupoId}
+              onValueChange={(val) => {
+                setMassGrupoId(val);
+                setMassCatId('');
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs min-w-[130px] w-auto">
+                <SelectValue placeholder="Grupo..." />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={massCatId}
+              onValueChange={setMassCatId}
+              disabled={!massGrupoId}
+            >
+              <SelectTrigger className="h-7 text-xs min-w-[150px] w-auto disabled:opacity-40">
+                <SelectValue placeholder="Subcategoria..." />
+              </SelectTrigger>
+              <SelectContent>
+                {massSubcats.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              className="h-7 px-3 text-xs font-medium gap-1.5"
+              disabled={!massGrupoId || isMassAssigning}
+              onClick={handleMassAssign}
+            >
+              {isMassAssigning ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Zap className="w-3.5 h-3.5" />
+              )}
+              Aplicar a todos selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Barra simples quando 1 selecionado — só limpar */}
+      {selectedEstabelecimentos.size === 1 && (
+        <div className="mb-3 py-1.5 px-2 rounded border border-border bg-muted/30 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">1 selecionado</span>
+          <button
+            type="button"
             onClick={() => setSelectedEstabelecimentos(new Set())}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
           >
-            Limpar
-          </Button>
+            Limpar seleção
+          </button>
         </div>
       )}
 
       {/* Rodapé sticky */}
-      <div className="sticky bottom-0 mt-4 pt-4 border-t border-border bg-background flex justify-end">
+      <div className="sticky bottom-0 mt-4 pt-4 border-t border-border bg-background px-0 py-3 flex items-center justify-end gap-2 flex-wrap">
         <Button
-          onClick={handleSaveAll}
-          disabled={dirtyCount === 0 || saving}
-          className="gap-2"
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 px-4 text-sm"
+          onClick={handleRequestClose}
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {dirtyCount === 0 ? 'Salvar tudo' : `Salvar tudo (${dirtyCount} alterações)`}
+          Cancelar
+        </Button>
+        {dirtyCount > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 px-4 text-sm text-destructive hover:bg-destructive/10 gap-1.5"
+            onClick={handleDiscard}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Descartar alterações
+          </Button>
+        )}
+        <Button
+          size="sm"
+          className="h-8 px-4 text-sm gap-1.5"
+          disabled={dirtyCount === 0 || saving}
+          onClick={handleSaveAll}
+        >
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          {dirtyCount > 0 ? `Salvar tudo (${dirtyCount})` : 'Salvar tudo'}
         </Button>
       </div>
+
+      {/* Dialog de confirmação ao sair com alterações pendentes */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Alterações não salvas
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem <strong>{dirtyCount} estabelecimento{dirtyCount > 1 ? 's' : ''}</strong> com
+              categorias alteradas mas não salvas. O que deseja fazer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <Button
+              className="w-full h-9 gap-1.5"
+              onClick={async () => {
+                setShowExitDialog(false);
+                setSaving(true);
+                try {
+                  const { totalUpdated } = await saveAll();
+                  onSaveComplete(dirtyCount, totalUpdated);
+                  onClose?.();
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              <Save className="w-4 h-4" />
+              Salvar e fechar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-9 text-destructive hover:bg-destructive/10 gap-1.5"
+              onClick={() => {
+                setShowExitDialog(false);
+                reset();
+                setSelectedEstabelecimentos(new Set());
+                onClose?.();
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+              Descartar alterações e fechar
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-9 text-muted-foreground hover:bg-muted/50"
+              onClick={() => setShowExitDialog(false)}
+            >
+              Voltar e continuar editando
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

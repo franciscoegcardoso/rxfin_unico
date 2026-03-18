@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,7 +64,9 @@ const CategoryAssignmentContent: React.FC<{
   defaultTab: CategoryAssignmentTab;
   open: boolean;
   onSaveConsolidarComplete?: (establishmentsUpdated: number, transactionsUpdated: number) => void;
-}> = ({ defaultTab, open, onSaveConsolidarComplete }) => {
+  onCloseModal?: () => void;
+  consolidarRequestCloseRef?: React.RefObject<(() => void) | null>;
+}> = ({ defaultTab, open, onSaveConsolidarComplete, onCloseModal, consolidarRequestCloseRef }) => {
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
   const [pluggyAccountNumbers, setPluggyAccountNumbers] = useState<Record<string, PluggyCardInfo>>({});
@@ -313,6 +315,8 @@ const CategoryAssignmentContent: React.FC<{
             onSaveComplete={(est, tx) => {
               onSaveConsolidarComplete?.(est, tx);
             }}
+            onClose={onCloseModal}
+            requestCloseRef={consolidarRequestCloseRef}
           />
         ) : (
           <>
@@ -351,15 +355,30 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
   onComplete,
 }) => {
   const isTabletOrMobile = useIsTabletOrMobile();
+  const consolidarRequestCloseRef = useRef<(() => void) | null>(null);
 
   const handleClose = (value: boolean) => {
     onOpenChange(value);
     if (!value) onComplete?.();
   };
 
+  const handleOpenChange = (value: boolean) => {
+    if (!value && consolidarRequestCloseRef.current) {
+      consolidarRequestCloseRef.current();
+      return;
+    }
+    handleClose(value);
+  };
+
+  const onSaveConsolidar = (est: number, tx: number) => {
+    handleClose(false);
+    onComplete?.();
+    toast.success(`${est} estabelecimentos categorizados · ${tx} lançamentos atualizados`);
+  };
+
   if (isTabletOrMobile) {
     return (
-      <Drawer open={open} onOpenChange={handleClose}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent className="h-[95vh] max-h-[95vh]">
           <DrawerHeader className="flex flex-row items-center justify-between border-b pb-3">
             <DrawerTitle className="flex items-center gap-2 text-base">
@@ -378,11 +397,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
             <CategoryAssignmentContent
               defaultTab={defaultTab}
               open={open}
-              onSaveConsolidarComplete={(est, tx) => {
-                handleClose(false);
-                onComplete?.();
-                toast.success(`${est} estabelecimentos categorizados · ${tx} lançamentos atualizados`);
-              }}
+              onSaveConsolidarComplete={onSaveConsolidar}
+              onCloseModal={() => handleClose(false)}
+              consolidarRequestCloseRef={consolidarRequestCloseRef}
             />
           </div>
         </DrawerContent>
@@ -391,7 +408,7 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[95vw] max-w-[1600px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
@@ -405,11 +422,9 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
           <CategoryAssignmentContent
             defaultTab={defaultTab}
             open={open}
-            onSaveConsolidarComplete={(est, tx) => {
-              handleClose(false);
-              onComplete?.();
-              toast.success(`${est} estabelecimentos categorizados · ${tx} lançamentos atualizados`);
-            }}
+            onSaveConsolidarComplete={onSaveConsolidar}
+            onCloseModal={() => handleClose(false)}
+            consolidarRequestCloseRef={consolidarRequestCloseRef}
           />
         </div>
       </DialogContent>
