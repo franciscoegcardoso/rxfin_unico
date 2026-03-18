@@ -46,7 +46,7 @@ export const useIRImport = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [imports, setImports] = useState<IRImportData[]>([]);
 
-  const processFile = async (file: File): Promise<IRImportData | null> => {
+  const processFile = async (file: File, expectedAnoExercicio?: number): Promise<IRImportData | null> => {
     // eslint-disable-next-line no-console -- temporary log for IR upload flow verification
     console.log('Uploading IR file:', file.name);
     if (!session?.access_token) {
@@ -80,7 +80,7 @@ export const useIRImport = () => {
         return null;
       }
 
-      const { data: responseBody, error: uploadErr } = await uploadIRFileMultipart(file);
+      const { data: responseBody, error: uploadErr } = await uploadIRFileMultipart(file, expectedAnoExercicio);
       if (uploadErr) {
         throw uploadErr;
       }

@@ -1,9 +1,30 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-// import { visualizer } from 'rollup-plugin-visualizer'; // descomente 1x para auditar
 
-// https://vitejs.dev/config/
+// Plugin local: injeta <link rel="preload"> para as fontes Inter críticas
+// Roda em build time, depois que o Vite resolve os hashes reais
+function preloadFontsPlugin() {
+  return {
+    name: 'preload-fonts',
+    transformIndexHtml: {
+      order: 'post' as const,
+      handler(html: string) {
+        // Extrair os nomes reais das fontes do HTML gerado pelo Vite
+        const fontMatches = [...html.matchAll(/href="(\/assets\/inter-latin-[^"]+\.woff2)"/g)];
+        if (!fontMatches.length) return html;
+
+        const preloadTags = fontMatches
+          .slice(0, 4) // máximo 4 fontes — as mais críticas
+          .map(m => `  <link rel="preload" as="font" type="font/woff2" crossorigin href="${m[1]}" />`)
+          .join('\n');
+
+        return html.replace('</head>', `${preloadTags}\n</head>`);
+      }
+    }
+  };
+}
+
 export default defineConfig(() => ({
   server: {
     host: "::",
@@ -11,7 +32,7 @@ export default defineConfig(() => ({
   },
   plugins: [
     react(),
-    // visualizer({ open: true, gzip: true, filename: 'bundle-stats.html' }),
+    preloadFontsPlugin(),
   ],
   resolve: {
     alias: {

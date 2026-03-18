@@ -11,6 +11,7 @@ import { useFinancial } from '@/contexts/FinancialContext';
 import { financialInstitutions, investmentTypes } from '@/data/defaultData';
 import { Asset, InvestmentType } from '@/types/financial';
 import { InteractiveTreemap, type TreemapItem } from '@/components/charts/InteractiveTreemap';
+import { AssetLogo } from '@/components/ui/AssetLogo';
 import {
   TrendingUp,
   Plus,
@@ -44,6 +45,19 @@ const formatCurrency = (value: number) => {
     maximumFractionDigits: 0,
   }).format(value);
 };
+
+/** Map InvestmentType to AssetLogo assetType (ManualInvestmentType-like) for logo fallback. */
+function assetTypeForLogo(investmentType?: InvestmentType): string {
+  if (!investmentType) return 'OTHER';
+  const map: Partial<Record<InvestmentType, string>> = {
+    renda_variavel: 'STOCK',
+    ofertas_publicas: 'STOCK',
+    fii: 'REAL_ESTATE_FUND',
+    etf: 'ETF',
+    criptoativos: 'CRYPTO',
+  };
+  return map[investmentType] ?? 'OTHER';
+}
 
 // Ícones por tipo de investimento
 const investmentIcons: Record<InvestmentType, React.ReactNode> = {
@@ -613,25 +627,32 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                               key={asset.id}
                               className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                             >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <AssetLogo
+                                  ticker={asset.investmentTicker}
+                                  assetType={assetTypeForLogo(asset.investmentType)}
+                                  logoUrl={asset.logo_url}
+                                  companyDomain={asset.company_domain}
+                                  name={asset.name}
+                                  size="md"
+                                  showTooltip
+                                />
+                                <div className="min-w-0 flex-1">
                                   <p className="font-medium">{asset.name}</p>
                                   {asset.investmentTicker && (
-                                    <Badge variant="outline" className="text-xs">
-                                      {asset.investmentTicker}
-                                    </Badge>
+                                    <p className="text-xs text-muted-foreground">{asset.investmentTicker}</p>
                                   )}
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  {institutionName && (
-                                    <span className="flex items-center gap-1">
-                                      <Landmark className="h-3 w-3" />
-                                      {institutionName}
-                                    </span>
-                                  )}
-                                  {asset.investmentQuantity && (
-                                    <span>• {asset.investmentQuantity} cotas</span>
-                                  )}
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {institutionName && (
+                                      <span className="flex items-center gap-1">
+                                        <Landmark className="h-3 w-3" />
+                                        {institutionName}
+                                      </span>
+                                    )}
+                                    {asset.investmentQuantity && (
+                                      <span>• {asset.investmentQuantity} cotas</span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
@@ -753,14 +774,22 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                             key={asset.id}
                             className="flex items-center justify-between py-2 px-3 rounded bg-muted/30"
                           >
-                            <div className="flex items-center gap-2">
-                              {asset.investmentType && investmentIcons[asset.investmentType]}
-                              <span>{asset.name}</span>
-                              {asset.investmentTicker && (
-                                <Badge variant="outline" className="text-xs">
-                                  {asset.investmentTicker}
-                                </Badge>
-                              )}
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <AssetLogo
+                                ticker={asset.investmentTicker}
+                                assetType={assetTypeForLogo(asset.investmentType)}
+                                logoUrl={asset.logo_url}
+                                companyDomain={asset.company_domain}
+                                name={asset.name}
+                                size="md"
+                                showTooltip
+                              />
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm truncate">{asset.name}</p>
+                                {asset.investmentTicker && (
+                                  <p className="text-xs text-muted-foreground">{asset.investmentTicker}</p>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{formatCurrency(asset.value)}</span>

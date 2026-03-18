@@ -66,7 +66,7 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-base">Metas do planejamento</CardTitle>
         </CardHeader>
@@ -77,7 +77,7 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
 
   if (error) {
     return (
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-base">Metas do planejamento</CardTitle>
         </CardHeader>
@@ -92,7 +92,7 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
 
   return (
     <>
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
@@ -164,7 +164,7 @@ export function MetasPainel({ saldo_disponivel }: { saldo_disponivel: number }) 
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openAporte(meta)}
+                      onClick={(e) => { e.stopPropagation(); openAporte(meta); }}
                       disabled={addAporte.isPending}
                       className="h-8"
                     >

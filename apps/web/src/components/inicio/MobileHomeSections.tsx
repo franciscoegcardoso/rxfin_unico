@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useContasPagarReceber } from '@/hooks/useContasPagarReceber';
+import { useMonthSummary } from '@/hooks/useMonthSummary';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,19 +25,20 @@ import { cn } from '@/lib/utils';
 
 // ─── Resumo do Mês ──────────────────────────────────────────
 
-export const MonthSummaryCard: React.FC = () => {
+export const MonthSummaryCard: React.FC<{ demoUserId?: string | null }> = ({ demoUserId }) => {
   const { isHidden } = useVisibility();
-  const { lancamentos } = useLancamentosRealizados();
   const navigate = useNavigate();
-
   const currentMonth = format(new Date(), 'yyyy-MM');
+  const monthSummaryData = useMonthSummary(currentMonth, demoUserId);
 
-  const summary = useMemo(() => {
-    const monthItems = lancamentos.filter(l => l.mes_referencia === currentMonth && !isBillPaymentTransaction(l));
-    const receitas = monthItems.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor_realizado, 0);
-    const despesas = monthItems.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor_realizado, 0);
-    return { receitas, despesas, saldo: receitas - despesas };
-  }, [lancamentos, currentMonth]);
+  const summary = useMemo(
+    () => ({
+      receitas: monthSummaryData.receitas,
+      despesas: monthSummaryData.totalDespesas,
+      saldo: monthSummaryData.saldoMensal,
+    }),
+    [monthSummaryData.receitas, monthSummaryData.totalDespesas, monthSummaryData.saldoMensal]
+  );
 
   const fmt = (v: number) => {
     if (isHidden) return '••••••';

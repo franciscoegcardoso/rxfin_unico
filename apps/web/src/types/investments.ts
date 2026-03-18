@@ -56,6 +56,8 @@ export interface ManualInvestment {
   source?: string;
   created_at: string;
   updated_at: string;
+  logo_url?: string | null;
+  company_domain?: string | null;
 }
 
 export interface ManualInvestmentInsert {

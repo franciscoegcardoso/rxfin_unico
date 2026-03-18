@@ -2015,11 +2015,13 @@ const VisaoMensalTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs">Clique nas categorias para expandir/recolher</span>
           </div>
-        </div>
+          </div>
           </div>
 
-      {/* Metas do planejamento (aportes) */}
-      <MetasPainel saldo_disponivel={versaoMensal.saldo_disponivel} />
+      {/* Metas do planejamento (aportes) — w-full min-w-0 evita que o card exceda a largura */}
+      <div className="w-full min-w-0">
+        <MetasPainel saldo_disponivel={versaoMensal.saldo_disponivel} />
+      </div>
       <div className="flex justify-end">
         <Link
           to={`/planejamento-anual?highlight=${currentMonth}`}

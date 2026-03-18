@@ -23,11 +23,13 @@ export interface ProcessIrImportResponse {
 /**
  * Envia o arquivo como multipart/form-data para a Edge Function `process-ir-import` (v140+).
  * - Campo no FormData DEVE ser `"file"` (a função lê formData.get('file')).
+ * - Se informado, expected_ano_exercicio é enviado para validação (exercício da linha selecionada).
  * - NÃO setar Content-Type: o browser define automaticamente com o boundary correto.
  * Evita limite de payload JSON com base64 em PDFs grandes (~6MB+).
  */
 export async function uploadIRFileMultipart(
-  file: File
+  file: File,
+  expectedAnoExercicio?: number
 ): Promise<{ data: ProcessIrImportResponse | null; error: Error | null }> {
   // eslint-disable-next-line no-console -- temporary log for IR upload flow verification
   console.log('[IR Import] uploadIRFileMultipart called, file:', file.name, 'size:', file.size);
@@ -39,6 +41,9 @@ export async function uploadIRFileMultipart(
 
   const formData = new FormData();
   formData.append('file', file, file.name);
+  if (expectedAnoExercicio != null) {
+    formData.append('expected_ano_exercicio', String(expectedAnoExercicio));
+  }
 
   const baseUrl = String(SUPABASE_URL).replace(/\/$/, '');
   const url = `${baseUrl}/functions/v1/process-ir-import`;

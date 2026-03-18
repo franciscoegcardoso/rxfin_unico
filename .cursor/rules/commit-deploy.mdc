@@ -1,0 +1,26 @@
+---
+description: Padrão de commits e deploy — usar [skip ci] por padrão
+alwaysApply: true
+---
+
+# Commits e Deploy (Vercel)
+
+## Regra de commit
+
+Ao fazer **commit**, inclua **`[skip ci]`** na mensagem, exceto quando o usuário disser explicitamente:
+- "pode deployar"
+- "sem skip ci"
+- ou equivalente (quer que o Vercel rode o pipeline).
+
+Exemplos:
+- `fix(chart): ajuste gráfico 0 km [skip ci]`
+- `feat(logo): logos investimentos [skip ci]`
+
+Quando o usuário autorizar o deploy, faça um commit **sem** `[skip ci]` (ou um segundo commit/push sem skip ci).
+
+## Fluxo sugerido
+
+1. Desenvolvimento → salvar arquivos → **turbo dev --filter=web** (hot reload em localhost).
+2. Validar no browser (http://localhost:5173 ou porta exibida).
+3. Commit + push **com** `[skip ci]` para não disparar deploy.
+4. Quando estiver satisfeito: commit/push **sem** `[skip ci]` para o Vercel deployar.

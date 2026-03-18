@@ -131,6 +131,13 @@ async function processPdfWithAI(pdfBase64: string): Promise<IRData> {
   throw new Error('Falha ao processar o PDF. Tente novamente ou use o arquivo XML/.dec.');
 }
 
+function parseExpectedAnoExercicio(value: string | null | undefined): number | undefined {
+  if (value == null || value === '') return undefined;
+  const n = parseInt(String(value).trim(), 10);
+  if (Number.isNaN(n) || n < 2015 || n > 2030) return undefined;
+  return n;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
@@ -141,9 +148,35 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
     if (authError || !user) return new Response(JSON.stringify({ error: 'Sessão inválida.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    const { fileContent, fileType, fileName } = await req.json();
-    if (!fileContent || !fileType) return new Response(JSON.stringify({ error: 'Arquivo ou tipo não informado.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    console.log(`v131: ${fileType} ${fileName} len=${fileContent.length}`);
+    let fileContent: string;
+    let fileType: string;
+    let fileName: string;
+    let expectedAnoExercicio: number | undefined;
+
+    const contentType = req.headers.get('Content-Type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      const file = formData.get('file') as File | null;
+      if (!file) return new Response(JSON.stringify({ success: false, error: 'Arquivo não informado.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      const expectedRaw = formData.get('expected_ano_exercicio');
+      expectedAnoExercicio = parseExpectedAnoExercicio(typeof expectedRaw === 'string' ? expectedRaw : null);
+      fileName = file.name || 'declaracao.pdf';
+      const ext = fileName.split('.').pop()?.toLowerCase() || '';
+      fileType = (ext === 'xml' || ext === 'dec') ? 'xml' : (ext === 'pdf' ? 'pdf' : 'pdf');
+      const arr = new Uint8Array(await file.arrayBuffer());
+      let binary = '';
+      for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+      fileContent = btoa(binary);
+      console.log(`multipart: ${fileType} ${fileName} len=${fileContent.length} expected_ano=${expectedAnoExercicio ?? 'n/a'}`);
+    } else {
+      const body = await req.json() as { fileContent?: string; fileType?: string; fileName?: string; expected_ano_exercicio?: number };
+      fileContent = body.fileContent;
+      fileType = body.fileType;
+      fileName = body.fileName ?? 'declaracao';
+      expectedAnoExercicio = body.expected_ano_exercicio != null ? parseExpectedAnoExercicio(String(body.expected_ano_exercicio)) : undefined;
+      if (!fileContent || !fileType) return new Response(JSON.stringify({ error: 'Arquivo ou tipo não informado.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      console.log(`json: ${fileType} ${fileName} len=${fileContent.length} expected_ano=${expectedAnoExercicio ?? 'n/a'}`);
+    }
 
     let irData: IRData;
     if (fileType === 'xml') {
@@ -152,6 +185,11 @@ serve(async (req) => {
       irData = await processPdfWithAI(fileContent);
     } else {
       return new Response(JSON.stringify({ error: 'Tipo não suportado. Use XML, DEC ou PDF.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (expectedAnoExercicio != null && irData.anoExercicio !== expectedAnoExercicio) {
+      const msg = `O arquivo anexado refere-se ao Exercício ${irData.anoExercicio}. Você selecionou o Exercício ${expectedAnoExercicio}. Anexe o arquivo do exercício ${expectedAnoExercicio} na linha correspondente ou use a linha do Exercício ${irData.anoExercicio} para este arquivo.`;
+      return new Response(JSON.stringify({ success: false, error: msg }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const fileExt = fileName.split('.').pop()?.toLowerCase() || fileType;

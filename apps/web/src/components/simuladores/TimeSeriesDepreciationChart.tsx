@@ -295,8 +295,8 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
     
     // Monthly points logging removed for production
     
-    const firstPrice = filteredHistory[0].price;
-    const lastHistoricalPrice = filteredHistory[filteredHistory.length - 1].price;
+    let firstPrice = filteredHistory[0].price;
+    let lastHistoricalPrice = filteredHistory[filteredHistory.length - 1].price;
     
     // Converte para formato compatível com projeção
     const historyForProjection: HistoricalPricePoint[] = filteredHistory.map(p => ({
@@ -393,19 +393,38 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
       // C) Fallback para taxa de categoria
       projection = calculateProjectionFromHistory(historyForProjection, 5, cohortData);
     }
+
+    // Para veículos 0 km, o eixo X deve começar no valor atual (x=0)
+    // e a curva deve mostrar apenas a projeção de 5 anos à frente.
+    // Usamos o histórico completo apenas para calcular a projeção, mas o gráfico
+    // é ancorado em um único ponto histórico sintético com o preço atual.
+    const historyForChart = isZeroKm
+      ? [{
+          ...filteredHistory[filteredHistory.length - 1],
+          price: currentPrice,
+          monthLabel: '0 km',
+          isLaunchPrice: true,
+        }]
+      : filteredHistory;
+
+    if (isZeroKm) {
+      firstPrice = currentPrice;
+      lastHistoricalPrice = currentPrice;
+    }
     
     // Adiciona variação entre meses e depreciação acumulada para dados históricos
-    const dataWithVariation = filteredHistory.map((point, index) => {
-      const prevPrice = index > 0 ? filteredHistory[index - 1].price : point.price;
+    const dataWithVariation = historyForChart.map((point, index) => {
+      const prevPrice = index > 0 ? historyForChart[index - 1].price : point.price;
       const variationFromPrevious = point.price - prevPrice;
       const variationPercent = prevPrice > 0 ? ((point.price - prevPrice) / prevPrice) * 100 : 0;
-      const isLatest = index === filteredHistory.length - 1;
+      const isLatest = index === historyForChart.length - 1;
       const totalDepreciation = ((point.price - firstPrice) / firstPrice) * 100;
       
       return {
         ...point,
         // Timestamp numérico para escala linear
-        timestamp: point.date.getTime(),
+        // Para 0 km, usamos escala relativa 0 (atual) → 1..5 (anos projetados)
+        timestamp: isZeroKm ? 0 : point.date.getTime(),
         variationFromPrevious: index > 0 ? variationFromPrevious : undefined,
         variationPercent: index > 0 ? variationPercent : undefined,
         isLatest,
@@ -425,7 +444,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
       return {
         date: point.date,
         // Timestamp numérico para escala linear
-        timestamp: point.date.getTime(),
+        timestamp: isZeroKm ? idx + 1 : point.date.getTime(),
         price: point.price,
         monthLabel: point.monthLabel,
         isLaunchPrice: false,
@@ -462,7 +481,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
     // Calcula métricas
     const totalVariation = lastHistoricalPrice - firstPrice;
     const totalVariationPercent = ((lastHistoricalPrice - firstPrice) / firstPrice) * 100;
-    const monthsCount = filteredHistory.length;
+    const monthsCount = historyForChart.length;
     const avgMonthlyVariation = totalVariation / Math.max(monthsCount - 1, 1);
     const annualizedRate = (totalVariationPercent / Math.max(monthsCount - 1, 1)) * 12;
     
@@ -481,8 +500,8 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
         monthsCount,
         avgMonthlyVariation,
         annualizedRate,
-        periodStart: filteredHistory[0].monthLabel,
-        periodEnd: filteredHistory[filteredHistory.length - 1].monthLabel,
+        periodStart: historyForChart[0].monthLabel,
+        periodEnd: historyForChart[historyForChart.length - 1].monthLabel,
         price5Years,
         depreciation5Years,
       },
@@ -497,7 +516,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
         engineV2: engineV2Metadata,
       },
     };
-  }, [priceHistory, cohortData, engineV2Result, modelYear, isZeroKm]);
+  }, [priceHistory, cohortData, engineV2Result, modelYear, isZeroKm, currentPrice]);
 
   // Filtra dados baseado no toggle de projeção
   // IMPORTANT: Hooks must be called unconditionally - moved before early return
@@ -778,6 +797,10 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                     domain={displayTimeDomain || ['auto', 'auto']}
                     ticks={(() => {
                       if (!displayData || displayData.length === 0) return [];
+                      // Para 0 km, o eixo X é idade em anos: 0 (atual) → 1..5 (projeção)
+                      if (isZeroKm) {
+                        return [0, 1, 2, 3, 4, 5];
+                      }
                       const timestamps = displayData.map(d => d.timestamp);
                       const minTs = Math.min(...timestamps);
                       const maxTs = Math.max(...timestamps);
@@ -796,7 +819,10 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                       return selectedTicks;
                     })()}
                     tickFormatter={(value: number) => {
-                      if (isZeroKm && value === 0) return '0 km';
+                      if (isZeroKm) {
+                        if (value === 0) return '0 km';
+                        return `${value} ano${value > 1 ? 's' : ''}`;
+                      }
                       const date = new Date(value);
                       return date.getUTCFullYear().toString().slice(-2);
                     }}

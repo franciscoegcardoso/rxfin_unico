@@ -4,24 +4,9 @@ import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AssetLogo } from '@/components/ui/AssetLogo';
 import { Pencil, Trash2, FileEdit } from 'lucide-react';
 import type { ManualInvestment, ManualInvestmentType } from '@/types/investments';
-
-const TYPE_ICON: Record<ManualInvestmentType, string> = {
-  PENSION_VGBL: '🏛️',
-  PENSION_PGBL: '🏛️',
-  FIXED_INCOME: '📊',
-  TREASURE_DIRECT: '🏦',
-  MUTUAL_FUND: '📈',
-  STOCK: '📉',
-  REAL_ESTATE_FUND: '🏢',
-  ETF: '🗂️',
-  BDR: '🌐',
-  CRYPTO: '🪙',
-  INCOME: '💸',
-  STOCK_OPTION: '⚙️',
-  OTHER: '📁',
-};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(n);
@@ -55,27 +40,36 @@ export function ManualInvestmentsList({ items, onEdit, onRemove, onAdd, showSect
           <p className="text-sm text-muted-foreground py-4 text-center">Nenhum investimento manual ainda.</p>
         ) : (
           <ul className="space-y-3">
-            {items.map((row) => {
-              const icon = TYPE_ICON[row.type] ?? '📁';
-              return (
+            {items.map((row) => (
                 <li
                   key={row.id}
                   className="flex flex-wrap items-start gap-2 sm:gap-3 py-2 border-b border-border/40 last:border-0"
                 >
-                  <span className="text-lg shrink-0" aria-hidden>
-                    {icon}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-foreground">{row.name}</span>
-                      <Badge variant="secondary" className="text-[10px] bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30">
-                        Manual
-                      </Badge>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <AssetLogo
+                      ticker={row.ticker ?? undefined}
+                      assetType={row.type}
+                      logoUrl={row.logo_url}
+                      companyDomain={row.company_domain}
+                      name={row.name}
+                      size="md"
+                      showTooltip
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-foreground">{row.name}</span>
+                        <Badge variant="secondary" className="text-[10px] bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30">
+                          Manual
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{row.institution}</p>
+                      {row.ticker && (
+                        <p className="text-xs text-muted-foreground">{row.ticker}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {row.balance_date ? format(new Date(row.balance_date + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">{row.institution}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {row.balance_date ? format(new Date(row.balance_date + 'T12:00:00'), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
-                    </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-auto">
                     <span className="font-semibold tabular-nums text-right">{fmt(Number(row.gross_balance))}</span>
@@ -95,8 +89,7 @@ export function ManualInvestmentsList({ items, onEdit, onRemove, onAdd, showSect
                     </Button>
                   </div>
                 </li>
-              );
-            })}
+            ))}
           </ul>
         )}
         {items.length > 0 && (

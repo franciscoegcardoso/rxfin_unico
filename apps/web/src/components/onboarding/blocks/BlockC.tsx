@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   ArrowRight, ArrowLeft, Target, TrendingUp, Wallet,
   Plus, Trash2, FileText, Upload, CheckCircle2, Calendar, Loader2, Sparkles,
-  Home, Car, PiggyBank, CreditCard, Shield, Building2, Banknote, BarChart3,
-  Zap, HelpCircle
+  Home, Car, PiggyBank, CreditCard, Shield, Building2, Building, Banknote, BarChart3,
+  Zap, HelpCircle, AlertCircle
 } from 'lucide-react';
 import type { BemDireito } from '@/hooks/useIRImport';
 
@@ -15,6 +15,15 @@ function getBemGroupLabel(codigo: string | number): string {
   if (n >= 31 && n <= 99) return 'Investimentos';
   return 'Outros';
 }
+
+/** Categoria do bem para o card Resumo (label singular + ícone + cor), alinhado ao Meu IR Resumo. */
+function getBemCategoriaResumo(codigo: string | number): { label: string; icon: React.ReactNode; color: string } {
+  const n = typeof codigo === 'number' ? codigo : parseInt(String(codigo), 10);
+  if (n >= 1 && n <= 19) return { label: 'Imóvel', icon: <Building className="h-4 w-4" />, color: 'text-blue-500' };
+  if (n >= 21 && n <= 29) return { label: 'Veículo', icon: <Car className="h-4 w-4" />, color: 'text-orange-500' };
+  if (n >= 31 && n <= 99) return { label: 'Investimento', icon: <Banknote className="h-4 w-4" />, color: 'text-green-500' };
+  return { label: 'Outro', icon: <FileText className="h-4 w-4" />, color: 'text-muted-foreground' };
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IrDownloadGuideContent } from '@/components/shared/IrDownloadGuide';
 import { Button } from '@/components/ui/button';
@@ -22,7 +31,9 @@ import { cn } from '@/lib/utils';
 import { formatIRFileName } from '@/lib/irFileName';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { ConquestCard } from '../ConquestCard';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -192,12 +203,18 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     if (!user?.id || !file) return;
     setSelectedYear(anoExercicio);
     setIrUploadError('');
-    const result = await processFile(file);
-    if (result) {
-      toast.success(`Declaração ${result.anoExercicio} importada com sucesso!`);
-      await fetchImports();
-    } else {
-      setIrUploadError('Erro ao importar. Tente novamente.');
+    try {
+      const result = await processFile(file, anoExercicio);
+      if (result) {
+        toast.success(`Declaração ${result.anoExercicio} importada com sucesso!`);
+        await fetchImports();
+      } else {
+        setIrUploadError('Erro ao importar. Tente novamente.');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao importar. Tente novamente.';
+      setIrUploadError(msg);
+      toast.error(msg);
     }
   };
 
@@ -549,6 +566,51 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
       financiamentos.length > 0 || consorcios.length > 0;
     const hasAnyData = useIRData ? hasBensFromIR || totalPassivos > 0 : hasAnyDataBens;
 
+    // Dados do Resumo (mesmo conteúdo do Meu IR → Resumo) para exibir os 3 cards quando useIRData
+    const resumoData = useMemo(() => {
+      if (!useIRData || !irPatrimonySource) return null;
+      const totalRendTrib = (irPatrimonySource.rendimentosTributaveis ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+      const totalRendIsentos = (irPatrimonySource.rendimentosIsentos ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+      const totalRend = totalRendTrib + totalRendIsentos;
+      const totalDiv = (irPatrimonySource.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0);
+      const numFontes = (irPatrimonySource.rendimentosTributaveis?.length ?? 0) + (irPatrimonySource.rendimentosIsentos?.length ?? 0);
+
+      let bensPorCategoria: { label: string; items: unknown[]; total: number; icon: React.ReactNode; color: string }[] = [];
+      let totalBens = 0;
+
+      if (hasIrBensFromDb && irBensFromDb.grupos?.length) {
+        totalBens = irBensFromDb.totais?.total_declarado ?? 0;
+        const iconMap: Record<string, { icon: React.ReactNode; color: string }> = {
+          'Imóveis': { icon: <Building className="h-4 w-4" />, color: 'text-blue-500' },
+          'Veículos': { icon: <Car className="h-4 w-4" />, color: 'text-orange-500' },
+          'Investimentos': { icon: <Banknote className="h-4 w-4" />, color: 'text-green-500' },
+          'Outros': { icon: <FileText className="h-4 w-4" />, color: 'text-muted-foreground' },
+        };
+        bensPorCategoria = irBensFromDb.grupos.map((g: { label?: string; bens?: { situacao_atual?: number; situacaoAtual?: number }[]; total_declarado?: number }) => {
+          const label = g.label ?? 'Outros';
+          const items = g.bens ?? [];
+          const total = g.total_declarado ?? items.reduce((s: number, b: { situacao_atual?: number; situacaoAtual?: number }) => s + (b.situacao_atual ?? b.situacaoAtual ?? 0), 0);
+          const { icon, color } = iconMap[label] ?? iconMap['Outros'];
+          return { label, items, total, icon, color };
+        });
+      } else if (irPatrimonySource.bensDireitos?.length) {
+        const acc: Record<string, { items: BemDireito[]; total: number; icon: React.ReactNode; color: string }> = {};
+        irPatrimonySource.bensDireitos.forEach((bem) => {
+          const cat = getBemCategoriaResumo(bem.codigo);
+          if (!acc[cat.label]) acc[cat.label] = { items: [], total: 0, ...cat };
+          acc[cat.label].items.push(bem);
+          acc[cat.label].total += bem.situacaoAtual ?? 0;
+        });
+        totalBens = Object.values(acc).reduce((s, c) => s + c.total, 0);
+        bensPorCategoria = Object.values(acc).map((c) => ({ label: c.label, items: c.items, total: c.total, icon: c.icon, color: c.color }));
+      }
+
+      return { totalBens, totalRendTrib, totalRendIsentos, totalRend, totalDiv, numFontes, bensPorCategoria };
+    }, [useIRData, irPatrimonySource, hasIrBensFromDb, irBensFromDb]);
+
+    const formatResumoCurrency = (v: number) =>
+      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
+
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex items-center mb-6">
@@ -584,7 +646,99 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
           </p>
         </div>
 
-        {hasAnyData && (
+        {/* Conteúdo igual ao Resumo do Meu IR (Anexo 2): 3 cards Bens e Direitos | Rendimentos | Dívidas e Ônus */}
+        {useIRData && resumoData && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+            <Card className="border-border/60">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Building className="h-4 w-4 text-blue-500" />
+                  Bens e Direitos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <div className="space-y-2">
+                  {resumoData.bensPorCategoria.map((cat) => (
+                    <div key={cat.label} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className={cat.color}>{cat.icon}</span>
+                        <span className="text-muted-foreground">{cat.label}</span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {cat.items.length}
+                        </Badge>
+                      </div>
+                      <span className="font-medium text-sm">{formatResumoCurrency(cat.total)}</span>
+                    </div>
+                  ))}
+                  <Separator className="my-2" />
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-sm">Total Declarado</span>
+                    <span className="text-primary">{formatResumoCurrency(resumoData.totalBens)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/60">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Banknote className="h-4 w-4 text-green-500" />
+                  Rendimentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Tributáveis</span>
+                    <span className="font-medium">{formatResumoCurrency(resumoData.totalRendTrib)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Isentos</span>
+                    <span className="font-medium">{formatResumoCurrency(resumoData.totalRendIsentos)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-sm">Total</span>
+                    <span className="text-green-600">{formatResumoCurrency(resumoData.totalRend)}</span>
+                  </div>
+                  {resumoData.numFontes > 0 && (
+                    <p className="text-xs text-muted-foreground pt-1">
+                      {resumoData.numFontes} fonte(s) pagadora(s)
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/60">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-orange-500" />
+                  Dívidas e Ônus
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 pb-3">
+                {(irPatrimonySource?.dividas?.length ?? 0) > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{irPatrimonySource!.dividas!.length} dívida(s)</span>
+                      <span className="font-medium text-orange-600">{formatResumoCurrency(resumoData.totalDiv)}</span>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="flex items-center justify-between font-semibold">
+                      <span className="text-sm">Total</span>
+                      <span className="text-orange-600">{formatResumoCurrency(resumoData.totalDiv)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    Nenhuma dívida declarada
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {hasAnyData && !useIRData && (
           <div className="grid grid-cols-3 gap-3 mb-5">
             {[
               { label: 'Total ativos', value: totalAtivos, color: 'text-primary' },
@@ -600,53 +754,6 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
         )}
 
         <div className="space-y-3 mb-5">
-          {useIRData && (hasIrBensFromDb ? irBensFromDb.grupos?.length > 0 : bensByGroup && bensByGroup.length > 0) && (
-            <>
-              {(hasIrBensFromDb ? irBensFromDb.grupos : bensByGroup!).map((grupo: any) => {
-                // Normaliza: banco usa { label, bens, total_declarado }, local usa { label, items }
-                const label: string = grupo.label ?? grupo.asset_type ?? 'Outros';
-                const items: any[] = grupo.bens ?? grupo.items ?? [];
-                const Icon =
-                  label === 'Imóveis' || label.toLowerCase().includes('imóv') ? Home
-                  : label === 'Veículos' || label.toLowerCase().includes('veíc') ? Car
-                  : label === 'Investimentos' ? Banknote
-                  : FileText;
-                return (
-                  <div key={label} className="bg-card border border-border rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Icon className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-semibold text-foreground">
-                        {label} ({items.length})
-                      </p>
-                    </div>
-                    <div className="space-y-1.5">
-                      {items.slice(0, 5).map((b: any, idx: number) => {
-                        // Compatível com formato banco (situacao_atual) e local (situacaoAtual)
-                        const valor = b.situacao_atual ?? b.situacaoAtual ?? 0;
-                        const nome = b.descricao || b.discriminacao || b.real_name
-                          || `Bem ${b.ir_item_code ?? b.codigo ?? idx}`;
-                        return (
-                          <div key={`${b.ir_item_code ?? b.codigo ?? ''}-${idx}`}
-                            className="flex items-center justify-between gap-2">
-                            <p className="text-xs text-muted-foreground truncate flex-1" title={nome}>
-                              {nome.slice(0, 40)}{nome.length > 40 ? '…' : ''}
-                            </p>
-                            <p className="text-xs font-medium text-foreground shrink-0 tabular-nums">
-                              {formatBRLFull(valor)}
-                            </p>
-                          </div>
-                        );
-                      })}
-                      {items.length > 5 && (
-                        <p className="text-xs text-muted-foreground">+{items.length - 5} outros</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </>
-          )}
-
           {!useIRData && assets.length > 0 && (
             <div className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">

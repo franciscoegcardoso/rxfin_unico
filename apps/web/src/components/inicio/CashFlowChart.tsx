@@ -124,14 +124,31 @@ export const CashFlowChart: React.FC = () => {
       <CardContent className="p-4 pt-0">
         <div className="h-[240px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 0 }} barCategoryGap="28%" barGap={3}>
+            <BarChart
+              data={data}
+              margin={{ top: 8, right: 8, left: 4, bottom: 0 }}
+              barCategoryGap={isMobile ? '6%' : '28%'}
+              barGap={isMobile ? 2 : 3}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border-subtle))" vertical={false} />
               <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tick={(props) => <AxisTick {...props} isHidden={isHidden} />} />
               <YAxis hide={isMobile} axisLine={false} tickLine={false} width={isMobile ? 0 : 72} tick={(props) => isMobile ? <g /> : <AxisTick {...props} isHidden={isHidden} isY />} />
               <Tooltip cursor={{ fill: 'hsl(var(--color-border-subtle))', radius: 4 }} content={<CustomTooltip isHidden={isHidden} />} />
               <Legend content={<CustomLegend />} />
-              <Bar dataKey="receitas" name="Receitas" fill={COLOR_INCOME} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="despesas" name="Despesas" fill={COLOR_EXPENSE} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="receitas"
+                name="Receitas"
+                fill={COLOR_INCOME}
+                radius={[4, 4, 0, 0]}
+                {...(isMobile ? { barSize: 12 } : {})}
+              />
+              <Bar
+                dataKey="despesas"
+                name="Despesas"
+                fill={COLOR_EXPENSE}
+                radius={[4, 4, 0, 0]}
+                {...(isMobile ? { barSize: 12 } : {})}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -30,6 +30,7 @@ import { usePluggyInvestments, InvestmentCategoryData, InvestmentCategory } from
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
+import { AssetLogo } from '@/components/ui/AssetLogo';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Select,
@@ -485,25 +486,31 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                       key={inv.id}
                       className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <AssetLogo
+                          ticker={inv.code ?? undefined}
+                          assetType={inv.type}
+                          logoUrl={inv.logo_url}
+                          name={inv.name}
+                          size="md"
+                          showTooltip
+                        />
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm truncate">{inv.name}</p>
                           {inv.code && (
-                            <Badge variant="outline" className="text-xs flex-shrink-0">
-                              {inv.code}
-                            </Badge>
+                            <p className="text-xs text-muted-foreground">{inv.code}</p>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                          {inv.issuer && <span>{inv.issuer}</span>}
-                          {inv.quantity && inv.unit_value && (
-                            <span>
-                              {inv.quantity.toLocaleString('pt-BR')} × {formatCurrency(inv.unit_value)}
-                            </span>
-                          )}
-                          {inv.fixed_annual_rate != null && (
-                            <span>Taxa: {inv.fixed_annual_rate.toFixed(2)}% a.a.</span>
-                          )}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                            {inv.issuer && <span>{inv.issuer}</span>}
+                            {inv.quantity && inv.unit_value && (
+                              <span>
+                                {inv.quantity.toLocaleString('pt-BR')} × {formatCurrency(inv.unit_value)}
+                              </span>
+                            )}
+                            {inv.fixed_annual_rate != null && (
+                              <span>Taxa: {inv.fixed_annual_rate.toFixed(2)}% a.a.</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0 ml-3">

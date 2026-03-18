@@ -424,6 +424,9 @@ export interface Asset {
   investmentTicker?: string; // Ticker/código do ativo (ex: PETR4, ITUB4)
   investmentQuantity?: number; // Quantidade de cotas/ações
   investmentAveragePrice?: number; // Preço médio de aquisição
+  logo_url?: string | null;
+  company_domain?: string | null;
+  logo_source?: string | null;
   // Campos específicos para previdência corporativa
   isCorporatePension?: boolean; // Se é um plano de previdência corporativa
   corporatePensionConfig?: CorporatePensionConfig; // Configuração do plano corporativo
