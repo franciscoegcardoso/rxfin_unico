@@ -52,7 +52,7 @@ import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recha
 import IrHistoricoPatrimonial from '@/components/ir/IrHistoricoPatrimonial';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { INVESTIMENTOS_ALOCACAO_PATH } from '@/constants/appPaths';
-import { useInvestmentsList } from '@/hooks/useInvestmentsList';
+import { useInvestmentsList, type InvestmentListItem } from '@/hooks/useInvestmentsList';
 import { enrichPatrimonioInvestRow } from '@/utils/investmentDisplay';
 import { InvestmentAvatar } from '@/components/bens-investimentos/InvestmentAvatar';
 
@@ -72,6 +72,12 @@ const BensInvestimentosLayout: React.FC = () => {
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
   const { seguros } = useSeguros();
+  const { data: investmentsListRpc = [] } = useInvestmentsList();
+  const rpcById = useMemo(() => {
+    const m = new Map<string, InvestmentListItem>();
+    investmentsListRpc.forEach((item) => m.set(item.id, item));
+    return m;
+  }, [investmentsListRpc]);
 
   const location = useLocation();
   const navigate = useNavigate();
