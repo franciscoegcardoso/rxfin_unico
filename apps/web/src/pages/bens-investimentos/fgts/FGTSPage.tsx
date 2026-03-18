@@ -44,7 +44,6 @@ const CAIXA_ONLINE = 'https://www.caixa.gov.br/';
 const CTPS_DIGITAL = 'https://ctpsdigital.mte.gov.br/';
 
 export default function FGTSPage() {
-  const navigate = useNavigate();
   const { data: assets = [], isLoading: loadingAssets } = useFGTSAssets();
   const { entries, getLatestEntry, isLoading: loadingEntries } = useFGTSEntries();
   const saveEntry = useSaveFGTSMonthlyEntry();
@@ -131,13 +130,13 @@ export default function FGTSPage() {
           <Card className="rounded-xl border border-dashed border-border/80">
             <CardContent className="p-8 text-center">
               <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="font-medium text-foreground">Nenhuma conta FGTS cadastrada</p>
+              <p className="font-medium text-foreground">Você ainda não cadastrou nenhuma conta FGTS</p>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
                 Cadastre suas contas FGTS por empregador para acompanhar saldo e depósitos mensais.
               </p>
               <Button className="mt-4 gap-2" onClick={() => setNewAccountModalOpen(true)}>
                 <Plus className="h-4 w-4" />
-                Nova conta FGTS
+                + Adicionar conta FGTS
               </Button>
             </CardContent>
           </Card>

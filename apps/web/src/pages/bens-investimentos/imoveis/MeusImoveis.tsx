@@ -80,7 +80,6 @@ const MeusImoveis: React.FC = () => {
     return [...active, ...sold];
   }, [config.assets]);
 
-  const total = useMemo(() => imoveis.filter(a => !a.isSold).reduce((sum, a) => sum + a.value, 0), [imoveis]);
 
   const renderAssetCard = (asset: Asset) => {
     const isSold = asset.isSold;
@@ -220,10 +219,6 @@ const MeusImoveis: React.FC = () => {
           <Plus className="h-4 w-4" />
           Adicionar imóvel
         </Button>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4 py-2 px-3 bg-muted/30 rounded-lg">
-        <span className="text-xs text-muted-foreground">Total:</span>
-        <span className="text-sm font-bold text-primary">{formatCurrency(total)}</span>
       </div>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-semibold text-foreground">Meus Imóveis</h2>
