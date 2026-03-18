@@ -151,6 +151,75 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
     return order.filter((k) => groups[k]?.length).map((k) => ({ label: k, items: groups[k]! }));
   }, [irPatrimonySource]);
 
+  /** Resumo IR para step Patrimônio — no topo para não violar Rules of Hooks (antes: useMemo após return de loading). */
+  const step2ResumoData = useMemo(() => {
+    const src = irPatrimonySource;
+    if (!src) return null;
+    const hasIrBensFromDb = !!irBensFromDb && (irBensFromDb.grupos?.length ?? 0) > 0;
+    const useIRData =
+      hasIrBensFromDb
+        ? (irBensFromDb!.grupos?.length ?? 0) > 0
+        : (src.bensDireitos?.length ?? 0) > 0;
+    if (!useIRData) return null;
+
+    const totalRendTrib = (src.rendimentosTributaveis ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+    const totalRendIsentos = (src.rendimentosIsentos ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
+    const totalRend = totalRendTrib + totalRendIsentos;
+    const totalDiv = (src.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0);
+    const numFontes = (src.rendimentosTributaveis?.length ?? 0) + (src.rendimentosIsentos?.length ?? 0);
+
+    let bensPorCategoria: { label: string; items: unknown[]; total: number; icon: React.ReactNode; color: string }[] =
+      [];
+    let totalBens = 0;
+
+    if (hasIrBensFromDb && irBensFromDb.grupos?.length) {
+      totalBens = irBensFromDb.totais?.total_declarado ?? 0;
+      const iconMap: Record<string, { icon: React.ReactNode; color: string }> = {
+        Imóveis: { icon: <Building className="h-4 w-4" />, color: 'text-blue-500' },
+        Veículos: { icon: <Car className="h-4 w-4" />, color: 'text-orange-500' },
+        Investimentos: { icon: <Banknote className="h-4 w-4" />, color: 'text-green-500' },
+        Outros: { icon: <FileText className="h-4 w-4" />, color: 'text-muted-foreground' },
+      };
+      bensPorCategoria = irBensFromDb.grupos.map(
+        (g: {
+          label?: string;
+          bens?: { situacao_atual?: number; situacaoAtual?: number }[];
+          total_declarado?: number;
+        }) => {
+          const label = g.label ?? 'Outros';
+          const items = g.bens ?? [];
+          const total =
+            g.total_declarado ??
+            items.reduce(
+              (s: number, b: { situacao_atual?: number; situacaoAtual?: number }) =>
+                s + (b.situacao_atual ?? b.situacaoAtual ?? 0),
+              0
+            );
+          const { icon, color } = iconMap[label] ?? iconMap['Outros'];
+          return { label, items, total, icon, color };
+        }
+      );
+    } else if (src.bensDireitos?.length) {
+      const acc: Record<string, { items: BemDireito[]; total: number; icon: React.ReactNode; color: string }> = {};
+      src.bensDireitos.forEach((bem) => {
+        const cat = getBemCategoriaResumo(bem.codigo);
+        if (!acc[cat.label]) acc[cat.label] = { items: [], total: 0, ...cat };
+        acc[cat.label].items.push(bem);
+        acc[cat.label].total += bem.situacaoAtual ?? 0;
+      });
+      totalBens = Object.values(acc).reduce((s, c) => s + c.total, 0);
+      bensPorCategoria = Object.values(acc).map((c) => ({
+        label: c.label,
+        items: c.items,
+        total: c.total,
+        icon: c.icon,
+        color: c.color,
+      }));
+    }
+
+    return { totalBens, totalRendTrib, totalRendIsentos, totalRend, totalDiv, numFontes, bensPorCategoria };
+  }, [irPatrimonySource, irBensFromDb]);
+
   const loadPatrimonio = async () => {
     if (patrimonioLoaded || !user?.id) return;
     try {
@@ -566,47 +635,7 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
       financiamentos.length > 0 || consorcios.length > 0;
     const hasAnyData = useIRData ? hasBensFromIR || totalPassivos > 0 : hasAnyDataBens;
 
-    // Dados do Resumo (mesmo conteúdo do Meu IR → Resumo) para exibir os 3 cards quando useIRData
-    const resumoData = useMemo(() => {
-      if (!useIRData || !irPatrimonySource) return null;
-      const totalRendTrib = (irPatrimonySource.rendimentosTributaveis ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
-      const totalRendIsentos = (irPatrimonySource.rendimentosIsentos ?? []).reduce((s, r) => s + (r.valor ?? 0), 0);
-      const totalRend = totalRendTrib + totalRendIsentos;
-      const totalDiv = (irPatrimonySource.dividas ?? []).reduce((s, d) => s + (d.situacaoAtual ?? 0), 0);
-      const numFontes = (irPatrimonySource.rendimentosTributaveis?.length ?? 0) + (irPatrimonySource.rendimentosIsentos?.length ?? 0);
-
-      let bensPorCategoria: { label: string; items: unknown[]; total: number; icon: React.ReactNode; color: string }[] = [];
-      let totalBens = 0;
-
-      if (hasIrBensFromDb && irBensFromDb.grupos?.length) {
-        totalBens = irBensFromDb.totais?.total_declarado ?? 0;
-        const iconMap: Record<string, { icon: React.ReactNode; color: string }> = {
-          'Imóveis': { icon: <Building className="h-4 w-4" />, color: 'text-blue-500' },
-          'Veículos': { icon: <Car className="h-4 w-4" />, color: 'text-orange-500' },
-          'Investimentos': { icon: <Banknote className="h-4 w-4" />, color: 'text-green-500' },
-          'Outros': { icon: <FileText className="h-4 w-4" />, color: 'text-muted-foreground' },
-        };
-        bensPorCategoria = irBensFromDb.grupos.map((g: { label?: string; bens?: { situacao_atual?: number; situacaoAtual?: number }[]; total_declarado?: number }) => {
-          const label = g.label ?? 'Outros';
-          const items = g.bens ?? [];
-          const total = g.total_declarado ?? items.reduce((s: number, b: { situacao_atual?: number; situacaoAtual?: number }) => s + (b.situacao_atual ?? b.situacaoAtual ?? 0), 0);
-          const { icon, color } = iconMap[label] ?? iconMap['Outros'];
-          return { label, items, total, icon, color };
-        });
-      } else if (irPatrimonySource.bensDireitos?.length) {
-        const acc: Record<string, { items: BemDireito[]; total: number; icon: React.ReactNode; color: string }> = {};
-        irPatrimonySource.bensDireitos.forEach((bem) => {
-          const cat = getBemCategoriaResumo(bem.codigo);
-          if (!acc[cat.label]) acc[cat.label] = { items: [], total: 0, ...cat };
-          acc[cat.label].items.push(bem);
-          acc[cat.label].total += bem.situacaoAtual ?? 0;
-        });
-        totalBens = Object.values(acc).reduce((s, c) => s + c.total, 0);
-        bensPorCategoria = Object.values(acc).map((c) => ({ label: c.label, items: c.items, total: c.total, icon: c.icon, color: c.color }));
-      }
-
-      return { totalBens, totalRendTrib, totalRendIsentos, totalRend, totalDiv, numFontes, bensPorCategoria };
-    }, [useIRData, irPatrimonySource, hasIrBensFromDb, irBensFromDb]);
+    const resumoData = step2ResumoData;
 
     const formatResumoCurrency = (v: number) =>
       new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
