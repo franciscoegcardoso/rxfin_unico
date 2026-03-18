@@ -38,6 +38,7 @@ import {
   FileQuestion,
   User,
   UserCog,
+  PieChart,
   LucideIcon,
   // Additional icons from database
   LayoutGrid,
@@ -125,6 +126,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   BarChart2,
   Bell,
   Key,
+  PieChart,
   
   // Outros
   LayoutGrid,

@@ -33,7 +33,7 @@ const TITLE_MAP: Record<string, string> = {
   "/bens-investimentos/fgts": "FGTS",
   "/bens-investimentos/credito": "Crédito",
   "/bens-investimentos/seguros": "Seguros",
-  "/alocacao": "Alocação de Ativos",
+  "/bens-investimentos/investimentos/alocacao": "Alocação de Ativos",
   "/simuladores": "Simuladores",
   "/simuladores/veiculos/simulador-fipe": "Simulador FIPE",
   "/minha-conta": "Minha Conta",

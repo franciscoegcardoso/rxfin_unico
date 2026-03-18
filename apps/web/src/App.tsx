@@ -221,6 +221,7 @@ const App = () => (
                                     <Route path="imoveis" element={<MeusImoveis />} />
                                     <Route path="veiculos" element={<MeusVeiculos />} />
                                     <Route path="investimentos" element={<InvestimentosTab />} />
+                                    <Route path="investimentos/alocacao" element={<Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AlocacaoRoute /></Suspense>} />
                                     <Route path="fgts" element={<FGTSPage />} />
                                     <Route path="passivos" element={<Navigate to="/passivos" replace />} />
                                     <Route path="credito" element={<Navigate to="/passivos" replace />} />
@@ -279,7 +280,7 @@ const App = () => (
                                   <Route path="instituicoes" element={<InstituicoesFinanceiras />} />
                                   <Route path="dados-financeiros" element={<DadosFinanceiros />} />
                                   <Route path="dados" element={<DadosFinanceiros />} />
-                                  <Route path="alocacao" element={<Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AlocacaoRoute /></Suspense>} />
+                                  <Route path="alocacao" element={<Navigate to="/bens-investimentos/investimentos/alocacao" replace />} />
 
                                   <Route path="financeiro" element={<FinanceiroLayout />}>
                                     <Route index element={<Navigate to="planos" replace />} />

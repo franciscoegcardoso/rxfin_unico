@@ -72,9 +72,12 @@ const BensInvestimentosLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const pathSegment = location.pathname.split('/').filter(Boolean).pop() || '';
+  const pathname = location.pathname;
+  const pathSegment = pathname.split('/').filter(Boolean).pop() || '';
   const validTabs = VALID_TABS as readonly string[];
+  const isInvestimentosAlocacao = pathname.includes('/investimentos/alocacao');
   const tabFromUrl = (() => {
+    if (isInvestimentosAlocacao) return 'investimentos';
     if (pathSegment === 'dividas') return 'dividas';
     if (pathSegment === 'overview') return 'consolidado';
     if (pathSegment === 'financiamentos') return 'consolidado';
@@ -657,7 +660,9 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {(currentTab === 'imoveis' || currentTab === 'veiculos' || currentTab === 'fgts') && <Outlet />}
 
-              {currentTab === 'investimentos' && (
+              {currentTab === 'investimentos' && isInvestimentosAlocacao && <Outlet />}
+
+              {currentTab === 'investimentos' && !isInvestimentosAlocacao && (
                 <div className="space-y-6">
                   {bensData?.summary?.has_stale_data && (
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
@@ -674,10 +679,15 @@ const BensInvestimentosLayout: React.FC = () => {
                       <TrendingUp className="h-5 w-5 text-primary" />
                       Meus Investimentos
                     </h2>
-                    <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
-                      <Plus className="h-4 w-4" />
-                      Adicionar investimento
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                        <Link to="/bens-investimentos/investimentos/alocacao">Alocação de Ativos</Link>
+                      </Button>
+                      <Button size="sm" className="gap-1.5" onClick={() => { setEditingAsset(null); setIsDialogOpen(true); }}>
+                        <Plus className="h-4 w-4" />
+                        Adicionar investimento
+                      </Button>
+                    </div>
                   </div>
                   {patrimonioError ? (
                     <ErrorCard message="Não foi possível carregar os dados." onRetry={() => refetchPatrimonio()} />

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -82,19 +83,21 @@ export interface PendingTransaction {
   purchaseDate?: string | null;
 }
 
+const CREDIT_CARD_TRANSACTIONS_QUERY_KEY = 'credit-card-transactions';
+
 export function useCreditCardTransactions() {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<CreditCardTransaction[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchTransactions = useCallback(async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
+  const {
+    data: transactions = [],
+    isLoading: loading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id],
+    queryFn: async (): Promise<CreditCardTransaction[]> => {
+      if (!user) return [];
       const PAGE_SIZE = 1000;
       let allResults: any[] = [];
       let from = 0;
@@ -116,28 +119,20 @@ export function useCreditCardTransactions() {
         if (from >= 5000) break;
       }
 
-      // Campo virtual: display_installment
-      const enriched = allResults.map(t => ({
+      return allResults.map(t => ({
         ...t,
         display_installment:
           t.installment_total && t.installment_total > 1
             ? `${String(t.installment_current || 1).padStart(2, '0')}/${String(t.installment_total).padStart(2, '0')}`
             : 'À vista',
-      }));
+      })) as CreditCardTransaction[];
+    },
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+  });
 
-      console.log(`[fetchTransactions] ${enriched.length} registros carregados`);
-      setTransactions(enriched);
-    } catch (err) {
-      console.error('Error fetching transactions:', err);
-      setError('Erro ao carregar transações');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  const fetchTransactions = useCallback(() => refetch(), [refetch]);
+  const error = queryError ? 'Erro ao carregar transações' : null;
 
   const categorizeWithAI = async (pendingTransactions: PendingTransaction[]): Promise<PendingTransaction[]> => {
     try {
@@ -417,7 +412,9 @@ export function useCreditCardTransactions() {
       }
 
       const transactionIds = allInsertedIds;
-
+      if (transactionIds.length > 0) {
+        queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
+      }
       return { success: true, transactionIds };
     } catch (err) {
       console.error('[importTransactions] Error:', err);
@@ -441,9 +438,7 @@ export function useCreditCardTransactions() {
 
       if (updateError) throw updateError;
 
-      setTransactions(prev => 
-        prev.map(t => t.id === id ? { ...t, ...updates } : t)
-      );
+      queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
       return true;
     } catch (err) {
       console.error('Error updating transaction:', err);
@@ -461,7 +456,7 @@ export function useCreditCardTransactions() {
 
       if (deleteError) throw deleteError;
 
-      setTransactions(prev => prev.filter(t => t.id !== id));
+      queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
       toast.success('Transação removida');
       return true;
     } catch (err) {
@@ -482,7 +477,7 @@ export function useCreditCardTransactions() {
 
       if (deleteError) throw deleteError;
 
-      setTransactions(prev => prev.filter(t => !ids.includes(t.id)));
+      queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
       toast.success(`${ids.length} transações removidas`);
       return true;
     } catch (err) {

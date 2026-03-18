@@ -342,6 +342,7 @@ export function useNavMenuPages(): NavMenuData {
   const seenMainPaths = new Set<string>();
   const mainItems: NavMenuItem[] = pages
     .filter(page => page.group_slug === MAIN_NAV_GROUP_SLUG)
+    .filter(page => page.path !== '/alocacao') // Alocação movida para B&I > Investimentos
     .filter(page => !isPageHiddenFromMenu(page))
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
