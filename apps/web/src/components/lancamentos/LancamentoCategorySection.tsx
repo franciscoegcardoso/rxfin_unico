@@ -188,8 +188,21 @@ export function LancamentoCategorySection({
     [suggestionMap, expenseCategoryNames, incomeCategories]
   );
 
-  const getDisplayCategory = (item: LancamentoRealizado) =>
-    item.categoria?.trim() || suggestionMap[item.id]?.suggestedCategory || '';
+  const getDisplayCategory = (item: LancamentoRealizado) => {
+    const currentName = item.categoria?.trim() || '';
+    const suggested = suggestionMap[item.id]?.suggestedCategory?.trim() || '';
+
+    // Para lançamentos não confirmados, quando a "categoria atual" é apenas o placeholder
+    // (ex.: não atribuída / sem category_id), priorizamos a sugestão da IA.
+    const isUnconfirmed = item.is_category_confirmed !== true;
+    const hasCategoryId =
+      item.category_id !== null && item.category_id !== undefined && item.category_id !== '';
+    const isPlaceholder =
+      currentName === 'Não atribuído' || currentName === 'Outros' || currentName === 'outros';
+
+    if (isUnconfirmed && suggested && (!hasCategoryId || isPlaceholder)) return suggested;
+    return currentName || suggested || '';
+  };
 
   // Filter & sort
   const filteredAndSorted = useMemo(() => {

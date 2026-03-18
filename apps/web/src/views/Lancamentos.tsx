@@ -57,6 +57,7 @@ import { usePurchaseRegistry } from '@/hooks/usePurchaseRegistry';
 import { useSeguros } from '@/hooks/useSeguros';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useBillPaymentReconciliation } from '@/hooks/useBillPaymentReconciliation';
+import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
 import { WarrantySection, useWarrantyState } from '@/components/shared/WarrantySection';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -97,6 +98,11 @@ export const Lancamentos: React.FC = () => {
   const { getSourceInfo, sourceMap } = useTransactionSourceMap();
   const { bills } = useCreditCardBills();
   const { getReconciliation, billPaymentIds } = useBillPaymentReconciliation(lancamentos, bills);
+  const { data: consolidarData = [] } = useConsolidarEstabelecimentos('bank');
+  const uniqueStoresCountExtrato = useMemo(
+    () => consolidarData.filter((r) => r.total_pendentes > 0).length,
+    [consolidarData]
+  );
   const pendingPurchases = getItemsByStatus('pending');
   const enabledIncomes = config.incomeItems.filter(i => i.enabled);
   const enabledExpenses = config.expenseItems.filter(i => i.enabled);
@@ -1316,6 +1322,8 @@ export const Lancamentos: React.FC = () => {
               description="Valide e organize suas receitas e despesas por categoria"
               count={filteredByMonth.filter(l => !l.is_category_confirmed).length}
               defaultTab="conta"
+              highlightWhenPending
+              uniqueStoresCount={uniqueStoresCountExtrato}
             />
 
             <CollapsibleModule

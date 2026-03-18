@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { 
   TrendingUp, 
   TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
   Calendar,
   DollarSign,
   ChevronDown,
@@ -66,8 +69,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MonthlyOverviewTable } from '@/components/planejamento/MonthlyOverviewTable';
 import { DashboardChartsSection, MonthlyPlanChart } from '@/components/planejamento/DashboardChartsSection';
 import { GoalsSummaryCard } from '@/components/planejamento/GoalsSummaryCard';
+import { MetasPainel } from '@/components/planejamento/MetasPainel';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useGoalsProjectionIntegration } from '@/hooks/useGoalsProjectionIntegration';
+import { useVersaoMensal } from '@/hooks/planejamento/useVersaoMensal';
 
 // ID do item de ajuste do cartão de crédito
 const CREDIT_CARD_ADJUSTMENT_ITEM_ID = 'e_cc_adjust';
@@ -249,6 +254,8 @@ const VisaoMensalTab: React.FC = () => {
   
   const currentDate = new Date();
   const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+  const versaoMensal = useVersaoMensal(currentMonth);
   
   const allMonths = useMemo(() => generateMonths(2025, 24), []);
 
@@ -1037,6 +1044,66 @@ const VisaoMensalTab: React.FC = () => {
           </div>
 
           <div className="space-y-5">
+          {/* Banner de saldo realizado (receitas/despesas/cartão) */}
+          <Card className="rounded-2xl border border-border/40 bg-card/80 backdrop-blur-sm shadow-sm">
+            <CardContent className="p-4">
+              {versaoMensal.isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-pulse">
+                  <div className="h-20 rounded-xl bg-muted/50" />
+                  <div className="h-20 rounded-xl bg-muted/50" />
+                  <div className="h-20 rounded-xl bg-muted/50" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <TrendingUp className="h-4 w-4 text-income" />
+                      Receitas realizadas
+                    </div>
+                    <div className={cn("text-lg font-semibold", 'text-income')}>
+                      {formatCurrency(versaoMensal.receitas)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <TrendingDown className="h-4 w-4 text-expense" />
+                      Despesas realizadas
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Extrato: {formatCurrency(versaoMensal.despesas_extrato)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Cartão: {formatCurrency(versaoMensal.faturas_total)}
+                    </div>
+                    <div className={cn("text-lg font-semibold", 'text-expense')}>
+                      {formatCurrency(versaoMensal.total_despesas)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      {versaoMensal.saldo_disponivel >= 0 ? (
+                        <ArrowUpRight className="h-4 w-4 text-income" />
+                      ) : (
+                        <ArrowDownRight className="h-4 w-4 text-expense" />
+                      )}
+                      Saldo disponível
+                    </div>
+                    <div
+                      className={cn(
+                        "text-lg font-semibold",
+                        versaoMensal.saldo_disponivel >= 0 ? 'text-income' : 'text-expense'
+                      )}
+                    >
+                      {formatCurrency(versaoMensal.saldo_disponivel)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
             {/* Goals Summary Card */}
             <GoalsSummaryCard
               selectedMonth={currentMonth}
@@ -1950,6 +2017,17 @@ const VisaoMensalTab: React.FC = () => {
           </div>
         </div>
           </div>
+
+      {/* Metas do planejamento (aportes) */}
+      <MetasPainel saldo_disponivel={versaoMensal.saldo_disponivel} />
+      <div className="flex justify-end">
+        <Link
+          to={`/planejamento-anual?highlight=${currentMonth}`}
+          className="text-sm text-primary hover:underline underline-offset-4"
+        >
+          Ver no planejamento anual &rarr;
+        </Link>
+      </div>
 
       {/* Consolidação Dialog */}
       <ConsolidacaoMensalDialog

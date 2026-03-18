@@ -11,10 +11,11 @@ import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSec
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
 import { Label } from '@/components/ui/label';
-import { CreditCard, CheckCircle2, Clock } from 'lucide-react';
+import { CreditCard, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
+import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { CategoryAssignmentDialog } from '@/components/shared/CategoryAssignmentDialog';
@@ -69,7 +70,13 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [projecaoParcelasDialogOpen, setProjecaoParcelasDialogOpen] = useState(false);
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
   const { transactions: allTransactions } = useCreditCardTransactions();
+  const { data: consolidarData = [] } = useConsolidarEstabelecimentos('card');
   const dashboard = data as DashboardData | null;
+
+  const uniqueStoresCount = useMemo(
+    () => consolidarData.filter((r) => r.total_pendentes > 0).length,
+    [consolidarData]
+  );
 
   const pendentesCartao = useMemo(() => {
     return allTransactions.filter(
@@ -198,14 +205,35 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
                   Ver todas as transações ({recentTransactions.length})
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => setCategoriasDialogOpen(true)}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-              >
-                <span className="text-primary font-medium">›</span>
-                Atribuir categorias às transações ({pendentesCartao} pendentes)
-              </button>
+              {pendentesCartao > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setCategoriasDialogOpen(true)}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        <span>⚠️</span>
+                        {pendentesCartao} lançamentos sem categoria
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                        {uniqueStoresCount} estabelecimentos únicos · resolva de uma vez →
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  </div>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCategoriasDialogOpen(true)}
+                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                >
+                  <span className="text-primary font-medium">›</span>
+                  Atribuir categorias às transações
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setVisaoMensalDialogOpen(true)}

@@ -4,13 +4,16 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Landmark, ChevronRight, FileText, X } from 'lucide-react';
+import { CreditCard, Landmark, ChevronRight, FileText, X, Sparkles } from 'lucide-react';
 import { ImportedTransactionsTable } from '@/components/cartao/ImportedTransactionsTable';
 import { LancamentoCategorySection } from '@/components/lancamentos/LancamentoCategorySection';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useAuth } from '@/contexts/AuthContext';
+import { useExpenseCategories } from '@/hooks/useDefaultParameters';
+import { ConsolidarTab } from '@/components/movimentacoes/ConsolidarTab';
+import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
 import { supabase } from '@/integrations/supabase/client';
 import {
   CategoryAssignmentFilters,
@@ -20,8 +23,9 @@ import {
 } from '@/components/shared/CategoryAssignmentFilters';
 import type { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
 import type { CreditCardTransaction } from '@/hooks/useCreditCardTransactions';
+import { toast } from 'sonner';
 
-export type CategoryAssignmentTab = 'cartao' | 'conta';
+export type CategoryAssignmentTab = 'cartao' | 'conta' | 'consolidar';
 
 function getBancoLabel(item: LancamentoRealizado): string {
   const ext = item as LancamentoRealizado & { account_name?: string | null; conta_nome?: string | null; instituicao?: string | null };
@@ -59,10 +63,16 @@ type PluggyCardInfo = {
 const CategoryAssignmentContent: React.FC<{
   defaultTab: CategoryAssignmentTab;
   open: boolean;
-}> = ({ defaultTab, open }) => {
+  onSaveConsolidarComplete?: (establishmentsUpdated: number, transactionsUpdated: number) => void;
+}> = ({ defaultTab, open, onSaveConsolidarComplete }) => {
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
   const [pluggyAccountNumbers, setPluggyAccountNumbers] = useState<Record<string, PluggyCardInfo>>({});
+  const sourceFilter = defaultTab === 'conta' ? 'bank' : defaultTab === 'cartao' ? 'card' : null;
+  const { data: consolidarData = [] } = useConsolidarEstabelecimentos(sourceFilter);
+  const consolidarPendingCount = consolidarData.filter((r) => r.total_pendentes > 0).length;
+  const { data: expenseCategories = [] } = useExpenseCategories();
+  const categoriesForConsolidar = useMemo(() => expenseCategories.map((c) => ({ id: c.id, name: c.name })), [expenseCategories]);
 
   // Filtros unificados (período, status, banco, categoria, cartão)
   const [period, setPeriod] = useState<PeriodFilterValue>('this_month');
@@ -235,27 +245,43 @@ const CategoryAssignmentContent: React.FC<{
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CategoryAssignmentTab)} className="flex flex-col min-h-0 flex-1">
-      <TabsList className="w-full shrink-0">
-        <TabsTrigger value="conta" className="flex-1 gap-1.5 text-xs">
+      <TabsList className="w-full shrink-0 grid grid-cols-3">
+        <TabsTrigger value="conta" className="gap-1.5 text-xs">
           <Landmark className="h-3.5 w-3.5" />
-          Lançamentos em Conta
+          Por lançamento (Conta)
           {unconfirmedLancCount > 0 && (
             <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
               {unconfirmedLancCount}
             </span>
           )}
         </TabsTrigger>
-        <TabsTrigger value="cartao" className="flex-1 gap-1.5 text-xs">
+        <TabsTrigger value="cartao" className="gap-1.5 text-xs">
           <CreditCard className="h-3.5 w-3.5" />
-          Cartão de Crédito
+          Por lançamento (Cartão)
           {unconfirmedCCCount > 0 && (
             <span className="ml-1 rounded-full bg-primary/15 text-primary text-[10px] font-semibold px-1.5 py-0.5 leading-none">
               {unconfirmedCCCount}
             </span>
           )}
         </TabsTrigger>
+        <TabsTrigger value="consolidar" className="gap-1.5 text-xs bg-primary/5 border-primary/20 data-[state=active]:bg-primary/10">
+          <Sparkles className="h-3.5 w-3.5" />
+          ✦ Consolidar
+          {consolidarPendingCount > 0 && (
+            <span className="ml-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 text-[10px] font-semibold px-1.5 py-0.5 leading-none">
+              {consolidarPendingCount}
+            </span>
+          )}
+        </TabsTrigger>
       </TabsList>
 
+      {activeTab === 'consolidar' && (
+        <p className="shrink-0 mt-2 text-xs text-muted-foreground">
+          💡 Categorize por estabelecimento e resolva vários lançamentos de uma vez
+        </p>
+      )}
+
+      {activeTab !== 'consolidar' && (
       <div className="shrink-0 mt-2">
         <CategoryAssignmentFilters
           activeTab={activeTab}
@@ -277,10 +303,21 @@ const CategoryAssignmentContent: React.FC<{
           compact
         />
       </div>
+      )}
 
       <div className="overflow-y-auto flex-1 min-h-0 mt-2">
-        <TabsContent value="cartao" className="mt-0 h-full">
-          <ImportedTransactionsTable
+        {activeTab === 'consolidar' ? (
+          <ConsolidarTab
+            sourceFilter={sourceFilter}
+            categories={categoriesForConsolidar}
+            onSaveComplete={(est, tx) => {
+              onSaveConsolidarComplete?.(est, tx);
+            }}
+          />
+        ) : (
+          <>
+            <TabsContent value="cartao" className="mt-0 h-full">
+              <ImportedTransactionsTable
             transactions={filteredTransactions}
             bills={bills}
             loading={transactionsLoading}
@@ -294,12 +331,14 @@ const CategoryAssignmentContent: React.FC<{
             hideFilters
           />
         </TabsContent>
-        <TabsContent value="conta" className="mt-0 h-full">
-          <LancamentoCategorySection
-            lancamentos={filteredLancamentos}
-            onCategoryUpdated={fetchLancamentos}
-          />
-        </TabsContent>
+            <TabsContent value="conta" className="mt-0 h-full">
+              <LancamentoCategorySection
+                lancamentos={filteredLancamentos}
+                onCategoryUpdated={fetchLancamentos}
+              />
+            </TabsContent>
+          </>
+        )}
       </div>
     </Tabs>
   );
@@ -336,7 +375,15 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
             </DrawerClose>
           </DrawerHeader>
           <div className="flex-1 overflow-y-auto p-4">
-            <CategoryAssignmentContent defaultTab={defaultTab} open={open} />
+            <CategoryAssignmentContent
+              defaultTab={defaultTab}
+              open={open}
+              onSaveConsolidarComplete={(est, tx) => {
+                handleClose(false);
+                onComplete?.();
+                toast.success(`${est} estabelecimentos categorizados · ${tx} lançamentos atualizados`);
+              }}
+            />
           </div>
         </DrawerContent>
       </Drawer>
@@ -355,19 +402,30 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
           </DialogTitle>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <CategoryAssignmentContent defaultTab={defaultTab} open={open} />
+          <CategoryAssignmentContent
+            defaultTab={defaultTab}
+            open={open}
+            onSaveConsolidarComplete={(est, tx) => {
+              handleClose(false);
+              onComplete?.();
+              toast.success(`${est} estabelecimentos categorizados · ${tx} lançamentos atualizados`);
+            }}
+          />
         </div>
       </DialogContent>
     </Dialog>
   );
 };
 
-/** Card trigger that matches CollapsibleModule visual style */
+/** Card trigger that matches CollapsibleModule visual style. When highlightWhenPending and count > 0, shows amber CTA. */
 interface CategoryAssignmentCardProps {
   title: string;
   description?: string;
   count?: number;
   defaultTab?: CategoryAssignmentTab;
+  /** When true and count > 0, render as amber "pending" CTA with uniqueStoresCount subtitle */
+  highlightWhenPending?: boolean;
+  uniqueStoresCount?: number;
 }
 
 export const CategoryAssignmentCard: React.FC<CategoryAssignmentCardProps> = ({
@@ -375,39 +433,64 @@ export const CategoryAssignmentCard: React.FC<CategoryAssignmentCardProps> = ({
   description,
   count,
   defaultTab = 'conta',
+  highlightWhenPending,
+  uniqueStoresCount,
 }) => {
   const [open, setOpen] = useState(false);
 
+  const usePendingStyle = highlightWhenPending && (count ?? 0) > 0 && uniqueStoresCount !== undefined;
+
   return (
     <>
-      <Card
-        className="cursor-pointer hover:bg-muted/30 transition-colors border-border/60 active:scale-[0.99]"
-        onClick={() => setOpen(true)}
-      >
-        <CardContent className="py-3 px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <FileText className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-foreground truncate">{title}</span>
-                  {count !== undefined && count > 0 && (
-                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full tabular-nums">
-                      {count}
-                    </span>
+      {usePendingStyle ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-full text-left px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors group"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                <span>⚠️</span>
+                {count} lançamentos sem categoria
+              </p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                {uniqueStoresCount} estabelecimentos únicos · resolva de uma vez →
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-amber-500 mt-0.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
+          </div>
+        </button>
+      ) : (
+        <Card
+          className="cursor-pointer hover:bg-muted/30 transition-colors border-border/60 active:scale-[0.99]"
+          onClick={() => setOpen(true)}
+        >
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground truncate">{title}</span>
+                    {count !== undefined && count > 0 && (
+                      <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full tabular-nums">
+                        {count}
+                      </span>
+                    )}
+                  </div>
+                  {description && (
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
                   )}
                 </div>
-                {description && (
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
-                )}
               </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <CategoryAssignmentDialog
         open={open}
