@@ -65,6 +65,7 @@ const PassivosConsorciosTab = lazy(() => import("./pages/passivos/PassivosConsor
 const SegurosTab = lazy(() => import("./pages/bens-investimentos/SegurosTab"));
 const ParticipacaoTab = lazy(() => import("./pages/bens-investimentos/ParticipacaoTab"));
 const IntangiveisTab = lazy(() => import("./pages/bens-investimentos/IntangiveisTab"));
+const AlocacaoRoute = lazy(() => import("./pages/alocacao/AlocacaoRoute").then((m) => ({ default: m.AlocacaoRoute })));
 
 const PlanejamentoLayout = lazy(() => import("./pages/planejamento/PlanejamentoLayout"));
 const VisaoMensalTab = lazy(() => import("./pages/Planejamento"));
@@ -278,6 +279,7 @@ const App = () => (
                                   <Route path="instituicoes" element={<InstituicoesFinanceiras />} />
                                   <Route path="dados-financeiros" element={<DadosFinanceiros />} />
                                   <Route path="dados" element={<DadosFinanceiros />} />
+                                  <Route path="alocacao" element={<Suspense fallback={<RXFinLoadingSpinner height="h-screen" />}><AlocacaoRoute /></Suspense>} />
 
                                   <Route path="financeiro" element={<FinanceiroLayout />}>
                                     <Route index element={<Navigate to="planos" replace />} />
