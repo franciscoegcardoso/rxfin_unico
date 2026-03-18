@@ -149,10 +149,14 @@ export const BlockC: React.FC<BlockCProps> = ({ step, onStepChange, onComplete, 
       });
       setPatrimonioData(data);
 
-      // Busca bens do IR mais recente do banco (sempre MAX(ano_calendario))
-      // Resolve o problema de PDF truncado: o banco tem todos os bens salvos corretamente
+      // Busca bens do IR do exercício mais recente no banco (p_ano_calendario = maior ano-base)
+      // Resolve o problema de PDF truncado e garante exibir 2025 em vez de 2022 quando há ambos
       try {
-        const { data: irDb, error: irDbErr } = await supabase.rpc('get_ir_bens_direitos');
+        const maxAnoCalendario = irImportList.length
+          ? Math.max(...irImportList.map((i) => i.anoCalendario))
+          : undefined;
+        const rpcParams = maxAnoCalendario != null ? { p_ano_calendario: maxAnoCalendario } : {};
+        const { data: irDb, error: irDbErr } = await supabase.rpc('get_ir_bens_direitos', rpcParams);
         if (!irDbErr && irDb?.import_id) {
           setIrBensFromDb(irDb);
         }
