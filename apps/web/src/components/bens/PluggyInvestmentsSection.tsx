@@ -614,9 +614,10 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
                           <AssetLogo
                             ticker={inv.code ?? undefined}
-                            assetType={inv.type}
-                            logoUrl={inv.logo_url}
-                            name={inv.name}
+                            assetType={inv.type ?? ''}
+                            logoUrl={(inv as { logo_url?: string | null }).logo_url}
+                            companyDomain={(inv as { company_domain?: string | null }).company_domain}
+                            name={inv.name ?? (inv as { issuer?: string | null }).issuer ?? undefined}
                             size="md"
                             showTooltip
                           />

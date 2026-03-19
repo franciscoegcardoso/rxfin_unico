@@ -284,6 +284,14 @@ const PlanejamentoAnual: React.FC = () => {
                             <span className={cn('text-right', hasData ? 'text-income' : 'text-muted-foreground')}>{hasData ? formatCurrency(realizadoReceita) : '—'}</span>
                             <span className="text-muted-foreground">Despesa</span>
                             <span className={cn('text-right', hasData ? 'text-expense' : 'text-muted-foreground')}>{hasData ? formatCurrency(realizadoDespesaTotal) : '—'}</span>
+                            {hasData && (months[i]?.expense_cartao ?? 0) > 0 && (
+                              <>
+                                <span className="text-muted-foreground text-[10px] pl-2">↳ Cartão</span>
+                                <span className="text-right text-[10px] text-muted-foreground">
+                                  {formatCurrency(months[i]?.expense_cartao ?? 0)}
+                                </span>
+                              </>
+                            )}
                             <span className="text-muted-foreground">Saldo</span>
                             <span
                               className={cn(

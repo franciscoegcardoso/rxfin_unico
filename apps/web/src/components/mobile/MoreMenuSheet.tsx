@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LogOut,
@@ -28,6 +28,8 @@ interface MoreMenuSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const NARROW_LABEL_MAX_WIDTH = 640;
+
 export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   open,
   onOpenChange,
@@ -36,6 +38,16 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
   const location = useLocation();
   const { signOut } = useAuth();
   const { sections, isLoading } = useMobileMenuSections();
+  const [isNarrow, setIsNarrow] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < NARROW_LABEL_MAX_WIDTH
+  );
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < NARROW_LABEL_MAX_WIDTH);
+    window.addEventListener('resize', check);
+    check();
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -152,7 +164,9 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
                               </div>
                             )}
                           </div>
-                          <span className="flex-1 text-left">{item.label}</span>
+                          <span className="flex-1 text-left">
+                            {isNarrow && item.shortLabel ? item.shortLabel : item.label}
+                          </span>
                           {item.isComingSoon && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 border border-amber-500/30 font-medium">
                               Em breve

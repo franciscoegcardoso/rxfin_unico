@@ -9,8 +9,6 @@ import { SearchableSelect } from '@/components/ui/searchable-select';
 import { BrandSearchSelect } from '@/components/ui/brand-search-select';
 import { Car, Loader2, AlertCircle, Calendar, X, Info, Bike, Truck, CheckCircle2, ChevronDown, TrendingDown, TrendingUp, BarChart3, Sparkles, DollarSign, RefreshCw, Star, FileDown } from 'lucide-react';
 import { useFipe, VehicleType, formatFipeYearName, formatFipeAnoModelo } from '@/hooks/useFipe';
-import { useFipeBrandLogosByType } from '@/hooks/useFipeBrandLogo';
-import { FipeBrandLogo } from '@/components/simuladores/FipeBrandLogo';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
 import { useDepreciationEngineV2 } from '@/hooks/useDepreciationEngineV2';
@@ -134,7 +132,6 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
   const fipe = useFipe();
   const fipeFavoritesProps = useFipeFavorites(fipe);
   const vehicleTypeNum = FIPE_VEHICLE_TYPE_MAP[fipe.vehicleType] ?? 1;
-  useFipeBrandLogosByType(vehicleTypeNum);
   const fipeHistory = useFipeFullHistory();
   const cohortMatrix = useCohortMatrix();
   const isMobile = useIsMobile();
@@ -976,13 +973,6 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                           {fipe.price.Valor}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <FipeBrandLogo
-                            vehicleType={vehicleTypeNum}
-                            brandId={fipe.selectedBrand ? (parseInt(fipe.selectedBrand, 10) || null) : null}
-                            brandName={fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome}
-                            size="md"
-                            className="shrink-0"
-                          />
                           <p className="font-syne font-bold text-lg sm:text-xl text-foreground">
                             {fipe.brands.find(b => b.codigo === fipe.selectedBrand)?.nome} {fipe.models.find(m => String(m.codigo) === fipe.selectedModel)?.nome}
                           </p>

@@ -10,6 +10,8 @@ function getIsMobile(): boolean {
 /**
  * Evita 1º render como "desktop" e 2º como "mobile" (isso remontava AppShell inteiro
  * e disparava todos os requests do Início 2× no telefone).
+ * Não chama setIsMobile no effect: só o listener de resize — evita flip que remontava
+ * o Outlet (ex.: isMobile mudava logo após o primeiro paint e duplicava requests).
  */
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState(getIsMobile);
@@ -18,7 +20,6 @@ export function useIsMobile() {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const onChange = () => setIsMobile(getIsMobile());
     mql.addEventListener("change", onChange);
-    setIsMobile(getIsMobile());
     return () => mql.removeEventListener("change", onChange);
   }, []);
 

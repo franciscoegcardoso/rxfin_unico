@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Building2, Settings2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { INVESTIMENTOS_ALOCACAO_PATH } from '@/constants/appPaths';
 
 const ASSET_CLASSES: AssetClass[] = ['renda_fixa', 'acoes', 'fii', 'internacional'];
 
@@ -26,6 +27,7 @@ function formatBrl(value: number): string {
 }
 
 export default function AlocacaoPage() {
+  const navigate = useNavigate();
   const { data: dashboard, isLoading, isError, error, refetch } = useAllocationDashboard();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -90,6 +92,7 @@ export default function AlocacaoPage() {
       <div className="px-4 py-8 max-w-2xl mx-auto">
         <PersonaOnboarding
           onComplete={() => {
+            navigate(INVESTIMENTOS_ALOCACAO_PATH);
             setShowOnboarding(false);
             void refetch();
           }}

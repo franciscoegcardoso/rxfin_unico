@@ -40,7 +40,7 @@ export function BrandSearchSelect({
 }: BrandSearchSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId, getBrandByName } = useBrandLogos();
+  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId } = useBrandLogos();
 
   // Merge FIPE brands with local logo data
   // Note: BrandLogo component handles fallback by name internally,
@@ -57,14 +57,14 @@ export function BrandSearchSelect({
 
     // Merge FIPE brands - BrandLogo will use name-based fallback if logoUrl is undefined
     return fipeBrands.map(fb => {
-      const localBrand = getBrandByFipeId(fb.codigo) || getBrandByName(fb.nome);
+      const localBrand = getBrandByFipeId(fb.codigo);
       return {
         value: fb.codigo,
         label: fb.nome,
-        logoUrl: localBrand?.logo_url, // Can be undefined - BrandLogo handles fallback
+        logoUrl: localBrand?.logo_url,
       };
     });
-  }, [fipeBrands, localBrands, getBrandByFipeId, getBrandByName]);
+  }, [fipeBrands, localBrands, getBrandByFipeId]);
 
   const selectedBrand = mergedBrands.find((b) => b.value === value);
 

@@ -46,7 +46,35 @@ function getAvatarColor(seed: string): string {
   return colors[idx];
 }
 
-function getInitials(ticker?: string | null, name?: string | null): string {
+const FIXED_INCOME_TYPES = new Set([
+  'FIXED_INCOME',
+  'TREASURE_DIRECT',
+  'MUTUAL_FUND',
+  'PENSION_VGBL',
+  'PENSION_PGBL',
+]);
+
+function getInitials(
+  name?: string | null,
+  ticker?: string | null,
+  assetType?: string
+): string {
+  const typeUpper = (assetType ?? '').toUpperCase();
+  if (assetType && FIXED_INCOME_TYPES.has(typeUpper) && name?.trim()) {
+    const afterDash = name.split(' - ')[1];
+    if (afterDash) {
+      const cleaned = afterDash
+        .replace(/BANCO |S\.A\.|SA|LTDA|S\/A/gi, '')
+        .trim();
+      const parts = cleaned.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase().slice(0, 2);
+      }
+      if (parts.length === 1 && parts[0].length >= 2) {
+        return parts[0].slice(0, 2).toUpperCase();
+      }
+    }
+  }
   if (ticker && ticker.length >= 2) {
     return ticker.slice(0, 2).toUpperCase();
   }
@@ -85,22 +113,34 @@ export function AssetLogo({
 
   const typeUpper = (assetType || '').toUpperCase();
   const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
-  const useBrapi = isBrapiTickerType(assetType, ticker);
   const logodevToken = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN;
 
   const fallbackUrls = useMemo(() => {
     const list: string[] = [];
     if (logoUrl?.trim()) list.push(logoUrl.trim());
-    // 1. Brapi CDN — ações, FIIs, ETFs, BDRs BR (SVG público)
-    if (useBrapi && ticker?.trim()) {
-      list.push(`https://icons.brapi.dev/icons/${ticker.trim().toUpperCase()}.svg`);
+    const t = ticker?.trim();
+    const isTickerType = [
+      'STOCK',
+      'REAL_ESTATE_FUND',
+      'ETF',
+      'BDR',
+      'stock_br',
+      'fii',
+      'etf_br',
+      'bdr',
+      'stock',
+      'EQUITY',
+    ].includes(typeUpper);
+    if (isTickerType && t) {
+      list.push(`https://icons.brapi.dev/icons/${t}.svg`);
+      list.push(`https://icons.brapi.dev/logos/${t}.png`);
+      list.push(`https://raw.githubusercontent.com/thefintz/icones-b3/main/icones/${t}.png`);
+      list.push(`https://raw.githubusercontent.com/nancydotso/logos/main/${t}.png`);
     }
-    // 2. Cripto — mapa local
     if (isCrypto && ticker) {
       const url = CRYPTO_LOGO_MAP[ticker.toUpperCase()];
       if (url) list.push(url);
     }
-    // 3. Logo.dev + 4. Clearbit
     if (companyDomain?.trim()) {
       const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
       if (domain) {
@@ -111,11 +151,11 @@ export function AssetLogo({
       }
     }
     return list;
-  }, [logoUrl, isCrypto, ticker, useBrapi, companyDomain, logodevToken]);
+  }, [logoUrl, isCrypto, ticker, typeUpper, companyDomain, logodevToken]);
 
   const currentUrl = fallbackUrls[fallbackIndex];
   const failed = fallbackIndex >= fallbackUrls.length;
-  const initials = getInitials(ticker, name);
+  const initials = getInitials(name, ticker, assetType);
   const { box, text } = SIZE_MAP[size];
   const avatarColor = getAvatarColor(ticker || name || 'x');
 

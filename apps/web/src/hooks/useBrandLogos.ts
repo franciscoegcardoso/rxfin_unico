@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { normalizeBrandName } from '@/lib/brand-utils';
 
 export interface BrandData {
   id: string;
@@ -17,16 +16,10 @@ let loadingPromise: Promise<BrandData[]> | null = null;
 
 async function loadBrands(): Promise<BrandData[]> {
   if (cachedBrands && cachedBrands.length > 0) return cachedBrands;
-  
   if (loadingPromise) return loadingPromise;
-  
-  // Try multiple paths to ensure the file is found
+
   const basePath = import.meta.env.BASE_URL || '/';
-  const paths = [
-    `${basePath}marcas.json`,
-    '/marcas.json',
-    './marcas.json'
-  ];
+  const paths = [`${basePath}marcas.json`, '/marcas.json', './marcas.json'];
 
   loadingPromise = (async () => {
     for (const path of paths) {
@@ -40,14 +33,13 @@ async function loadBrands(): Promise<BrandData[]> {
           }
         }
       } catch {
-        // Silently continue to next path
+        // continue
       }
     }
-    // Silent fallback - no brands available
     loadingPromise = null;
     return [];
   })();
-  
+
   return loadingPromise;
 }
 
@@ -61,37 +53,18 @@ export function useBrandLogos() {
       setLoading(false);
       return;
     }
-
     loadBrands().then(data => {
       setBrands(data);
       setLoading(false);
     });
   }, []);
 
+  // Lookup por fipe_id — ÚNICA fonte de verdade, sem ambiguidade
   const getBrandByFipeId = useMemo(() => {
     const map = new Map(brands.map(b => [String(b.fipe_id), b]));
-    return (fipeId: string | number) => map.get(String(fipeId));
+    return (fipeId: string | number): BrandData | undefined =>
+      map.get(String(fipeId));
   }, [brands]);
 
-  const getBrandByName = useMemo(() => {
-    const map = new Map(brands.map(b => [normalizeBrandName(b.nome), b]));
-    return (name: string) => {
-      const normalized = normalizeBrandName(name);
-      if (map.has(normalized)) return map.get(normalized);
-      // Partial match fallback
-      for (const [key, value] of map) {
-        if (normalized.startsWith(key) || key.startsWith(normalized)) {
-          return value;
-        }
-      }
-      return undefined;
-    };
-  }, [brands]);
-
-  return {
-    brands,
-    loading,
-    getBrandByFipeId,
-    getBrandByName,
-  };
+  return { brands, loading, getBrandByFipeId };
 }

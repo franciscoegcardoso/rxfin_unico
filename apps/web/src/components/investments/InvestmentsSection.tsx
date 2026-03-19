@@ -591,7 +591,16 @@ export const InvestmentsSection: React.FC = () => {
                       return (
                         <tr key={inv.id} className="border-t border-border/50">
                           <td className="p-3 max-w-[180px]">
-                            <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-2">
+                              <AssetLogo
+                                ticker={inv.code ?? undefined}
+                                assetType={inv.type ?? ''}
+                                logoUrl={(inv as { logo_url?: string | null }).logo_url}
+                                companyDomain={(inv as { company_domain?: string | null }).company_domain}
+                                name={inv.marketing_name ?? inv.name ?? inv.issuer ?? undefined}
+                                size="md"
+                              />
+                              <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-medium text-foreground truncate">
                                   {inv.marketing_name ?? inv.name}
@@ -623,6 +632,8 @@ export const InvestmentsSection: React.FC = () => {
                                   </TooltipContent>
                                 </Tooltip>
                               ) : null}
+                            </div>
+                              </div>
                             </div>
                           </td>
                           <td className="p-3 text-muted-foreground">{getTypeLabel(inv.type)}</td>

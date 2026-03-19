@@ -63,6 +63,7 @@ export interface PluggyInvestment {
   provider_id: string | null;
   marketing_name: string | null;
   logo_url?: string | null;
+  company_domain?: string | null;
 }
 
 export interface InvestmentSummary {

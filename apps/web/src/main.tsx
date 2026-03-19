@@ -65,6 +65,8 @@ initClarityDeferred();
 })();
 
 createRoot(document.getElementById("root")!).render(
+  // Em desenvolvimento, StrictMode monta componentes 2× de propósito (detecção de side effects).
+  // Em produção o StrictMode NÃO duplica mount — se requests duplicados ocorrerem em produção, a causa é outra (ex.: useIsMobile flip, ProtectedRoute).
   <React.StrictMode>
     <App />
   </React.StrictMode>

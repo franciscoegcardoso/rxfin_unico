@@ -7864,9 +7864,10 @@ export type Database = {
       get_label_mismatch_stats: { Args: never; Returns: Json }
       get_lancamentos_com_banco: {
         Args: {
-          p_date_from?: string | null
-          p_date_to?: string | null
-          p_source: string
+          p_limit?: number
+          p_offset?: number
+          p_reference_month?: string | null
+          p_source_filter: string
         }
         Returns: {
           account_name: string | null

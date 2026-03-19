@@ -39,6 +39,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
+import { format, parseISO } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
 import { useQuery } from '@tanstack/react-query'
@@ -46,7 +48,10 @@ import { toast } from 'sonner'
 import type { LancamentoFilters } from '@/types/consolidar'
 import { BancoLogo } from '@/components/shared/BancoLogo'
 import { useUserCategories } from '@/hooks/useUserCategories'
-import type { StatusFilterValue } from '@/components/shared/CategoryAssignmentFilters'
+import type {
+  PeriodFilterValue,
+  StatusFilterValue,
+} from '@/components/shared/CategoryAssignmentFilters'
 
 const defaultFilters: LancamentoFilters = {
   search: '',
@@ -58,8 +63,15 @@ const defaultFilters: LancamentoFilters = {
 }
 
 const formatDate = (iso: string) => {
-  const [y, m, d] = iso.split('-')
-  return `${d}/${m}/${y}`
+  if (!iso) return '—'
+  const dateOnly = iso.slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) return iso
+  try {
+    return format(parseISO(dateOnly), 'dd/MM/yyyy', { locale: ptBR })
+  } catch {
+    const [y, m, d] = dateOnly.split('-')
+    return `${d}/${m}/${y}`
+  }
 }
 
 const formatCurrency = (value: number) =>
@@ -73,10 +85,8 @@ function bancoKey(row: { connector_name: string; account_name: string | null }) 
 
 export interface LancamentosTabProps {
   source: LancamentosSource
-  dateFrom: string | null
-  dateTo: string | null
+  period: PeriodFilterValue
   categories: { id: string; name: string }[]
-  /** Filtros do painel superior (período já em dateFrom/dateTo) */
   statusFilter: StatusFilterValue
   bankOrCardValue: string
   categoryFilterValue: string
@@ -88,8 +98,7 @@ export interface LancamentosTabProps {
 
 export function LancamentosTab({
   source,
-  dateFrom,
-  dateTo,
+  period,
   categories,
   statusFilter,
   bankOrCardValue,
@@ -115,11 +124,12 @@ export function LancamentosTab({
     pendingCount,
     dirtyCount,
     isLoading,
+    isFetching,
     setCategory,
     saveAll,
     reset,
     refetch,
-  } = useLancamentosComBanco(source, dateFrom, dateTo, { enabled })
+  } = useLancamentosComBanco(source, period, { enabled })
 
   const { data: expenseItemsByGroup = [] } = useQuery({
     queryKey: ['default-expense-items'],
@@ -337,8 +347,9 @@ export function LancamentosTab({
     filters.dateTo != null
 
   const sourceLabel = source === 'bank' ? 'conta' : 'cartão'
+  const showLoadingSkeleton = isLoading || (isFetching && data.length === 0)
 
-  if (isLoading) {
+  if (showLoadingSkeleton) {
     return (
       <div className="space-y-2 py-4">
         {[1, 2, 3, 4, 5].map((i) => (
@@ -348,12 +359,17 @@ export function LancamentosTab({
     )
   }
 
-  if (data.length === 0) {
+  if (filteredData.length === 0) {
+    const noDataInPeriod = data.length === 0
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-3" />
-        <p className="text-sm font-medium text-foreground">
-          Nenhum lançamento no período ({sourceLabel})
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-4">
+        <CheckCircle2
+          className={cn('h-10 w-10', noDataInPeriod ? 'text-emerald-500' : 'text-muted-foreground')}
+        />
+        <p className="text-sm text-muted-foreground max-w-sm">
+          {noDataInPeriod
+            ? `Nenhum lançamento no período (${sourceLabel}).`
+            : 'Nenhum lançamento corresponde aos filtros selecionados.'}
         </p>
       </div>
     )

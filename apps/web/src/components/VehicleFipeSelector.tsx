@@ -80,7 +80,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
   compact = false,
   className,
 }) => {
-  const { getBrandByFipeId, getBrandByName } = useBrandLogos();
+  const { getBrandByFipeId } = useBrandLogos();
   const vehicleAge = fipe.price 
     ? new Date().getFullYear() - fipe.price.AnoModelo 
     : 0;
@@ -450,7 +450,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-center gap-2.5">
                             {(() => {
-                              const brand = getBrandByFipeId(String(fipe.selectedBrand)) || getBrandByName(fipe.price.Marca);
+                              const brand = getBrandByFipeId(String(fipe.selectedBrand));
                               return (
                                 <BrandLogo
                                   url={brand?.logo_url}

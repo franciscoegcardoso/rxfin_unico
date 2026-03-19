@@ -44,6 +44,8 @@ export interface NavGroup {
 export interface NavMenuItem {
   path: string;
   label: string;
+  /** Optional short label for narrow screens (e.g. mobile "Bens & Inv.") */
+  shortLabel?: string;
   icon: LucideIcon;
   isLocked?: boolean;      // Locked due to plan restrictions
   isComingSoon?: boolean;  // Page is disabled (is_active_users = false)
@@ -481,15 +483,43 @@ export function useNavMenuPages(): NavMenuData {
 
 /**
  * Hook simplificado para o menu mobile (MoreMenuSheet)
- * Retorna todas as seções exceto as que já aparecem na bottom nav
+ * Retorna todas as seções exceto as que já aparecem na bottom nav.
+ * Inclui seção Patrimônio (Bens & Investimentos, Passivos) no topo para mobile/tablet.
  */
 export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading: boolean } {
   const { groupedSections, isLoading } = useNavMenuPages();
-  
+
+  // Seção Patrimônio: visão geral de Bens & Investimentos e Passivos (apenas no menu "Mais" mobile/tablet)
+  const patrimonioSection: NavMenuSection = {
+    title: 'Patrimônio',
+    slug: 'patrimonio',
+    icon: TrendingUp,
+    items: [
+      {
+        path: '/bens-investimentos',
+        label: 'Bens & Investimentos',
+        shortLabel: 'Bens & Inv.',
+        icon: TrendingUp,
+        accessLevel: 'free',
+        canAccessAsAdmin: true,
+      },
+      {
+        path: '/passivos',
+        label: 'Passivos',
+        icon: CreditCard,
+        accessLevel: 'free',
+        canAccessAsAdmin: true,
+      },
+    ],
+  };
+
   // No mobile/tablet: não mostramos admin nem os itens individuais de Simuladores (Hub, FIPE, etc.)
   const mobileSections = groupedSections.filter(
     section => section.slug !== 'admin' && section.slug !== 'simuladores'
   );
+
+  // Patrimônio no topo, depois as demais seções
+  const mobileSectionsWithPatrimonio = [patrimonioSection, ...mobileSections];
 
   // Apenas categorias (Veículos, Dívidas, Planejamento) no menu mobile/tablet
   const simuladoresSection: NavMenuSection = {
@@ -504,8 +534,8 @@ export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading
   };
 
   // Insert simuladores section before the last section (usually Configurações)
-  const insertIndex = Math.max(mobileSections.length - 1, 0);
-  const result = [...mobileSections];
+  const insertIndex = Math.max(mobileSectionsWithPatrimonio.length - 1, 0);
+  const result = [...mobileSectionsWithPatrimonio];
   result.splice(insertIndex, 0, simuladoresSection);
 
   // Configurações com items vazios: exibir como botão que leva a /configuracoes (menu MAIS mobile/tablet)

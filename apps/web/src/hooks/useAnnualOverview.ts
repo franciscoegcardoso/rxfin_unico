@@ -6,6 +6,8 @@ export interface AnnualMonth {
   month?: string;
   income?: number;
   expense?: number;
+  expense_extrato?: number;  // apenas extrato/manual (sem cartão)
+  expense_cartao?: number;  // apenas credit_card_bills
   balance?: number;
   income_goal?: number;
   expense_goal?: number;
@@ -26,6 +28,8 @@ export interface SavingsGoal {
 export interface AnnualOverviewTotals {
   total_income?: number;
   total_expense?: number;
+  total_expense_extrato?: number;  // apenas extrato/manual (sem cartão)
+  total_expense_cartao?: number;   // apenas credit_card_bills
   avg_monthly_income?: number;
   avg_monthly_expense?: number;
   best_month?: string | null;
@@ -50,7 +54,22 @@ export function useAnnualOverview(year: number) {
         p_year: year,
       });
       if (error) throw error;
-      return (data as AnnualOverviewData) ?? null;
+      const raw = data as AnnualOverviewData | null;
+      if (!raw) return null;
+      const totals = raw.totals;
+      const months = raw.months?.map((m) => ({
+        ...m,
+        expense_extrato: Number(m?.expense_extrato ?? 0),
+        expense_cartao: Number(m?.expense_cartao ?? 0),
+      }));
+      const normalizedTotals = totals
+        ? {
+            ...totals,
+            total_expense_extrato: Number(totals.total_expense_extrato ?? 0),
+            total_expense_cartao: Number(totals.total_expense_cartao ?? 0),
+          }
+        : totals;
+      return { ...raw, months: months ?? raw.months, totals: normalizedTotals };
     },
     enabled: !!user?.id,
   });

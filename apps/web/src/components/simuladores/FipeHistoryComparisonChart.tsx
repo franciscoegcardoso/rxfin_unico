@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import {
   LineChart,
@@ -13,25 +12,106 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { premiumGrid, premiumXAxis, premiumYAxis, premiumTooltipStyle, formatBRLCompact, chartColors } from '@/components/charts/premiumChartTheme';
-import type { ParsedHistoryPoint } from '@/hooks/useFipeFullHistory';
+import { premiumGrid, premiumXAxis, premiumYAxis, premiumTooltipStyle, formatBRLCompact } from '@/components/charts/premiumChartTheme';
+import type { ComparisonHistoryPoint } from '@/utils/buildFipeHistoryComparisonSeries';
 
 interface FipeHistoryComparisonChartProps {
-  historyA: ParsedHistoryPoint[];
-  historyB: ParsedHistoryPoint[];
+  historyA: ComparisonHistoryPoint[];
+  historyB: ComparisonHistoryPoint[];
   loadingA: boolean;
   loadingB: boolean;
   nameA: string;
   nameB: string;
   hasHistoryA: boolean;
   hasHistoryB: boolean;
+  /** Se true, inclui pontos isProjection (linha tracejada). */
+  showProjection?: boolean;
+  /** Se true, ajusta eixo X para modo híbrido (0 km com 1 ponto âncora). */
+  hasZeroKmVehicle?: boolean;
 }
 
-interface MergedPoint {
-  date: string;
-  timestamp: number;
-  priceA?: number;
-  priceB?: number;
+interface PointWithX extends ComparisonHistoryPoint {
+  x: number;
+}
+
+function normalizeForChart(
+  seriesA: ComparisonHistoryPoint[],
+  seriesB: ComparisonHistoryPoint[],
+  hasZeroKm: boolean
+): { dataA: PointWithX[]; dataB: PointWithX[] } {
+  if (!hasZeroKm) {
+    return {
+      dataA: seriesA.map((p) => ({ ...p, x: p.date.getTime() })),
+      dataB: seriesB.map((p) => ({ ...p, x: p.date.getTime() })),
+    };
+  }
+
+  const historyA = seriesA.filter((d) => !d.isProjection);
+  const historyB = seriesB.filter((d) => !d.isProjection);
+  const maxHistLen = Math.max(historyA.length, historyB.length, 1);
+
+  const indexedA = seriesA.map((d, i) => ({ ...d, x: i }));
+
+  if (historyB.length <= 1) {
+    const projB = seriesB.filter((d) => d.isProjection);
+    const anchorB = historyB[0];
+    const indexedB: PointWithX[] = [
+      ...(anchorB ? [{ ...anchorB, x: maxHistLen - 1 }] : []),
+      ...projB.map((d, i) => ({ ...d, x: maxHistLen + i })),
+    ];
+    return { dataA: indexedA, dataB: indexedB };
+  }
+
+  const indexedB = seriesB.map((d, i) => ({ ...d, x: i }));
+  return { dataA: indexedA, dataB: indexedB };
+}
+
+function buildMergedDataset(
+  dataA: PointWithX[],
+  dataB: PointWithX[],
+  hasZeroKm: boolean
+): Array<{ x: number; label: string; histA?: number; projA?: number; histB?: number; projB?: number }> {
+  const keySet = new Set<number>();
+  for (const p of dataA) keySet.add(p.x);
+  for (const p of dataB) keySet.add(p.x);
+  const sortedKeys = Array.from(keySet).sort((a, b) => a - b);
+
+  const byXA = new Map<number, PointWithX[]>();
+  for (const p of dataA) {
+    const list = byXA.get(p.x) ?? [];
+    list.push(p);
+    byXA.set(p.x, list);
+  }
+  const byXB = new Map<number, PointWithX[]>();
+  for (const p of dataB) {
+    const list = byXB.get(p.x) ?? [];
+    list.push(p);
+    byXB.set(p.x, list);
+  }
+
+  return sortedKeys.map((x) => {
+    const ptsA = byXA.get(x) ?? [];
+    const ptsB = byXB.get(x) ?? [];
+    const histA = ptsA.find((p) => !p.isProjection)?.price;
+    const projA = ptsA.find((p) => p.isProjection)?.price;
+    const histB = ptsB.find((p) => !p.isProjection)?.price;
+    const projB = ptsB.find((p) => p.isProjection)?.price;
+    const label =
+      ptsA[0]?.monthLabel ?? ptsB[0]?.monthLabel ?? (hasZeroKm ? String(x) : '');
+    return { x, label, histA, projA, histB, projB };
+  });
+}
+
+// Simplify X axis labels: show only Jan of each year as 'YY (for date strings)
+function formatTickLabel(value: string | number, hasZeroKm: boolean): string {
+  if (hasZeroKm && typeof value === 'number') return '';
+  const s = String(value);
+  const parts = s.split('/');
+  if (parts.length === 2 && parts[0].toLowerCase() === 'jan') {
+    return `'${parts[1]}`;
+  }
+  if (s === '0 km') return '0 km';
+  return '';
 }
 
 export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProps> = ({
@@ -43,40 +123,27 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
   nameB,
   hasHistoryA,
   hasHistoryB,
+  showProjection = false,
+  hasZeroKmVehicle = false,
 }) => {
   const isMobile = useIsMobile();
   const isLoading = loadingA || loadingB;
 
-  const mergedData = useMemo(() => {
-    const map = new Map<string, MergedPoint>();
+  const { dataA, dataB } = useMemo(
+    () => normalizeForChart(historyA, historyB, hasZeroKmVehicle),
+    [historyA, historyB, hasZeroKmVehicle]
+  );
 
-    for (const p of historyA) {
-      const key = p.monthLabel;
-      const existing = map.get(key);
-      if (existing) {
-        existing.priceA = p.price;
-      } else {
-        map.set(key, { date: key, timestamp: p.date.getTime(), priceA: p.price });
-      }
-    }
+  const mergedData = useMemo(
+    () => buildMergedDataset(dataA, dataB, hasZeroKmVehicle),
+    [dataA, dataB, hasZeroKmVehicle]
+  );
 
-    for (const p of historyB) {
-      const key = p.monthLabel;
-      const existing = map.get(key);
-      if (existing) {
-        existing.priceB = p.price;
-      } else {
-        map.set(key, { date: key, timestamp: p.date.getTime(), priceB: p.price });
-      }
-    }
-
-    return Array.from(map.values()).sort((a, b) => a.timestamp - b.timestamp);
-  }, [historyA, historyB]);
-
-  /** Deve ficar antes de qualquer return — evita violar regras dos hooks (erro ao sair de loading → gráfico). */
   const yDomain = useMemo(() => {
     const values = mergedData.flatMap((d) =>
-      [d.priceA, d.priceB].filter((v): v is number => typeof v === 'number')
+      [d.histA, d.projA, d.histB, d.projB].filter(
+        (v): v is number => typeof v === 'number'
+      )
     );
     if (values.length === 0) return undefined;
     const dataMin = Math.min(...values);
@@ -86,18 +153,19 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
     return [min, max] as [number, number];
   }, [mergedData]);
 
-  // Simplify X axis labels: show only Jan of each year as 'YY
-  const tickFormatter = (value: string) => {
-    // monthLabel format varies: "jan/23", "fev/24", etc.
-    const parts = value.split('/');
-    if (parts.length === 2 && parts[0].toLowerCase() === 'jan') {
-      return `'${parts[1]}`;
-    }
-    return '';
-  };
+  const tickFormatter = (value: string | number) =>
+    formatTickLabel(value, hasZeroKmVehicle);
 
   const formatMoney = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+
+  const colorA = 'hsl(217, 70%, 55%)';
+  const colorB = 'hsl(38, 92%, 50%)';
 
   if (isLoading) {
     return (
@@ -116,7 +184,9 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
-          <p className="text-xs text-muted-foreground">Histórico FIPE indisponível para os veículos selecionados</p>
+          <p className="text-xs text-muted-foreground">
+            Histórico FIPE indisponível para os veículos selecionados
+          </p>
         </CardContent>
       </Card>
     );
@@ -150,7 +220,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
             >
               <CartesianGrid {...premiumGrid} />
               <XAxis
-                dataKey="date"
+                dataKey="label"
                 {...premiumXAxis}
                 tickFormatter={tickFormatter}
                 interval="preserveStartEnd"
@@ -167,7 +237,9 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
               />
               <Tooltip
                 contentStyle={premiumTooltipStyle}
-                labelFormatter={(label) => label}
+                labelFormatter={(label, payload) =>
+                  (payload?.[0]?.payload as { label?: string } | undefined)?.label ?? String(label)
+                }
                 formatter={(value: number, name: string) => [
                   formatMoney(value),
                   name,
@@ -176,10 +248,24 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
               {hasHistoryA && (
                 <Line
                   type="monotone"
-                  dataKey="priceA"
+                  dataKey="histA"
                   name={nameA || 'Carro A'}
-                  stroke="hsl(217, 70%, 55%)"
+                  stroke={colorA}
                   strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
+                  connectNulls={false}
+                />
+              )}
+              {showProjection && (
+                <Line
+                  type="monotone"
+                  dataKey="projA"
+                  name={`${nameA || 'Carro A'} (proj.)`}
+                  stroke={colorA}
+                  strokeWidth={2.5}
+                  strokeDasharray="4 4"
+                  opacity={0.7}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
                   connectNulls={false}
@@ -188,10 +274,24 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
               {hasHistoryB && (
                 <Line
                   type="monotone"
-                  dataKey="priceB"
+                  dataKey="histB"
                   name={nameB || 'Carro B'}
-                  stroke="hsl(38, 92%, 50%)"
+                  stroke={colorB}
                   strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
+                  connectNulls={false}
+                />
+              )}
+              {showProjection && (
+                <Line
+                  type="monotone"
+                  dataKey="projB"
+                  name={`${nameB || 'Carro B'} (proj.)`}
+                  stroke={colorB}
+                  strokeWidth={2.5}
+                  strokeDasharray="4 4"
+                  opacity={0.7}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
                   connectNulls={false}

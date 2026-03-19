@@ -4,7 +4,8 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Landmark, ChevronRight, FileText, X, Sparkles } from 'lucide-react';
+import { CreditCard, Landmark, ChevronRight, FileText, X, Sparkles, Loader2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
@@ -17,7 +18,6 @@ import { useLancamentosComBanco } from '@/hooks/useLancamentosComBanco';
 import { supabase } from '@/integrations/supabase/client';
 import {
   CategoryAssignmentFilters,
-  getPeriodBounds,
   type PeriodFilterValue,
   type StatusFilterValue,
 } from '@/components/shared/CategoryAssignmentFilters';
@@ -58,6 +58,12 @@ type PluggyCardInfo = {
   cardLevel: string | null;
 };
 
+export type HeaderActionsState = {
+  pendingCount: number;
+  isAutoCategorizando: boolean;
+  onSugerirIA: () => Promise<void>;
+} | null;
+
 /** The inner tabbed content shared by Dialog and Drawer */
 const CategoryAssignmentContent: React.FC<{
   defaultTab: CategoryAssignmentTab;
@@ -68,6 +74,7 @@ const CategoryAssignmentContent: React.FC<{
   lancamentosContaCloseRef?: React.RefObject<(() => void) | null>;
   lancamentosCartaoCloseRef?: React.RefObject<(() => void) | null>;
   tabForDirtyCloseRef?: React.MutableRefObject<CategoryAssignmentTab>;
+  setHeaderActions?: React.Dispatch<React.SetStateAction<HeaderActionsState>>;
 }> = ({
   defaultTab,
   open,
@@ -77,6 +84,7 @@ const CategoryAssignmentContent: React.FC<{
   lancamentosContaCloseRef,
   lancamentosCartaoCloseRef,
   tabForDirtyCloseRef,
+  setHeaderActions,
 }) => {
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
@@ -171,15 +179,53 @@ const CategoryAssignmentContent: React.FC<{
     });
   }, [transactions, bills, pluggyAccountNumbers]);
 
-  const periodBounds = useMemo(() => getPeriodBounds(period), [period]);
-  const periodStart = periodBounds?.start ?? null;
-  const periodEnd = periodBounds?.end ?? null;
-  const { pendingCount: pendingContaTab } = useLancamentosComBanco('bank', periodStart, periodEnd, {
+  const queryClient = useQueryClient();
+  const [isAutoCategorizando, setIsAutoCategorizando] = useState(false);
+
+  const { pendingCount: pendingContaTab } = useLancamentosComBanco('bank', period, {
     enabled: open,
   });
-  const { pendingCount: pendingCartaoTab } = useLancamentosComBanco('card', periodStart, periodEnd, {
+  const { pendingCount: pendingCartaoTab } = useLancamentosComBanco('card', period, {
     enabled: open,
   });
+
+  const totalPendingCount = consolidarPendingCount + pendingContaTab + pendingCartaoTab;
+
+  const handleAutoCategorizarIA = useCallback(async () => {
+    setIsAutoCategorizando(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('auto-categorize-stores', {
+        body: { dry_run: false, max_stores: 100 },
+      });
+      if (error) throw error;
+      const msg =
+        data?.regex != null && data?.ai != null
+          ? `${(data.regex as number) + (data.ai as number)} estabelecimentos categorizados · ${data?.persisted ?? 0} salvos`
+          : 'Categorização com IA concluída.';
+      toast.success(msg);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['consolidar-estabelecimentos'] }),
+        queryClient.invalidateQueries({ queryKey: ['lancamentos-com-banco'] }),
+      ]);
+    } catch {
+      toast.error('Não foi possível categorizar com IA.');
+    } finally {
+      setIsAutoCategorizando(false);
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    if (!setHeaderActions) return;
+    if (!open) {
+      setHeaderActions(null);
+      return;
+    }
+    setHeaderActions({
+      pendingCount: totalPendingCount,
+      isAutoCategorizando,
+      onSugerirIA: handleAutoCategorizarIA,
+    });
+  }, [open, totalPendingCount, isAutoCategorizando, handleAutoCategorizarIA, setHeaderActions]);
 
   const bankOptions = useMemo(() => {
     const labels = new Map<string, string>();
@@ -285,8 +331,7 @@ const CategoryAssignmentContent: React.FC<{
             <TabsContent value="cartao" className="mt-0 flex-1 min-h-0 flex flex-col data-[state=inactive]:hidden">
               <LancamentosTab
                 source="card"
-                dateFrom={periodStart}
-                dateTo={periodEnd}
+                period={period}
                 categories={categoriesForConsolidar}
                 statusFilter={status}
                 bankOrCardValue={cardValue}
@@ -304,8 +349,7 @@ const CategoryAssignmentContent: React.FC<{
             <TabsContent value="conta" className="mt-0 flex-1 min-h-0 flex flex-col data-[state=inactive]:hidden">
               <LancamentosTab
                 source="bank"
-                dateFrom={periodStart}
-                dateTo={periodEnd}
+                period={period}
                 categories={categoriesForConsolidar}
                 statusFilter={status}
                 bankOrCardValue={bankValue}
@@ -334,10 +378,30 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
   onComplete,
 }) => {
   const isTabletOrMobile = useIsTabletOrMobile();
+  const [headerActions, setHeaderActions] = useState<HeaderActionsState>(null);
   const consolidarRequestCloseRef = useRef<(() => void) | null>(null);
   const lancamentosContaCloseRef = useRef<(() => void) | null>(null);
   const lancamentosCartaoCloseRef = useRef<(() => void) | null>(null);
   const tabForDirtyCloseRef = useRef<CategoryAssignmentTab>(defaultTab);
+
+  const headerIAButton =
+    headerActions && headerActions.pendingCount > 0 ? (
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="flex items-center gap-1.5 px-3 h-7 text-xs font-medium rounded-md bg-violet-100 text-violet-700 hover:bg-violet-200 dark:bg-violet-900/30 dark:text-violet-300 disabled:opacity-50 transition-colors"
+        disabled={headerActions.isAutoCategorizando}
+        onClick={() => void headerActions.onSugerirIA()}
+      >
+        {headerActions.isAutoCategorizando ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Sparkles className="w-3.5 h-3.5" />
+        )}
+        {headerActions.isAutoCategorizando ? 'Categorizando...' : 'Sugerir com IA'}
+      </Button>
+    ) : null;
 
   const handleClose = (value: boolean) => {
     onOpenChange(value);
@@ -396,6 +460,7 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
               lancamentosContaCloseRef={lancamentosContaCloseRef}
               lancamentosCartaoCloseRef={lancamentosCartaoCloseRef}
               tabForDirtyCloseRef={tabForDirtyCloseRef}
+              setHeaderActions={setHeaderActions}
             />
           </div>
         </DrawerContent>
@@ -406,13 +471,14 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[95vw] max-w-[1600px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col">
-        <DialogHeader className="shrink-0">
+        <DialogHeader className="shrink-0 flex flex-row items-center justify-between gap-4">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
             <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
               <FileText className="h-4 w-4 text-primary" />
             </div>
             Atribuir Categorias
           </DialogTitle>
+          {headerIAButton}
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           <CategoryAssignmentContent
@@ -424,6 +490,7 @@ export const CategoryAssignmentDialog: React.FC<CategoryAssignmentDialogProps> =
             lancamentosContaCloseRef={lancamentosContaCloseRef}
             lancamentosCartaoCloseRef={lancamentosCartaoCloseRef}
             tabForDirtyCloseRef={tabForDirtyCloseRef}
+            setHeaderActions={setHeaderActions}
           />
         </div>
       </DialogContent>

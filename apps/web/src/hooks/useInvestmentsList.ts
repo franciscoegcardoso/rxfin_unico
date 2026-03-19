@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+/** Esperado retorno de get_investments_list (RPC). Incluir logo_url e company_domain no SELECT da view/RPC. */
 export interface InvestmentListItem {
   id: string;
   source: 'pluggy' | 'manual';
@@ -12,6 +13,7 @@ export interface InvestmentListItem {
   subtype: string | null;
   balance: number;
   logo_url: string | null;
+  company_domain: string | null;
   quantity: number | null;
   unit_value: number | null;
   balance_updated_at: string | null;

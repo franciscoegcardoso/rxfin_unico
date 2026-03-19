@@ -1501,6 +1501,8 @@ const SimuladorCarroAB: React.FC = () => {
                 nameB={fipeB.price ? `${fipeB.price.Marca} ${fipeB.price.Modelo}` : 'Carro B'}
                 hasHistoryA={chartDataA.length > 0}
                 hasHistoryB={chartDataB.length > 0}
+                showProjection={showProjectionAB}
+                hasZeroKmVehicle={hasZeroKmVehicle}
               />
             </div>
           </MobileSectionDrawer>

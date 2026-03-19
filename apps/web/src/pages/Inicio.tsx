@@ -219,6 +219,12 @@ const Inicio: React.FC = () => {
   const isMobile = useIsMobile();
   const [firstName, setFirstName] = useState<string>("");
 
+  // Diagnóstico double-mount: se no console aparecer "montou" → "desmontou" → "montou" em <100ms, o pai está remontando.
+  useEffect(() => {
+    console.log("[InicioPage] montou");
+    return () => console.log("[InicioPage] desmontou");
+  }, []);
+
   const currentMonth = format(new Date(), "yyyy-MM");
   const {
     data: dashboardData,

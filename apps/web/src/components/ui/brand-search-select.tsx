@@ -2,11 +2,7 @@ import * as React from "react";
 import { Check, ChevronsUpDown, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBrandLogos } from "@/hooks/useBrandLogos";
@@ -19,7 +15,6 @@ interface BrandSearchSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   loading?: boolean;
-  /** FIPE API brands to merge with local brand logos */
   fipeBrands?: Array<{ codigo: string; nome: string }>;
 }
 
@@ -40,40 +35,34 @@ export function BrandSearchSelect({
 }: BrandSearchSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId, getBrandByName } = useBrandLogos();
+  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId } = useBrandLogos();
 
-  // Merge FIPE brands with local logo data
-  // Note: BrandLogo component handles fallback by name internally,
-  // so logoUrl being undefined is OK - it will look up by brand name
   const mergedBrands = React.useMemo((): MergedBrand[] => {
     if (fipeBrands.length === 0) {
-      // If no FIPE brands provided, use local brands
       return localBrands.map(b => ({
         value: b.fipe_id,
         label: b.nome,
-        logoUrl: b.logo_url,
+        logoUrl: b.logo_url || undefined,
       }));
     }
 
-    // Merge FIPE brands - BrandLogo will use name-based fallback if logoUrl is undefined
     return fipeBrands.map(fb => {
-      const localBrand = getBrandByFipeId(fb.codigo) || getBrandByName(fb.nome);
+      // Lookup EXCLUSIVAMENTE por fipe_id — sem fallback por nome
+      const localBrand = getBrandByFipeId(fb.codigo);
       return {
         value: fb.codigo,
         label: fb.nome,
-        logoUrl: localBrand?.logo_url, // Can be undefined - BrandLogo handles fallback
+        logoUrl: localBrand?.logo_url || undefined,
       };
     });
-  }, [fipeBrands, localBrands, getBrandByFipeId, getBrandByName]);
+  }, [fipeBrands, localBrands, getBrandByFipeId]);
 
-  const selectedBrand = mergedBrands.find((b) => b.value === value);
+  const selectedBrand = mergedBrands.find(b => b.value === value);
 
   const filteredBrands = React.useMemo(() => {
     if (!search) return mergedBrands;
-    const searchLower = search.toLowerCase();
-    return mergedBrands.filter((b) =>
-      b.label.toLowerCase().includes(searchLower)
-    );
+    const s = search.toLowerCase();
+    return mergedBrands.filter(b => b.label.toLowerCase().includes(s));
   }, [mergedBrands, search]);
 
   const handleSelect = (brandValue: string) => {
@@ -116,7 +105,7 @@ export function BrandSearchSelect({
           <Input
             placeholder={searchPlaceholder}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-10"
           />
         </div>
@@ -127,7 +116,7 @@ export function BrandSearchSelect({
             </div>
           ) : (
             <div className="p-1">
-              {filteredBrands.map((brand) => (
+              {filteredBrands.map(brand => (
                 <button
                   key={brand.value}
                   onClick={() => handleSelect(brand.value)}
@@ -137,12 +126,7 @@ export function BrandSearchSelect({
                     value === brand.value && "bg-accent"
                   )}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 shrink-0",
-                      value === brand.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
+                  <Check className={cn("mr-2 h-4 w-4 shrink-0", value === brand.value ? "opacity-100" : "opacity-0")} />
                   <BrandLogo url={brand.logoUrl} name={brand.label} size="sm" />
                   <span className="ml-2 truncate">{brand.label}</span>
                 </button>

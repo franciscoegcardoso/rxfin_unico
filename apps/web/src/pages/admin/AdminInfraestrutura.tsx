@@ -36,6 +36,7 @@ import { ptBR } from 'date-fns/locale';
 import { RefreshCw, Loader2, AlertTriangle, Server, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { ScrapingQueueHealthCard } from '@/components/admin/ScrapingQueueHealthCard';
 
 const REFRESH_MS = 5 * 60 * 1000;
 const STALE_GREEN_MS = 30 * 60 * 1000;
@@ -200,6 +201,11 @@ export default function AdminInfraestrutura() {
         title="Infraestrutura"
         description="Partições de transactions e staleness das materialized views."
       />
+
+      {/* Health — Scraping queue */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ScrapingQueueHealthCard />
+      </div>
 
       {/* Painel 1 — Partições */}
       <Card>
