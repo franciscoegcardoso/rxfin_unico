@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, ScrollRestoration } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePageTracking } from "@/hooks/usePageTracking";
 import { MobileMenuProvider } from "@/contexts/MobileMenuContext";
@@ -29,7 +29,6 @@ export const AppShell: React.FC = () => {
     <ShellContext.Provider value={{ insideShell: true }}>
       <AccountNavigationGuard />
       <MobileMenuProvider>
-        <ScrollRestoration />
         {isMobile ? (
           <main id="main-content" className="min-h-screen">
             <MobileShell>

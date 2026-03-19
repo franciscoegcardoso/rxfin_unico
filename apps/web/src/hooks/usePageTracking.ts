@@ -20,19 +20,28 @@ export function usePageTracking(): void {
     if (pathname === lastPathname.current) return;
     lastPathname.current = pathname;
 
-    const sessionId = getSessionId();
-    supabase
-      .rpc('track_route_event', {
-        p_event_type: 'page_view',
-        p_event_name: 'page_viewed',
-        p_metadata: {
-          path: pathname,
-          title: document.title,
-          referrer: document.referrer || null,
-        },
-        p_session_id: sessionId,
-      })
-      .then(() => {})
-      .catch(() => {});
+    // Defer so we never run in the same tick as React state updates (avoids triggering errors in query layer)
+    const t = setTimeout(() => {
+      try {
+        const sessionId = getSessionId();
+        if (!supabase?.rpc) return;
+        supabase
+          .rpc('track_route_event', {
+            p_event_type: 'page_view',
+            p_event_name: 'page_viewed',
+            p_metadata: {
+              path: pathname,
+              title: typeof document !== 'undefined' ? document.title : '',
+              referrer: typeof document !== 'undefined' && document.referrer ? document.referrer : null,
+            },
+            p_session_id: sessionId || undefined,
+          })
+          .then(() => {})
+          .catch(() => {});
+      } catch {
+        // never let tracking break the app
+      }
+    }, 0);
+    return () => clearTimeout(t);
   }, [pathname]);
 }
