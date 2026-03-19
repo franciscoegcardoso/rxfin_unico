@@ -197,12 +197,7 @@ const LandingPage: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-2xl" />
         
         <div className="relative max-w-7xl mx-auto">
-          <motion.div 
-            className="text-center max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
+          <div className="text-center max-w-4xl mx-auto">
             <Badge className="mb-5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/15">
               <Sparkles className="h-3 w-3 mr-1" />
               Beta Exclusivo - Vagas Limitadas
@@ -225,11 +220,7 @@ const LandingPage: React.FC = () => {
             </p>
 
             {/* Primary CTA - Simulator */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <div>
               <Link to="/simuladores/veiculos/simulador-fipe">
                 <Button 
                   size="lg" 
@@ -249,12 +240,7 @@ const LandingPage: React.FC = () => {
           </motion.div>
 
           {/* Social Proof */}
-          <motion.div 
-            className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
+          <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
                 <div className="w-6 h-6 rounded-full bg-primary/20 border-2 border-background" />
@@ -267,7 +253,7 @@ const LandingPage: React.FC = () => {
               <Eye className="h-4 w-4" />
               <span>Desenvolvido por especialistas em finanças corporativas</span>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
