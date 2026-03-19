@@ -20,7 +20,8 @@ import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-const BLOCK_STEPS = { A: 6, B: 6, C: 7, D: 4 } as const;
+/** A: 0–6 (7 telas). B: 0–4 após OB03/04. C: 7 telas até OB05–08 expandirem para 9. */
+const BLOCK_STEPS = { A: 7, B: 5, C: 7, D: 4 } as const;
 
 type ActiveBlock = 'A' | 'B' | 'C' | 'D';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
+import { useRealtimeBalance, getTotalCheckingBalance } from '@/hooks/useRealtimeBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { cn } from '@/lib/utils';
 
@@ -41,16 +41,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     (c) => c.toUpperCase()
   );
 
-  const totalChecking =
-    data?.summary?.total_checking ??
-    (data?.accounts ?? [])
-      .filter(
-        (a) =>
-          a.type === 'BANK' &&
-          (a.subtype === 'CHECKING_ACCOUNT' ||
-            (a.subtype ?? '').toLowerCase().includes('checking'))
-      )
-      .reduce((s, a) => s + (a.balance ?? 0), 0);
+  const totalChecking = getTotalCheckingBalance(data);
 
   return (
     <header

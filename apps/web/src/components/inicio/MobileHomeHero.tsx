@@ -7,17 +7,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useHomeShortcuts } from '@/hooks/useHomeShortcuts';
 import { EditShortcutsDialog } from '@/components/inicio/EditShortcutsDialog';
 import { Pencil } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useRealtimeBalance, getTotalCheckingBalance } from '@/hooks/useRealtimeBalance';
 
 interface MobileHomeHeroProps {
   firstName: string;
-  saldoLiquido: number;
 }
 
-export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldoLiquido }) => {
+export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName }) => {
   const navigate = useNavigate();
   const { isHidden } = useVisibility();
   const { user } = useAuth();
+  const { data: balanceData, isLoading: balanceLoading } = useRealtimeBalance();
   const isTablet = typeof window !== 'undefined' && window.innerWidth >= 768;
   const { shortcuts } = useHomeShortcuts(isTablet ? 5 : 4);
   const [editOpen, setEditOpen] = useState(false);
@@ -26,6 +26,8 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
   const getInitials = (name: string) => {
     return name.slice(0, 2).toUpperCase();
   };
+
+  const totalContas = getTotalCheckingBalance(balanceData);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
@@ -49,8 +51,10 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName, saldo
         {/* Greeting + value */}
         <div className="mb-6">
           <h1 className="text-lg font-medium text-primary-foreground">Olá, {firstName || 'Usuário'} 👋</h1>
-          <p className="text-xs text-primary-foreground/70 mt-0.5">Saldo Líquido do Mês</p>
-          <p className="font-numeric font-bold tracking-[-0.02em] leading-none tabular-nums text-2xl sm:text-[32px] mt-1 text-primary-foreground">{formatCurrency(saldoLiquido)}</p>
+          <p className="text-xs text-primary-foreground/70 mt-0.5">Saldo em contas</p>
+          <p className="font-numeric font-bold tracking-[-0.02em] leading-none tabular-nums text-2xl sm:text-[32px] mt-1 text-primary-foreground">
+            {balanceLoading && !balanceData ? '—' : formatCurrency(totalContas)}
+          </p>
         </div>
 
         {/* Quick actions */}

@@ -206,7 +206,7 @@ const Inicio: React.FC = () => {
   if (isMobile) {
     return (
       <div className="space-y-4">
-          <MobileHomeHero firstName={firstName} saldoLiquido={saldoLiquido} />
+          <MobileHomeHero firstName={firstName} />
 
           {/* Onboarding Insight (replaces legacy checklist) */}
           {isDemoMode && <OnboardingInsightCard />}

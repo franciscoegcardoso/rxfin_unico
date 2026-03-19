@@ -147,7 +147,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           <main
             className={`
               w-full max-w-full overflow-x-hidden flex-1 min-w-0
-              px-4 md:px-6 lg:px-8
+              px-2 sm:px-3 md:px-6 lg:px-8
               pb-4 md:pb-6
               pt-0
             `}
@@ -185,7 +185,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         <main
           className={cn(
             'w-full max-w-full overflow-x-hidden flex-1',
-            'px-4 md:px-6 lg:px-8 pb-6',
+            'px-2 sm:px-3 md:px-6 lg:px-8 pb-6',
             isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
           )}
           style={{ paddingTop: showDemoBanner ? `${DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX}px` : '0px' }}

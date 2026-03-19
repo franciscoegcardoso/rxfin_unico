@@ -27,7 +27,7 @@ export function InvestmentAvatar({
   type: string;
   /** Para iniciais quando não há logo */
   displayName?: string;
-  /** Domínio para fallback Clearbit (ex.: renda fixa) */
+  /** Domínio para fallback Logo.dev quando não houver logo_url (ex.: renda fixa) */
   companyDomain?: string | null;
 }) {
   const box = useLogoBoxPx();

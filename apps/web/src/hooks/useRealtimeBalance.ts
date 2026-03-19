@@ -43,6 +43,24 @@ export interface RealtimeBalanceData {
   fetched_at: string;
 }
 
+/** Mesma regra do header desktop (HomeHeader): total em contas corrente Pluggy. */
+export function getTotalCheckingBalance(
+  data: RealtimeBalanceData | null | undefined
+): number {
+  if (!data) return 0;
+  return (
+    data.summary?.total_checking ??
+    (data.accounts ?? [])
+      .filter(
+        (a) =>
+          a.type === 'BANK' &&
+          (a.subtype === 'CHECKING_ACCOUNT' ||
+            (a.subtype ?? '').toLowerCase().includes('checking'))
+      )
+      .reduce((s, a) => s + (a.balance ?? 0), 0)
+  );
+}
+
 const REALTIME_BALANCE_QUERY_KEY = ['realtimeBalance'] as const;
 const STALE_TIME_MS = 5 * 60 * 1000; // 5 minutes
 const REFRESH_COOLDOWN_MS = 30 * 1000; // 30s rate limit per account

@@ -34,10 +34,16 @@ export const MonthSummaryCard: React.FC<{ demoUserId?: string | null }> = ({ dem
   const summary = useMemo(
     () => ({
       receitas: monthSummaryData.receitas,
-      despesas: monthSummaryData.totalDespesas,
+      despesasDebito: monthSummaryData.despesasSemCartao,
+      despesasCartao: monthSummaryData.totalCartao,
       saldo: monthSummaryData.saldoMensal,
     }),
-    [monthSummaryData.receitas, monthSummaryData.totalDespesas, monthSummaryData.saldoMensal]
+    [
+      monthSummaryData.receitas,
+      monthSummaryData.despesasSemCartao,
+      monthSummaryData.totalCartao,
+      monthSummaryData.saldoMensal,
+    ]
   );
 
   const fmt = (v: number) => {
@@ -59,9 +65,19 @@ export const MonthSummaryCard: React.FC<{ demoUserId?: string | null }> = ({ dem
           <span className="text-sm font-medium text-income truncate tabular-nums">{fmt(summary.receitas)}</span>
         </div>
         <div className="flex items-center justify-between min-w-0 gap-2">
-          <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0"><TrendingDown className="h-3.5 w-3.5 text-expense" /> Despesas</span>
-          <span className="text-sm font-medium text-expense truncate tabular-nums">{fmt(summary.despesas)}</span>
+          <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0">
+            <TrendingDown className="h-3.5 w-3.5 text-expense" /> Despesas (débito)
+          </span>
+          <span className="text-sm font-medium text-expense truncate tabular-nums">{fmt(summary.despesasDebito)}</span>
         </div>
+        {summary.despesasCartao > 0 && (
+          <div className="flex items-center justify-between min-w-0 gap-2">
+            <span className="text-sm text-muted-foreground flex items-center gap-2 shrink-0">
+              <CreditCard className="h-3.5 w-3.5 text-primary" /> Cartão (fatura)
+            </span>
+            <span className="text-sm font-medium truncate tabular-nums">{fmt(summary.despesasCartao)}</span>
+          </div>
+        )}
         <div className="border-t border-border pt-2 flex items-center justify-between min-w-0 gap-2">
           <span className="text-sm font-medium shrink-0">Saldo</span>
           <span className={cn(
@@ -141,8 +157,17 @@ export const CreditCardSpendingCard: React.FC = () => {
   const currentMonth = format(new Date(), 'yyyy-MM');
 
   const totalCartao = useMemo(() => {
+    const seen = new Set<string>();
     return bills
-      .filter(b => b.billing_month?.slice(0, 7) === currentMonth || b.due_date?.slice(0, 7) === currentMonth)
+      .filter((b) => {
+        const inMonth =
+          b.billing_month?.slice(0, 7) === currentMonth ||
+          b.due_date?.slice(0, 7) === currentMonth;
+        if (!inMonth) return false;
+        if (seen.has(b.id)) return false;
+        seen.add(b.id);
+        return true;
+      })
       .reduce((s, b) => s + b.total_value, 0);
   }, [bills, currentMonth]);
 

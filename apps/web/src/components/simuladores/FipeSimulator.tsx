@@ -841,6 +841,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                 ) : (
                   <div className="[&_button]:h-12 [&_button]:rounded-xl [&_button]:bg-card [&_button]:border [&_button]:border-border [&_button]:text-foreground">
                     <BrandSearchSelect
+                      vehicleType={fipe.vehicleType}
                       fipeBrands={fipe.brands}
                       value={fipe.selectedBrand}
                       onValueChange={fipe.setSelectedBrand}

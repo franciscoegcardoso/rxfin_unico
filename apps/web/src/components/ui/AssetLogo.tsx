@@ -10,6 +10,9 @@ const SIZE_MAP = {
   xl: { box: 56, text: 16 },
 } as const;
 
+/** Token publishable Logo.dev — override via `VITE_LOGODEV_TOKEN`. */
+export const LOGODEV_TOKEN_DEFAULT = 'pk_Dp3UH6feRJSHIK2iM3-Y0g';
+
 /** Tipos com ícone público em icons.brapi.dev (SVG, sem token). */
 const BRAPI_TYPES_UPPER = new Set(['STOCK', 'REAL_ESTATE_FUND', 'ETF', 'BDR']);
 const BRAPI_TYPES_RAW = new Set(['stock_br', 'fii', 'etf_br', 'bdr']);
@@ -29,6 +32,71 @@ function isBrapiTickerType(assetType: string, ticker?: string | null): boolean {
   if (BRAPI_TYPES_UPPER.has(u)) return true;
   if (u === 'EQUITY' && ticker && isLikelyBrazilianListingTicker(ticker)) return true;
   return false;
+}
+
+/**
+ * Converte URL legada `logo.clearbit.com/…` para `img.logo.dev` (evita ERR_NAME_NOT_RESOLVED).
+ * Não deve existir no banco; defesa em profundidade se cache ou dado antigo ainda vier.
+ */
+export function normalizeLegacyLogoUrl(url: string, token: string = LOGODEV_TOKEN_DEFAULT): string {
+  const trimmed = url.trim();
+  if (!trimmed || !/logo\.clearbit\.com/i.test(trimmed)) return trimmed;
+  try {
+    const href = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
+    const u = new URL(href);
+    if (!/\.clearbit\.com$/i.test(u.hostname)) return trimmed;
+    const domain = u.pathname.replace(/^\//, '').split('/')[0]?.split('?')[0];
+    if (!domain) return trimmed;
+    return `https://img.logo.dev/${domain}?token=${token}&size=64`;
+  } catch {
+    const m = trimmed.match(/logo\.clearbit\.com\/([^/?#]+)/i);
+    if (m?.[1]) return `https://img.logo.dev/${m[1]}?token=${token}&size=64`;
+    return trimmed;
+  }
+}
+
+/**
+ * Cadeia de fallbacks para o avatar — sem uso de domínios descontinuados.
+ * FIXED_INCOME / fundos: só `logoUrl` normalizado + Logo.dev por domínio (sem CDNs de ticker B3).
+ */
+export function buildFallbackChain(
+  ticker: string | undefined | null,
+  assetType: string,
+  logoUrl?: string | null,
+  companyDomain?: string | null,
+  token: string = LOGODEV_TOKEN_DEFAULT,
+): string[] {
+  const urls: string[] = [];
+  const t = ticker?.trim().toUpperCase() ?? '';
+
+  if (logoUrl?.trim()) {
+    urls.push(normalizeLegacyLogoUrl(logoUrl.trim(), token));
+  }
+
+  const isTickerType = isBrapiTickerType(assetType, ticker);
+
+  if (isTickerType && t) {
+    urls.push(`https://icons.brapi.dev/icons/${t}.svg`);
+    urls.push(`https://icons.brapi.dev/logos/${t}.png`);
+    urls.push(`https://raw.githubusercontent.com/thefintz/icones-b3/main/icones/${t}.png`);
+    urls.push(`https://raw.githubusercontent.com/nancydotso/logos/main/${t}.png`);
+  }
+
+  const typeUpper = (assetType || '').toUpperCase();
+  const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
+  if (isCrypto && t) {
+    const cryptoUrl = CRYPTO_LOGO_MAP[t];
+    if (cryptoUrl) urls.push(cryptoUrl);
+  }
+
+  if (companyDomain?.trim()) {
+    const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
+    if (domain) {
+      urls.push(`https://img.logo.dev/${domain}?token=${token}&size=64`);
+    }
+  }
+
+  return urls;
 }
 
 function getAvatarColor(seed: string): string {
@@ -111,40 +179,14 @@ export function AssetLogo({
 }: AssetLogoProps) {
   const [fallbackIndex, setFallbackIndex] = useState(0);
 
-  const typeUpper = (assetType || '').toUpperCase();
-  const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
-  // Logo.dev é o substituto oficial do Clearbit (descontinuado em 2025).
-  // Token publishable pode ficar no frontend; permite override por env.
-  const LOGODEV_TOKEN_FALLBACK = 'pk_Dp3UH6feRJSHIK2iM3-Y0g';
   const logodevToken =
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN) ||
-    LOGODEV_TOKEN_FALLBACK;
+    LOGODEV_TOKEN_DEFAULT;
 
-  const fallbackUrls = useMemo(() => {
-    const list: string[] = [];
-    if (logoUrl?.trim()) list.push(logoUrl.trim());
-    const t = ticker?.trim();
-    // Só tenta CDNs de bolsa (brapi, etc.) para tipos com ticker real (ações, FII, ETF, BDR).
-    // FIXED_INCOME, MUTUAL_FUND, PENSION_* usam apenas logo_url do banco e companyDomain (Logo.dev).
-    const isTickerType = isBrapiTickerType(assetType, ticker);
-    if (isTickerType && t) {
-      list.push(`https://icons.brapi.dev/icons/${t}.svg`);
-      list.push(`https://icons.brapi.dev/logos/${t}.png`);
-      list.push(`https://raw.githubusercontent.com/thefintz/icones-b3/main/icones/${t}.png`);
-      list.push(`https://raw.githubusercontent.com/nancydotso/logos/main/${t}.png`);
-    }
-    if (isCrypto && ticker) {
-      const url = CRYPTO_LOGO_MAP[ticker.toUpperCase()];
-      if (url) list.push(url);
-    }
-    if (companyDomain?.trim()) {
-      const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
-      if (domain) {
-        list.push(`https://img.logo.dev/${domain}?token=${logodevToken}&size=64`);
-      }
-    }
-    return list;
-  }, [logoUrl, isCrypto, ticker, typeUpper, companyDomain, logodevToken]);
+  const fallbackUrls = useMemo(
+    () => buildFallbackChain(ticker, assetType, logoUrl, companyDomain, logodevToken),
+    [logoUrl, ticker, assetType, companyDomain, logodevToken],
+  );
 
   const currentUrl = fallbackUrls[fallbackIndex];
   const failed = fallbackIndex >= fallbackUrls.length;

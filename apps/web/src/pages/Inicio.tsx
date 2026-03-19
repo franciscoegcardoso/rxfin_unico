@@ -493,7 +493,7 @@ const Inicio: React.FC = () => {
           <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1">
             {errorBlock}
             {showControlBanner && <ControlOnboardingBanner />}
-            <MobileHomeHero firstName={displayFirstName} saldoLiquido={monthSummaryData.saldoMensal} />
+            <MobileHomeHero firstName={displayFirstName} />
             <MonthSummaryCard demoUserId={effectiveDemoUserId} />
             <ExpensesStatusCard />
             {isDemoMode && <OnboardingInsightCard />}

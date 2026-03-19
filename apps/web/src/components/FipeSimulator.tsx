@@ -689,6 +689,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
                 hint={!fipe.selectedBrand && !fipe.loading.brands ? "Selecione a marca do veículo" : undefined}
               >
                 <BrandSearchSelect
+                  vehicleType={fipe.vehicleType}
                   fipeBrands={fipe.brands}
                   value={fipe.selectedBrand}
                   onValueChange={fipe.setSelectedBrand}

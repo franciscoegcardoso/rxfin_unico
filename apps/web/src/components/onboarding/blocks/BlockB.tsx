@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ArrowRight, ArrowLeft, Building2, Upload, CheckCircle2, Loader2,
-  TrendingUp, DollarSign, AlertCircle, ChevronRight, Sparkles,
+  TrendingUp, AlertCircle, Sparkles,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -13,47 +13,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
+import type { Tables } from '@/integrations/supabase/types';
 import type { OnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
 import { invalidateOnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface ConnectedBank {
   item_id: string;
+  connector_id?: number;
   connector_name: string;
   connector_image_url: string | null;
   connector_primary_color: string | null;
   connected_at: string;
+  from_snapshot?: boolean;
 }
-
-interface IncomeValidationItem {
-  id: string;
-  name: string;
-  method: string;
-  enabled: boolean;
-  estimatedValue: number | null;
-  confirmed: boolean;
-  source: 'pluggy' | 'manual';
-}
-
-interface ExpenseValidationCategory {
-  id: string;
-  name: string;
-  icon: string;
-  enabled: boolean;
-  itemCount: number;
-  confirmedByAI: boolean;
-  detectedAmount: number | null;
-}
-
-const EXPENSE_CATEGORY_ICONS: Record<string, string> = {
-  'Contas da Casa': '🏠',
-  'Alimentação': '🛒',
-  'Transporte': '🚗',
-  'Lazer': '🎬',
-  'Saúde': '❤️',
-  'Investimentos': '📈',
-  'Pets': '🐾',
-  'Pessoal': '👤',
-};
 
 interface BlockBProps {
   step: number;
@@ -62,6 +42,97 @@ interface BlockBProps {
   onSaveDraft: (key: string, data: unknown) => void;
   snapshot?: OnboardingSnapshot | null;
 }
+
+type IncomeRow = Pick<
+  Tables<'user_income_items'>,
+  'id' | 'name' | 'method' | 'enabled'
+>;
+
+type TxnGroup = {
+  nome: string;
+  count: number;
+  avg: number;
+  categoria: string | null;
+};
+
+function buildTxnGroups(
+  txns: Array<{
+    nome: string | null;
+    valor_realizado: number | null;
+    categoria: string | null;
+  }>,
+): TxnGroup[] {
+  const map = new Map<string, { sum: number; count: number; categoria: string | null }>();
+  for (const t of txns) {
+    const nome = (t.nome || '').trim() || '—';
+    const v = Number(t.valor_realizado) || 0;
+    const cur = map.get(nome) ?? { sum: 0, count: 0, categoria: t.categoria ?? null };
+    cur.sum += v;
+    cur.count += 1;
+    if (cur.categoria == null && t.categoria) cur.categoria = t.categoria;
+    map.set(nome, cur);
+  }
+  return [...map.entries()]
+    .map(([nome, g]) => ({
+      nome,
+      count: g.count,
+      avg: g.count > 0 ? g.sum / g.count : 0,
+      categoria: g.categoria,
+    }))
+    .filter((g) => g.count >= 2)
+    .sort((a, b) => b.avg - a.avg);
+}
+
+function suggestForIncomeItem(
+  item: IncomeRow,
+  groups: TxnGroup[],
+): { group: TxnGroup | null; confidence: 'high' | 'medium' | 'none' } {
+  if (groups.length === 0) return { group: null, confidence: 'none' };
+
+  const nameL = item.name.toLowerCase();
+  let best: { group: TxnGroup; confidence: 'high' | 'medium'; score: number } | null = null;
+
+  for (const g of groups) {
+    const nom = g.nome.toLowerCase();
+    const cat = (g.categoria || '').toLowerCase();
+
+    if (
+      (nom.includes('vr') || nom.includes('vale aliment')) &&
+      (nameL.includes('vr') || nameL.includes('vale') || nameL.includes('aliment'))
+    ) {
+      return { group: g, confidence: 'high' };
+    }
+
+    if (
+      cat.includes('invest') &&
+      (nameL.includes('divid') || nameL.includes('rend') || nameL.includes('juros'))
+    ) {
+      const score = 95;
+      if (!best || score > best.score) best = { group: g, confidence: 'high', score };
+      continue;
+    }
+
+    if (
+      cat.includes('pessoal') &&
+      (nameL.includes('sal') || nameL.includes('freel') || nameL.includes('orden') || nameL.includes('contrato'))
+    ) {
+      const score = 90;
+      if (!best || score > best.score) best = { group: g, confidence: 'high', score };
+      continue;
+    }
+
+    const tokens = nameL.split(/\s+/).filter((t) => t.length > 2);
+    if (tokens.some((t) => nom.includes(t))) {
+      if (!best || best.score < 55)
+        best = { group: g, confidence: 'medium', score: 55 };
+    }
+  }
+
+  if (best) return { group: best.group, confidence: best.confidence };
+  return { group: null, confidence: 'none' };
+}
+
+type RowMatchMode = 'suggested' | 'manual' | 'skip';
 
 export const BlockB: React.FC<BlockBProps> = ({
   step,
@@ -79,12 +150,24 @@ export const BlockB: React.FC<BlockBProps> = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [milestoneData, setMilestoneData] = useState<unknown>(null);
-  const [incomeValidations, setIncomeValidations] = useState<IncomeValidationItem[]>([]);
-  const [validationsLoaded, setValidationsLoaded] = useState(false);
-  const [savingValidations, setSavingValidations] = useState(false);
-  const [expenseValidations, setExpenseValidations] = useState<ExpenseValidationCategory[]>([]);
-  const [expenseValidationsLoaded, setExpenseValidationsLoaded] = useState(false);
-  const [savingExpenseValidations, setSavingExpenseValidations] = useState(false);
+
+  // B2 — reconciliação de receitas
+  const [b2Loading, setB2Loading] = useState(true);
+  const [openFinanceConnected, setOpenFinanceConnected] = useState<boolean | null>(null);
+  const [incomeItemsB2, setIncomeItemsB2] = useState<IncomeRow[]>([]);
+  const [txnGroups, setTxnGroups] = useState<TxnGroup[]>([]);
+  const [rowMatch, setRowMatch] = useState<
+    Record<string, { mode: RowMatchMode; manualNome?: string }>
+  >({});
+  const [manualEstimates, setManualEstimates] = useState<Record<string, number>>({});
+  const [savingB2, setSavingB2] = useState(false);
+
+  const suggestions = useMemo(() => {
+    return incomeItemsB2.map((item) => {
+      const s = suggestForIncomeItem(item, txnGroups);
+      return { item, ...s };
+    });
+  }, [incomeItemsB2, txnGroups]);
 
   useEffect(() => {
     if (step === 1 && snapshot?.pluggy_connections && connectedBanks.length === 0) {
@@ -102,7 +185,80 @@ export const BlockB: React.FC<BlockBProps> = ({
         setConnectedCount(existing.length);
       }
     }
-  }, [step, snapshot]);
+  }, [step, snapshot, connectedBanks.length]);
+
+  useEffect(() => {
+    if (step !== 2 || !user?.id) return;
+
+    let cancelled = false;
+    (async () => {
+      setB2Loading(true);
+      try {
+        const { data: stateRow } = await supabase
+          .from('onboarding_state')
+          .select('open_finance_connected')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const ofOk = Boolean(stateRow?.open_finance_connected);
+        if (cancelled) return;
+        setOpenFinanceConnected(ofOk);
+
+        const { data: items } = await supabase
+          .from('user_income_items')
+          .select('id, name, method, enabled')
+          .eq('user_id', user.id)
+          .eq('enabled', true)
+          .order('order_index');
+
+        if (cancelled) return;
+        setIncomeItemsB2((items ?? []) as IncomeRow[]);
+
+        if (!ofOk) {
+          setTxnGroups([]);
+          setRowMatch({});
+          setB2Loading(false);
+          return;
+        }
+
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        const fromDate = threeMonthsAgo.toISOString().split('T')[0];
+
+        const { data: txns } = await supabase
+          .from('lancamentos_realizados_v')
+          .select('nome, valor_realizado, mes_referencia, categoria')
+          .eq('user_id', user.id)
+          .eq('tipo', 'receita')
+          .gte('data_lancamento', fromDate)
+          .order('valor_realizado', { ascending: false })
+          .limit(200);
+
+        if (cancelled) return;
+        const groups = buildTxnGroups(txns ?? []);
+        setTxnGroups(groups);
+
+        const nextInit: Record<string, { mode: RowMatchMode; manualNome?: string }> = {};
+        for (const row of (items ?? []) as IncomeRow[]) {
+          const { group, confidence } = suggestForIncomeItem(row, groups);
+          if (group && confidence === 'high') {
+            nextInit[row.id] = { mode: 'suggested', manualNome: group.nome };
+          } else if (group && confidence === 'medium') {
+            nextInit[row.id] = { mode: 'suggested', manualNome: group.nome };
+          } else {
+            nextInit[row.id] = { mode: 'skip' };
+          }
+        }
+        setRowMatch(nextInit);
+      } finally {
+        if (!cancelled) setB2Loading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [step, user?.id]);
 
   const handlePluggySaving = () => {
     setSyncMessage('Salvando conexão...');
@@ -111,11 +267,11 @@ export const BlockB: React.FC<BlockBProps> = ({
   const handleFinishConnections = async () => {
     setIsSyncing(true);
     setSyncMessage('Importando seus lançamentos...');
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1200));
     setSyncMessage('IA categorizando automaticamente...');
-    await new Promise(r => setTimeout(r, 1400));
+    await new Promise((r) => setTimeout(r, 1400));
     setSyncMessage('Calculando seu Raio-X...');
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
     setIsSyncing(false);
 
     if (user?.id) {
@@ -124,123 +280,7 @@ export const BlockB: React.FC<BlockBProps> = ({
       });
       setMilestoneData(data);
     }
-    onStepChange(2); // validação de receitas
-  };
-
-  const loadIncomeValidations = async () => {
-    if (validationsLoaded || !user?.id) return;
-    try {
-      const { data: incomeItems } = await supabase
-        .from('user_income_items')
-        .select('id, name, method, enabled')
-        .eq('user_id', user.id)
-        .eq('enabled', true)
-        .order('order_index');
-
-      if (!incomeItems || incomeItems.length === 0) {
-        setValidationsLoaded(true);
-        return;
-      }
-
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      const fromDate = threeMonthsAgo.toISOString().split('T')[0];
-
-      const { data: txns } = await supabase
-        .from('lancamentos_realizados_v')
-        .select('nome, valor_realizado, mes_referencia')
-        .eq('user_id', user.id)
-        .eq('tipo', 'receita')
-        .gte('data_lancamento', fromDate)
-        .order('valor_realizado', { ascending: false })
-        .limit(50);
-
-      const validations: IncomeValidationItem[] = incomeItems.map(item => {
-        const match = txns?.find(tx =>
-          tx.nome?.toLowerCase().includes(item.name.toLowerCase().split(' ')[0].toLowerCase()) ||
-          item.name.toLowerCase().includes(tx.nome?.toLowerCase().split(' ')[0] ?? '')
-        );
-
-        return {
-          id: item.id,
-          name: item.name,
-          method: item.method,
-          enabled: item.enabled,
-          estimatedValue: match ? Math.round(match.valor_realizado) : null,
-          confirmed: false,
-          source: match ? 'pluggy' : 'manual',
-        };
-      });
-
-      setIncomeValidations(validations);
-    } catch (err) {
-      console.warn('[BlockB] loadIncomeValidations erro:', err);
-    } finally {
-      setValidationsLoaded(true);
-    }
-  };
-
-  const loadExpenseValidations = async () => {
-    if (expenseValidationsLoaded || !user?.id) return;
-    try {
-      const { data: expenseItems } = await supabase
-        .from('user_expense_items')
-        .select('category_id, category_name')
-        .eq('user_id', user.id)
-        .eq('enabled', true);
-
-      if (!expenseItems || expenseItems.length === 0) {
-        setExpenseValidationsLoaded(true);
-        return;
-      }
-
-      const categoryMap = new Map<string, { name: string; count: number }>();
-      for (const item of expenseItems as Array<{ category_id: string; category_name: string }>) {
-        if (!categoryMap.has(item.category_id)) {
-          categoryMap.set(item.category_id, { name: item.category_name, count: 0 });
-        }
-        categoryMap.get(item.category_id)!.count++;
-      }
-
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      const fromDate = threeMonthsAgo.toISOString().split('T')[0];
-
-      const { data: txns } = await supabase
-        .from('lancamentos_realizados_v')
-        .select('categoria, valor_realizado, mes_referencia')
-        .eq('user_id', user.id)
-        .eq('tipo', 'despesa')
-        .gte('data_lancamento', fromDate)
-        .order('valor_realizado', { ascending: false })
-        .limit(100);
-
-      const validations: ExpenseValidationCategory[] = Array.from(categoryMap.entries()).map(([id, { name, count }]) => {
-        const matchingTxns = (txns as Array<{ categoria?: string | null; valor_realizado?: number }> | null)?.filter(tx =>
-          tx.categoria?.toLowerCase().includes(name.toLowerCase().split(' ')[0].toLowerCase()) ||
-          name.toLowerCase().includes(tx.categoria?.toLowerCase().split(' ')[0] ?? '')
-        ) ?? [];
-
-        const totalAmount = matchingTxns.reduce((sum, tx) => sum + (tx.valor_realizado || 0), 0);
-        const avgMonthly = matchingTxns.length > 0 ? Math.round(totalAmount / 3) : null;
-
-        return {
-          id,
-          name,
-          icon: EXPENSE_CATEGORY_ICONS[name] ?? '📦',
-          enabled: true,
-          itemCount: count,
-          confirmedByAI: matchingTxns.length > 0,
-          detectedAmount: avgMonthly,
-        };
-      });
-
-      setExpenseValidations(validations);
-    } catch (err) {
-      console.warn('[BlockB] loadExpenseValidations erro:', err);
-    } finally {
-      setExpenseValidationsLoaded(true);
-    }
+    onStepChange(2);
   };
 
   // ─── Step 0: Intro ────────────────────────────────────────
@@ -273,7 +313,7 @@ export const BlockB: React.FC<BlockBProps> = ({
               });
               setReconciliationDone(true);
               setConnectedCount(connections.length);
-              onStepChange(5); // conquest
+              onStepChange(4);
             }}
             onReconfigure={() => {
               setReconciliationDone(true);
@@ -346,7 +386,7 @@ export const BlockB: React.FC<BlockBProps> = ({
           variant="ghost"
           size="sm"
           className="w-full mt-2 text-muted-foreground text-xs"
-          onClick={() => onStepChange(4)}
+          onClick={() => onStepChange(3)}
         >
           <Upload className="h-3.5 w-3.5 mr-1.5" />
           Prefiro fazer upload de extrato
@@ -358,9 +398,7 @@ export const BlockB: React.FC<BlockBProps> = ({
   // ─── Step 1: Conectar via Open Finance ──────────────────────
   if (step === 1) {
     const connectedConnectorIds = new Set(
-      connectedBanks
-        .map((b) => b.connector_id)
-        .filter((id): id is number => id !== undefined)
+      connectedBanks.map((b) => b.connector_id).filter((id): id is number => id !== undefined),
     );
     const snapshotBanks = connectedBanks.filter((b) => b.from_snapshot);
     const newlyConnectedBanks = connectedBanks.filter((b) => !b.from_snapshot);
@@ -487,7 +525,9 @@ export const BlockB: React.FC<BlockBProps> = ({
               if (itemId && user?.id) {
                 const { data } = await supabase
                   .from('pluggy_connections')
-                  .select('item_id, connector_id, connector_name, connector_image_url, connector_primary_color')
+                  .select(
+                    'item_id, connector_id, connector_name, connector_image_url, connector_primary_color',
+                  )
                   .eq('item_id', itemId)
                   .eq('user_id', user.id)
                   .single();
@@ -579,26 +619,87 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 2: Validação de Receitas por IA ─────────────────
+  // ─── Step 2: Bate de receitas (reconciliação) ─────────────────
   if (step === 2) {
-    if (!validationsLoaded) {
-      loadIncomeValidations();
+    if (b2Loading || openFinanceConnected === null) {
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <RXFinLoadingSpinner size={48} />
           <p className="text-sm text-muted-foreground text-center">
-            IA analisando suas receitas...
+            Carregando dados para conciliar receitas...
           </p>
         </div>
       );
     }
 
-    if (incomeValidations.length === 0) {
+    if (!openFinanceConnected) {
+      return (
+        <div className="max-w-2xl mx-auto py-4">
+          <div className="flex items-center mb-6">
+            <Button variant="ghost" size="sm" onClick={() => onStepChange(1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+            </Button>
+          </div>
+          <div className="mb-5">
+            <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+              Sem Open Finance
+            </p>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Confirme suas fontes de renda
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Conecte um banco depois para bater com extratos. Por ora, estime valores mensais
+              aproximados (opcional).
+            </p>
+          </div>
+          <div className="space-y-3 mb-6">
+            {incomeItemsB2.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma linha de receita ativa. Volte ao Nível 1 ou avance.
+              </p>
+            ) : (
+              incomeItemsB2.map((it) => (
+                <div
+                  key={it.id}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{it.name}</p>
+                    <p className="text-xs text-muted-foreground">{it.method}</p>
+                  </div>
+                  <Input
+                    className="w-32 text-right tabular-nums text-sm"
+                    inputMode="decimal"
+                    placeholder="R$"
+                    value={
+                      manualEstimates[it.id] != null && manualEstimates[it.id] > 0
+                        ? String(manualEstimates[it.id])
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d.,]/g, '').replace(',', '.');
+                      const n = parseFloat(raw);
+                      setManualEstimates((prev) => ({
+                        ...prev,
+                        [it.id]: Number.isFinite(n) ? n : 0,
+                      }));
+                    }}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+          <Button variant="hero" className="w-full" onClick={() => onStepChange(3)}>
+            Continuar <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      );
+    }
+
+    if (incomeItemsB2.length === 0) {
       return (
         <div className="max-w-2xl mx-auto py-8 text-center">
-          <p className="text-muted-foreground mb-4">
-            Nenhuma fonte de renda configurada ainda.
-          </p>
+          <p className="text-muted-foreground mb-4">Nenhuma fonte de renda ativa para bater.</p>
           <Button variant="hero" onClick={() => onStepChange(3)}>
             Continuar <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
@@ -606,42 +707,41 @@ export const BlockB: React.FC<BlockBProps> = ({
       );
     }
 
-    const hasRealData = incomeValidations.some(v => v.source === 'pluggy');
-    const confirmedCount = incomeValidations.filter(v => v.confirmed).length;
-
-    const handleToggleConfirm = (id: string) => {
-      setIncomeValidations(prev =>
-        prev.map(v => v.id === id ? { ...v, confirmed: !v.confirmed } : v)
-      );
-    };
-
-    const handleConfirmAll = () => {
-      setIncomeValidations(prev => prev.map(v => ({ ...v, confirmed: true })));
-    };
-
-    const handleContinue = async () => {
-      setSavingValidations(true);
+    const handleConfirmB2 = async () => {
+      setSavingB2(true);
       try {
-        const confirmed = incomeValidations.filter(v => v.confirmed).length;
+        const matches = suggestions.map(({ item, group, confidence }) => {
+          const r = rowMatch[item.id] ?? { mode: 'skip' as RowMatchMode };
+          let linkedNome: string | null = null;
+          if (r.mode === 'suggested' && group) linkedNome = r.manualNome ?? group.nome;
+          if (r.mode === 'manual' && r.manualNome) linkedNome = r.manualNome;
+          if (r.mode === 'skip') linkedNome = null;
+          return {
+            income_item_id: item.id,
+            income_name: item.name,
+            mode: r.mode,
+            linked_txn_nome: linkedNome,
+            suggestion_confidence: confidence,
+          };
+        });
+
+        const autoMatched = matches.filter(
+          (m) => m.mode === 'suggested' && m.suggestion_confidence === 'high',
+        ).length;
+
         await supabase.from('ai_onboarding_events').insert({
           user_id: user?.id,
-          event_type: 'income_validation_confirmed',
+          event_type: 'income_reconciliation_confirmed',
           metadata: {
-            total_items: incomeValidations.length,
-            confirmed_count: confirmed,
-            has_real_data: hasRealData,
-            items: incomeValidations.map(v => ({
-              name: v.name,
-              confirmed: v.confirmed,
-              source: v.source,
-              estimated_value: v.estimatedValue,
-            })),
+            matches,
+            total_items: incomeItemsB2.length,
+            auto_matched: autoMatched,
           },
-        });
+        } as never);
       } catch (err) {
-        console.warn('[BlockB] saveValidations erro (não crítico):', err);
-} finally {
-      setSavingValidations(false);
+        console.warn('[BlockB] income_reconciliation_confirmed', err);
+      } finally {
+        setSavingB2(false);
       }
       onStepChange(3);
     };
@@ -658,110 +758,156 @@ export const BlockB: React.FC<BlockBProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="h-4 w-4 text-primary" />
             <p className="text-xs font-medium text-primary uppercase tracking-wide">
-              Validação por IA
+              Bate de receitas
             </p>
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Confirme suas fontes de renda
+            Relacione cada renda aos lançamentos recorrentes
           </h2>
           <p className="text-sm text-muted-foreground">
-            {hasRealData
-              ? 'A IA identificou entradas nos seus extratos. Confirme as que fazem parte da sua renda regular.'
-              : 'Confirme as fontes de renda que você configurou. Os valores serão preenchidos após sincronizar seus bancos.'}
+            Agrupamos transações com padrão de valor e frequência. Confirme o vínculo ou escolha
+            manualmente.
           </p>
         </div>
 
-        {hasRealData && (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-foreground">
-              <span className="font-semibold">Dados reais detectados</span>
-              {' '}— Baseado nos seus últimos 3 meses de extratos bancários
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-2 mb-4">
-          {incomeValidations.map(item => (
-            <div
-              key={item.id}
-              className={cn(
-                'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer',
-                item.confirmed
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card'
-              )}
-              onClick={() => handleToggleConfirm(item.id)}
-            >
-              <div className="shrink-0">
-                {item.confirmed
-                  ? <CheckCircle2 className="h-5 w-5 text-primary" />
-                  : <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/40" />
-                }
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {item.name}
-                  </p>
-                  {item.source === 'pluggy' && (
-                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full shrink-0">
-                      detectado
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {item.method}
-                </p>
-              </div>
-
-              <div className="shrink-0 text-right">
-                {item.estimatedValue != null ? (
-                  <p className="text-sm font-semibold text-foreground">
-                    R$ {item.estimatedValue.toLocaleString('pt-BR')}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    A sincronizar
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {confirmedCount < incomeValidations.length && (
-          <button
-            type="button"
-            onClick={handleConfirmAll}
-            className="w-full text-xs text-primary font-medium mb-4 py-2 hover:underline"
-          >
-            Confirmar todas as fontes de renda
-          </button>
-        )}
-
-        {!hasRealData && (
+        {txnGroups.length === 0 && (
           <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Conecte seus bancos via Open Finance para que a IA identifique
-              automaticamente os valores reais de cada fonte de renda.
+              Ainda não há transações de receita recorrentes (2+ ocorrências). Você pode avançar e
+              refinar depois.
             </p>
           </div>
         )}
+
+        {txnGroups.length > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground">
+              <span className="font-semibold">Dados reais</span> — últimos 3 meses · apenas grupos
+              com 2+ lançamentos
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-3 mb-6">
+          {suggestions.map(({ item, group, confidence }) => {
+            const r = rowMatch[item.id] ?? { mode: 'skip' as RowMatchMode };
+            const isGreen =
+              r.mode === 'suggested' && group && (confidence === 'high' || confidence === 'medium');
+            const isYellow = r.mode === 'manual' || (!group && r.mode !== 'skip');
+            const isGray = r.mode === 'skip';
+
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  'rounded-xl border-2 p-3.5 transition-colors',
+                  isGreen && 'border-emerald-500/50 bg-emerald-500/5',
+                  isYellow && !isGreen && 'border-amber-500/50 bg-amber-500/5',
+                  isGray && 'border-border bg-card opacity-90',
+                )}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.method}</p>
+                  </div>
+                  <span
+                    className={cn(
+                      'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0',
+                      isGreen && 'bg-emerald-500/15 text-emerald-700',
+                      isYellow && !isGreen && 'bg-amber-500/15 text-amber-800',
+                      isGray && 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {isGreen ? '✓ sugerido' : isYellow ? '⚠ manual' : '— pular'}
+                  </span>
+                </div>
+
+                {group && r.mode === 'suggested' && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Sugestão: <strong>{group.nome}</strong> · média{' '}
+                    {group.avg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} ·{' '}
+                    {group.count}×
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  {group && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={r.mode === 'suggested' ? 'default' : 'outline'}
+                      onClick={() =>
+                        setRowMatch((prev) => ({
+                          ...prev,
+                          [item.id]: { mode: 'suggested', manualNome: group.nome },
+                        }))
+                      }
+                    >
+                      Confirmar sugestão
+                    </Button>
+                  )}
+                  <div className="flex-1 min-w-[200px]">
+                    <Select
+                      value={r.mode === 'manual' ? r.manualNome ?? '' : ''}
+                      onValueChange={(nome) =>
+                        setRowMatch((prev) => ({
+                          ...prev,
+                          [item.id]: { mode: 'manual', manualNome: nome },
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Vincular manualmente..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {txnGroups.map((g) => (
+                          <SelectItem key={g.nome} value={g.nome}>
+                            {g.nome} · {g.avg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground"
+                    onClick={() =>
+                      setRowMatch((prev) => ({
+                        ...prev,
+                        [item.id]: { mode: 'skip' },
+                      }))
+                    }
+                  >
+                    Sem correspondência
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
         <Button
           variant="hero"
           size="lg"
           className="w-full"
-          disabled={savingValidations}
-          onClick={handleContinue}
+          disabled={savingB2}
+          onClick={() => void handleConfirmB2()}
         >
-          {savingValidations
-            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</>
-            : <>Continuar <ArrowRight className="ml-2 h-5 w-5" /></>
-          }
+          {savingB2 ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              Continuar <ArrowRight className="ml-2 h-5 w-5" />
+            </>
+          )}
         </Button>
 
         <Button
@@ -776,211 +922,12 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 3: Validação de Despesas por IA ─────────────────
+  // ─── Step 3: Upload de extrato ──────────────────────────────
   if (step === 3) {
-    if (!expenseValidationsLoaded) {
-      loadExpenseValidations();
-      return (
-        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
-          <RXFinLoadingSpinner size={48} />
-          <p className="text-sm text-muted-foreground text-center">
-            IA analisando suas despesas...
-          </p>
-        </div>
-      );
-    }
-
-    if (expenseValidations.length === 0) {
-      return (
-        <div className="max-w-2xl mx-auto py-8 text-center">
-          <p className="text-muted-foreground mb-4">
-            Nenhuma categoria de despesa configurada ainda.
-          </p>
-          <Button variant="hero" onClick={() => onStepChange(5)}>
-            Continuar <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      );
-    }
-
-    const hasRealData = expenseValidations.some(v => v.confirmedByAI);
-    const enabledCount = expenseValidations.filter(v => v.enabled).length;
-
-    const handleToggleExpenseCat = (id: string) => {
-      setExpenseValidations(prev =>
-        prev.map(v => v.id === id ? { ...v, enabled: !v.enabled } : v)
-      );
-    };
-
-    const handleConfirmAllExpenses = () => {
-      setExpenseValidations(prev => prev.map(v => ({ ...v, enabled: true })));
-    };
-
-    const handleContinueExpenses = async () => {
-      setSavingExpenseValidations(true);
-      try {
-        await supabase.from('ai_onboarding_events').insert({
-          user_id: user?.id,
-          event_type: 'expense_validation_confirmed',
-          metadata: {
-            total_categories: expenseValidations.length,
-            enabled_count: enabledCount,
-            has_real_data: hasRealData,
-            categories: expenseValidations.map(v => ({
-              name: v.name,
-              enabled: v.enabled,
-              confirmed_by_ai: v.confirmedByAI,
-              detected_amount: v.detectedAmount,
-            })),
-          },
-        });
-      } catch (err) {
-        console.warn('[BlockB] saveExpenseValidations erro (não crítico):', err);
-      } finally {
-        setSavingExpenseValidations(false);
-      }
-      onStepChange(5);
-    };
-
-    return (
-      <div className="max-w-2xl mx-auto py-4">
-        <div className="flex items-center mb-6">
-          <Button variant="ghost" size="sm" onClick={() => onStepChange(2)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-          </Button>
-        </div>
-
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <p className="text-xs font-medium text-primary uppercase tracking-wide">
-              Validação por IA
-            </p>
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">
-            Confirme suas categorias de gasto
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {hasRealData
-              ? 'A IA identificou gastos nos seus extratos. Confirme as categorias da sua vida financeira.'
-              : 'Confirme as categorias que fazem parte do seu cotidiano. Os valores serão preenchidos após sincronizar seus bancos.'}
-          </p>
-        </div>
-
-        {hasRealData && (
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-foreground">
-              <span className="font-semibold">Gastos reais detectados</span>
-              {' '}— Baseado nos seus últimos 3 meses de extratos
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {expenseValidations.map(cat => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => handleToggleExpenseCat(cat.id)}
-              className={cn(
-                'flex items-start gap-3 p-4 rounded-xl border-2 transition-all text-left',
-                cat.enabled
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card opacity-60'
-              )}
-            >
-              <span className="text-xl shrink-0 mt-0.5">{cat.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <p className={cn(
-                    'text-sm font-semibold leading-tight',
-                    cat.enabled ? 'text-foreground' : 'text-muted-foreground'
-                  )}>
-                    {cat.name}
-                  </p>
-                  {cat.confirmedByAI && (
-                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-1 py-0.5 rounded-full shrink-0">
-                      detectado
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {cat.detectedAmount != null
-                    ? `~R$ ${cat.detectedAmount.toLocaleString('pt-BR')}/mês`
-                    : `${cat.itemCount} item${cat.itemCount !== 1 ? 's' : ''}`
-                  }
-                </p>
-              </div>
-              <div className="shrink-0 mt-0.5">
-                {cat.enabled
-                  ? <CheckCircle2 className="h-4 w-4 text-primary" />
-                  : <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/40" />
-                }
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {enabledCount < expenseValidations.length && (
-          <button
-            type="button"
-            onClick={handleConfirmAllExpenses}
-            className="w-full text-xs text-primary font-medium mb-4 py-2 hover:underline"
-          >
-            Confirmar todas as categorias
-          </button>
-        )}
-
-        {!hasRealData && (
-          <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Conecte seus bancos via Open Finance para que a IA identifique
-              automaticamente os valores reais de cada categoria.
-            </p>
-          </div>
-        )}
-
-        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{enabledCount}</span>
-            {' '}categoria{enabledCount !== 1 ? 's' : ''} ativa{enabledCount !== 1 ? 's' : ''} no seu perfil.
-          </p>
-        </div>
-
-        <Button
-          variant="hero"
-          size="lg"
-          className="w-full"
-          disabled={savingExpenseValidations}
-          onClick={handleContinueExpenses}
-        >
-          {savingExpenseValidations
-            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando...</>
-            : <>Continuar <ArrowRight className="ml-2 h-5 w-5" /></>
-        }
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-2 text-muted-foreground"
-          onClick={() => onStepChange(5)}
-        >
-          Pular por agora
-        </Button>
-      </div>
-    );
-  }
-
-  // ─── Step 4: Upload de extrato ──────────────────────────────
-  if (step === 4) {
     return (
       <div className="max-w-2xl mx-auto py-4">
         <div className="flex justify-between mb-6">
-          <Button variant="outline" size="sm" onClick={() => onStepChange(3)}>
+          <Button variant="outline" size="sm" onClick={() => onStepChange(2)}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Button>
         </div>
@@ -1031,7 +978,7 @@ export const BlockB: React.FC<BlockBProps> = ({
                 p_step: step,
                 p_metadata: { file_type: 'portal_flow' as const },
               } as never);
-              onStepChange(5);
+              onStepChange(4);
             }}
           >
             Concluir importação
@@ -1053,15 +1000,40 @@ export const BlockB: React.FC<BlockBProps> = ({
     );
   }
 
-  // ─── Step 5: Conquest Card ────────────────────────────────
-  if (step === 5) {
-    const md = milestoneData as { actual_income?: number; actual_expenses?: number; count_transactions?: number } | null;
+  // ─── Step 4: Conquest Card ────────────────────────────────
+  if (step === 4) {
+    const md = milestoneData as {
+      actual_income?: number;
+      actual_expenses?: number;
+      count_transactions?: number;
+    } | null;
     const metrics = md
       ? [
-          { label: 'Receita Identificada', value: md.actual_income != null && md.actual_income > 0 ? `R$ ${md.actual_income.toLocaleString('pt-BR')}` : 'Calculando...' },
-          { label: 'Despesa Identificada', value: md.actual_expenses != null && md.actual_expenses > 0 ? `R$ ${md.actual_expenses.toLocaleString('pt-BR')}` : 'Calculando...' },
-          { label: 'Bancos conectados', value: `${connectedCount || 1} banco${connectedCount !== 1 ? 's' : ''}` },
-          { label: 'Lançamentos importados', value: md.count_transactions != null && md.count_transactions > 0 ? `${md.count_transactions} lançamentos` : 'Em processamento...' },
+          {
+            label: 'Receita Identificada',
+            value:
+              md.actual_income != null && md.actual_income > 0
+                ? `R$ ${md.actual_income.toLocaleString('pt-BR')}`
+                : 'Calculando...',
+          },
+          {
+            label: 'Despesa Identificada',
+            value:
+              md.actual_expenses != null && md.actual_expenses > 0
+                ? `R$ ${md.actual_expenses.toLocaleString('pt-BR')}`
+                : 'Calculando...',
+          },
+          {
+            label: 'Bancos conectados',
+            value: `${connectedCount || 1} banco${connectedCount !== 1 ? 's' : ''}`,
+          },
+          {
+            label: 'Lançamentos importados',
+            value:
+              md.count_transactions != null && md.count_transactions > 0
+                ? `${md.count_transactions} lançamentos`
+                : 'Em processamento...',
+          },
         ]
       : [
           { label: 'Bancos conectados', value: `${connectedCount} banco${connectedCount !== 1 ? 's' : ''}` },

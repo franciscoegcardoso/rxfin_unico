@@ -45,7 +45,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({ children }) => {
       <div className="min-h-screen bg-background w-full max-w-full overflow-x-hidden flex flex-col">
         <AppSidebar />
         <main
-        className="w-full max-w-full px-4 py-6 overflow-x-hidden flex-1 pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] md:pb-6"
+        className="w-full max-w-full px-2 sm:px-3 py-6 overflow-x-hidden flex-1 pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] md:pb-6"
       >
           <BackLink to="/configuracoes-hub" label="Configurações" className="mb-4" />
           <PageTransition>

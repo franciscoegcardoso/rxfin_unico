@@ -80,7 +80,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
   compact = false,
   className,
 }) => {
-  const { getBrandByFipeId } = useBrandLogos();
+  const { getBrandByFipeId } = useBrandLogos(fipe.vehicleType);
   const vehicleAge = fipe.price 
     ? new Date().getFullYear() - fipe.price.AnoModelo 
     : 0;
@@ -292,6 +292,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
                 hint={!fipe.selectedBrand && !fipe.loading.brands ? "Selecione a marca do veículo" : undefined}
               >
                 <BrandSearchSelect
+                  vehicleType={fipe.vehicleType}
                   fipeBrands={fipe.brands}
                   value={fipe.selectedBrand}
                   onValueChange={fipe.setSelectedBrand}
@@ -453,7 +454,7 @@ export const VehicleFipeSelector: React.FC<VehicleFipeSelectorProps> = ({
                               const brand = getBrandByFipeId(String(fipe.selectedBrand));
                               return (
                                 <BrandLogo
-                                  url={brand?.logo_url}
+                                  url={brand?.logo_path ?? undefined}
                                   name={fipe.price.Marca}
                                   className="h-8 w-8"
                                 />

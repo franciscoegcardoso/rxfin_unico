@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,14 @@ import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { cn } from '@/lib/utils';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface BlockAProps {
   step: number;
@@ -24,77 +32,33 @@ interface ProfileAnswers {
   controlLevel: 'nao_acompanho' | 'as_vezes' | 'controlo_bem' | null;
 }
 
-interface RpcCategoryRow {
-  key: string;
+type IncomeItemRow = {
+  id: string;
   name: string;
-  icon?: string;
-}
+  method: string;
+  enabled: boolean;
+  default_item_id: string | null;
+  order_index: number;
+};
 
-function parseCategories(data: unknown): { income: RpcCategoryRow[]; expense: RpcCategoryRow[] } {
-  const p = data as Record<string, unknown> | null;
-  if (!p) return { income: [], expense: [] };
-  const inc = Array.isArray(p.income) ? p.income : [];
-  const exp = Array.isArray(p.expense) ? p.expense : [];
-  const mapRow = (c: Record<string, unknown>): RpcCategoryRow | null => {
-    const key = String(c.key ?? c.id ?? c.category_id ?? '').trim();
-    if (!key) return null;
-    const name = String(c.name ?? c.category_name ?? 'Categoria');
-    const icon = typeof c.icon === 'string' ? c.icon : undefined;
-    return { key, name, icon };
-  };
-  return {
-    income: inc
-      .map((x) => mapRow(x as Record<string, unknown>))
-      .filter((r): r is RpcCategoryRow => r != null),
-    expense: exp
-      .map((x) => mapRow(x as Record<string, unknown>))
-      .filter((r): r is RpcCategoryRow => r != null),
-  };
-}
+type ExpenseItemRow = {
+  id: string;
+  category_id: string;
+  category_name: string;
+  name: string;
+  enabled: boolean;
+  payment_method: string;
+  order_index: number;
+};
 
-function formatBRLInput(n: number) {
-  if (n <= 0) return '';
-  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-}
-
-function CategoryAmountRow({
-  icon,
-  label,
-  value,
-  onChange,
-}: {
-  icon: string;
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  const handleChange = (raw: string) => {
-    const digits = raw.replace(/\D/g, '');
-    if (!digits) {
-      onChange(0);
-      return;
-    }
-    onChange(Number(digits) / 100);
-  };
-
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-      <span className="text-xl shrink-0 w-9 text-center">{icon || '•'}</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-      </div>
-      <div className="w-[140px] shrink-0">
-        <Input
-          inputMode="numeric"
-          placeholder="R$ 0,00"
-          className="text-right tabular-nums text-sm h-9"
-          value={formatBRLInput(value)}
-          onChange={(e) => handleChange(e.target.value)}
-          onFocus={(e) => e.target.select()}
-        />
-      </div>
-    </div>
-  );
+function groupExpenseByCategory(items: ExpenseItemRow[]): Map<string, ExpenseItemRow[]> {
+  const m = new Map<string, ExpenseItemRow[]>();
+  for (const it of items) {
+    const k = it.category_name?.trim() || 'Outros';
+    if (!m.has(k)) m.set(k, []);
+    m.get(k)!.push(it);
+  }
+  return m;
 }
 
 const PROFILE_QUESTIONS: Array<{
@@ -177,36 +141,142 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [localAccountType, setLocalAccountType] = useState<'individual' | 'shared'>(() =>
     (config.accountType as 'individual' | 'shared') ?? 'individual'
   );
-  const [categoriesBundle, setCategoriesBundle] = useState<{
-    income: RpcCategoryRow[];
-    expense: RpcCategoryRow[];
-  } | null>(null);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [categoriesError, setCategoriesError] = useState<string | null>(null);
-  const [incomeValues, setIncomeValues] = useState<Record<string, number>>({});
-  const [expenseValues, setExpenseValues] = useState<Record<string, number>>({});
   const [savingBlockA, setSavingBlockA] = useState(false);
 
+  // A3 – receitas (user_income_items)
+  const [incomeItems, setIncomeItems] = useState<IncomeItemRow[]>([]);
+  const [incomeItemsLoading, setIncomeItemsLoading] = useState(false);
+  const [addIncomeOpen, setAddIncomeOpen] = useState(false);
+  const [newIncomeName, setNewIncomeName] = useState('');
+  const [newIncomeMethod, setNewIncomeMethod] = useState('Transferência');
+
+  // A4a / A4b – despesas (user_expense_items)
+  const [expenseItems, setExpenseItems] = useState<ExpenseItemRow[]>([]);
+  const [expenseLoading, setExpenseLoading] = useState(false);
+  const [a4bGroupIndex, setA4bGroupIndex] = useState(0);
+  const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [newGroupCategory, setNewGroupCategory] = useState('');
+  const [newGroupItemName, setNewGroupItemName] = useState('');
+  const [addExpenseItemOpen, setAddExpenseItemOpen] = useState(false);
+  const [a4bNewItemName, setA4bNewItemName] = useState('');
+
+  const expenseByCategory = useMemo(() => groupExpenseByCategory(expenseItems), [expenseItems]);
+
+  const selectedExpenseGroups = useMemo(() => {
+    return [...expenseByCategory.entries()].filter(([, rows]) => rows.some((r) => r.enabled));
+  }, [expenseByCategory]);
+
+  const persistA4bIndex = useCallback(
+    (idx: number) => {
+      void supabase.rpc('save_onboarding_draft' as never, {
+        p_key: 'a4b_current_group_index',
+        p_value: idx,
+      } as never);
+      onSaveDraft('a4b_current_group_index', idx);
+    },
+    [onSaveDraft],
+  );
+
   useEffect(() => {
+    if (step !== 3 || !user?.id) return;
     let cancelled = false;
     (async () => {
-      setCategoriesLoading(true);
-      setCategoriesError(null);
-      const { data, error } = await supabase.rpc('get_onboarding_categories');
+      setIncomeItemsLoading(true);
+      const [{ data: rows }, draftRpc] = await Promise.all([
+        supabase
+          .from('user_income_items')
+          .select('id, name, method, enabled, default_item_id, order_index')
+          .eq('user_id', user.id)
+          .order('order_index'),
+        supabase.rpc('get_onboarding_draft' as never),
+      ]);
       if (cancelled) return;
-      if (error) {
-        console.error('[BlockA] get_onboarding_categories', error);
-        setCategoriesError('Não foi possível carregar categorias. Tente novamente.');
-        setCategoriesBundle({ income: [], expense: [] });
-      } else {
-        setCategoriesBundle(parseCategories(data));
+      setIncomeItems((rows ?? []) as IncomeItemRow[]);
+
+      const draft = draftRpc.data as Record<string, unknown> | null;
+      const draftIds = draft?.a3_income_ids as string[] | undefined;
+      if (draftIds?.length && rows?.length) {
+        const allow = new Set(draftIds);
+        for (const r of rows) {
+          const want = allow.has(r.id);
+          if (r.enabled !== want) {
+            await supabase
+              .from('user_income_items')
+              .update({ enabled: want, updated_at: new Date().toISOString() })
+              .eq('id', r.id)
+              .eq('user_id', user.id);
+          }
+        }
+        const refreshed = rows.map((r) => ({ ...r, enabled: allow.has(r.id) }));
+        setIncomeItems(refreshed as IncomeItemRow[]);
       }
-      setCategoriesLoading(false);
+      setIncomeItemsLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [step, user?.id]);
+
+  useEffect(() => {
+    if (step !== 4 && step !== 5) return;
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      setExpenseLoading(true);
+      const { data: rows } = await supabase
+        .from('user_expense_items')
+        .select('id, category_id, category_name, name, enabled, payment_method, order_index')
+        .eq('user_id', user.id)
+        .order('order_index');
+      if (cancelled) return;
+      setExpenseItems((rows ?? []) as ExpenseItemRow[]);
+
+      if (step === 5) {
+        const { data: draft } = await supabase.rpc('get_onboarding_draft' as never);
+        const d = draft as Record<string, unknown> | null;
+        const saved =
+          typeof d?.a4b_current_group_index === 'number'
+            ? d.a4b_current_group_index
+            : typeof d?.a4b_current_group_index === 'string'
+              ? parseInt(String(d.a4b_current_group_index), 10)
+              : 0;
+        const groups = [...groupExpenseByCategory((rows ?? []) as ExpenseItemRow[]).entries()].filter(
+          ([, r]) => r.some((x) => x.enabled),
+        );
+        const idx = Number.isFinite(saved) ? Math.min(Math.max(0, saved), Math.max(0, groups.length - 1)) : 0;
+        setA4bGroupIndex(idx);
+      }
+      setExpenseLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, user?.id]);
+
+  useEffect(() => {
+    if (step !== 6 || !user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const [{ data: inc }, { data: exp }] = await Promise.all([
+        supabase
+          .from('user_income_items')
+          .select('id, name, method, enabled, default_item_id, order_index')
+          .eq('user_id', user.id)
+          .order('order_index'),
+        supabase
+          .from('user_expense_items')
+          .select('id, category_id, category_name, name, enabled, payment_method, order_index')
+          .eq('user_id', user.id)
+          .order('order_index'),
+      ]);
+      if (cancelled) return;
+      if (inc?.length) setIncomeItems(inc as IncomeItemRow[]);
+      if (exp?.length) setExpenseItems(exp as ExpenseItemRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, user?.id]);
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
@@ -593,19 +663,58 @@ export const BlockA: React.FC<BlockAProps> = ({
     );
   }
 
-  // ─── Step 3: Receitas (valores por categoria) ─────────────────────
+  // ─── Step 3: Linhas de receita (user_income_items) ────────────────
   if (step === 3) {
-    if (categoriesLoading || !categoriesBundle) {
+    if (incomeItemsLoading) {
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <RXFinLoadingSpinner size={48} />
-          <p className="text-sm text-muted-foreground">Carregando categorias de receita...</p>
+          <p className="text-sm text-muted-foreground">Carregando suas receitas...</p>
         </div>
       );
     }
 
-    const incomeRows = categoriesBundle.income;
-    const hasIncomePositive = Object.values(incomeValues).some((v) => v > 0);
+    const toggleIncomeItem = async (item: IncomeItemRow) => {
+      if (!user?.id) return;
+      const next = !item.enabled;
+      const { error } = await supabase
+        .from('user_income_items')
+        .update({ enabled: next, updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+        .eq('user_id', user.id);
+      if (error) {
+        toast.error('Não foi possível atualizar a receita.');
+        return;
+      }
+      const updated = incomeItems.map((x) => (x.id === item.id ? { ...x, enabled: next } : x));
+      setIncomeItems(updated);
+      const enabledIds = updated.filter((x) => x.enabled).map((x) => x.id);
+      onSaveDraft('a3_income_ids', enabledIds);
+    };
+
+    const submitNewIncome = async () => {
+      if (!user?.id || !newIncomeName.trim()) return;
+      const { error } = await supabase.from('user_income_items').insert({
+        user_id: user.id,
+        name: newIncomeName.trim(),
+        method: newIncomeMethod.trim() || 'Outros',
+        enabled: true,
+        order_index: 999,
+      });
+      if (error) {
+        toast.error('Erro ao criar receita.');
+        return;
+      }
+      const { data: rows } = await supabase
+        .from('user_income_items')
+        .select('id, name, method, enabled, default_item_id, order_index')
+        .eq('user_id', user.id)
+        .order('order_index');
+      setIncomeItems((rows ?? []) as IncomeItemRow[]);
+      setNewIncomeName('');
+      setAddIncomeOpen(false);
+      toast.success('Receita adicionada');
+    };
 
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -620,67 +729,161 @@ export const BlockA: React.FC<BlockAProps> = ({
             Suas receitas
           </p>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Quanto entra por mês?
+            Quais entradas fazem parte da sua vida?
           </h2>
           <p className="text-sm text-muted-foreground">
-            Informe valores aproximados em reais. Você poderá refinar depois com Open Finance ou extratos.
+            Ative as linhas que você usa. Valores reais virão do Open Finance no próximo nível.
           </p>
         </div>
 
-        {categoriesError && (
-          <p className="text-sm text-destructive mb-4">{categoriesError}</p>
-        )}
-
-        {incomeRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground mb-4">
-            Nenhuma categoria de receita disponível. Avance para continuar — os dados poderão ser
-            ajustados depois.
-          </p>
-        ) : (
-          <div className="space-y-2 mb-4">
-            {incomeRows.map((row) => (
-              <CategoryAmountRow
-                key={row.key}
-                icon={row.icon ?? '💰'}
-                label={row.name}
-                value={incomeValues[row.key] ?? 0}
-                onChange={(v) =>
-                  setIncomeValues((prev) => ({
-                    ...prev,
-                    [row.key]: v,
-                  }))
-                }
-              />
-            ))}
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          {incomeItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => void toggleIncomeItem(item)}
+              className={cn(
+                'text-left p-4 rounded-xl border-2 transition-all',
+                item.enabled
+                  ? 'border-emerald-500 bg-emerald-500/5'
+                  : 'border-border bg-card hover:border-primary/40',
+              )}
+            >
+              <p className="text-sm font-semibold text-foreground">{item.name}</p>
+              <p className="text-xs text-muted-foreground mt-1">{item.method}</p>
+              <p className="text-[10px] font-medium text-muted-foreground mt-2">
+                {item.enabled ? 'Ativa · toque para desativar' : 'Inativa · toque para ativar'}
+              </p>
+            </button>
+          ))}
+        </div>
 
         <Button
-          variant="hero"
-          size="lg"
-          className="w-full"
-          disabled={incomeRows.length > 0 && !hasIncomePositive}
-          onClick={() => onStepChange(4)}
+          type="button"
+          variant="outline"
+          className="w-full mb-4"
+          onClick={() => setAddIncomeOpen(true)}
         >
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar receita
+        </Button>
+
+        <Button variant="hero" size="lg" className="w-full" onClick={() => onStepChange(4)}>
           Continuar <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
+
+        <Dialog open={addIncomeOpen} onOpenChange={setAddIncomeOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Nova receita</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div>
+                <Label htmlFor="inc-name">Nome</Label>
+                <Input
+                  id="inc-name"
+                  value={newIncomeName}
+                  onChange={(e) => setNewIncomeName(e.target.value)}
+                  placeholder="Ex: Salário, Freelance..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="inc-method">Método / forma</Label>
+                <Input
+                  id="inc-method"
+                  value={newIncomeMethod}
+                  onChange={(e) => setNewIncomeMethod(e.target.value)}
+                  placeholder="Transferência, PIX..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddIncomeOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void submitNewIncome()} disabled={!newIncomeName.trim()}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
-  // ─── Step 4: Despesas (valores por categoria) ───────────────────────
+  // ─── Step 4: A4a grupos de despesa ────────────────────────────────
   if (step === 4) {
-    if (categoriesLoading || !categoriesBundle) {
+    if (expenseLoading) {
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <RXFinLoadingSpinner size={48} />
-          <p className="text-sm text-muted-foreground">Carregando categorias de despesa...</p>
+          <p className="text-sm text-muted-foreground">Carregando grupos de despesa...</p>
         </div>
       );
     }
 
-    const expenseRows = categoriesBundle.expense;
-    const hasExpensePositive = Object.values(expenseValues).some((v) => v > 0);
+    const allGroups = [...expenseByCategory.entries()];
+
+    const toggleExpenseGroup = async (categoryName: string, rows: ExpenseItemRow[]) => {
+      if (!user?.id) return;
+      const anyOn = rows.some((r) => r.enabled);
+      const next = !anyOn;
+      for (const r of rows) {
+        if (r.enabled === next) continue;
+        await supabase
+          .from('user_expense_items')
+          .update({ enabled: next, updated_at: new Date().toISOString() })
+          .eq('id', r.id)
+          .eq('user_id', user.id);
+      }
+      setExpenseItems((prev) =>
+        prev.map((e) => (e.category_name === categoryName ? { ...e, enabled: next } : e)),
+      );
+    };
+
+    const submitNewGroup = async () => {
+      if (!user?.id || !newGroupCategory.trim() || !newGroupItemName.trim()) return;
+      const categoryId = crypto.randomUUID();
+      const { error } = await supabase.from('user_expense_items').insert({
+        user_id: user.id,
+        category_id: categoryId,
+        category_name: newGroupCategory.trim(),
+        name: newGroupItemName.trim(),
+        expense_type: 'variable_non_essential',
+        expense_nature: 'variable',
+        recurrence_type: 'monthly',
+        is_recurring: true,
+        payment_method: 'credit_card',
+        enabled: true,
+        order_index: 999,
+      });
+      if (error) {
+        toast.error('Erro ao criar grupo.');
+        return;
+      }
+      const { data: rows } = await supabase
+        .from('user_expense_items')
+        .select('id, category_id, category_name, name, enabled, payment_method, order_index')
+        .eq('user_id', user.id)
+        .order('order_index');
+      setExpenseItems((rows ?? []) as ExpenseItemRow[]);
+      setNewGroupCategory('');
+      setNewGroupItemName('');
+      setAddGroupOpen(false);
+      toast.success('Grupo criado');
+    };
+
+    const goA4b = () => {
+      const names = selectedExpenseGroups.map(([k]) => k);
+      void supabase.rpc('save_onboarding_draft' as never, {
+        p_key: 'a4a_groups',
+        p_value: names,
+      } as never);
+      onSaveDraft('a4a_groups', names);
+      persistA4bIndex(0);
+      setA4bGroupIndex(0);
+      onStepChange(5);
+    };
 
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -692,60 +895,286 @@ export const BlockA: React.FC<BlockAProps> = ({
 
         <div className="mb-6">
           <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
-            Suas despesas
+            Grupos de despesa
           </p>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Quanto sai por mês?
+            Onde você costuma gastar?
           </h2>
           <p className="text-sm text-muted-foreground">
-            Use totais por categoria (aluguel, alimentação, etc.). Estimativas já ajudam o Raio-X.
+            Toque no grupo para ativar ou desativar todos os itens daquela categoria. Depois você
+            detalha cada um.
           </p>
         </div>
 
-        {categoriesError && (
-          <p className="text-sm text-destructive mb-4">{categoriesError}</p>
-        )}
-
-        {expenseRows.length === 0 ? (
+        {allGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground mb-4">
-            Nenhuma categoria de despesa disponível. Avance para o resumo.
+            Nenhum grupo encontrado. Adicione um grupo ou avance.
           </p>
         ) : (
-          <div className="space-y-2 mb-4">
-            {expenseRows.map((row) => (
-              <CategoryAmountRow
-                key={row.key}
-                icon={row.icon ?? '📦'}
-                label={row.name}
-                value={expenseValues[row.key] ?? 0}
-                onChange={(v) =>
-                  setExpenseValues((prev) => ({
-                    ...prev,
-                    [row.key]: v,
-                  }))
-                }
-              />
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+            {allGroups.map(([categoryName, rows]) => {
+              const on = rows.some((r) => r.enabled);
+              return (
+                <button
+                  key={categoryName}
+                  type="button"
+                  onClick={() => void toggleExpenseGroup(categoryName, rows)}
+                  className={cn(
+                    'text-left p-4 rounded-xl border-2 transition-all',
+                    on ? 'border-emerald-500 bg-emerald-500/5' : 'border-border bg-card opacity-80',
+                  )}
+                >
+                  <p className="text-sm font-semibold text-foreground">{categoryName}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {rows.length} item(ns) · {on ? 'ativo' : 'inativo'}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         )}
 
-        <Button
-          variant="hero"
-          size="lg"
-          className="w-full"
-          disabled={expenseRows.length > 0 && !hasExpensePositive}
-          onClick={() => onStepChange(5)}
-        >
-          Continuar <ArrowRight className="ml-2 h-5 w-5" />
+        <Button type="button" variant="outline" className="w-full mb-4" onClick={() => setAddGroupOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar grupo
         </Button>
+
+        <Button variant="hero" size="lg" className="w-full" onClick={goA4b}>
+          Próxima etapa: detalhar grupos <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+
+        <Dialog open={addGroupOpen} onOpenChange={setAddGroupOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo grupo de despesa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div>
+                <Label>Nome da categoria</Label>
+                <Input
+                  value={newGroupCategory}
+                  onChange={(e) => setNewGroupCategory(e.target.value)}
+                  placeholder="Ex: Moradia"
+                />
+              </div>
+              <div>
+                <Label>Primeiro item</Label>
+                <Input
+                  value={newGroupItemName}
+                  onChange={(e) => setNewGroupItemName(e.target.value)}
+                  placeholder="Ex: Aluguel"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddGroupOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => void submitNewGroup()}
+                disabled={!newGroupCategory.trim() || !newGroupItemName.trim()}
+              >
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
 
-  // ─── Step 5: Conquest Card + persistir Block A ─────────────────────
+  // ─── Step 5: A4b itens por grupo ──────────────────────────────────
   if (step === 5) {
-    const incomeSum = Object.values(incomeValues).reduce((a, b) => a + b, 0);
-    const expenseSum = Object.values(expenseValues).reduce((a, b) => a + b, 0);
+    if (expenseLoading) {
+      return (
+        <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
+          <RXFinLoadingSpinner size={48} />
+          <p className="text-sm text-muted-foreground">Carregando itens...</p>
+        </div>
+      );
+    }
+
+    const groups = selectedExpenseGroups;
+
+    if (groups.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto py-8 text-center space-y-4">
+          <p className="text-muted-foreground">Nenhum grupo ativo. Volte e selecione categorias.</p>
+          <Button variant="hero" onClick={() => onStepChange(4)}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar aos grupos
+          </Button>
+        </div>
+      );
+    }
+
+    const safeIdx = Math.min(Math.max(0, a4bGroupIndex), groups.length - 1);
+    const current = groups[safeIdx];
+    const categoryName = current[0];
+    const rows = current[1];
+    const template = rows[0];
+
+    const toggleExpenseRow = async (row: ExpenseItemRow) => {
+      if (!user?.id) return;
+      const next = !row.enabled;
+      const { error } = await supabase
+        .from('user_expense_items')
+        .update({ enabled: next, updated_at: new Date().toISOString() })
+        .eq('id', row.id)
+        .eq('user_id', user.id);
+      if (error) {
+        toast.error('Erro ao atualizar item.');
+        return;
+      }
+      setExpenseItems((prev) => prev.map((e) => (e.id === row.id ? { ...e, enabled: next } : e)));
+    };
+
+    const addItemInGroup = async () => {
+      if (!user?.id || !template || !a4bNewItemName.trim()) return;
+      const { error } = await supabase.from('user_expense_items').insert({
+        user_id: user.id,
+        category_id: template.category_id,
+        category_name: template.category_name,
+        name: a4bNewItemName.trim(),
+        expense_type: 'variable_non_essential',
+        expense_nature: 'variable',
+        recurrence_type: 'monthly',
+        is_recurring: true,
+        payment_method: template.payment_method || 'credit_card',
+        enabled: true,
+        order_index: 999,
+      });
+      if (error) {
+        toast.error('Erro ao adicionar item.');
+        return;
+      }
+      const { data: refreshed } = await supabase
+        .from('user_expense_items')
+        .select('id, category_id, category_name, name, enabled, payment_method, order_index')
+        .eq('user_id', user.id)
+        .order('order_index');
+      setExpenseItems((refreshed ?? []) as ExpenseItemRow[]);
+      setA4bNewItemName('');
+      setAddExpenseItemOpen(false);
+      toast.success('Item adicionado');
+    };
+
+    const goPrevGroup = () => {
+      if (safeIdx <= 0) {
+        onStepChange(4);
+        return;
+      }
+      const n = safeIdx - 1;
+      setA4bGroupIndex(n);
+      persistA4bIndex(n);
+    };
+
+    const goNextGroup = () => {
+      if (safeIdx >= groups.length - 1) {
+        onStepChange(6);
+        return;
+      }
+      const n = safeIdx + 1;
+      setA4bGroupIndex(n);
+      persistA4bIndex(n);
+    };
+
+    return (
+      <div className="max-w-2xl mx-auto py-4">
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" size="sm" onClick={goPrevGroup}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+          <p className="text-xs font-medium text-muted-foreground">
+            Grupo {safeIdx + 1} de {groups.length}
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-xs font-medium text-primary uppercase tracking-wide mb-1">
+            Detalhar despesas
+          </p>
+          <h2 className="text-2xl font-bold text-foreground mb-1">{categoryName}</h2>
+          <p className="text-sm text-muted-foreground">
+            Ative os itens que aplicam e ajuste conforme sua rotina.
+          </p>
+        </div>
+
+        <div className="space-y-2 mb-4">
+          {rows.map((row) => (
+            <button
+              key={row.id}
+              type="button"
+              onClick={() => void toggleExpenseRow(row)}
+              className={cn(
+                'w-full text-left p-3.5 rounded-xl border-2 transition-all flex items-center justify-between gap-2',
+                row.enabled
+                  ? 'border-emerald-500 bg-emerald-500/5'
+                  : 'border-border bg-card opacity-80',
+              )}
+            >
+              <div>
+                <p className="text-sm font-semibold text-foreground">{row.name}</p>
+                <p className="text-xs text-muted-foreground">{row.payment_method}</p>
+              </div>
+              <span className="text-[10px] text-muted-foreground shrink-0">
+                {row.enabled ? 'Ativo' : 'Inativo'}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full mb-4"
+          onClick={() => setAddExpenseItemOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Novo item neste grupo
+        </Button>
+
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={goPrevGroup}>
+            ← Grupo anterior
+          </Button>
+          <Button variant="hero" className="flex-1" onClick={goNextGroup}>
+            {safeIdx >= groups.length - 1 ? (
+              <>Concluir <ArrowRight className="ml-2 h-4 w-4" /></>
+            ) : (
+              <>Próximo grupo <ArrowRight className="ml-2 h-4 w-4" /></>
+            )}
+          </Button>
+        </div>
+
+        <Dialog open={addExpenseItemOpen} onOpenChange={setAddExpenseItemOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo item em {categoryName}</DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              <Label>Nome do item</Label>
+              <Input
+                value={a4bNewItemName}
+                onChange={(e) => setA4bNewItemName(e.target.value)}
+                placeholder="Ex: Internet, Condomínio..."
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddExpenseItemOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={() => void addItemInGroup()} disabled={!a4bNewItemName.trim()}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // ─── Step 6: Conquest + save_onboarding_block_a ─────────────────
+  if (step === 6) {
     const goalLabels: Record<string, string> = {
       reserva: 'Montar reserva de emergência',
       dividas: 'Quitar dívidas',
@@ -761,20 +1190,18 @@ export const BlockA: React.FC<BlockAProps> = ({
           ? '1 dependente'
           : '2 ou mais';
 
-    const fmtMoney = (n: number) =>
-      n > 0
-        ? `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mês`
-        : '—';
+    const incomeActive = incomeItems.filter((i) => i.enabled).length;
+    const expenseActive = expenseItems.filter((i) => i.enabled).length;
 
     const metrics = [
-      { label: 'Receitas informadas', value: fmtMoney(incomeSum) },
-      { label: 'Despesas informadas', value: fmtMoney(expenseSum) },
+      { label: 'Linhas de receita ativas', value: String(incomeActive) },
+      { label: 'Linhas de despesa ativas', value: String(expenseActive) },
       { label: 'Seu principal objetivo', value: goalLabels[profile.mainGoal ?? 'outro'] ?? '—' },
       { label: 'Dependentes', value: dependentsLabel },
     ];
 
     const insight =
-      'Seu perfil e seus números iniciais estão registrados. Na próxima etapa você pode conectar seus bancos para refinar tudo com dados reais.';
+      'Seu perfil e estrutura de receitas/despesas estão registrados. No próximo nível você conecta bancos para dados reais.';
 
     const handleVerRaioX = async () => {
       if (!user?.id) {
@@ -783,25 +1210,18 @@ export const BlockA: React.FC<BlockAProps> = ({
       }
       setSavingBlockA(true);
       try {
-        const incomeData = Object.entries(incomeValues)
-          .filter(([, v]) => v > 0)
-          .map(([key, value]) => ({ key, value }));
-        const expenseData = Object.entries(expenseValues)
-          .filter(([, v]) => v > 0)
-          .map(([key, value]) => ({ key, value }));
-
         const { error } = await supabase.rpc('save_onboarding_block_a', {
-          p_income_data: incomeData as never,
-          p_expense_data: expenseData as never,
+          p_income_data: [] as never,
+          p_expense_data: [] as never,
         });
         if (error) throw error;
 
         const { error: trackErr } = await supabase.rpc('track_onboarding_event', {
           p_event_name: 'block_a_completed',
-          p_step: 5,
+          p_step: 6,
           p_metadata: {
-            income_count: incomeData.length,
-            expense_count: expenseData.length,
+            income_lines_active: incomeActive,
+            expense_lines_active: expenseActive,
           },
         } as never);
         if (trackErr) console.warn('[BlockA] track_onboarding_event', trackErr);

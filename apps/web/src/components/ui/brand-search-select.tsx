@@ -1,12 +1,13 @@
-import * as React from "react";
-import { Check, ChevronsUpDown, Loader2, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useBrandLogos } from "@/hooks/useBrandLogos";
-import { BrandLogo } from "@/components/ui/brand-logo";
+import * as React from 'react';
+import { Check, ChevronsUpDown, Loader2, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useBrandLogos } from '@/hooks/useBrandLogos';
+import { BrandLogo } from '@/components/ui/brand-logo';
+import type { VehicleType } from '@/hooks/useFipe';
 
 interface BrandSearchSelectProps {
   value?: string;
@@ -15,53 +16,56 @@ interface BrandSearchSelectProps {
   searchPlaceholder?: string;
   disabled?: boolean;
   loading?: boolean;
+  vehicleType?: VehicleType;
   fipeBrands?: Array<{ codigo: string; nome: string }>;
 }
 
 interface MergedBrand {
   value: string;
   label: string;
-  logoUrl?: string;
+  logoUrl: string | null;
 }
 
 export function BrandSearchSelect({
   value,
   onValueChange,
-  placeholder = "Selecione a marca...",
-  searchPlaceholder = "Buscar marca...",
+  placeholder = 'Selecione a marca...',
+  searchPlaceholder = 'Buscar marca...',
   disabled = false,
   loading: externalLoading = false,
+  vehicleType,
   fipeBrands = [],
 }: BrandSearchSelectProps) {
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
-  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId } = useBrandLogos();
+  const [search, setSearch] = React.useState('');
+
+  const { brands: localBrands, loading: brandsLoading, getBrandByFipeId } =
+    useBrandLogos(vehicleType);
 
   const mergedBrands = React.useMemo((): MergedBrand[] => {
     if (fipeBrands.length === 0) {
-      return localBrands.map(b => ({
-        value: b.fipe_id,
-        label: b.nome,
-        logoUrl: b.logo_url || undefined,
+      return localBrands.map((b) => ({
+        value: String(b.brand_id),
+        label: b.brand_name,
+        logoUrl: b.logo_path ?? null,
       }));
     }
-    return fipeBrands.map(fb => {
-      // getBrandByFipeId aceita "080", "80" ou 80 — normaliza internamente
+    return fipeBrands.map((fb) => {
       const local = getBrandByFipeId(fb.codigo);
       return {
         value: fb.codigo,
         label: fb.nome,
-        logoUrl: local?.logo_url || undefined,
+        logoUrl: local?.logo_path ?? null,
       };
     });
   }, [fipeBrands, localBrands, getBrandByFipeId]);
 
-  const selectedBrand = mergedBrands.find(b => b.value === value);
+  const selectedBrand = mergedBrands.find((b) => b.value === value);
 
   const filteredBrands = React.useMemo(() => {
     if (!search) return mergedBrands;
     const s = search.toLowerCase();
-    return mergedBrands.filter(b => b.label.toLowerCase().includes(s));
+    return mergedBrands.filter((b) => b.label.toLowerCase().includes(s));
   }, [mergedBrands, search]);
 
   const isLoading = externalLoading || brandsLoading;
@@ -83,7 +87,7 @@ export function BrandSearchSelect({
             </div>
           ) : selectedBrand ? (
             <div className="flex items-center gap-2 min-w-0">
-              <BrandLogo url={selectedBrand.logoUrl} name={selectedBrand.label} size="sm" />
+              <BrandLogo url={selectedBrand.logoUrl ?? undefined} name={selectedBrand.label} size="sm" />
               <span className="truncate">{selectedBrand.label}</span>
             </div>
           ) : (
@@ -98,7 +102,7 @@ export function BrandSearchSelect({
           <Input
             placeholder={searchPlaceholder}
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-10"
           />
         </div>
@@ -109,18 +113,28 @@ export function BrandSearchSelect({
             </div>
           ) : (
             <div className="p-1">
-              {filteredBrands.map(brand => (
+              {filteredBrands.map((brand) => (
                 <button
                   key={brand.value}
-                  onClick={() => { onValueChange(brand.value); setOpen(false); setSearch(""); }}
+                  type="button"
+                  onClick={() => {
+                    onValueChange(brand.value);
+                    setOpen(false);
+                    setSearch('');
+                  }}
                   className={cn(
-                    "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-2 text-sm outline-none transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    value === brand.value && "bg-accent"
+                    'relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-2 text-sm outline-none transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    value === brand.value && 'bg-accent',
                   )}
                 >
-                  <Check className={cn("mr-2 h-4 w-4 shrink-0", value === brand.value ? "opacity-100" : "opacity-0")} />
-                  <BrandLogo url={brand.logoUrl} name={brand.label} size="sm" />
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4 shrink-0',
+                      value === brand.value ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                  <BrandLogo url={brand.logoUrl ?? undefined} name={brand.label} size="sm" />
                   <span className="ml-2 truncate">{brand.label}</span>
                 </button>
               ))}

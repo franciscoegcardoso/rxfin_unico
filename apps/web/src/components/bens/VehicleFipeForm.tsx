@@ -45,6 +45,7 @@ export const VehicleFipeForm: React.FC<VehicleFipeFormProps> = ({
         <div className="space-y-2">
           <Label>Marca</Label>
           <BrandSearchSelect
+            vehicleType={fipe.vehicleType}
             fipeBrands={fipe.brands}
             value={fipe.selectedBrand}
             onValueChange={fipe.setSelectedBrand}
