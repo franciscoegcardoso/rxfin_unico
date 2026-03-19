@@ -1,6 +1,7 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, ScrollRestoration } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import { MobileMenuProvider } from "@/contexts/MobileMenuContext";
 import { ShellContext } from "./ShellContext";
 import { MobileShell } from "./MobileShell";
@@ -16,6 +17,7 @@ import { AccountNavigationGuard } from "@/components/account/AccountNavigationGu
  */
 export const AppShell: React.FC = () => {
   const { user } = useAuth();
+  usePageTracking();
   const isMobile = useIsMobile();
   const userName =
     (user?.user_metadata?.full_name as string) ||
@@ -27,6 +29,7 @@ export const AppShell: React.FC = () => {
     <ShellContext.Provider value={{ insideShell: true }}>
       <AccountNavigationGuard />
       <MobileMenuProvider>
+        <ScrollRestoration />
         {isMobile ? (
           <main id="main-content" className="min-h-screen">
             <MobileShell>
