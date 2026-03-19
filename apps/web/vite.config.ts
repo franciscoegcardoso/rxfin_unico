@@ -1,27 +1,35 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 
-// Plugin local: injeta <link rel="preload"> para as fontes Inter críticas
-// Roda em build time, depois que o Vite resolve os hashes reais
+// Plugin: injeta preloads de fontes Inter críticas após o build (fontes vêm do CSS, não do HTML)
 function preloadFontsPlugin() {
+  let outDir = "dist";
   return {
-    name: 'preload-fonts',
-    transformIndexHtml: {
-      order: 'post' as const,
-      handler(html: string) {
-        // Extrair os nomes reais das fontes do HTML gerado pelo Vite
-        const fontMatches = [...html.matchAll(/href="(\/assets\/inter-latin-[^"]+\.woff2)"/g)];
-        if (!fontMatches.length) return html;
-
-        const preloadTags = fontMatches
-          .slice(0, 4) // máximo 4 fontes — as mais críticas
-          .map(m => `  <link rel="preload" as="font" type="font/woff2" crossorigin href="${m[1]}" />`)
-          .join('\n');
-
-        return html.replace('</head>', `${preloadTags}\n</head>`);
+    name: 'preload-critical-fonts',
+    configResolved(config: { command: string; build?: { outDir: string } }) {
+      if (config.command === 'build' && config.build?.outDir) {
+        outDir = config.build.outDir;
       }
-    }
+    },
+    closeBundle() {
+      const assetsDir = path.resolve(__dirname, outDir, "assets");
+      if (!fs.existsSync(assetsDir)) return;
+      const files = fs.readdirSync(assetsDir);
+      const weights = ["400", "500", "600", "700"];
+      const fontFiles = weights
+        .map((w) => files.find((f) => f.match(new RegExp(`^inter-latin-${w}-normal-.+\\.woff2$`))))
+        .filter(Boolean) as string[];
+      if (!fontFiles.length) return;
+      const preloads = fontFiles
+        .map((f) => `  <link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/${f}" />`)
+        .join("\n");
+      const indexPath = path.resolve(__dirname, outDir, "index.html");
+      let html = fs.readFileSync(indexPath, "utf-8");
+      html = html.replace("</head>", `${preloads}\n</head>`);
+      fs.writeFileSync(indexPath, html);
+    },
   };
 }
 
