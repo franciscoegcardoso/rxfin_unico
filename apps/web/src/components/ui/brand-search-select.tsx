@@ -45,14 +45,13 @@ export function BrandSearchSelect({
         logoUrl: b.logo_url || undefined,
       }));
     }
-
     return fipeBrands.map(fb => {
-      // Lookup EXCLUSIVAMENTE por fipe_id — sem fallback por nome
-      const localBrand = getBrandByFipeId(fb.codigo);
+      // getBrandByFipeId aceita "080", "80" ou 80 — normaliza internamente
+      const local = getBrandByFipeId(fb.codigo);
       return {
         value: fb.codigo,
         label: fb.nome,
-        logoUrl: localBrand?.logo_url || undefined,
+        logoUrl: local?.logo_url || undefined,
       };
     });
   }, [fipeBrands, localBrands, getBrandByFipeId]);
@@ -64,12 +63,6 @@ export function BrandSearchSelect({
     const s = search.toLowerCase();
     return mergedBrands.filter(b => b.label.toLowerCase().includes(s));
   }, [mergedBrands, search]);
-
-  const handleSelect = (brandValue: string) => {
-    onValueChange(brandValue);
-    setOpen(false);
-    setSearch("");
-  };
 
   const isLoading = externalLoading || brandsLoading;
 
@@ -119,7 +112,7 @@ export function BrandSearchSelect({
               {filteredBrands.map(brand => (
                 <button
                   key={brand.value}
-                  onClick={() => handleSelect(brand.value)}
+                  onClick={() => { onValueChange(brand.value); setOpen(false); setSearch(""); }}
                   className={cn(
                     "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 px-2 text-sm outline-none transition-colors",
                     "hover:bg-accent hover:text-accent-foreground",

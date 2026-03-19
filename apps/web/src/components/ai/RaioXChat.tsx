@@ -99,6 +99,7 @@ export function RaioXChat() {
       return data as { full_name: string | null } | null;
     },
     enabled: isOpen && !!user?.id,
+    staleTime: 5 * 60 * 1000,
   });
   const firstName = profile?.full_name?.trim().split(/\s+/)[0] || (user?.user_metadata?.full_name as string)?.trim().split(/\s+/)[0] || 'você';
   const [isLoading, setIsLoading] = useState(false);

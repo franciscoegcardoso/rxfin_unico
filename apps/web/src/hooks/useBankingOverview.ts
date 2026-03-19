@@ -46,5 +46,6 @@ export function useBankingOverview() {
       return (data as BankingOverviewData) ?? null;
     },
     enabled: !!user?.id,
+    staleTime: 60 * 1000,
   });
 }

@@ -84,6 +84,9 @@ const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
 const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
 
+/** Paths que NÃO devem aparecer no menu (ex.: Cibélia é widget de chat flutuante, não item de navegação). */
+const HIDDEN_MENU_PATHS = ['/cibelia'];
+
 /** Ícones canônicos por path — recuperam ícones quando o banco não retorna (menu principal e itens de seções). */
 const ICON_BY_PATH: Record<string, LucideIcon> = {
   '/inicio': Home,
@@ -352,6 +355,7 @@ export function useNavMenuPages(): NavMenuData {
   const mainItems: NavMenuItem[] = pages
     .filter(page => page.group_slug === MAIN_NAV_GROUP_SLUG)
     .filter((page) => !isAlocacaoMainMenuPath(page.path)) // só em B&I > Investimentos, não no menu principal
+    .filter(page => !HIDDEN_MENU_PATHS.includes(page.path)) // Cibélia etc. — widget, não item de menu
     .filter(page => !isPageHiddenFromMenu(page))
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
@@ -394,6 +398,7 @@ export function useNavMenuPages(): NavMenuData {
   pages
     .filter(page => page.group_slug && !EXCLUDED_NAV_GROUP_SLUGS.includes(page.group_slug))
     .filter(page => !mainPathsSet.has(page.path)) // Não mostrar em dropdown se já está no menu principal
+    .filter(page => !HIDDEN_MENU_PATHS.includes(page.path)) // Cibélia etc. — widget, não item de menu
     .filter(page => !isPageHiddenFromMenu(page)) // Exclude hub pages and hidden titles from menu
     .filter(page => effectiveAdmin || isRouteEnabled(page.path)) // Admin bypasses feature preferences
     // Filter out unavailable pages that shouldn't be shown (unless admin)
@@ -498,7 +503,7 @@ export function useMobileMenuSections(): { sections: NavMenuSection[]; isLoading
       {
         path: '/bens-investimentos',
         label: 'Bens & Investimentos',
-        shortLabel: 'Bens & Inv.',
+        shortLabel: 'Bens & Investimentos',
         icon: TrendingUp,
         accessLevel: 'free',
         canAccessAsAdmin: true,

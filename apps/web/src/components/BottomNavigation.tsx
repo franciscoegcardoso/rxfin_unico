@@ -1,7 +1,7 @@
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Receipt, Calendar, List, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QuickActionsSheet } from '@/components/mobile/QuickActionsSheet';
 import { MoreMenuSheet } from '@/components/mobile/MoreMenuSheet';
 
@@ -14,20 +14,23 @@ const RIGHT_TABS = [
   { label: 'Planejamento', icon: Calendar, path: '/planejamento' },
 ];
 
+const ALL_TAB_PATHS = [...LEFT_TABS.map((t) => t.path), ...RIGHT_TABS.map((t) => t.path)];
+
 function NavTab({
-  to,
   icon: Icon,
   label,
   isActive,
+  onClick,
 }: {
-  to: string;
   icon: React.ElementType;
   label: string;
   isActive: boolean;
+  onClick: () => void;
 }) {
   return (
-    <Link
-      to={to}
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
         'relative flex flex-1 flex-col items-center justify-center gap-0.5 min-h-[56px] transition-colors duration-150',
         isActive ? 'text-primary' : 'text-muted-foreground'
@@ -45,17 +48,43 @@ function NavTab({
         aria-hidden
       />
       <span className="text-[10px] font-medium">{label}</span>
-    </Link>
+    </button>
   );
 }
 
 export function BottomNavigation() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + '/');
+
+  useEffect(() => {
+    const activeTab = ALL_TAB_PATHS.find(
+      (path) => location.pathname === path || location.pathname.startsWith(path + '/')
+    );
+    if (activeTab) {
+      try {
+        sessionStorage.setItem(`tab_last_${activeTab}`, location.pathname);
+      } catch {}
+    }
+  }, [location.pathname]);
+
+  const handleTabClick = (tabPath: string) => {
+    const isCurrentTab = location.pathname === tabPath || location.pathname.startsWith(tabPath + '/');
+    if (isCurrentTab) {
+      navigate(tabPath);
+    } else {
+      try {
+        const lastRoute = sessionStorage.getItem(`tab_last_${tabPath}`);
+        navigate(lastRoute ?? tabPath);
+      } catch {
+        navigate(tabPath);
+      }
+    }
+  };
 
   return (
     <>
@@ -64,18 +93,16 @@ export function BottomNavigation() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-center h-16 px-2">
-          {/* Esquerda: Início, Lançamentos */}
           {LEFT_TABS.map((tab) => (
             <NavTab
               key={tab.path}
-              to={tab.path}
               icon={tab.icon}
               label={tab.label}
               isActive={isActive(tab.path)}
+              onClick={() => handleTabClick(tab.path)}
             />
           ))}
 
-          {/* Centro: FAB (+) — atalho rápido */}
           <div className="flex-1 flex items-center justify-center">
             <button
               type="button"
@@ -89,14 +116,13 @@ export function BottomNavigation() {
             </button>
           </div>
 
-          {/* Direita: Planejamento, Mais */}
           {RIGHT_TABS.map((tab) => (
             <NavTab
               key={tab.path}
-              to={tab.path}
               icon={tab.icon}
               label={tab.label}
               isActive={isActive(tab.path)}
+              onClick={() => handleTabClick(tab.path)}
             />
           ))}
           <button

@@ -11,6 +11,7 @@ import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExpenseCategories } from '@/hooks/useDefaultParameters';
+import { useUserCategories } from '@/hooks/useUserCategories';
 import { ConsolidarTab } from '@/components/movimentacoes/ConsolidarTab';
 import { LancamentosTab } from '@/components/movimentacoes/LancamentosTab';
 import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
@@ -93,7 +94,12 @@ const CategoryAssignmentContent: React.FC<{
   const { data: consolidarData = [] } = useConsolidarEstabelecimentos(sourceFilter);
   const consolidarPendingCount = consolidarData.filter((r) => r.total_pendentes > 0).length;
   const { data: expenseCategories = [] } = useExpenseCategories();
+  const { data: userCats } = useUserCategories();
   const categoriesForConsolidar = useMemo(() => expenseCategories.map((c) => ({ id: c.id, name: c.name })), [expenseCategories]);
+  const categoriesL1 = useMemo(
+    () => (userCats?.expenseGroups ?? []).map((g) => ({ id: g.category_id, name: g.category_name })),
+    [userCats]
+  );
 
   // Filtros unificados (período, status, banco, categoria, cartão)
   const [period, setPeriod] = useState<PeriodFilterValue>('this_month');
@@ -332,7 +338,7 @@ const CategoryAssignmentContent: React.FC<{
               <LancamentosTab
                 source="card"
                 period={period}
-                categories={categoriesForConsolidar}
+                categories={categoriesL1}
                 statusFilter={status}
                 bankOrCardValue={cardValue}
                 categoryFilterValue={categoryValue}
@@ -350,7 +356,7 @@ const CategoryAssignmentContent: React.FC<{
               <LancamentosTab
                 source="bank"
                 period={period}
-                categories={categoriesForConsolidar}
+                categories={categoriesL1}
                 statusFilter={status}
                 bankOrCardValue={bankValue}
                 categoryFilterValue={categoryValue}

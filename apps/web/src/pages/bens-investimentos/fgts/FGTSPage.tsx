@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Wallet, Plus, Calendar, FileText, Smartphone, Globe, CreditCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { Button } from '@/components/ui/button';
 import {
   useFGTSAssets,
@@ -104,24 +105,19 @@ export default function FGTSPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="rounded-xl border border-border/80">
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo total</p>
-            <p className="mt-1 text-2xl font-bold text-primary tabular-nums">{formatCurrency(summary.total_balance)}</p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-xl border border-border/80">
-          <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              Última atualização
-            </p>
-            <p className="mt-1 text-lg font-semibold text-foreground tabular-nums">
-              {summary.last_update_month ? formatMonth(summary.last_update_month) : '—'}
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+        <HeaderMetricCard
+          label="Saldo total"
+          value={formatCurrency(summary.total_balance)}
+          variant="positive"
+          icon={<Wallet className="h-4 w-4" />}
+        />
+        <HeaderMetricCard
+          label="Última atualização"
+          value={summary.last_update_month ? formatMonth(summary.last_update_month) : '—'}
+          variant="neutral"
+          icon={<Calendar className="h-4 w-4" />}
+        />
       </div>
 
       <section>

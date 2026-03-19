@@ -8,7 +8,8 @@ import { ScoreGauge } from '@/components/alocacao/ScoreGauge';
 import { DriftCard } from '@/components/alocacao/DriftCard';
 import { PortfolioTierBadge } from '@/components/alocacao/PortfolioTierBadge';
 import { PersonaOnboarding } from '@/components/alocacao/PersonaOnboarding';
-import { GoalProgressBar } from '@/components/alocacao/GoalProgressBar';
+import { GoalCard } from '@/components/alocacao/GoalCard';
+import { SuggestionCard } from '@/components/alocacao/SuggestionCard';
 import type { AssetClass } from '@/types/allocation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -140,9 +141,16 @@ export default function AlocacaoPage() {
         <CardContent className="pt-6 pb-6 flex flex-col items-center">
           <ScoreGauge score={hasSnapshot ? score : 0} isLoading={false} />
           {hasSnapshot && snapshot && (
-            <p className="mt-4 text-lg font-semibold text-foreground tabular-nums">
-              {formatBrl(snapshot.total_brl)}
-            </p>
+            <div className="mt-4 flex flex-col items-center">
+              <p className="text-lg font-semibold text-foreground tabular-nums">
+                {formatBrl(snapshot.total_brl)}
+              </p>
+              {dashboard?.usd_brl_rate && (
+                <span className="text-xs text-slate-400">
+                  USD/BRL {dashboard.usd_brl_rate.toFixed(2)}
+                </span>
+              )}
+            </div>
           )}
           {!hasSnapshot && (
             <div className="mt-6 flex flex-col items-center gap-3 text-center w-full">
@@ -197,8 +205,27 @@ export default function AlocacaoPage() {
         </div>
       </div>
 
+      {(dashboard?.pending_suggestions ?? []).length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
+            Sugestões de rebalanceamento
+          </h3>
+          <div className="flex flex-col gap-3">
+            {(dashboard.pending_suggestions ?? [])
+              .filter((s) => s.status !== 'dismissed')
+              .map((s) => (
+                <SuggestionCard
+                  key={s.id}
+                  suggestion={s}
+                  onAction={() => void refetch()}
+                />
+              ))}
+          </div>
+        </section>
+      )}
+
       {primaryGoal && hasSnapshot && snapshot && (
-        <GoalProgressBar goal={primaryGoal} currentBrl={snapshot.total_brl} />
+        <GoalCard goal={primaryGoal} currentBrl={snapshot.total_brl} />
       )}
 
       <div
@@ -207,6 +234,14 @@ export default function AlocacaoPage() {
         <div>
           <p className="text-xs text-muted-foreground">Política ativa</p>
           <p className="text-sm font-semibold text-foreground">{policy?.name}</p>
+          {(dashboard?.total_annual_fee_brl ?? 0) > 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Custo anual estimado em taxas:{' '}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {formatBrl(dashboard.total_annual_fee_brl ?? 0)}
+              </span>
+            </p>
+          )}
         </div>
         <span className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground capitalize border border-border">
           {policy?.risk_profile}

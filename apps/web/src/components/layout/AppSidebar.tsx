@@ -38,9 +38,16 @@ const COLLAPSED_WIDTH_PX = 56;
 
 interface AppSidebarProps {
   className?: string;
+  /** Quando true (tablet): sidebar sempre colapsada, sem toggle, não persiste em localStorage. */
+  forceCollapsed?: boolean;
 }
 
-export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
+function getSidebarCollapsed(forceCollapsed?: boolean): boolean {
+  if (forceCollapsed) return true;
+  try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
+}
+
+export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -48,9 +55,11 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
   const { mainItems, groupedSections } = useNavMenuPages();
   const { resolvedTheme } = useTheme();
 
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try { return localStorage.getItem(STORAGE_KEY) === 'true'; } catch { return false; }
-  });
+  const [collapsed, setCollapsed] = useState<boolean>(() => getSidebarCollapsed(forceCollapsed));
+
+  useEffect(() => {
+    if (!forceCollapsed) setCollapsed(getSidebarCollapsed(false));
+  }, [forceCollapsed]);
 
   const [sidebarWidthPx, setSidebarWidthPx] = useState<number>(() => {
     try {
@@ -67,8 +76,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
   const resizeStartRef = useRef({ x: 0, w: 0 });
 
   useEffect(() => {
+    if (forceCollapsed) return;
     try { localStorage.setItem(STORAGE_KEY, String(collapsed)); } catch {}
-  }, [collapsed]);
+  }, [collapsed, forceCollapsed]);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_WIDTH, String(sidebarWidthPx)); } catch {}
@@ -446,14 +456,16 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className }) => {
             />
           </a>
         )}
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          className="rounded-md p-1.5 text-[hsl(var(--color-text-tertiary))] hover:bg-accent hover:text-foreground transition-colors shrink-0"
-          aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-        >
-          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-        </button>
+        {!forceCollapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            className="rounded-md p-1.5 text-[hsl(var(--color-text-tertiary))] hover:bg-accent hover:text-foreground transition-colors shrink-0"
+            aria-label={collapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5">

@@ -44,7 +44,7 @@ export function useOnboardingCheckpoint() {
       } as any;
     },
     enabled: !!user?.id,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   const currentPhase: OnboardingPhase = (data?.onboarding_phase as OnboardingPhase) ?? 'not_started';

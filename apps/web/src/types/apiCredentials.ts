@@ -58,3 +58,21 @@ export interface RotateCredentialInput {
   new_key_value?: string;
   new_secret_value?: string;
 }
+
+export interface VaultSecretStatus {
+  secret_name: string;
+  exists_in_vault: boolean;
+  vault_updated_at: string | null;
+  edge_functions: string[];
+  description: string;
+}
+
+export interface WebhookEventSummary {
+  source: string;
+  endpoint_path: string;
+  total_events: number;
+  last_event_at: string | null;
+  last_event_type: string | null;
+  processed_count: number;
+  error_count: number;
+}

@@ -7,17 +7,18 @@ import { SecureConnectionBadge } from "@/components/shared/SecureConnectionBadge
 interface DesktopShellProps {
   userName: string;
   userEmail: string;
+  /** Quando true (tablet): sidebar sempre colapsada, sem botão de toggle. */
+  forceCollapsed?: boolean;
 }
 
 /**
- * DesktopShell — shell das rotas autenticadas no desktop (>= md).
+ * DesktopShell — shell das rotas autenticadas no desktop (>= md) e tablet.
  * Renderiza AppSidebar à esquerda + Outlet à direita em flex-row.
- * Sem key no Outlet para não remontar layouts nested (abas de planejamento, bens, financeiro).
  */
-export const DesktopShell: React.FC<DesktopShellProps> = () => {
+export const DesktopShell: React.FC<DesktopShellProps> = ({ forceCollapsed }) => {
   return (
     <div className="flex flex-row flex-1 w-full h-full overflow-hidden">
-      <AppSidebar />
+      <AppSidebar forceCollapsed={forceCollapsed} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Banner sticky no topo da área de conteúdo no desktop */}
         <OnboardingProgressBanner placement="inline" />

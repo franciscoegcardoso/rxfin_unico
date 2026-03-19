@@ -51,7 +51,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       return data as { status: string };
     },
     enabled: !!user?.id,
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   });
 
   const needsOnboardingCheck = location.pathname === '/inicio' && !localStorage.getItem(ONBOARDING_CACHE_KEY);

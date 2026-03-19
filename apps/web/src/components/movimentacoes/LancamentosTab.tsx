@@ -43,7 +43,6 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
-import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import type { LancamentoFilters } from '@/types/consolidar'
 import { BancoLogo } from '@/components/shared/BancoLogo'
@@ -131,33 +130,21 @@ export function LancamentosTab({
     refetch,
   } = useLancamentosComBanco(source, period, { enabled })
 
-  const { data: expenseItemsByGroup = [] } = useQuery({
-    queryKey: ['default-expense-items'],
-    queryFn: async () => {
-      const { data: d, error } = await supabase
-        .from('default_expense_items')
-        .select('id, name, category_name')
-        .eq('is_active', true)
-        .order('order_index')
-      if (error) throw error
-      return (d ?? []) as { id: string; name: string; category_name: string | null }[]
-    },
-  })
-
   const { data: userCats } = useUserCategories()
 
   const expenseGroups = categories
 
   useEffect(() => {
-    if (!bulkGrupoId) {
+    if (!bulkGrupoId || !userCats?.expenseGroups) {
       setMassSubcats([])
       setBulkCatId('')
       return
     }
     const grupoNome = categories.find((c) => c.id === bulkGrupoId)?.name ?? ''
-    setMassSubcats(expenseItemsByGroup.filter((i) => i.category_name === grupoNome))
+    const group = userCats.expenseGroups.find((g) => g.category_name === grupoNome)
+    setMassSubcats(group?.items ?? [])
     setBulkCatId('')
-  }, [bulkGrupoId, categories, expenseItemsByGroup])
+  }, [bulkGrupoId, categories, userCats])
 
   const uniqueBancos = useMemo(() => {
     const set = new Set<string>()
@@ -235,19 +222,21 @@ export function LancamentosTab({
   }
 
   const getItemsForGroup = (grupoNome: string | null) => {
-    if (!grupoNome) return []
-    return expenseItemsByGroup.filter((i) => i.category_name === grupoNome)
+    if (!grupoNome || !userCats?.expenseGroups) return []
+    const group = userCats.expenseGroups.find((g) => g.category_name === grupoNome)
+    return group?.items ?? []
   }
 
   const grupoForExpenseItemId = useCallback(
     (itemId: string | null) => {
-      if (!itemId) return null
-      const item = expenseItemsByGroup.find((i) => i.id === itemId)
-      if (!item?.category_name) return null
-      const g = expenseGroups.find((x) => x.name === item.category_name)
-      return g ? { id: g.id, name: g.name } : null
+      if (!itemId || !userCats?.expenseGroups) return null
+      for (const g of userCats.expenseGroups) {
+        const item = g.items.find((i) => i.id === itemId)
+        if (item) return { id: g.category_id, name: g.category_name }
+      }
+      return null
     },
-    [expenseItemsByGroup, expenseGroups]
+    [userCats]
   )
 
   const handleRequestClose = useCallback(() => {
@@ -473,13 +462,16 @@ export function LancamentosTab({
           <tbody>
             {sortedRows.map((row) => {
               const state = rowStates[row.transaction_id]
+              const isIncome = state?.is_income ?? row.is_income
               const isDespesa = row.transaction_type === 'despesa'
               const borderClass = row.is_pending
                 ? 'border-l-2 border-red-400'
                 : state?.dirty
                   ? 'border-l-2 border-yellow-400'
                   : 'border-l-2 border-emerald-400'
-              const itemsForGroup = getItemsForGroup(state?.grupo_nome ?? null)
+              const grupoNomeEfetivo =
+                state?.grupo_nome ?? categories.find((c) => c.id === state?.grupo_id)?.name ?? null
+              const itemsForGroup = getItemsForGroup(grupoNomeEfetivo)
 
               return (
                 <tr
@@ -540,7 +532,7 @@ export function LancamentosTab({
                     />
                   </td>
                   <td className="px-2 py-2 shrink-0">
-                    {state?.is_income ? (
+                    {isIncome ? (
                       <span className="text-xs text-muted-foreground">—</span>
                     ) : (
                       <Select
@@ -569,7 +561,7 @@ export function LancamentosTab({
                     )}
                   </td>
                   <td className="px-2 py-2 shrink-0 min-w-[160px]">
-                    {state?.is_income ? (
+                    {isIncome ? (
                       <Select
                         value={state?.categoria_id ?? ''}
                         onValueChange={(val) => {
@@ -594,9 +586,7 @@ export function LancamentosTab({
                         <Select
                           value={state?.categoria_id ?? ''}
                           onValueChange={(val) => {
-                            const item =
-                              itemsForGroup.find((i) => i.id === val) ??
-                              expenseItemsByGroup.find((i) => i.id === val)
+                            const item = itemsForGroup.find((i) => i.id === val)
                             if (item) {
                               const g = grupoForExpenseItemId(item.id)
                               setCategory(
@@ -608,7 +598,7 @@ export function LancamentosTab({
                               )
                             }
                           }}
-                          disabled={!state?.grupo_nome && expenseGroups.length > 0 && !state?.grupo_id}
+                          disabled={!state?.grupo_id && !state?.grupo_nome}
                         >
                           <SelectTrigger className="h-7 text-xs w-full">
                             <SelectValue placeholder="Subcategoria..." />

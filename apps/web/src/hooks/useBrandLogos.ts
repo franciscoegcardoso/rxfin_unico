@@ -27,14 +27,12 @@ async function loadBrands(): Promise<BrandData[]> {
         const res = await fetch(path);
         if (res.ok) {
           const data: BrandLogosData = await res.json();
-          if (data.marcas && data.marcas.length > 0) {
+          if (data.marcas?.length > 0) {
             cachedBrands = data.marcas;
             return cachedBrands;
           }
         }
-      } catch {
-        // continue
-      }
+      } catch { /* continue */ }
     }
     loadingPromise = null;
     return [];
@@ -43,27 +41,31 @@ async function loadBrands(): Promise<BrandData[]> {
   return loadingPromise;
 }
 
+/** Remove zero-padding: "080" → "80", "007" → "7", "101" → "101" */
+function normalizeId(id: string | number): string {
+  return String(parseInt(String(id), 10));
+}
+
 export function useBrandLogos() {
   const [brands, setBrands] = useState<BrandData[]>(cachedBrands || []);
   const [loading, setLoading] = useState(!cachedBrands);
 
   useEffect(() => {
-    if (cachedBrands) {
-      setBrands(cachedBrands);
-      setLoading(false);
-      return;
-    }
-    loadBrands().then(data => {
-      setBrands(data);
-      setLoading(false);
-    });
+    if (cachedBrands) { setBrands(cachedBrands); setLoading(false); return; }
+    loadBrands().then(data => { setBrands(data); setLoading(false); });
   }, []);
 
-  // Lookup por fipe_id — ÚNICA fonte de verdade, sem ambiguidade
+  /**
+   * Lookup por fipe_id — aceita qualquer formato:
+   *   "80", "080", 80  →  todos encontram a entrada com fipe_id "80"
+   * Duas marcas diferentes nunca têm o mesmo fipe_id numérico,
+   * então não há risco de colisão.
+   */
   const getBrandByFipeId = useMemo(() => {
-    const map = new Map(brands.map(b => [String(b.fipe_id), b]));
+    // Indexa por fipe_id normalizado (sem zero-pad)
+    const map = new Map(brands.map(b => [normalizeId(b.fipe_id), b]));
     return (fipeId: string | number): BrandData | undefined =>
-      map.get(String(fipeId));
+      map.get(normalizeId(fipeId));
   }, [brands]);
 
   return { brands, loading, getBrandByFipeId };

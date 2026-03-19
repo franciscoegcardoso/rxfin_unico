@@ -27,8 +27,7 @@ export function useIsAdmin() {
       return !!data;
     },
     enabled: !!user?.id,
-    staleTime: 0, // Always fetch fresh data - admin status is critical
-    refetchOnWindowFocus: true,
+    staleTime: 15 * 60 * 1000, // admin status muda só em admin actions
   });
 
   return { isAdmin, isLoading };

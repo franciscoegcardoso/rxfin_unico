@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 /** Response shape from get_home_dashboard RPC */
 export interface HomeDashboardData {
@@ -35,45 +36,36 @@ export interface HomeDashboardData {
   onboarding?: { phase?: string; completed?: boolean };
 }
 
+const HOME_DASHBOARD_QUERY_KEY = 'home-dashboard';
+
 /**
  * Fetches home dashboard data via get_home_dashboard RPC.
- * Uses auth.uid() when demoUserId is omitted. When demoUserId is provided (modo demo),
- * the RPC returns data for that user instead.
+ * Single useQuery with stable key so Inicio, useMonthSummary and CartaoCreditoInicio share cache (1 request).
+ * When demoUserId is provided (modo demo), the RPC returns data for that user.
  */
 export function useHomeDashboard(month: string, demoUserId?: string | null) {
-  const [data, setData] = useState<HomeDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const effectiveUserId = demoUserId ?? user?.id ?? '';
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const query = useQuery({
+    queryKey: [HOME_DASHBOARD_QUERY_KEY, effectiveUserId, month],
+    queryFn: async (): Promise<HomeDashboardData | null> => {
       const params: Record<string, unknown> = { p_month: month };
       if (demoUserId) params.p_user_id = demoUserId;
 
       const { data: result, error: rpcError } = await supabase.rpc('get_home_dashboard', params);
 
-      if (rpcError) {
-        setError(rpcError.message);
-        setData(null);
-        return null;
-      }
-      setData((result as HomeDashboardData) ?? null);
-      return result as HomeDashboardData;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-      setData(null);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [month, demoUserId]);
+      if (rpcError) throw new Error(rpcError.message);
+      return (result as HomeDashboardData) ?? null;
+    },
+    enabled: !!effectiveUserId && !!month,
+    staleTime: 60 * 1000, // 1 min — dados financeiros do usuário
+  });
 
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
-
-  return { data, loading, error, refetch: fetchDashboard };
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error ? String(query.error) : null,
+    refetch: query.refetch,
+  };
 }

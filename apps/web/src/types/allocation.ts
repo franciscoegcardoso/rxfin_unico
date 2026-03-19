@@ -89,6 +89,28 @@ export interface PrimaryGoal {
   success_probability: number | null;
 }
 
+export interface RebalancingSuggestion {
+  id: string;
+  asset_class: AssetClass;
+  suggestion_type: 'comprar' | 'vender' | 'aportar' | 'hold';
+  suggested_amount_brl: number;
+  drift_pct: number;
+  drift_priority_score: number;
+  cibelia_insight: string | null;
+  cibelia_mode: string | null;
+  status: 'pending' | 'committed' | 'confirmed' | 'dismissed';
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface ScheduledCommitment {
+  id: string;
+  asset_class: AssetClass;
+  amount_brl: number;
+  scheduled_date: string;
+  status: 'scheduled' | 'reminder_sent';
+}
+
 export interface AllocationDashboard {
   policy: AllocationPolicy | null;
   allocation_status: AllocationStatusRow[];
@@ -98,4 +120,8 @@ export interface AllocationDashboard {
   unread_notifications_count: number;
   completeness_threshold: number;
   market_stress_active: boolean;
+  pending_suggestions?: RebalancingSuggestion[];
+  scheduled_commitments?: ScheduledCommitment[];
+  total_annual_fee_brl?: number;
+  usd_brl_rate?: number | null;
 }

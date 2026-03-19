@@ -85,6 +85,7 @@ export function useUserVehicleRecords() {
       return (data as any[]).map(dbToApp);
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addRecord = useMutation({

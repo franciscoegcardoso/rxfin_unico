@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type {
   ApiCredential,
   ApiCredentialCategory,
@@ -8,6 +9,8 @@ import type {
   ApiKeyAuditEntry,
   UpsertCredentialInput,
   RotateCredentialInput,
+  VaultSecretStatus,
+  WebhookEventSummary,
 } from '@/types/apiCredentials';
 
 const CATEGORIES: ApiCredentialCategory[] = [
@@ -93,6 +96,10 @@ export function useApiCredentials() {
   const [credentials, setCredentials] = useState<ApiCredential[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [auditLog, setAuditLog] = useState<ApiKeyAuditEntry[]>([]);
+  const [vaultSecrets, setVaultSecrets] = useState<VaultSecretStatus[]>([]);
+  const [isLoadingVault, setIsLoadingVault] = useState(true);
+  const [webhookSummary, setWebhookSummary] = useState<WebhookEventSummary[]>([]);
+  const [isLoadingWebhooks, setIsLoadingWebhooks] = useState(true);
 
   const refetch = useCallback(async () => {
     setIsLoading(true);
@@ -109,10 +116,6 @@ export function useApiCredentials() {
       setIsLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    void refetch().catch(() => {});
-  }, [refetch]);
 
   const upsert = useCallback(async (input: UpsertCredentialInput): Promise<void> => {
     const payload: Record<string, unknown> = {
@@ -180,10 +183,55 @@ export function useApiCredentials() {
     setAuditLog(rows.map((r) => mapAuditRow(r as Record<string, unknown>)));
   }, []);
 
+  const fetchVaultSecrets = useCallback(async () => {
+    setIsLoadingVault(true);
+    try {
+      const { data, error } = await supabase.rpc('get_vault_secrets_status');
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      setVaultSecrets(rows as VaultSecretStatus[]);
+    } catch (e) {
+      setVaultSecrets([]);
+      const message =
+        e instanceof Error ? e.message : 'Erro ao carregar status de secrets no Vault';
+      toast.error(`Edge Function Secrets: ${message}`);
+      throw e;
+    } finally {
+      setIsLoadingVault(false);
+    }
+  }, []);
+
+  const fetchWebhookSummary = useCallback(async () => {
+    setIsLoadingWebhooks(true);
+    try {
+      const { data, error } = await supabase.rpc('get_webhook_events_summary');
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      setWebhookSummary(rows as WebhookEventSummary[]);
+    } catch (e) {
+      setWebhookSummary([]);
+      const message = e instanceof Error ? e.message : 'Erro ao carregar resumo de webhooks';
+      toast.error(`Webhooks Recebidos: ${message}`);
+      throw e;
+    } finally {
+      setIsLoadingWebhooks(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void Promise.all([refetch(), fetchVaultSecrets(), fetchWebhookSummary()]).catch(() => {});
+  }, [refetch, fetchVaultSecrets, fetchWebhookSummary]);
+
   return {
     credentials,
     isLoading,
+    vaultSecrets,
+    isLoadingVault,
+    webhookSummary,
+    isLoadingWebhooks,
     refetch,
+    fetchVaultSecrets,
+    fetchWebhookSummary,
     upsert,
     reveal,
     rotate,

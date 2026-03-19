@@ -56,6 +56,8 @@ import type {
 } from '@/types/apiCredentials';
 import { CredentialFormModal } from '@/components/admin/api-credentials/CredentialFormModal';
 import { RotateCredentialModal } from '@/components/admin/api-credentials/RotateCredentialModal';
+import { EdgeFunctionSecretsSection } from '@/components/admin/EdgeFunctionSecretsSection';
+import { WebhooksSection } from '@/components/admin/WebhooksSection';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -115,6 +117,10 @@ export default function ApiKeysPage() {
   const {
     credentials,
     isLoading,
+    vaultSecrets,
+    isLoadingVault,
+    webhookSummary,
+    isLoadingWebhooks,
     upsert,
     reveal,
     rotate,
@@ -545,6 +551,9 @@ export default function ApiKeysPage() {
               })}
             </Accordion>
           )}
+
+          <EdgeFunctionSecretsSection data={vaultSecrets} isLoading={isLoadingVault} />
+          <WebhooksSection data={webhookSummary} isLoading={isLoadingWebhooks} />
         </TabsContent>
 
         <TabsContent value="audit" className="mt-6 space-y-4">

@@ -166,6 +166,8 @@ const queryClient = new QueryClient({
       gcTime: 60 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: 1,
+      /** Default 1 min — evita 13+ refetches ao alternar abas; cada hook pode sobrescrever. */
+      staleTime: 60 * 1000,
     },
   },
 });

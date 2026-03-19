@@ -44,6 +44,7 @@ export function useUserDreams() {
       return (data as unknown as DbDream[]).map(dbToApp);
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const addDream = useMutation({

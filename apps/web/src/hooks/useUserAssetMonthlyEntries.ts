@@ -27,6 +27,7 @@ export function useUserAssetMonthlyEntries() {
       }));
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const upsertEntry = useMutation({

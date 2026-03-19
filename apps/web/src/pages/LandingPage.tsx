@@ -236,8 +236,8 @@ const LandingPage: React.FC = () => {
                 <Zap className="h-3 w-3 text-primary" />
                 100% gratuito · Sem cadastro
               </p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Social Proof */}
           <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
