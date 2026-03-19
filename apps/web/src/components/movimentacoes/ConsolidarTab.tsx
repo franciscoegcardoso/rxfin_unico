@@ -466,10 +466,10 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
               const isDespesa = row.transaction_type === 'despesa';
               const borderClass =
                 row.total_pendentes > 0
-                  ? 'border-l-2 border-red-400'
+                  ? 'border-l-2 border-l-red-400'
                   : state?.dirty
-                    ? 'border-l-2 border-yellow-400'
-                    : 'border-l-2 border-emerald-400';
+                    ? 'border-l-2 border-l-yellow-400'
+                    : 'border-l-2 border-l-emerald-400';
               const itemsForGroup = getItemsForGroup(state?.grupo_nome ?? null);
 
               return (

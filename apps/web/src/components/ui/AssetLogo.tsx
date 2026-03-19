@@ -113,14 +113,19 @@ export function AssetLogo({
 
   const typeUpper = (assetType || '').toUpperCase();
   const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
-  const logodevToken = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN;
+  // Logo.dev é o substituto oficial do Clearbit (descontinuado em 2025).
+  // Token publishable pode ficar no frontend; permite override por env.
+  const LOGODEV_TOKEN_FALLBACK = 'pk_Dp3UH6feRJSHIK2iM3-Y0g';
+  const logodevToken =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN) ||
+    LOGODEV_TOKEN_FALLBACK;
 
   const fallbackUrls = useMemo(() => {
     const list: string[] = [];
     if (logoUrl?.trim()) list.push(logoUrl.trim());
     const t = ticker?.trim();
     // Só tenta CDNs de bolsa (brapi, etc.) para tipos com ticker real (ações, FII, ETF, BDR).
-    // FIXED_INCOME, MUTUAL_FUND, PENSION_* usam apenas logo_url do banco e companyDomain (Clearbit).
+    // FIXED_INCOME, MUTUAL_FUND, PENSION_* usam apenas logo_url do banco e companyDomain (Logo.dev).
     const isTickerType = isBrapiTickerType(assetType, ticker);
     if (isTickerType && t) {
       list.push(`https://icons.brapi.dev/icons/${t}.svg`);
@@ -135,10 +140,7 @@ export function AssetLogo({
     if (companyDomain?.trim()) {
       const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
       if (domain) {
-        if (logodevToken) {
-          list.push(`https://img.logo.dev/${domain}?token=${logodevToken}&size=64`);
-        }
-        list.push(`https://logo.clearbit.com/${domain}`);
+        list.push(`https://img.logo.dev/${domain}?token=${logodevToken}&size=64`);
       }
     }
     return list;

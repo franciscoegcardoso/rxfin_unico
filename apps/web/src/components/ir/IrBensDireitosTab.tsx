@@ -24,9 +24,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Building2, CircleDollarSign, FileText, Scale, Wallet } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
+import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 
 const formatBRL = (n: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
@@ -167,25 +169,27 @@ function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosT
 
   if (!hasBens) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <label className="text-[13px] text-muted-foreground">Ano</label>
-          <Select
-            value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
-            onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Mais recente" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__latest__">Mais recente</SelectItem>
-              {anos.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="space-y-5">
+        <div className="rounded-[14px] border border-border/80 bg-card p-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ano</label>
+            <Select
+              value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
+              onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
+            >
+              <SelectTrigger className="h-9 w-[160px] bg-background">
+                <SelectValue placeholder="Mais recente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__latest__">Mais recente</SelectItem>
+                {anos.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="rounded-lg border border-border p-8 text-center">
+        <div className="rounded-[14px] border border-border/80 bg-card p-8 text-center shadow-sm">
           <p className="text-sm text-muted-foreground">Nenhum bem declarado encontrado para este ano.</p>
         </div>
       </div>
@@ -193,127 +197,137 @@ function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosT
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <label className="text-[13px] text-muted-foreground">Ano</label>
-        <Select
-          value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
-          onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Mais recente" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__latest__">Mais recente</SelectItem>
-            {anos.map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+    <div className="space-y-5">
+      <Card className="rounded-[14px] border border-border/80 bg-card shadow-sm">
+        <CardContent className="p-4 sm:p-5 space-y-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ano</label>
+            <Select
+              value={anoSelecionado != null ? String(anoSelecionado) : '__latest__'}
+              onValueChange={(v) => setAnoSelecionado(v === '__latest__' ? null : Number(v))}
+            >
+              <SelectTrigger className="h-9 w-[160px] bg-background">
+                <SelectValue placeholder="Mais recente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__latest__">Mais recente</SelectItem>
+                {anos.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <HeaderMetricCard
+              label="Total Declarado"
+              value={formatBRL(tot.total_declarado)}
+              icon={Wallet}
+              variant="neutral"
+            />
+            <HeaderMetricCard
+              label="Total Mercado"
+              value={formatBRL(tot.total_mercado ?? 0)}
+              icon={CircleDollarSign}
+              variant={(tot.total_mercado ?? 0) > 0 ? 'blue' : 'neutral'}
+            />
+            <HeaderMetricCard
+              label="Variação"
+              value={`${(tot.delta ?? 0) >= 0 ? '+' : ''}${formatBRL(tot.delta ?? 0)}`}
+              icon={Scale}
+              variant={(tot.delta ?? 0) > 0 ? 'positive' : (tot.delta ?? 0) < 0 ? 'negative' : 'neutral'}
+            />
+            <HeaderMetricCard
+              label="Bens sem Mercado"
+              value={String(tot.bens_sem_valor_mercado ?? 0)}
+              icon={Building2}
+              variant={(tot.bens_sem_valor_mercado ?? 0) > 0 ? 'amber' : 'neutral'}
+            />
+          </div>
+
+          <Accordion type="multiple" className="w-full space-y-2">
+            {data.grupos?.map((grupo) => (
+              <AccordionItem
+                key={grupo.asset_type}
+                value={grupo.asset_type}
+                className="rounded-[12px] border border-border/80 bg-background px-3"
+              >
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <div className="flex flex-wrap items-center gap-2 text-left">
+                    <span className="font-medium text-foreground">{grupo.label}</span>
+                    <span className="text-muted-foreground font-normal">
+                      {formatBRL(grupo.total_declarado)}
+                    </span>
+                    {(grupo.total_mercado ?? 0) > 0 && (
+                      <span className="text-muted-foreground font-normal">
+                        · Mercado {formatBRL(grupo.total_mercado!)}
+                      </span>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="rounded-[10px] border border-border/70 overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead>Bem</TableHead>
+                          <TableHead className="text-right">Declarado</TableHead>
+                          <TableHead className="text-right">Mercado</TableHead>
+                          <TableHead className="text-right">Variação</TableHead>
+                          <TableHead className="text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {grupo.bens?.map((bem) => {
+                          const statusLabel =
+                            bem.reconciliation_status === 'linked' ? 'Vinculado'
+                            : bem.reconciliation_status === 'created' ? 'Criado'
+                            : bem.reconciliation_status === 'ignored' ? 'Ignorado'
+                            : 'Pendente';
+                          const desc = (bem.descricao || bem.discriminacao || '—').trim();
+                          const bemLabel = truncate(desc, 40);
+                          const badgeVariant =
+                            bem.reconciliation_status === 'pending' ? 'outline'
+                            : bem.reconciliation_status === 'linked' ? 'default'
+                            : bem.reconciliation_status === 'created' ? 'secondary'
+                            : 'destructive';
+                          return (
+                            <TableRow key={bem.ir_item_index}>
+                              <TableCell className="max-w-[240px]" title={desc}>
+                                {bemLabel}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums">{formatBRL(bem.situacao_atual)}</TableCell>
+                              <TableCell className="text-right tabular-nums">
+                                {bem.real_value != null ? formatBRL(bem.real_value) : '—'}
+                              </TableCell>
+                              <TableCell
+                                className={cn(
+                                  'text-right tabular-nums font-medium',
+                                  bem.delta != null && bem.delta > 0 && 'text-green-600',
+                                  bem.delta != null && bem.delta < 0 && 'text-destructive'
+                                )}
+                              >
+                                {bem.delta != null
+                                  ? `${bem.delta >= 0 ? '+' : ''}${formatBRL(bem.delta)}`
+                                  : '—'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={badgeVariant as 'outline' | 'default' | 'secondary' | 'destructive'}>
+                                  {statusLabel}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-md bg-secondary p-4">
-          <p className="text-[13px] text-muted-foreground mb-1">Total declarado</p>
-          <p className="text-2xl font-medium tabular-nums">{formatBRL(tot.total_declarado)}</p>
-        </div>
-        <div className="rounded-md bg-secondary p-4">
-          <p className="text-[13px] text-muted-foreground mb-1">Total mercado</p>
-          <p className={cn('text-2xl font-medium tabular-nums', (tot.total_mercado ?? 0) === 0 && 'text-muted-foreground')}>
-            {formatBRL(tot.total_mercado ?? 0)}
-          </p>
-        </div>
-        <div className="rounded-md bg-secondary p-4">
-          <p className="text-[13px] text-muted-foreground mb-1">Variação</p>
-          <p
-            className={cn(
-              'text-2xl font-medium tabular-nums',
-              (tot.delta ?? 0) > 0 && 'text-green-600',
-              (tot.delta ?? 0) < 0 && 'text-destructive'
-            )}
-          >
-            {(tot.delta ?? 0) >= 0 ? '+' : ''}{formatBRL(tot.delta ?? 0)}
-          </p>
-        </div>
-        <div className="rounded-md bg-secondary p-4">
-          <p className="text-[13px] text-muted-foreground mb-1">Bens s/ valor mercado</p>
-          <p className="text-2xl font-medium tabular-nums">{tot.bens_sem_valor_mercado ?? 0}</p>
-        </div>
-      </div>
-
-      <Accordion type="multiple" className="w-full space-y-2">
-        {data.grupos?.map((grupo) => (
-          <AccordionItem key={grupo.asset_type} value={grupo.asset_type} className="rounded-lg border px-3">
-            <AccordionTrigger className="hover:no-underline py-3">
-              <span className="font-medium">{grupo.label}</span>
-              <span className="text-muted-foreground font-normal ml-2">
-                {formatBRL(grupo.total_declarado)}
-              </span>
-              {(grupo.total_mercado ?? 0) > 0 && (
-                <span className="text-muted-foreground font-normal ml-2">
-                  · Mercado {formatBRL(grupo.total_mercado!)}
-                </span>
-              )}
-            </AccordionTrigger>
-            <AccordionContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Bem</TableHead>
-                    <TableHead className="text-right">Declarado</TableHead>
-                    <TableHead className="text-right">Mercado</TableHead>
-                    <TableHead className="text-right">Variação</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {grupo.bens?.map((bem) => {
-                    const statusLabel =
-                      bem.reconciliation_status === 'linked' ? 'Vinculado'
-                      : bem.reconciliation_status === 'created' ? 'Criado'
-                      : bem.reconciliation_status === 'ignored' ? 'Ignorado'
-                      : 'Pendente';
-                    const desc = (bem.descricao || bem.discriminacao || '—').trim();
-                    const bemLabel = truncate(desc, 40);
-                    const badgeVariant =
-                      bem.reconciliation_status === 'pending' ? 'outline'
-                      : bem.reconciliation_status === 'linked' ? 'default'
-                      : bem.reconciliation_status === 'created' ? 'secondary'
-                      : 'destructive';
-                    return (
-                      <TableRow key={bem.ir_item_index}>
-                        <TableCell className="max-w-[240px]" title={desc}>
-                          {bemLabel}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{formatBRL(bem.situacao_atual)}</TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {bem.real_value != null ? formatBRL(bem.real_value) : '—'}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            'text-right tabular-nums font-medium',
-                            bem.delta != null && bem.delta > 0 && 'text-green-600',
-                            bem.delta != null && bem.delta < 0 && 'text-destructive'
-                          )}
-                        >
-                          {bem.delta != null
-                            ? `${bem.delta >= 0 ? '+' : ''}${formatBRL(bem.delta)}`
-                            : '—'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={badgeVariant as 'outline' | 'default' | 'secondary' | 'destructive'}>
-                            {statusLabel}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+          </Accordion>
+        </CardContent>
+      </Card>
     </div>
   );
 }

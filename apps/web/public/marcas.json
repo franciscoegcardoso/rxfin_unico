@@ -61,6 +61,29 @@
     { "id": "mercedes-benz-caminhoes", "nome": "Mercedes-Benz",  "fipe_id": "109", "logo_url": "/logos/mercedes-benz.png" },
     { "id": "volkswagen-caminhoes",    "nome": "Volkswagen",     "fipe_id": "115", "logo_url": "/logos/volkswagen.png" },
     { "id": "ford-caminhoes",          "nome": "Ford",           "fipe_id": "105", "logo_url": "/logos/ford.png" },
-    { "id": "volvo-caminhoes",         "nome": "Volvo",          "fipe_id": "116", "logo_url": "/logos/volvo.png" }
+    { "id": "volvo-caminhoes",         "nome": "Volvo",          "fipe_id": "116", "logo_url": "/logos/volvo.png" },
+
+    { "id": "marcopolo",               "nome": "Marcopolo",      "fipe_id": "108", "logo_url": "" },
+    { "id": "brp",                     "nome": "BRP",            "fipe_id": "150", "logo_url": "" },
+    { "id": "shineray-motos",          "nome": "SHINERAY",       "fipe_id": "134", "logo_url": "" },
+    { "id": "agrale-cam",              "nome": "AGRALE",         "fipe_id": "102", "logo_url": "" },
+    { "id": "piaggio",                 "nome": "PIAGGIO",        "fipe_id": "95",  "logo_url": "" },
+    { "id": "ssangyong",               "nome": "SSANGYONG",      "fipe_id": "125", "logo_url": "" },
+    { "id": "husqvarna",               "nome": "HUSQVARNA",      "fipe_id": "82",  "logo_url": "" },
+    { "id": "kasinski",                "nome": "KASINSKI",       "fipe_id": "118", "logo_url": "" },
+    { "id": "dafra",                   "nome": "DAFRA",          "fipe_id": "145", "logo_url": "" },
+    { "id": "polaris",                 "nome": "POLARIS",        "fipe_id": "210", "logo_url": "" },
+    { "id": "aprilia",                 "nome": "APRILIA",        "fipe_id": "62",  "logo_url": "/logos/aprilia.svg" },
+    { "id": "vespa",                   "nome": "VESPA",          "fipe_id": "256", "logo_url": "" },
+    { "id": "mv-agusta",               "nome": "MV AGUSTA",      "fipe_id": "91",  "logo_url": "" },
+    { "id": "moto-guzzi",              "nome": "MOTO GUZZI",     "fipe_id": "90",  "logo_url": "" },
+    { "id": "bajaj",                   "nome": "BAJAJ",          "fipe_id": "64",  "logo_url": "/logos/bajaj.svg" },
+    { "id": "benelli",                 "nome": "Benelli",        "fipe_id": "162", "logo_url": "" },
+    { "id": "rolls-royce",             "nome": "Rolls-Royce",    "fipe_id": "195", "logo_url": "" },
+    { "id": "mclaren",                 "nome": "Mclaren",        "fipe_id": "211", "logo_url": "/logos/mclaren.svg" },
+    { "id": "aston-martin",            "nome": "ASTON MARTIN",   "fipe_id": "189", "logo_url": "" },
+    { "id": "mg",                      "nome": "MG",             "fipe_id": "167", "logo_url": "" },
+    { "id": "saab-scania",             "nome": "SAAB-SCANIA",    "fipe_id": "113", "logo_url": "/logos/scania.png" },
+    { "id": "marcopolo-cam",           "nome": "MARCOPOLO",      "fipe_id": "108", "logo_url": "" }
   ]
 }

@@ -466,10 +466,10 @@ export function LancamentosTab({
               const isIncome = state?.is_income ?? row.is_income
               const isDespesa = row.transaction_type === 'despesa'
               const borderClass = row.is_pending
-                ? 'border-l-2 border-red-400'
+                ? 'border-l-2 border-l-red-400'
                 : state?.dirty
-                  ? 'border-l-2 border-yellow-400'
-                  : 'border-l-2 border-emerald-400'
+                  ? 'border-l-2 border-l-yellow-400'
+                  : 'border-l-2 border-l-emerald-400'
               const grupoNomeEfetivo =
                 state?.grupo_nome ?? categories.find((c) => c.id === state?.grupo_id)?.name ?? null
               const itemsForGroup = getItemsForGroup(grupoNomeEfetivo)

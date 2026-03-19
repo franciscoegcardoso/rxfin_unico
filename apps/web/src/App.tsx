@@ -28,7 +28,6 @@ import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
 import { MobileCtaBar } from "@/components/landing/MobileCtaBar";
 import { CanonicalLink } from "@/components/seo/CanonicalLink";
 import { RaioXChat } from "./components/ai/RaioXChat";
-import { useAuth } from "@/contexts/AuthContext";
 import { INVESTIMENTOS_ALOCACAO_PATH, LEGACY_ALOCACAO_ROUTE_SEGMENT } from "@/constants/appPaths";
 
 // ─── ESTÁTICO: carregado em TODA sessão ──────────────────────────────────────
@@ -148,9 +147,6 @@ const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
 const PageFallback = () => <RXFinLoadingSpinner height="h-screen" />;
 
 function RootRoute() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <Navigate to="/inicio" replace />;
   return (
     <>
       <LandingPage />

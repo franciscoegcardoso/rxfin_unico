@@ -3,10 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface PluggyInvestment {
   id: string;
+  display_name?: string;
+  full_name?: string;
+  ticker?: string;
   name: string;
   type: string | null;
   subtype: string | null;
   balance: number | null;
+  balance_brl?: number;
   amount_original: number | null;
   amount_profit: number | null;
   profit_pct: number | null;
@@ -19,6 +23,8 @@ export interface PluggyInvestment {
   taxes: string | null;
   status: string | null;
   code: string | null;
+  logo_url?: string | null;
+  company_domain?: string | null;
   isin: string | null;
   quantity: number | null;
   unit_value: number | null;
@@ -44,6 +50,8 @@ export interface PluggyInvestment {
   indexador_bloco?: string;
   /** 'CDI' | 'SELIC' | 'IPCA' | null */
   rate_type?: string | null;
+  last_twelve_months_rate?: number | null;
+  last_month_rate?: number | null;
 }
 
 export interface ManualAsset {

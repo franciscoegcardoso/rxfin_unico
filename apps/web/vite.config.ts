@@ -1,37 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import fs from "fs";
-
-// Plugin: injeta preloads de fontes Inter críticas após o build (fontes vêm do CSS, não do HTML)
-function preloadFontsPlugin() {
-  let outDir = "dist";
-  return {
-    name: 'preload-critical-fonts',
-    configResolved(config: { command: string; build?: { outDir: string } }) {
-      if (config.command === 'build' && config.build?.outDir) {
-        outDir = config.build.outDir;
-      }
-    },
-    closeBundle() {
-      const assetsDir = path.resolve(__dirname, outDir, "assets");
-      if (!fs.existsSync(assetsDir)) return;
-      const files = fs.readdirSync(assetsDir);
-      const weights = ["400", "500", "600", "700"];
-      const fontFiles = weights
-        .map((w) => files.find((f) => f.match(new RegExp(`^inter-latin-${w}-normal-.+\\.woff2$`))))
-        .filter(Boolean) as string[];
-      if (!fontFiles.length) return;
-      const preloads = fontFiles
-        .map((f) => `  <link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/${f}" />`)
-        .join("\n");
-      const indexPath = path.resolve(__dirname, outDir, "index.html");
-      let html = fs.readFileSync(indexPath, "utf-8");
-      html = html.replace("</head>", `${preloads}\n</head>`);
-      fs.writeFileSync(indexPath, html);
-    },
-  };
-}
 
 export default defineConfig(() => ({
   server: {
@@ -40,7 +9,6 @@ export default defineConfig(() => ({
   },
   plugins: [
     react(),
-    preloadFontsPlugin(),
   ],
   resolve: {
     alias: {

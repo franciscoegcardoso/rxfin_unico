@@ -31,15 +31,17 @@ import { usePluggyInvestments, InvestmentCategory, InvestmentCategoryData } from
 import { useInvestmentsList } from '@/hooks/useInvestmentsList';
 import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
 import { groupInvestments } from '@/utils/groupInvestments';
-import { InvestmentGroupHeader } from '@/components/bens-investimentos/InvestmentGroupHeader';
-import { InvestmentListItemRow } from '@/components/bens-investimentos/InvestmentListItemRow';
-import { InvestimentosFiscal } from '@/components/bens-investimentos/InvestimentosFiscal';
-import { InvestimentosBlocos } from '@/components/bens-investimentos/InvestimentosBlocos';
-import { InvestimentosMoedas } from '@/components/bens-investimentos/InvestimentosMoedas';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
-import { AssetLogo } from '@/components/ui/AssetLogo';
+import { InvestimentoGrupoHeader } from '@/components/investimentos/InvestimentoGrupoHeader';
+import { InvestimentoTabela } from '@/components/investimentos/InvestimentoTabela';
+import { InvestimentoRowMobile } from '@/components/investimentos/InvestimentoRowMobile';
+import { PainelFiscal } from '@/components/investimentos/PainelFiscal';
+import { PainelIndexador } from '@/components/investimentos/PainelIndexador';
+import { PainelMoedas } from '@/components/investimentos/PainelMoedas';
+import type { PluggyInvestment } from '@/hooks/useBensInvestimentos';
+import type { InvestmentGroupView } from '@/components/investimentos/types';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Select,
@@ -76,6 +78,17 @@ const categoryConfig: Record<InvestmentCategory, { icon: React.ReactNode; color:
   'ETFs': { icon: <Layers className="h-5 w-5" />, color: 'bg-teal-500', chartColor: '#14b8a6' },
   'Outros': { icon: <Wallet className="h-5 w-5" />, color: 'bg-gray-500', chartColor: '#6b7280' },
 };
+
+function getGroupMeta(label: string): { colorKey: InvestmentGroupView['colorKey'] } {
+  if (label === 'Renda Fixa') return { colorKey: 'emerald' };
+  if (label === 'Ações') return { colorKey: 'blue' };
+  if (label === 'FIIs') return { colorKey: 'amber' };
+  if (label === 'Fundos') return { colorKey: 'purple' };
+  if (label === 'ETFs') return { colorKey: 'cyan' };
+  if (label === 'BDRs') return { colorKey: 'rose' };
+  if (label === 'Previdência') return { colorKey: 'pink' };
+  return { colorKey: 'gray' };
+}
 
 
 export interface PluggyInvestmentsSectionProps {
@@ -147,7 +160,8 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
       void queryClient.invalidateQueries({ queryKey: ['investments-list'] });
     }
   }, [refreshTrigger, refetch, queryClient]);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [chartType, setChartType] = useState<'treemap' | 'pie'>('treemap');
 
@@ -184,13 +198,42 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     }));
   }, [categories, rpcGrouped]);
 
-  const toggleCategory = (cat: string) => {
-    setExpandedCategories(prev => {
-      const next = new Set(prev);
-      next.has(cat) ? next.delete(cat) : next.add(cat);
-      return next;
-    });
-  };
+  const redesignedGroups = useMemo<InvestmentGroupView[]>(() => {
+    const items = (bensData?.pluggy_investments ?? []) as PluggyInvestment[]
+    if (!items.length) return []
+    const map = new Map<string, PluggyInvestment[]>()
+    for (const item of items) {
+      const type = (item.type ?? '').toUpperCase()
+      const subtype = (item.subtype ?? '').toUpperCase()
+      let key = 'Outros'
+      if (type === 'FIXED_INCOME') key = 'Renda Fixa'
+      else if (type === 'ETF') key = 'ETFs'
+      else if (type === 'MUTUAL_FUND') key = 'Fundos'
+      else if (type === 'EQUITY') {
+        if (subtype === 'REAL_ESTATE_FUND') key = 'FIIs'
+        else if (subtype === 'BDR') key = 'BDRs'
+        else key = 'Ações'
+      } else if (type.includes('PENSION')) key = 'Previdência'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(item)
+    }
+    return Array.from(map.entries())
+      .map(([label, groupItems]) => {
+        const totalBalance = groupItems.reduce((sum, i) => sum + (i.balance ?? 0), 0)
+        const perfCandidates = groupItems.map((i) => i.last_twelve_months_rate).filter((v): v is number => v != null)
+        const perf12m = perfCandidates.length ? perfCandidates.reduce((a, b) => a + b, 0) / perfCandidates.length : null
+        const isStale = groupItems.some((i) => !!i.suspect_zero)
+        return {
+          label: label as InvestmentGroupView['label'],
+          items: groupItems,
+          totalBalance,
+          perf12m,
+          isStale,
+          colorKey: getGroupMeta(label).colorKey,
+        }
+      })
+      .sort((a, b) => b.totalBalance - a.totalBalance)
+  }, [bensData?.pluggy_investments]);
 
   const manualCount = totals?.manual_count ?? 0;
   if (allInvestments.length === 0 && !isLoading && syncAlertRows.length === 0 && manualCount === 0) {
@@ -226,20 +269,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
       )}
       <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
 
-      {/* Painel fiscal (IR/IOF retidos) */}
-      {bensData?.summary && (
-        <InvestimentosFiscal summary={bensData.summary} />
-      )}
-
-      {/* Blocos por indexador */}
-      {bensData?.by_indexador && bensData.by_indexador.length > 0 && (
-        <InvestimentosBlocos byIndexador={bensData.by_indexador} />
-      )}
-
-      {/* Distribuição por moeda (só se mais de uma moeda) */}
-      {bensData?.by_currency && bensData.by_currency.length > 1 && (
-        <InvestimentosMoedas byCurrency={bensData.by_currency} fxRates={bensData.fx_rates} />
-      )}
+      {bensData?.summary && <PainelFiscal summary={bensData.summary} />}
+      {bensData?.by_indexador && bensData.by_indexador.length > 0 && <PainelIndexador byIndexador={bensData.by_indexador} />}
+      {bensData?.by_currency && bensData.by_currency.length > 1 && <PainelMoedas byCurrency={bensData.by_currency} fxRates={bensData.fx_rates} />}
 
       {/* Header */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
@@ -483,9 +515,8 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         </CardContent>
       </Card>
 
-      {/* Category list — RPC compact layout quando disponível */}
       {showRpcListSkeleton ? (
-        <div className="w-full md:max-w-3xl md:mx-auto lg:max-w-4xl rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">
+        <div className="w-full rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="border-b border-border p-4 space-y-2">
               <div className="h-5 bg-muted rounded w-1/3" />
@@ -493,202 +524,52 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
             </div>
           ))}
         </div>
-      ) : useRpcListLayout && rpcGrouped ? (
-        <div className="w-full md:max-w-3xl md:mx-auto lg:max-w-4xl rounded-xl border border-border bg-card overflow-hidden shadow-sm">
-          {rpcGrouped.map((g) => {
-            const catKey = pluggyCategoryForGroupLabel(g.label);
-            const summaryRow = summaryByCategory[catKey];
-            const pluggyCat = categories.find((c) => c.category === catKey);
-            const netTotal = totals?.net_total ?? totalBalance;
-            const allocationPct = netTotal > 0 ? (g.totalBalance / netTotal) * 100 : null;
-            const isExpanded = expandedCategories.has(g.label);
-            const coverageBadge =
-              summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100
-                ? `${summaryRow.sync_coverage_pct}% coberto`
-                : undefined;
-
+      ) : redesignedGroups.length > 0 ? (
+        <div className="w-full rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+          {redesignedGroups.map((group) => {
+            const isOpen = openGroups[group.label] ?? true
+            const netTotal = totals?.net_total ?? totalBalance
             return (
-              <div key={g.label}>
-                <InvestmentGroupHeader
-                  label={g.label}
-                  count={g.items.length}
-                  totalBalance={g.totalBalance}
-                  isExpanded={isExpanded}
-                  onToggle={() => toggleCategory(g.label)}
-                  badge={summaryRow?.has_stale_data ? 'Cota desatualizada' : undefined}
-                  coverageBadge={coverageBadge}
-                  allocationPercent={allocationPct}
-                  avgLast12MonthsRate={pluggyCat?.avgLast12MonthsRate ?? null}
+              <div key={group.label}>
+                <InvestimentoGrupoHeader
+                  label={group.label}
+                  count={group.items.length}
+                  totalBalance={group.totalBalance}
+                  allocationPct={netTotal > 0 ? (group.totalBalance / netTotal) * 100 : 0}
+                  perf12m={group.perf12m}
+                  isStale={group.isStale}
+                  isOpen={isOpen}
+                  onToggle={() => setOpenGroups((prev) => ({ ...prev, [group.label]: !(prev[group.label] ?? true) }))}
+                  colorKey={group.colorKey}
                 />
-                {isExpanded && (
-                  <div className="bg-card">
-                    {g.items.map((item) => (
-                      <InvestmentListItemRow key={item.id} item={item} />
-                    ))}
-                  </div>
+                {isOpen && (
+                  <>
+                    <div className="hidden md:block overflow-x-auto">
+                      <InvestimentoTabela
+                        items={group.items}
+                        grupoLabel={group.label}
+                        totalCarteira={netTotal}
+                        colorKey={group.colorKey}
+                      />
+                    </div>
+                    <div className="md:hidden">
+                      {group.items.map((item) => (
+                        <InvestimentoRowMobile
+                          key={item.id}
+                          item={item}
+                          totalCarteira={netTotal}
+                          isOpen={!!openItems[item.id]}
+                          onToggle={() => setOpenItems((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
-            );
+            )
           })}
         </div>
-      ) : (
-        categories.map((cat) => {
-          const config = categoryConfig[cat.category];
-          const isExpanded = expandedCategories.has(cat.category);
-          const summaryRow = summaryByCategory[cat.category];
-          const showGrossNet = summaryRow && summaryRow.gross_net_spread > 0;
-          const deltaLabel =
-            cat.category === 'Renda Fixa' ? 'IR est.' : cat.category === 'Fundos' ? 'lag de cota' : '';
-
-          return (
-            <Card key={cat.category}>
-              <button
-                onClick={() => toggleCategory(cat.category)}
-                className="w-full text-left"
-                type="button"
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          'h-10 w-10 rounded-full flex items-center justify-center text-white',
-                          config.color
-                        )}
-                      >
-                        {config.icon}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <CardTitle className="text-base">{cat.category}</CardTitle>
-                          {summaryRow?.sync_coverage_pct != null && summaryRow.sync_coverage_pct < 100 && (
-                            <span
-                              title={`${summaryRow.sync_coverage_pct}% dos ativos desta classe foram retornados pelo Open Finance. Verifique o app do banco.`}
-                              className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40"
-                              style={{ cursor: 'default' }}
-                            >
-                              {summaryRow.sync_coverage_pct}% coberto
-                            </span>
-                          )}
-                          {summaryRow?.has_stale_data && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded ml-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/40">
-                              Cota desatualizada
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {cat.items.length} {cat.items.length === 1 ? 'ativo' : 'ativos'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        {showGrossNet && summaryRow ? (
-                          <>
-                            <p className="text-[11px] text-muted-foreground">Bruto</p>
-                            <p className="font-semibold text-sm">{formatCurrency(summaryRow.gross_balance)}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">Líq.</p>
-                            <p className="font-semibold text-sm">{formatCurrency(summaryRow.net_balance)}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">
-                              (−{formatCurrency(summaryRow.gross_net_spread)} {deltaLabel})
-                            </p>
-                          </>
-                        ) : (
-                          <p className="font-semibold text-lg">{formatCurrency(cat.totalBalance)}</p>
-                        )}
-                        <div className="flex items-center gap-2 justify-end mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {cat.allocationPercent.toFixed(1)}%
-                          </Badge>
-                          {cat.avgLast12MonthsRate != null && (
-                            <span
-                              className={cn(
-                                'text-xs font-medium',
-                                cat.avgLast12MonthsRate >= 0 ? 'text-income' : 'text-expense'
-                              )}
-                            >
-                              12m: {formatPercent(cat.avgLast12MonthsRate)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {isExpanded ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-              </button>
-
-              {isExpanded && (
-                <CardContent className="pt-0">
-                  <Separator className="mb-3" />
-                  <div className="space-y-2">
-                    {cat.items.map((inv) => (
-                      <div
-                        key={inv.id}
-                        className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <AssetLogo
-                            ticker={inv.code ?? undefined}
-                            assetType={inv.type ?? ''}
-                            logoUrl={inv.logo_url ?? undefined}
-                            companyDomain={inv.company_domain ?? undefined}
-                            name={inv.name ?? inv.issuer ?? undefined}
-                            size="md"
-                            showTooltip
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm truncate">{inv.name}</p>
-                            {inv.code && <p className="text-xs text-muted-foreground">{inv.code}</p>}
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                              {inv.issuer && <span>{inv.issuer}</span>}
-                              {inv.quantity && inv.unit_value && (
-                                <span>
-                                  {inv.quantity.toLocaleString('pt-BR')} × {formatCurrency(inv.unit_value)}
-                                </span>
-                              )}
-                              {inv.fixed_annual_rate != null && (
-                                <span>Taxa: {inv.fixed_annual_rate.toFixed(2)}% a.a.</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-3">
-                          <p className="font-semibold text-sm">{formatCurrency(inv.balance)}</p>
-                          <div className="flex items-center gap-2 justify-end text-xs">
-                            {inv.last_month_rate != null && (
-                              <span
-                                className={cn(
-                                  inv.last_month_rate >= 0 ? 'text-income' : 'text-expense'
-                                )}
-                              >
-                                1m: {formatPercent(inv.last_month_rate)}
-                              </span>
-                            )}
-                            {inv.last_twelve_months_rate != null && (
-                              <span
-                                className={cn(
-                                  inv.last_twelve_months_rate >= 0 ? 'text-income' : 'text-expense'
-                                )}
-                              >
-                                12m: {formatPercent(inv.last_twelve_months_rate)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          );
-        })
-      )}
+      ) : null}
 
       {/* Alerta global de posições suspeitas */}
       {totals != null && totals.suspect_zero_total > 0 && (

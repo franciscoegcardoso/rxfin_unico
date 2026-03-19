@@ -187,6 +187,35 @@
       "name": "Notify Failure",
       "notesInFlow": true,
       "notes": "Envia e-mail para contato@rxfin.com.br. Configure credencial SMTP e opcionalmente N8N_FROM_EMAIL."
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        560
+      ],
+      "id": "a10-error-trigger",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://kneaniaifzgqibpajyji.supabase.co/functions/v1/send-email-n8n",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"contato@rxfin.com.br\",\n  \"subject\": \"🚨 Deploy Pipeline falhou\",\n  \"body\": \"Erro no deploy: \" + ($json.error?.message || $json.error || 'erro desconhecido') + \"\\nTimestamp: \" + $now\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        560
+      ],
+      "id": "a11-send-failure-email-edge",
+      "name": "Send Failure Email (Edge)"
     }
   ],
   "pinData": {},
@@ -276,6 +305,17 @@
         [
           {
             "node": "Notify Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Failure Email (Edge)",
             "type": "main",
             "index": 0
           }

@@ -79,13 +79,13 @@ const EXCLUDED_NAV_GROUP_SLUGS = ['menu-principal', 'administracao'];
 
 // Slugs de páginas que NÃO devem aparecer nos menus (hubs de navegação internos; alertas/notificações acessíveis via sino no top bar; itens removidos do Planejamento)
 // Slugs de páginas que NÃO devem aparecer nos menus
-const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'assinatura', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira', 'cartao-credito'];
+const HIDDEN_PAGE_SLUGS = ['configuracoes', 'hub-configuracoes', 'configuracoes-hub', 'simuladores', 'contas', 'fluxo-financeiro', 'seguros', 'dashboard', 'metas-mensais', 'planos', 'assinatura', 'historico-pagamentos', 'alertas', 'notificacoes', 'recorrentes', 'relatorio-financeiro', 'relatorios', 'tendencias-gastos', 'tendencia-gastos', 'dados', 'dados-financeiros', 'lixeira', 'cartao-credito'];
 
 // Títulos de páginas que NÃO devem aparecer no menu (independente do slug no banco)
-const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
+const HIDDEN_PAGE_TITLES = ['Relatório Financeiro', 'Relatórios', 'Tendências de Gastos', 'Tendência de Gastos', 'Despesas Recorrentes'];
 
 /** Paths que NÃO devem aparecer no menu (ex.: Cibélia é widget de chat flutuante, não item de navegação). */
-const HIDDEN_MENU_PATHS = ['/cibelia'];
+const HIDDEN_MENU_PATHS = ['/cibelia', '/relatorios'];
 
 /** Ícones canônicos por path — recuperam ícones quando o banco não retorna (menu principal e itens de seções). */
 const ICON_BY_PATH: Record<string, LucideIcon> = {

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Calculator, 
@@ -31,10 +31,19 @@ import { Badge } from '@/components/ui/badge';
 import logoHorizontal from '@/assets/Logo_RXFin-10.png';
 import { FeaturePreviewDialog } from '@/components/landing/FeaturePreviewDialog';
 import { featureContentMap } from '@/components/landing/featureSlideContents';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LandingPage: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState<string>('');
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/inicio', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const simulators = [
     {
