@@ -568,25 +568,52 @@ export function LancamentosTab({
                   </td>
                   <td className="px-2 py-1.5 shrink-0 min-w-[160px]">
                     {isIncome ? (
-                      <Select
-                        value={state?.categoria_id ?? ''}
-                        onValueChange={(val) => {
-                          const it = userCats?.incomeItems.find((i) => i.id === val)
-                          if (it)
-                            setCategory(row.transaction_id, null, null, it.id, it.name)
-                        }}
-                      >
-                        <SelectTrigger className="h-6 text-xs w-full">
-                          <SelectValue placeholder="Receita..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(userCats?.incomeItems ?? []).map((it) => (
-                            <SelectItem key={it.id} value={it.id}>
-                              {it.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="space-y-1">
+                        <Select
+                          value={state?.categoria_id ?? ''}
+                          onValueChange={(val) => {
+                            const it = userCats?.incomeItems.find((i) => i.id === val)
+                            if (it)
+                              setCategory(row.transaction_id, null, null, it.id, it.name)
+                          }}
+                        >
+                          <SelectTrigger className="h-6 text-xs w-full">
+                            <SelectValue placeholder="Receita..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(userCats?.incomeItems ?? []).map((it) => (
+                              <SelectItem key={it.id} value={it.id}>
+                                {it.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {row.ai_sugestao_id && !state?.categoria_id && (
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                            <span className="inline-flex gap-1 rounded-md bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] px-1.5 py-0.5">
+                              ✨ {row.ai_sugestao_categoria ?? ''}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px]"
+                              onClick={() => {
+                                if (row.ai_sugestao_id && row.ai_sugestao_categoria) {
+                                  setCategory(
+                                    row.transaction_id,
+                                    null,
+                                    null,
+                                    row.ai_sugestao_id,
+                                    row.ai_sugestao_categoria
+                                  )
+                                }
+                              }}
+                            >
+                              Aceitar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-1">
                         <Select

@@ -114,6 +114,20 @@ export interface FxRates {
 
 export interface BensInvestimentosData {
   pluggy_investments: PluggyInvestment[];
+  manual_investments?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    subtype?: string | null;
+    gross_balance?: number | null;
+    net_balance?: number | null;
+    balance_date?: string | null;
+    maturity_date?: string | null;
+    institution?: string | null;
+    ticker?: string | null;
+    logo_url?: string | null;
+    company_domain?: string | null;
+  }>;
   manual_assets: ManualAsset[];
   by_type: BensByType[];
   summary: BensInvestimentosSummary;

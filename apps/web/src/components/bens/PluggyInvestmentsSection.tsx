@@ -21,6 +21,7 @@ import {
   PieChartIcon,
   Info,
   AlertTriangle,
+  GitCompare,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePluggyInvestments, InvestmentCategory, InvestmentCategoryData } from '@/hooks/usePluggyInvestments';
 import { useInvestmentsList } from '@/hooks/useInvestmentsList';
 import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
+import { usePortfolioPerformance } from '@/hooks/usePortfolioPerformance';
 import { groupInvestments } from '@/utils/groupInvestments';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
@@ -40,6 +42,9 @@ import { InvestimentoRowMobile } from '@/components/investimentos/InvestimentoRo
 import { PainelFiscal } from '@/components/investimentos/PainelFiscal';
 import { PainelIndexador } from '@/components/investimentos/PainelIndexador';
 import { PainelMoedas } from '@/components/investimentos/PainelMoedas';
+import { GraficoEvolucao } from '@/components/investimentos/GraficoEvolucao';
+import { TabelaEvolucaoAnual } from '@/components/investimentos/TabelaEvolucaoAnual';
+import { RentabilidadeComparada } from '@/components/investimentos/RentabilidadeComparada';
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos';
 import type { InvestmentGroupView } from '@/components/investimentos/types';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -56,6 +61,66 @@ const formatCurrency = (value: number) =>
 
 const formatPercent = (value: number | null) =>
   value != null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—';
+
+function mapManualInvestmentToListItem(
+  item: {
+    id: string;
+    name: string;
+    type: string;
+    subtype?: string | null;
+    gross_balance?: number | null;
+    net_balance?: number | null;
+    balance_date?: string | null;
+    maturity_date?: string | null;
+    institution?: string | null;
+    ticker?: string | null;
+    logo_url?: string | null;
+    company_domain?: string | null;
+  }
+): PluggyInvestment {
+  const type = (item.type ?? 'OTHER').toUpperCase();
+  const balance = item.net_balance ?? item.gross_balance ?? 0;
+  return {
+    id: `manual-${item.id}`,
+    display_name: item.name,
+    full_name: item.name,
+    ticker: item.ticker ?? undefined,
+    name: item.name,
+    type,
+    subtype: item.subtype ?? null,
+    balance,
+    amount_original: 0,
+    amount_profit: null,
+    fixed_annual_rate: null,
+    annual_rate: null,
+    index_name: null,
+    due_date: item.maturity_date ?? null,
+    issue_date: item.balance_date ?? null,
+    issuer: item.institution ?? 'Manual',
+    taxes: null,
+    status: 'ACTIVE',
+    code: item.ticker ?? null,
+    logo_url: item.logo_url ?? null,
+    company_domain: item.company_domain ?? null,
+    isin: null,
+    quantity: 1,
+    unit_value: null,
+    currency_code: 'BRL',
+    balance_updated_at: item.balance_date ?? null,
+    suspect_zero: false,
+    source: 'pluggy',
+    connector_name: 'Manual',
+    connector_image_url: null,
+    ir_retido: 0,
+    iof_retido: 0,
+    ir_exempt: type === 'PENSION_VGBL' || type === 'PENSION_PGBL',
+    ir_regime: null,
+    ir_rate_pct: null,
+    rate_type: null,
+    last_twelve_months_rate: null,
+    last_month_rate: null,
+  };
+}
 
 function pluggyCategoryForGroupLabel(label: string): InvestmentCategory {
   const m: Record<string, InvestmentCategory> = {
@@ -122,6 +187,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   const queryClient = useQueryClient();
   const investmentsListQuery = useInvestmentsList();
   const { data: bensData } = useBensInvestimentos(null);
+  const portfolioPerformanceQuery = usePortfolioPerformance();
 
   const rpcItems = investmentsListQuery.data;
   const rpcGrouped = useMemo(() => {
@@ -164,6 +230,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [chartType, setChartType] = useState<'treemap' | 'pie'>('treemap');
+  const [showPerformance, setShowPerformance] = useState(false);
 
   const treemapData: TreemapItem[] = useMemo(() => {
     if (rpcGrouped && rpcGrouped.length > 0) {
@@ -199,7 +266,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   }, [categories, rpcGrouped]);
 
   const redesignedGroups = useMemo<InvestmentGroupView[]>(() => {
-    const items = (bensData?.pluggy_investments ?? []) as PluggyInvestment[]
+    const pluggyItems = (bensData?.pluggy_investments ?? []) as PluggyInvestment[]
+    const manualItems = (bensData?.manual_investments ?? []).map(mapManualInvestmentToListItem)
+    const items = [...pluggyItems, ...manualItems]
     if (!items.length) return []
     const map = new Map<string, PluggyInvestment[]>()
     for (const item of items) {
@@ -214,6 +283,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         else if (subtype === 'BDR') key = 'BDRs'
         else key = 'Ações'
       } else if (type.includes('PENSION')) key = 'Previdência'
+      else if (type === 'INCOME') key = 'Outros'
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(item)
     }
@@ -233,7 +303,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         }
       })
       .sort((a, b) => b.totalBalance - a.totalBalance)
-  }, [bensData?.pluggy_investments]);
+  }, [bensData?.pluggy_investments, bensData?.manual_investments]);
 
   const manualCount = totals?.manual_count ?? 0;
   if (allInvestments.length === 0 && !isLoading && syncAlertRows.length === 0 && manualCount === 0) {
@@ -272,6 +342,36 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
       {bensData?.summary && <PainelFiscal summary={bensData.summary} />}
       {bensData?.by_indexador && bensData.by_indexador.length > 0 && <PainelIndexador byIndexador={bensData.by_indexador} />}
       {bensData?.by_currency && bensData.by_currency.length > 1 && <PainelMoedas byCurrency={bensData.by_currency} fxRates={bensData.fx_rates} />}
+      {portfolioPerformanceQuery.data && (
+        <Card className="border border-border/80">
+          <CardHeader className="pb-2">
+            <button
+              className="w-full flex items-center justify-between gap-3"
+              onClick={() => setShowPerformance((prev) => !prev)}
+            >
+              <CardTitle className="text-base flex items-center gap-2">
+                <GitCompare className="h-4 w-4 text-primary" />
+                Performance da carteira
+              </CardTitle>
+              {showPerformance ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+          </CardHeader>
+          {showPerformance && (
+            <CardContent className="space-y-4">
+              <GraficoEvolucao data={portfolioPerformanceQuery.data} />
+              <TabelaEvolucaoAnual data={portfolioPerformanceQuery.data} />
+              <RentabilidadeComparada data={portfolioPerformanceQuery.data} />
+              <p className="text-[11px] text-muted-foreground">
+                Benchmarks a partir de jun/2025 podem incluir estimativas baseadas em dados publicos.
+              </p>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {/* Header */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5">

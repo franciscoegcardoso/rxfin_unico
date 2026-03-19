@@ -52,10 +52,10 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { ConsolidarFilters } from '@/types/consolidar';
 import { BancoLogo } from '@/components/shared/BancoLogo';
+import { useUserCategories } from '@/hooks/useUserCategories';
 
 interface ConsolidarTabProps {
   sourceFilter: 'bank' | 'card' | null;
@@ -90,10 +90,9 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showAllMap, setShowAllMap] = useState<Record<string, boolean>>({});
-  const [bulkCategoryId, setBulkCategoryId] = useState<string>('');
-  const [bulkCategoryName, setBulkCategoryName] = useState<string>('');
   const [massGrupoId, setMassGrupoId] = useState<string>('');
   const [massCatId, setMassCatId] = useState<string>('');
+  const [massIncomeId, setMassIncomeId] = useState<string>('');
   const [massSubcats, setMassSubcats] = useState<{ id: string; name: string }[]>([]);
   const [isMassAssigning, setIsMassAssigning] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -110,31 +109,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
     reset,
   } = useConsolidarEstabelecimentos(sourceFilter, filters);
 
-  const { data: expenseGroups = [] } = useQuery({
-    queryKey: ['expense-categories-groups'],
-    queryFn: async () => {
-      const { data: d, error } = await supabase
-        .from('expense_categories')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('order_index');
-      if (error) throw error;
-      return (d ?? []) as { id: string; name: string }[];
-    },
-  });
-
-  const { data: expenseItemsByGroup = [] } = useQuery({
-    queryKey: ['default-expense-items'],
-    queryFn: async () => {
-      const { data: d, error } = await supabase
-        .from('default_expense_items')
-        .select('id, name, category_name')
-        .eq('is_active', true)
-        .order('order_index');
-      if (error) throw error;
-      return (d ?? []) as { id: string; name: string; category_name: string | null }[];
-    },
-  });
+  const { data: userCats } = useUserCategories();
 
   const uniqueBancos = useMemo(() => {
     const set = new Set<string>();
@@ -188,20 +163,34 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
   };
 
   const getItemsForGroup = (grupoNome: string | null) => {
-    if (!grupoNome) return [];
-    return expenseItemsByGroup.filter((i) => i.category_name === grupoNome);
+    if (!grupoNome || !userCats?.expenseGroups) return [];
+    const group = userCats.expenseGroups.find((g) => g.category_name === grupoNome);
+    return group?.items ?? [];
   };
 
+  const grupoForExpenseItemId = useCallback(
+    (itemId: string | null) => {
+      if (!itemId || !userCats?.expenseGroups) return null;
+      for (const g of userCats.expenseGroups) {
+        const item = g.items.find((i) => i.id === itemId);
+        if (item) return { id: g.category_id, name: g.category_name };
+      }
+      return null;
+    },
+    [userCats]
+  );
+
   useEffect(() => {
-    if (!massGrupoId) {
+    if (!massGrupoId || !userCats?.expenseGroups) {
       setMassSubcats([]);
       setMassCatId('');
       return;
     }
     const grupoNome = categories.find((c) => c.id === massGrupoId)?.name ?? '';
-    setMassSubcats(expenseItemsByGroup.filter((i) => i.category_name === grupoNome));
+    const group = userCats.expenseGroups.find((g) => g.category_name === grupoNome);
+    setMassSubcats(group?.items ?? []);
     setMassCatId('');
-  }, [massGrupoId, categories, expenseItemsByGroup]);
+  }, [massGrupoId, categories, userCats]);
 
   const handleRequestClose = useCallback(() => {
     if (dirtyCount > 0) {
@@ -221,15 +210,37 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
   }, [requestCloseRef, handleRequestClose]);
 
   const handleMassAssign = async () => {
-    if (!massGrupoId) return;
-    const grupoNome = categories.find((c) => c.id === massGrupoId)?.name ?? '';
-    const finalCatId = massCatId || massGrupoId;
-    const finalCatNome = massCatId
-      ? (massSubcats.find((s) => s.id === massCatId)?.name ?? grupoNome)
-      : grupoNome;
     const storeNames = Array.from(selectedEstabelecimentos);
+    const selectedRows = sortedRows.filter((r) => selectedEstabelecimentos.has(r.estabelecimento));
+    const selectionAllIncome = selectedRows.length > 0 && selectedRows.every((r) => r.transaction_type === 'receita');
+    const selectionAllExpense = selectedRows.length > 0 && selectedRows.every((r) => r.transaction_type !== 'receita');
+    if (!selectionAllIncome && !selectionAllExpense) {
+      toast.error('Seleção mista. Selecione apenas receitas ou apenas despesas.');
+      return;
+    }
     setIsMassAssigning(true);
     try {
+      let finalCatId = '';
+      let finalCatNome = '';
+      let finalGroupId: string | null = null;
+      let finalGroupName: string | null = null;
+
+      if (selectionAllIncome) {
+        if (!massIncomeId) return;
+        const income = userCats?.incomeItems.find((i) => i.id === massIncomeId);
+        finalCatId = massIncomeId;
+        finalCatNome = income?.name ?? '';
+      } else {
+        if (!massGrupoId) return;
+        const grupoNome = categories.find((c) => c.id === massGrupoId)?.name ?? '';
+        finalGroupId = massGrupoId;
+        finalGroupName = grupoNome;
+        finalCatId = massCatId || massGrupoId;
+        finalCatNome = massCatId
+          ? (massSubcats.find((s) => s.id === massCatId)?.name ?? grupoNome)
+          : grupoNome;
+      }
+
       const { data: rpcData, error } = await supabase.rpc('bulk_assign_category_to_stores', {
         p_store_names: storeNames,
         p_category_id: finalCatId,
@@ -239,11 +250,12 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
       });
       if (error) throw error;
       storeNames.forEach((store) => {
-        setCategory(store, massGrupoId, grupoNome, finalCatId, finalCatNome);
+        setCategory(store, finalGroupId, finalGroupName, finalCatId, finalCatNome);
       });
       setSelectedEstabelecimentos(new Set());
       setMassGrupoId('');
       setMassCatId('');
+      setMassIncomeId('');
       toast.success(
         `Categoria aplicada em massa: ${(rpcData as { stores_updated?: number })?.stores_updated ?? storeNames.length} estabelecimentos · ${(rpcData as { total_updated_transactions?: number })?.total_updated_transactions ?? 0} lançamentos atualizados`
       );
@@ -374,7 +386,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
-            {expenseGroups.map((g) => (
+            {categories.map((g) => (
               <SelectItem key={g.id} value={g.name}>
                 {g.name}
               </SelectItem>
@@ -463,6 +475,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
             {sortedRows.map((row) => {
               const state = rowStates[row.estabelecimento];
               const isExpanded = expanded[row.estabelecimento];
+              const isIncome = row.transaction_type === 'receita';
               const isDespesa = row.transaction_type === 'despesa';
               const borderClass =
                 row.total_pendentes > 0
@@ -470,7 +483,9 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                   : state?.dirty
                     ? 'border-l-2 border-l-yellow-400'
                     : 'border-l-2 border-l-emerald-400';
-              const itemsForGroup = getItemsForGroup(state?.grupo_nome ?? null);
+              const grupoNomeEfetivo =
+                state?.grupo_nome ?? categories.find((c) => c.id === state?.grupo_id)?.name ?? null;
+              const itemsForGroup = getItemsForGroup(grupoNomeEfetivo);
 
               return (
                 <React.Fragment key={row.estabelecimento}>
@@ -569,47 +584,81 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                       )}
                     </td>
                     <td className="px-2 py-1.5 shrink-0">
-                      <Select
-                        value={state?.grupo_id ?? expenseGroups.find((g) => g.name === state?.grupo_nome)?.id ?? ''}
-                        onValueChange={(val) => {
-                          const g = expenseGroups.find((x) => x.id === val);
-                          if (g) setCategory(row.estabelecimento, g.id, g.name, null, null);
-                        }}
-                      >
-                        <SelectTrigger className="h-6 text-xs w-full min-w-[140px]">
-                          <SelectValue placeholder="Grupo..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {expenseGroups.map((g) => (
-                            <SelectItem key={g.id} value={g.id}>
-                              {g.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="px-2 py-1.5 shrink-0 min-w-[180px]">
-                      <div className="space-y-1">
+                      {isIncome ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
                         <Select
-                          value={state?.categoria_id ?? ''}
+                          value={state?.grupo_id ?? categories.find((g) => g.name === state?.grupo_nome)?.id ?? ''}
                           onValueChange={(val) => {
-                            const item = itemsForGroup.find((i) => i.id === val) ?? expenseItemsByGroup.find((i) => i.id === val);
-                            if (item) setCategory(row.estabelecimento, state?.grupo_id ?? null, state?.grupo_nome ?? null, item.id, item.name);
+                            const g = categories.find((x) => x.id === val);
+                            if (g) setCategory(row.estabelecimento, g.id, g.name, null, null);
                           }}
-                          disabled={!state?.grupo_nome && expenseGroups.length > 0}
                         >
-                          <SelectTrigger className="h-6 text-xs w-full">
-                            <SelectValue placeholder="Subcategoria..." />
+                          <SelectTrigger className="h-6 text-xs w-full min-w-[140px]">
+                            <SelectValue placeholder="Grupo..." />
                           </SelectTrigger>
                           <SelectContent>
-                            {itemsForGroup.map((i) => (
-                              <SelectItem key={i.id} value={i.id}>
-                                {i.name}
+                            {categories.map((g) => (
+                              <SelectItem key={g.id} value={g.id}>
+                                {g.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        {row.ai_sugestao_id && !state?.categoria_id && !state?.grupo_id && (
+                      )}
+                    </td>
+                    <td className="px-2 py-1.5 shrink-0 min-w-[180px]">
+                      <div className="space-y-1">
+                        {isIncome ? (
+                          <Select
+                            value={state?.categoria_id ?? ''}
+                            onValueChange={(val) => {
+                              const it = userCats?.incomeItems.find((i) => i.id === val);
+                              if (it) setCategory(row.estabelecimento, null, null, it.id, it.name);
+                            }}
+                          >
+                            <SelectTrigger className="h-6 text-xs w-full">
+                              <SelectValue placeholder="Receita..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(userCats?.incomeItems ?? []).map((it) => (
+                                <SelectItem key={it.id} value={it.id}>
+                                  {it.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Select
+                            value={state?.categoria_id ?? ''}
+                            onValueChange={(val) => {
+                              const item = itemsForGroup.find((i) => i.id === val);
+                              if (item) {
+                                const g = grupoForExpenseItemId(item.id);
+                                setCategory(
+                                  row.estabelecimento,
+                                  g?.id ?? state?.grupo_id ?? null,
+                                  g?.name ?? state?.grupo_nome ?? null,
+                                  item.id,
+                                  item.name
+                                );
+                              }
+                            }}
+                            disabled={!state?.grupo_id && !grupoNomeEfetivo}
+                          >
+                            <SelectTrigger className="h-6 text-xs w-full">
+                              <SelectValue placeholder="Subcategoria..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {itemsForGroup.map((i) => (
+                                <SelectItem key={i.id} value={i.id}>
+                                  {i.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        {row.ai_sugestao_id && !state?.categoria_id && (isIncome || !state?.grupo_id) && (
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
                             <span className="inline-flex gap-1 rounded-md bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] px-1.5 py-0.5">
                               ✨ {row.ai_sugestao_categoria ?? ''}
@@ -621,7 +670,13 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                               onClick={() =>
                                 row.ai_sugestao_id &&
                                 row.ai_sugestao_categoria &&
-                                setCategory(row.estabelecimento, null, null, row.ai_sugestao_id, row.ai_sugestao_categoria)
+                                setCategory(
+                                  row.estabelecimento,
+                                  isIncome ? null : state?.grupo_id ?? null,
+                                  isIncome ? null : state?.grupo_nome ?? null,
+                                  row.ai_sugestao_id,
+                                  row.ai_sugestao_categoria
+                                )
                               }
                             >
                               Aceitar
@@ -753,56 +808,101 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
               Limpar seleção
             </button>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground shrink-0">Aplicar categoria a todos:</span>
-            <Select
-              value={massGrupoId}
-              onValueChange={(val) => {
-                setMassGrupoId(val);
-                setMassCatId('');
-              }}
-            >
-              <SelectTrigger className="h-7 text-xs min-w-[130px] w-auto">
-                <SelectValue placeholder="Grupo..." />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>
-                    {g.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={massCatId}
-              onValueChange={setMassCatId}
-              disabled={!massGrupoId}
-            >
-              <SelectTrigger className="h-7 text-xs min-w-[150px] w-auto disabled:opacity-40">
-                <SelectValue placeholder="Subcategoria..." />
-              </SelectTrigger>
-              <SelectContent>
-                {massSubcats.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              className="h-7 px-3 text-xs font-medium gap-1.5"
-              disabled={!massGrupoId || isMassAssigning}
-              onClick={handleMassAssign}
-            >
-              {isMassAssigning ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Zap className="w-3.5 h-3.5" />
-              )}
-              Aplicar a todos selecionados
-            </Button>
-          </div>
+          {(() => {
+            const selectedRows = sortedRows.filter((r) => selectedEstabelecimentos.has(r.estabelecimento));
+            const selectionAllIncome = selectedRows.length > 0 && selectedRows.every((r) => r.transaction_type === 'receita');
+            const selectionAllExpense = selectedRows.length > 0 && selectedRows.every((r) => r.transaction_type !== 'receita');
+
+            if (!selectionAllIncome && !selectionAllExpense) {
+              return (
+                <p className="text-xs text-muted-foreground">
+                  Seleção mista (receitas e despesas). Selecione apenas um tipo para aplicar em massa.
+                </p>
+              );
+            }
+
+            if (selectionAllIncome) {
+              return (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-muted-foreground shrink-0">Receita:</span>
+                  <Select value={massIncomeId} onValueChange={setMassIncomeId}>
+                    <SelectTrigger className="h-7 text-xs min-w-[170px] w-auto">
+                      <SelectValue placeholder="Categoria receita..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(userCats?.incomeItems ?? []).map((it) => (
+                        <SelectItem key={it.id} value={it.id}>
+                          {it.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="h-7 px-3 text-xs font-medium gap-1.5"
+                    disabled={!massIncomeId || isMassAssigning}
+                    onClick={handleMassAssign}
+                  >
+                    {isMassAssigning ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Zap className="w-3.5 h-3.5" />
+                    )}
+                    Aplicar a todos selecionados
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground shrink-0">Despesa:</span>
+                <Select
+                  value={massGrupoId}
+                  onValueChange={(val) => {
+                    setMassGrupoId(val);
+                    setMassCatId('');
+                  }}
+                >
+                  <SelectTrigger className="h-7 text-xs min-w-[130px] w-auto">
+                    <SelectValue placeholder="Grupo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={massCatId} onValueChange={setMassCatId} disabled={!massGrupoId}>
+                  <SelectTrigger className="h-7 text-xs min-w-[150px] w-auto disabled:opacity-40">
+                    <SelectValue placeholder="Subcategoria..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {massSubcats.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  className="h-7 px-3 text-xs font-medium gap-1.5"
+                  disabled={!massGrupoId || isMassAssigning}
+                  onClick={handleMassAssign}
+                >
+                  {isMassAssigning ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Zap className="w-3.5 h-3.5" />
+                  )}
+                  Aplicar a todos selecionados
+                </Button>
+              </div>
+            );
+          })()}
         </div>
       )}
 

@@ -32,8 +32,10 @@ declare global {
     PluggyConnect?: new (options: {
       connectToken: string;
       includeSandbox?: boolean;
-      openFinanceParameters?: { cpf?: string };
+      updateItem?: string;
       selectedConnectorId?: number;
+      openFinanceParameters?: { cpf?: string };
+      forceAskForCredentials?: boolean;
       onSuccess: (data: { item: { id: string } }) => void;
       onError: (error: { message?: string } | unknown) => void;
       onClose: () => void;
@@ -54,7 +56,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   size = 'default',
   className,
 }) => {
-  const { isLoading, getConnectToken, saveConnection } = usePluggyConnect();
+  const { isLoading, getConnectToken, saveConnection, triggerSync } = usePluggyConnect();
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
   const scriptLoadedRef = useRef(false);
@@ -200,14 +202,21 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       const pluggyConnect = new PluggyConnectCtor({
         connectToken,
         includeSandbox: isMobileSafari ? false : import.meta.env.VITE_PLUGGY_SANDBOX === 'true',
+        ...(updateItemId && { updateItem: updateItemId }),
+        ...(selectedConnectorId != null && { selectedConnectorId }),
         ...(cpf && { openFinanceParameters: { cpf } }),
         onSuccess: async (data) => {
           console.log('Pluggy Connect success:', data);
           setWidgetClosed(); setIsOpening(false);
           if (onSaving) onSaving();
           setTimeout(async () => {
-            const success = await saveConnection(data.item.id);
-            if (success && onSuccess) onSuccess(data.item.id);
+            if (updateItemId) {
+              await triggerSync(data.item.id).catch(console.error);
+              if (onSuccess) onSuccess(data.item.id);
+            } else {
+              const success = await saveConnection(data.item.id);
+              if (success && onSuccess) onSuccess(data.item.id);
+            }
           }, 300);
         },
         onError: (err) => {
@@ -233,7 +242,7 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         variant: 'destructive',
       });
     }
-  }, [scriptLoaded, getConnectToken, saveConnection, onSuccess, onSaving, updateItemId, selectedConnectorId, toast]);
+  }, [scriptLoaded, getConnectToken, saveConnection, triggerSync, onSuccess, onSaving, updateItemId, selectedConnectorId, toast]);
 
   const buttonDisabled = isLoading || isOpening || !scriptLoaded;
 
