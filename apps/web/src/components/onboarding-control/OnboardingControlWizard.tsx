@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingCheckpoint } from '@/hooks/useOnboardingCheckpoint';
@@ -12,8 +12,21 @@ import { StepCartao } from './steps/StepCartao';
 import { StepMetas } from './steps/StepMetas';
 import { StepPatrimonio } from './steps/StepPatrimonio';
 import { StepGrandFinale } from './steps/StepGrandFinale';
+import { supabase } from '@/integrations/supabase/client';
 
 type ControlStep = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+const CONTROL_STEP_TRACK_NAMES: Record<
+  number,
+  'planejamento' | 'fluxo' | 'cartao' | 'metas' | 'patrimonio' | 'finale'
+> = {
+  1: 'planejamento',
+  2: 'fluxo',
+  3: 'cartao',
+  4: 'metas',
+  5: 'patrimonio',
+  6: 'finale',
+};
 
 const PHASE_TO_STEP: Record<string, number> = {
   'not_started': 0,
@@ -35,6 +48,27 @@ export const OnboardingControlWizard: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<ControlStep>(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const controlCompletedRef = useRef(false);
+  const currentStepRef = useRef<ControlStep>(currentStep);
+
+  useEffect(() => {
+    currentStepRef.current = currentStep;
+  }, [currentStep]);
+
+  useEffect(() => {
+    void supabase.rpc('resume_onboarding' as never);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (!controlCompletedRef.current) {
+        void supabase.rpc('mark_onboarding_abandoned' as never, {
+          p_step: currentStepRef.current,
+          p_metadata: { wizard: 'control' },
+        } as never);
+      }
+    };
+  }, []);
 
   // Restore progress from DB
   useEffect(() => {
@@ -64,6 +98,14 @@ export const OnboardingControlWizard: React.FC = () => {
     await advanceControlPhase(phaseToAdvance as any);
     await logControlEvent(eventName);
     if (completedStep !== undefined) {
+      const stepName = CONTROL_STEP_TRACK_NAMES[completedStep];
+      if (stepName) {
+        void supabase.rpc('track_onboarding_event' as never, {
+          p_event_name: 'control_step_completed',
+          p_step: completedStep,
+          p_metadata: { step_name: stepName },
+        } as never);
+      }
       setCompletedSteps(prev => [...prev, completedStep]);
     }
     setCurrentStep(nextStep);
@@ -72,6 +114,12 @@ export const OnboardingControlWizard: React.FC = () => {
   const handleComplete = useCallback(async () => {
     await advanceControlPhase('completed');
     await logControlEvent('control_onboarding_completed');
+    controlCompletedRef.current = true;
+    void supabase.rpc('track_onboarding_event' as never, {
+      p_event_name: 'control_step_completed',
+      p_step: 6,
+      p_metadata: { step_name: 'finale' },
+    } as never);
     navigate('/inicio', { replace: true });
   }, [advanceControlPhase, logControlEvent, navigate]);
 

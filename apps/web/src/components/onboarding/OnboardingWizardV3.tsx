@@ -18,6 +18,7 @@ import { useOnboardingSnapshot } from '@/hooks/useOnboardingSnapshot';
 import { useAuth } from '@/contexts/AuthContext';
 import { markOnboardingComplete } from '@/services/onboardingPersistence';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const BLOCK_STEPS = { A: 6, B: 6, C: 7, D: 4 } as const;
 
@@ -46,6 +47,46 @@ export const OnboardingWizardV3: React.FC = () => {
   const [draftRestored, setDraftRestored] = useState(false);
   const [transition, setTransition] = useState<'block_a' | 'block_b' | 'block_c' | null>(null);
   const pendingTransitionRef = useRef<'block_a' | 'block_b' | 'block_c' | null>(null);
+  const onboardingCompletedRef = useRef(false);
+  const currentStepRef = useRef(step);
+  const currentBlockRef = useRef<ActiveBlock>(activeBlock);
+  const lastBlockStartedTrackedRef = useRef<ActiveBlock | null>(null);
+
+  useEffect(() => {
+    currentStepRef.current = step;
+  }, [step]);
+
+  useEffect(() => {
+    currentBlockRef.current = activeBlock;
+  }, [activeBlock]);
+
+  // Limpa abandono ao reentrar no wizard (fonte: onboarding_state.abandoned_at)
+  useEffect(() => {
+    void supabase.rpc('resume_onboarding' as never);
+  }, []);
+
+  // Abandono: unmount sem completar Raio-X completo
+  useEffect(() => {
+    return () => {
+      if (!onboardingCompletedRef.current) {
+        void supabase.rpc('mark_onboarding_abandoned' as never, {
+          p_step: currentStepRef.current,
+          p_metadata: { block: currentBlockRef.current },
+        } as never);
+      }
+    };
+  }, []);
+
+  // Tracking: início de cada bloco (analytics_events via RPC)
+  useEffect(() => {
+    if (lastBlockStartedTrackedRef.current === activeBlock) return;
+    lastBlockStartedTrackedRef.current = activeBlock;
+    void supabase.rpc('track_onboarding_event' as never, {
+      p_event_name: 'block_started',
+      p_step: currentStepRef.current,
+      p_metadata: { block: activeBlock },
+    } as never);
+  }, [activeBlock]);
 
   // Marcar fase 'started' ao abrir o wizard com not_started (evita falha ao avançar para block_a_done)
   useEffect(() => {
@@ -145,6 +186,14 @@ export const OnboardingWizardV3: React.FC = () => {
       // Não travar o usuário — avançar step mesmo assim
     }
 
+    const completedBlock =
+      phase === 'block_a' ? 'A' : phase === 'block_b' ? 'B' : 'C';
+    void supabase.rpc('track_onboarding_event' as never, {
+      p_event_name: 'block_completed',
+      p_step: currentStepRef.current,
+      p_metadata: { block: completedBlock },
+    } as never);
+
     await registerEvent(eventMap[phase]);
     setStep(0);
   }, [user?.id, currentPhase, advancePhase, registerEvent]);
@@ -156,6 +205,12 @@ export const OnboardingWizardV3: React.FC = () => {
     }
     const ok = await advancePhase('completed');
     if (!ok) return;
+    onboardingCompletedRef.current = true;
+    void supabase.rpc('track_onboarding_event' as never, {
+      p_event_name: 'block_completed',
+      p_step: currentStepRef.current,
+      p_metadata: { block: 'D' },
+    } as never);
     await registerEvent('block_d_completed');
     // Sincroniza profiles.onboarding_completed = true para o ProtectedRoute usar como cache
     await markOnboardingComplete(user.id);

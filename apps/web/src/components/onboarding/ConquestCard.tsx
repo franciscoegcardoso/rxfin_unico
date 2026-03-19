@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Fingerprint, Shield, Activity, ArrowRight, Sparkles, ExternalLink } from 'lucide-react';
+import { Crown, Fingerprint, Shield, Activity, ArrowRight, Sparkles, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import confetti from 'canvas-confetti';
@@ -26,6 +26,8 @@ interface ConquestCardProps {
   nextLevelPreview?: string;
   onContinue: () => void;
   continueLabel?: string;
+  continueDisabled?: boolean;
+  continueLoading?: boolean;
   crown?: boolean;
   softUpsell?: SoftUpsell;
 }
@@ -147,9 +149,19 @@ export const ConquestCard: React.FC<ConquestCardProps> = ({
             size="lg"
             className="w-full"
             onClick={onContinue}
+            disabled={continueDisabled || continueLoading}
           >
-            {continueLabel}
-            <ArrowRight className="ml-2 h-4 w-4" />
+            {continueLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                {continueLabel}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </>
+            )}
           </Button>
         </div>
       </div>

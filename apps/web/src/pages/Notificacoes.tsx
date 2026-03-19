@@ -53,6 +53,7 @@ export interface NotificationRow {
   read_at: string | null;
   created_at: string;
   total_count?: number;
+  metadata?: Record<string, unknown> | null;
 }
 
 const CATEGORY_OPTIONS: { value: CategoryFilter; label: string }[] = [
@@ -157,6 +158,10 @@ export default function Notificacoes() {
         ...r,
         read_at: r.read_at ?? null,
         category: r.category ?? null,
+        metadata:
+          r.metadata && typeof r.metadata === 'object' && !Array.isArray(r.metadata)
+            ? (r.metadata as Record<string, unknown>)
+            : null,
       }));
       const total =
         (rows[0] as NotificationRow & { total_count?: number })?.total_count ??
@@ -227,6 +232,34 @@ export default function Notificacoes() {
   }, [list, statusFilter, categoryFilter]);
 
   const hasMore = list.length < totalCount && list.length > 0;
+
+  const handleNotificationRowActivate = useCallback(
+    (n: NotificationRow) => {
+      if (n.read_at == null) {
+        void markRead(n.id);
+      }
+      const itemId =
+        n.metadata && typeof n.metadata.item_id === 'string' ? n.metadata.item_id : null;
+      const connectorName =
+        n.metadata && typeof n.metadata.connector_name === 'string'
+          ? n.metadata.connector_name
+          : undefined;
+      if (n.type === 'connection' && itemId) {
+        navigate('/instituicoes-financeiras', {
+          state: {
+            autoReconnect: true,
+            itemId,
+            ...(connectorName ? { connectorName } : {}),
+          },
+        });
+        return;
+      }
+      if (n.action_url) {
+        navigate(n.action_url);
+      }
+    },
+    [markRead, navigate]
+  );
 
   return (
     <AppLayout>
@@ -370,8 +403,16 @@ export default function Notificacoes() {
                           </TooltipTrigger>
                           <TooltipContent><p>{absoluteDate(n.created_at)}</p></TooltipContent>
                         </Tooltip>
-                        {n.action_url && (
-                          <Button variant="ghost" size="sm" className="h-8 gap-1 text-[hsl(var(--color-brand-700))]" onClick={(e) => { e.stopPropagation(); markRead(n.id); navigate(n.action_url!); }}>
+                        {(n.action_url || (n.type === 'connection' && n.metadata?.item_id)) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-1 text-[hsl(var(--color-brand-700))]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNotificationRowActivate(n);
+                            }}
+                          >
                             <ExternalLink className="h-3.5 w-3.5" /> Ver detalhes
                           </Button>
                         )}

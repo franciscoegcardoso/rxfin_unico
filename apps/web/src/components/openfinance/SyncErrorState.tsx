@@ -38,6 +38,13 @@ export const SyncErrorState: React.FC<SyncErrorStateProps> = ({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        {connectorName === 'XP Banking' &&
+          (status === 'OUTDATED' || status === 'ERROR') && (
+            <p className="text-xs text-muted-foreground mt-1">
+              O XP Banking exige reautorização periódica por política de segurança do banco. Isso é normal e
+              esperado.
+            </p>
+          )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {(isLoginError || isTimeout) && onReconnect ? (

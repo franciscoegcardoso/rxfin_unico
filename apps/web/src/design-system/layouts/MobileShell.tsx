@@ -6,7 +6,7 @@ import { BottomNavigation } from "@/components/BottomNavigation";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
 import { ThemedLogo } from "@/components/ui/themed-logo";
-import { useOnboardingCheckpoint } from "@/hooks/useOnboardingCheckpoint";
+import { useBannerState } from "@/hooks/useBannerState";
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -27,14 +27,14 @@ const shellErrorFallback = (retry: () => void) => (
   </div>
 );
 
-const PROGRESS_PHASES = ['started', 'block_a_done', 'block_b_done', 'block_c_done'];
-
 export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentPhase, isLoading } = useOnboardingCheckpoint();
-  const showBanner = !isLoading && PROGRESS_PHASES.includes(currentPhase);
-  const mainPt = isLoading ? 'pt-[104px]' : showBanner ? 'pt-[104px]' : 'pt-14';
+  const { bannerState, loading: bannerLoading } = useBannerState();
+  const showBanner =
+    !bannerLoading &&
+    (bannerState.banner === "progress_raio_x" || bannerState.banner === "progress_control");
+  const mainPt = bannerLoading ? "pt-[104px]" : showBanner ? "pt-[104px]" : "pt-14";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -53,8 +53,23 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         </button>
       </header>
 
-      {/* Banner de onboarding: fixo imediatamente abaixo do header */}
-      <OnboardingProgressBanner placement="below-header" />
+      {showBanner && (
+        <OnboardingProgressBanner
+          placement="below-header"
+          ctaRoute={
+            bannerState.cta_route ??
+            (bannerState.banner === "progress_control" ? "/onboarding-control" : "/onboarding")
+          }
+          ctaLabel={
+            bannerState.cta_label ??
+            (bannerState.banner === "progress_control"
+              ? "Continuar configuração →"
+              : "Continuar meu Raio-X →")
+          }
+          phase={bannerState.phase}
+          variant={bannerState.banner === "progress_control" ? "control" : "raio_x"}
+        />
+      )}
 
       {/* Conteúdo: pt-14 ou pt para header+banner; pb = altura do menu + safe-area */}
       <main

@@ -119,18 +119,9 @@ export function AssetLogo({
     const list: string[] = [];
     if (logoUrl?.trim()) list.push(logoUrl.trim());
     const t = ticker?.trim();
-    const isTickerType = [
-      'STOCK',
-      'REAL_ESTATE_FUND',
-      'ETF',
-      'BDR',
-      'stock_br',
-      'fii',
-      'etf_br',
-      'bdr',
-      'stock',
-      'EQUITY',
-    ].includes(typeUpper);
+    // Só tenta CDNs de bolsa (brapi, etc.) para tipos com ticker real (ações, FII, ETF, BDR).
+    // FIXED_INCOME, MUTUAL_FUND, PENSION_* usam apenas logo_url do banco e companyDomain (Clearbit).
+    const isTickerType = isBrapiTickerType(assetType, ticker);
     if (isTickerType && t) {
       list.push(`https://icons.brapi.dev/icons/${t}.svg`);
       list.push(`https://icons.brapi.dev/logos/${t}.png`);

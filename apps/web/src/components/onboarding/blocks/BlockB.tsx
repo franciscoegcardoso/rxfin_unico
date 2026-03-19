@@ -493,6 +493,12 @@ export const BlockB: React.FC<BlockBProps> = ({
                   .single();
 
                 if (data) {
+                  void supabase.rpc('track_onboarding_event' as never, {
+                    p_event_name: 'pluggy_connected',
+                    p_step: step,
+                    p_metadata: { connector_name: data.connector_name ?? 'unknown' },
+                  } as never);
+
                   const isDuplicate =
                     data.connector_id != null && connectedConnectorIds.has(data.connector_id);
 
@@ -1019,7 +1025,14 @@ export const BlockB: React.FC<BlockBProps> = ({
           <Button
             variant="hero"
             className="flex-1"
-            onClick={() => onStepChange(5)}
+            onClick={() => {
+              void supabase.rpc('track_onboarding_event' as never, {
+                p_event_name: 'extract_uploaded',
+                p_step: step,
+                p_metadata: { file_type: 'portal_flow' as const },
+              } as never);
+              onStepChange(5);
+            }}
           >
             Concluir importação
             <ArrowRight className="ml-2 h-4 w-4" />

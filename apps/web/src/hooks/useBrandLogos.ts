@@ -24,7 +24,7 @@ async function loadBrands(): Promise<BrandData[]> {
   loadingPromise = (async () => {
     for (const path of paths) {
       try {
-        const res = await fetch(path);
+        const res = await fetch(path + '?v=2');
         if (res.ok) {
           const data: BrandLogosData = await res.json();
           if (data.marcas?.length > 0) {

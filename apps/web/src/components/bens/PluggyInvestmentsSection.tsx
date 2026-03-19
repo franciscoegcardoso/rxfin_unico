@@ -29,9 +29,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { usePluggyInvestments, InvestmentCategory, InvestmentCategoryData } from '@/hooks/usePluggyInvestments';
 import { useInvestmentsList } from '@/hooks/useInvestmentsList';
+import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
 import { groupInvestments } from '@/utils/groupInvestments';
 import { InvestmentGroupHeader } from '@/components/bens-investimentos/InvestmentGroupHeader';
 import { InvestmentListItemRow } from '@/components/bens-investimentos/InvestmentListItemRow';
+import { InvestimentosFiscal } from '@/components/bens-investimentos/InvestimentosFiscal';
+import { InvestimentosBlocos } from '@/components/bens-investimentos/InvestimentosBlocos';
+import { InvestimentosMoedas } from '@/components/bens-investimentos/InvestimentosMoedas';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
 import { InvestmentOnboardingCard } from '@/components/investimentos/InvestmentOnboardingCard';
 import { InteractiveTreemap, TreemapItem } from '@/components/charts/InteractiveTreemap';
@@ -104,6 +108,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
 
   const queryClient = useQueryClient();
   const investmentsListQuery = useInvestmentsList();
+  const { data: bensData } = useBensInvestimentos(null);
 
   const rpcItems = investmentsListQuery.data;
   const rpcGrouped = useMemo(() => {
@@ -220,6 +225,21 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         <InvestmentOnboardingCard onboarding={onboardingStatus} onDismiss={handleOnboardingDismiss} />
       )}
       <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
+
+      {/* Painel fiscal (IR/IOF retidos) */}
+      {bensData?.summary && (
+        <InvestimentosFiscal summary={bensData.summary} />
+      )}
+
+      {/* Blocos por indexador */}
+      {bensData?.by_indexador && bensData.by_indexador.length > 0 && (
+        <InvestimentosBlocos byIndexador={bensData.by_indexador} />
+      )}
+
+      {/* Distribuição por moeda (só se mais de uma moeda) */}
+      {bensData?.by_currency && bensData.by_currency.length > 1 && (
+        <InvestimentosMoedas byCurrency={bensData.by_currency} fxRates={bensData.fx_rates} />
+      )}
 
       {/* Header */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
@@ -615,9 +635,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                           <AssetLogo
                             ticker={inv.code ?? undefined}
                             assetType={inv.type ?? ''}
-                            logoUrl={(inv as { logo_url?: string | null }).logo_url}
-                            companyDomain={(inv as { company_domain?: string | null }).company_domain}
-                            name={inv.name ?? (inv as { issuer?: string | null }).issuer ?? undefined}
+                            logoUrl={inv.logo_url ?? undefined}
+                            companyDomain={inv.company_domain ?? undefined}
+                            name={inv.name ?? inv.issuer ?? undefined}
                             size="md"
                             showTooltip
                           />

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -16,9 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useCreditCardDashboard } from '@/hooks/useCreditCardDashboard';
 import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { useConsolidarEstabelecimentos } from '@/hooks/useConsolidarEstabelecimentos';
+import { useFinancial } from '@/contexts/FinancialContext';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { CategoryAssignmentDialog } from '@/components/shared/CategoryAssignmentDialog';
+import { financialInstitutions } from '@/data/defaultData';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BillRow {
   id?: string;
@@ -60,6 +63,30 @@ interface CartaoCreditoProps {
   embedded?: boolean;
 }
 
+/** Exibição legível do cartão: banco, bandeira e 4 últimos dígitos */
+function getCardDisplayLabel(
+  cardId: string | undefined,
+  config: { financialInstitutions: Array<{ id: string; institutionId: string; customName?: string; creditCardBrand?: string }> },
+  pluggyMap: Record<string, { bank: string; brand: string; last4: string }>
+): string {
+  if (!cardId) return '—';
+  const pluggy = pluggyMap[cardId];
+  if (pluggy) {
+    const parts = [pluggy.bank, pluggy.brand].filter(Boolean);
+    if (pluggy.last4) parts.push(`•••• ${pluggy.last4}`);
+    return parts.length > 0 ? parts.join(' · ') : cardId;
+  }
+  const fi = config.financialInstitutions.find((f) => f.id === cardId);
+  if (fi) {
+    const institution = financialInstitutions.find((i) => i.id === fi.institutionId);
+    const bank = fi.customName || institution?.name || 'Cartão';
+    const brand = fi.creditCardBrand || '';
+    const parts = [bank, brand].filter(Boolean);
+    return parts.length > 0 ? parts.join(' · ') : bank;
+  }
+  return cardId;
+}
+
 const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [todasTransacoesDialogOpen, setTodasTransacoesDialogOpen] = useState(false);
@@ -68,10 +95,42 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const [gestaoFaturasDialogOpen, setGestaoFaturasDialogOpen] = useState(false);
   const [comprasRecorrentesDialogOpen, setComprasRecorrentesDialogOpen] = useState(false);
   const [projecaoParcelasDialogOpen, setProjecaoParcelasDialogOpen] = useState(false);
+  const { config } = useFinancial();
+  const [pluggyCardDisplay, setPluggyCardDisplay] = useState<Record<string, { bank: string; brand: string; last4: string }>>({});
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
   const { transactions: allTransactions } = useCreditCardTransactions();
   const { data: consolidarData = [] } = useConsolidarEstabelecimentos('card');
   const dashboard = data as DashboardData | null;
+
+  useEffect(() => {
+    const fetchPluggyCards = async () => {
+      const { data: accounts } = await supabase
+        .from('pluggy_accounts')
+        .select('id, number, card_brand, connection_id')
+        .eq('type', 'CREDIT')
+        .is('deleted_at', null);
+      if (!accounts?.length) return;
+      const connIds = [...new Set(accounts.map((a) => a.connection_id))];
+      const { data: conns } = await supabase
+        .from('pluggy_connections')
+        .select('id, connector_name')
+        .in('id', connIds)
+        .is('deleted_at', null);
+      const connMap = new Map((conns || []).map((c) => [c.id, c]));
+      const map: Record<string, { bank: string; brand: string; last4: string }> = {};
+      accounts.forEach((a) => {
+        const conn = connMap.get(a.connection_id);
+        const number = (a.number as string) || '';
+        map[a.id] = {
+          bank: conn?.connector_name || '',
+          brand: (a.card_brand as string) || '',
+          last4: number.length >= 4 ? number.slice(-4) : number,
+        };
+      });
+      setPluggyCardDisplay(map);
+    };
+    fetchPluggyCards();
+  }, []);
 
   const uniqueStoresCount = useMemo(
     () => consolidarData.filter((r) => r.total_pendentes > 0).length,
@@ -338,7 +397,9 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
                               <p className="font-semibold text-foreground shrink-0 tabular-nums whitespace-nowrap">{formatCurrency(tx.value ?? 0)}</p>
                             </div>
                             {tx.card_id && (
-                              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 truncate">{tx.card_id}</p>
+                              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-border/50 truncate">
+                                {getCardDisplayLabel(tx.card_id, config, pluggyCardDisplay)}
+                              </p>
                             )}
                           </Card>
                         );
@@ -382,7 +443,9 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
                                   <td className="px-4 py-3 text-right font-medium tabular-nums">
                                     {formatCurrency(tx.value ?? 0)}
                                   </td>
-                                  <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">{tx.card_id ?? '—'}</td>
+                                  <td className="px-4 py-3 text-xs text-muted-foreground hidden sm:table-cell">
+                                    {getCardDisplayLabel(tx.card_id, config, pluggyCardDisplay)}
+                                  </td>
                                 </tr>
                               );
                             })}

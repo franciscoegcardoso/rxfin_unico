@@ -37,27 +37,20 @@ function getPriorityBorderClass(priority: string): string {
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkRead: (id: string) => void;
-  onNavigate?: (url: string) => void;
-  onClose?: () => void;
+  /** Clique na linha: marca lida se precisar e delega navegação ao pai */
+  onItemClick: (notification: Notification) => void;
 }
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
-  onMarkRead,
-  onNavigate,
-  onClose,
+  onItemClick,
 }) => {
   const isUnread = notification.read_at == null;
   const Icon = getCategoryIcon(notification.category);
   const borderClass = getPriorityBorderClass(notification.priority);
 
   const handleClick = () => {
-    if (isUnread) onMarkRead(notification.id);
-    if (notification.action_url && onNavigate) {
-      onClose?.();
-      onNavigate(notification.action_url);
-    }
+    onItemClick(notification);
   };
 
   const relativeDate = formatDistanceToNow(new Date(notification.created_at), {

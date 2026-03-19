@@ -20,12 +20,15 @@ export function InvestmentAvatar({
   ticker,
   type,
   displayName,
+  companyDomain,
 }: {
   logoUrl: string | null;
   ticker: string | null;
   type: string;
   /** Para iniciais quando não há logo */
   displayName?: string;
+  /** Domínio para fallback Clearbit (ex.: renda fixa) */
+  companyDomain?: string | null;
 }) {
   const box = useLogoBoxPx();
   const scale = box / 40;
@@ -40,11 +43,12 @@ export function InvestmentAvatar({
         style={{ width: 40, height: 40, transform: `scale(${scale})` }}
       >
         <AssetLogo
-          logoUrl={logoUrl}
+          logoUrl={logoUrl ?? undefined}
           ticker={ticker ?? undefined}
           assetType={type}
           size="lg"
           name={displayName ?? ticker ?? undefined}
+          companyDomain={companyDomain ?? undefined}
         />
       </div>
     </div>

@@ -24,10 +24,11 @@ export function InvestmentListItemRow({ item, onClick }: Props) {
       onClick={onClick}
     >
       <InvestmentAvatar
-        logoUrl={item.logo_url}
+        logoUrl={item.logo_url ?? null}
         ticker={item.ticker}
         type={item.investment_type}
         displayName={item.display_name}
+        companyDomain={item.company_domain ?? null}
       />
 
       <div className="flex-1 min-w-0 flex flex-row max-[360px]:flex-col max-[360px]:items-start items-center gap-2">

@@ -12,6 +12,8 @@ export interface Notification {
   action_url: string | null;
   read_at: string | null;
   created_at: string;
+  /** JSON do banco (ex.: item_id / connector_name para type connection) */
+  metadata?: Record<string, unknown> | null;
 }
 
 const BELL_LIMIT = 10;
@@ -35,7 +37,7 @@ export function useNotifications() {
         : (pageRes.data as { rows?: unknown[] })?.rows ??
           (pageRes.data as { data?: unknown[] })?.data ??
           [];
-    const list = (raw as (Notification & { read_at?: string | null })[]).map((r) => ({
+    const list = (raw as (Notification & { read_at?: string | null; metadata?: unknown })[]).map((r) => ({
       id: r.id,
       title: r.title,
       message: r.message,
@@ -45,6 +47,10 @@ export function useNotifications() {
       action_url: r.action_url ?? null,
       read_at: r.read_at ?? null,
       created_at: r.created_at,
+      metadata:
+        r.metadata && typeof r.metadata === 'object' && !Array.isArray(r.metadata)
+          ? (r.metadata as Record<string, unknown>)
+          : null,
     }));
     setNotifications(list);
     // Contagem de não lidas sempre derivada da lista, para sino e dropdown ficarem alinhados

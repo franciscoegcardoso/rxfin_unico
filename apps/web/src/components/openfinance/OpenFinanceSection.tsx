@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { mapPluggyStatus } from '@/core/adapters/pluggy-adapter';
 import { Card, CardContent } from '@/components/ui/card';
@@ -67,7 +66,16 @@ const accountTypeLabels: Record<string, string> = {
   CREDIT: 'Cartão de Crédito',
 };
 
-export const OpenFinanceSection: React.FC = () => {
+export interface OpenFinanceSectionProps {
+  /** Deep-link: abre o widget Pluggy em modo reconexão para este item_id */
+  forcedReconnectItemId?: string | null;
+  onForcedReconnectConsumed?: () => void;
+}
+
+export const OpenFinanceSection: React.FC<OpenFinanceSectionProps> = ({
+  forcedReconnectItemId = null,
+  onForcedReconnectConsumed,
+}) => {
   const {
     isLoading,
     connections,
@@ -82,6 +90,8 @@ export const OpenFinanceSection: React.FC = () => {
 
   const [refreshingItems, setRefreshingItems] = useState<Set<string>>(new Set());
   const [reconnectItemId, setReconnectItemId] = useState<string | null>(null);
+  /** Incrementa a cada pedido de reconexão para re-disparar o auto-clique no botão hidden */
+  const [reconnectGen, setReconnectGen] = useState(0);
   const [justConnectedId, setJustConnectedId] = useState<string | null>(null);
   const [isSavingConnection, setIsSavingConnection] = useState(false);
   const [recentlyConnectedIds, setRecentlyConnectedIds] = useState<Set<string>>(new Set());
@@ -91,6 +101,28 @@ export const OpenFinanceSection: React.FC = () => {
     fetchAccounts();
     fetchTransactions();
   }, [fetchConnections, fetchAccounts, fetchTransactions]);
+
+  const startReconnect = useCallback((itemId: string) => {
+    setReconnectItemId(itemId);
+    setReconnectGen((g) => g + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!reconnectItemId) return;
+    const t = window.setTimeout(() => {
+      const btn = document.querySelector(
+        '[data-pluggy-reconnect-btn="true"]'
+      ) as HTMLButtonElement | null;
+      btn?.click();
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [reconnectItemId, reconnectGen]);
+
+  useEffect(() => {
+    if (!forcedReconnectItemId) return;
+    startReconnect(forcedReconnectItemId);
+    onForcedReconnectConsumed?.();
+  }, [forcedReconnectItemId, startReconnect, onForcedReconnectConsumed]);
 
   const connectorIds = useMemo(
     () => connections.map((c) => c.connector_id).filter((id): id is number => id != null && Number.isInteger(id)),
@@ -192,30 +224,28 @@ export const OpenFinanceSection: React.FC = () => {
     [accountsByConnection, transactionsByAccount, recentlyConnectedIds],
   );
 
-  /** Conexões que precisam de reconexão (LOGIN_ERROR ou legado LOGIN_ERROR/OUTDATED) */
+  /** Conexões que precisam de reconexão (OUTDATED, ERROR, LOGIN_ERROR) */
   const loginErrorConnections = useMemo(
     () =>
       connections.filter(
         (c) =>
-          (c.status === 'ERROR' && c.error_type === 'LOGIN_ERROR') ||
-          c.status === 'LOGIN_ERROR' ||
-          c.status === 'OUTDATED'
+          c.status === 'OUTDATED' || c.status === 'LOGIN_ERROR' || c.status === 'ERROR'
       ),
     [connections]
   );
   const firstLoginErrorItemId = loginErrorConnections[0]?.item_id ?? null;
   const reconnectBannerRef = useRef<HTMLDivElement>(null);
 
+  const firstConsentExpiredConnection = useMemo(
+    () => healthConnections.find((c) => c.consent_expired === true),
+    [healthConnections]
+  );
+
   const scrollToReconnect = useCallback(() => {
-    if (firstLoginErrorItemId) {
-      setReconnectItemId(firstLoginErrorItemId);
-      reconnectBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      // Abrir o widget de reconexão após o botão hidden ser montado
-      setTimeout(() => {
-        (document.querySelector('[data-pluggy-reconnect-btn]') as HTMLButtonElement)?.click();
-      }, 150);
-    }
-  }, [firstLoginErrorItemId]);
+    if (!firstLoginErrorItemId) return;
+    startReconnect(firstLoginErrorItemId);
+    reconnectBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [firstLoginErrorItemId, startReconnect]);
 
   return (
     <div className="space-y-6">
@@ -339,11 +369,19 @@ export const OpenFinanceSection: React.FC = () => {
                   : `${healthSummary.expired} conexões com autorização expirada. Reconecte para retomar a sincronização.`}
               </p>
             </div>
-            <Button size="sm" variant="destructive" className="gap-1.5 shrink-0" asChild>
-              <Link to="/instituicoes-financeiras">
-                <Link2 className="h-4 w-4" />
-                Reconectar
-              </Link>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="gap-1.5 shrink-0"
+              type="button"
+              disabled={!firstConsentExpiredConnection?.item_id}
+              onClick={() => {
+                const id = firstConsentExpiredConnection?.item_id;
+                if (id) startReconnect(id);
+              }}
+            >
+              <Link2 className="h-4 w-4" />
+              Reconectar
             </Button>
           </CardContent>
         </Card>
@@ -537,7 +575,8 @@ export const OpenFinanceSection: React.FC = () => {
                           size="sm"
                           variant="destructive"
                           className="h-7 text-xs gap-1 px-2"
-                          onClick={() => setReconnectItemId(connection.item_id)}
+                          type="button"
+                          onClick={() => startReconnect(connection.item_id)}
                         >
                           <Link2 className="h-3 w-3" />
                           Reconectar
@@ -617,7 +656,7 @@ export const OpenFinanceSection: React.FC = () => {
                       connectorName={connection.connector_name}
                       status={connection.status}
                       onRetry={() => handleRefresh(connection.item_id)}
-                      onReconnect={() => setReconnectItemId(connection.item_id)}
+                      onReconnect={() => startReconnect(connection.item_id)}
                       isRetrying={isRefreshing}
                     />
                   )}

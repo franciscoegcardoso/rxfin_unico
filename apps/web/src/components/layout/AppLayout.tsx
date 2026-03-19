@@ -13,6 +13,7 @@ import { DemoModeWelcomeModal } from '@/components/DemoModeWelcomeModal';
 import { OnboardingTransitionModal } from '@/components/OnboardingTransitionModal';
 import { StartRaioXContext } from '@/contexts/StartRaioXContext';
 import { useDemoMode } from '@/hooks/useDemoMode';
+import { useBannerState } from '@/hooks/useBannerState';
 import { useStartRaioX } from '@/hooks/useStartRaioX';
 import { useShell } from '@/design-system/layouts/ShellContext';
 
@@ -27,6 +28,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
   const { insideShell } = useShell();
   const { isDemoMode, isLoading: isDemoModeLoading } = useDemoMode();
+  const { bannerState, loading: bannerLoading } = useBannerState();
+  const showDemoBanner =
+    !bannerLoading &&
+    (bannerState.banner === 'demo' || (bannerState.banner === 'none' && isDemoMode));
   const { needsPhone, currentEmail } = usePhoneCompletion();
   const [phoneCompleted, setPhoneCompleted] = useState(false);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -138,7 +143,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     return (
       <StartRaioXContext.Provider value={startRaioX}>
         <div className="w-full max-w-full overflow-x-hidden flex flex-col flex-1 min-h-0">
-          {isDemoMode && <DemoDataBanner inline innerRef={bannerRef} />}
+          {showDemoBanner && <DemoDataBanner inline innerRef={bannerRef} />}
           <main
             className={`
               w-full max-w-full overflow-x-hidden flex-1 min-w-0
@@ -176,14 +181,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   return (
     <StartRaioXContext.Provider value={startRaioX}>
       <div className="min-h-screen bg-[hsl(var(--color-surface-base))] w-full max-w-full overflow-x-hidden flex flex-col">
-        <DemoDataBanner innerRef={bannerRef} />
+        {showDemoBanner && <DemoDataBanner innerRef={bannerRef} />}
         <main
           className={cn(
             'w-full max-w-full overflow-x-hidden flex-1',
             'px-4 md:px-6 lg:px-8 pb-6',
             isMobile && 'pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]',
           )}
-          style={{ paddingTop: isDemoMode ? `${DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX}px` : '0px' }}
+          style={{ paddingTop: showDemoBanner ? `${DEMO_BANNER_EXPANDED_MIN_HEIGHT_PX}px` : '0px' }}
         >
           {content}
         </main>

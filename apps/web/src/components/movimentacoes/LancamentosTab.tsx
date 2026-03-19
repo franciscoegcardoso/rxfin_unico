@@ -39,6 +39,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -443,20 +444,20 @@ export function LancamentosTab({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="w-8 px-1 py-3 shrink-0">
+              <th className="w-8 px-1 py-2 shrink-0">
                 <Checkbox
                   checked={sortedRows.length > 0 && selectedIds.size === sortedRows.length}
                   onCheckedChange={toggleSelectAll}
                 />
               </th>
-              <th className="text-left px-2 py-3 font-medium w-[100px] shrink-0">Data</th>
-              <th className="text-left px-2 py-3 font-medium min-w-[200px]">Estabelecimento</th>
-              <th className="text-left px-2 py-3 font-medium w-[110px] shrink-0">Valor</th>
-              <th className="text-left px-2 py-3 font-medium w-[72px] shrink-0">Fonte</th>
-              <th className="text-left px-2 py-3 font-medium w-[100px] shrink-0">Banco</th>
-              <th className="text-left px-2 py-3 font-medium min-w-[140px] shrink-0">Grupo (L1)</th>
-              <th className="text-left px-2 py-3 font-medium min-w-[160px] shrink-0">Categoria</th>
-              <th className="text-left px-2 py-3 font-medium w-20 shrink-0">Status</th>
+              <th className="text-left px-2 py-2 font-medium w-[100px] shrink-0">Data</th>
+              <th className="text-left px-2 py-2 font-medium min-w-[200px]">Estabelecimento</th>
+              <th className="text-left px-2 py-2 font-medium w-[110px] shrink-0">Valor</th>
+              <th className="text-left px-2 py-2 font-medium w-[72px] shrink-0">Fonte</th>
+              <th className="text-left px-2 py-2 font-medium w-[100px] shrink-0">Banco</th>
+              <th className="text-left px-2 py-2 font-medium min-w-[140px] shrink-0">Grupo (L1)</th>
+              <th className="text-left px-2 py-2 font-medium min-w-[160px] shrink-0">Categoria</th>
+              <th className="text-left px-2 py-2 font-medium w-20 shrink-0">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -478,41 +479,46 @@ export function LancamentosTab({
                   key={row.transaction_id}
                   className={cn('border-b border-border/50 hover:bg-muted/20', borderClass)}
                 >
-                  <td className="px-1 py-2 shrink-0">
+                  <td className="px-1 py-1.5 shrink-0">
                     <Checkbox
                       checked={selectedIds.has(row.transaction_id)}
                       onCheckedChange={() => toggleSelect(row.transaction_id)}
                     />
                   </td>
-                  <td className="px-2 py-2 text-muted-foreground tabular-nums shrink-0 whitespace-nowrap">
+                  <td className="px-2 py-1.5 text-muted-foreground tabular-nums shrink-0 whitespace-nowrap text-xs">
                     {formatDate(row.tx_date)}
                   </td>
-                  <td className="px-2 py-2 min-w-[200px] align-top">
-                    <div className="flex flex-col gap-1">
-                      {isDespesa ? (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 rounded px-1 py-0.5 shrink-0 w-fit">
-                          <ArrowDownLeft className="w-2.5 h-2.5" /> Saída
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded px-1 py-0.5 shrink-0 w-fit">
-                          <ArrowUpRight className="w-2.5 h-2.5" /> Entrada
-                        </span>
-                      )}
-                      <span className="text-xs leading-tight break-words whitespace-normal">
+                  <td className="px-2 py-1.5 min-w-[200px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-xs leading-tight truncate break-words" title={row.estabelecimento}>
                         {row.estabelecimento}
                       </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="shrink-0 inline-flex">
+                              {isDespesa ? (
+                                <ArrowDownLeft className="w-3.5 h-3.5 text-red-500" />
+                              ) : (
+                                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
+                              )}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">{isDespesa ? 'Saída' : 'Entrada'}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </td>
                   <td
                     className={cn(
-                      'px-2 py-2 font-medium shrink-0 tabular-nums',
+                      'px-2 py-1.5 font-medium shrink-0 tabular-nums text-xs',
                       isDespesa ? 'text-red-500' : 'text-emerald-600'
                     )}
                   >
                     {isDespesa ? '- ' : '+ '}
                     {formatCurrency(row.amount)}
                   </td>
-                  <td className="px-2 py-2 shrink-0">
+                  <td className="px-2 py-1.5 shrink-0">
                     {source === 'bank' ? (
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <Landmark className="h-3.5 w-3.5" /> Conta
@@ -523,7 +529,7 @@ export function LancamentosTab({
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-2 w-[100px] shrink-0">
+                  <td className="px-2 py-1.5 w-[100px] shrink-0">
                     <BancoLogo
                       connector_name={row.connector_name}
                       connector_image_url={row.connector_image_url}
@@ -531,7 +537,7 @@ export function LancamentosTab({
                       size={20}
                     />
                   </td>
-                  <td className="px-2 py-2 shrink-0">
+                  <td className="px-2 py-1.5 shrink-0">
                     {isIncome ? (
                       <span className="text-xs text-muted-foreground">—</span>
                     ) : (
@@ -547,7 +553,7 @@ export function LancamentosTab({
                             setCategory(row.transaction_id, g.id, g.name, null, null)
                         }}
                       >
-                        <SelectTrigger className="h-7 text-xs w-full min-w-[120px]">
+                        <SelectTrigger className="h-6 text-xs w-full min-w-[120px]">
                           <SelectValue placeholder="Grupo..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -560,7 +566,7 @@ export function LancamentosTab({
                       </Select>
                     )}
                   </td>
-                  <td className="px-2 py-2 shrink-0 min-w-[160px]">
+                  <td className="px-2 py-1.5 shrink-0 min-w-[160px]">
                     {isIncome ? (
                       <Select
                         value={state?.categoria_id ?? ''}
@@ -570,7 +576,7 @@ export function LancamentosTab({
                             setCategory(row.transaction_id, null, null, it.id, it.name)
                         }}
                       >
-                        <SelectTrigger className="h-7 text-xs w-full">
+                        <SelectTrigger className="h-6 text-xs w-full">
                           <SelectValue placeholder="Receita..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -600,7 +606,7 @@ export function LancamentosTab({
                           }}
                           disabled={!state?.grupo_id && !state?.grupo_nome}
                         >
-                          <SelectTrigger className="h-7 text-xs w-full">
+                          <SelectTrigger className="h-6 text-xs w-full">
                             <SelectValue placeholder="Subcategoria..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -642,7 +648,7 @@ export function LancamentosTab({
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-2 shrink-0">
+                  <td className="px-2 py-1.5 shrink-0">
                     {state?.confirmada && !state?.dirty ? (
                       <span className="text-emerald-600 dark:text-emerald-400" title="Confirmada">
                         <CheckCircle2 className="h-4 w-4" />

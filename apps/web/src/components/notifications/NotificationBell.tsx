@@ -23,9 +23,31 @@ export const NotificationBell: React.FC = () => {
     if (open) refetch();
   };
 
-  const handleNavigate = (url: string) => {
-    setOpen(false);
-    navigate(url);
+  const handleNotificationClick = (n: Notification) => {
+    if (n.read_at == null) {
+      void markRead(n.id);
+    }
+
+    const itemId = n.metadata && typeof n.metadata.item_id === 'string' ? n.metadata.item_id : null;
+    const connectorName =
+      n.metadata && typeof n.metadata.connector_name === 'string' ? n.metadata.connector_name : undefined;
+
+    if (n.type === 'connection' && itemId) {
+      setOpen(false);
+      navigate('/instituicoes-financeiras', {
+        state: {
+          autoReconnect: true,
+          itemId,
+          ...(connectorName ? { connectorName } : {}),
+        },
+      });
+      return;
+    }
+
+    if (n.action_url) {
+      setOpen(false);
+      navigate(n.action_url);
+    }
   };
 
   return (
@@ -53,10 +75,9 @@ export const NotificationBell: React.FC = () => {
           notifications={notifications}
           unreadCount={unreadCount}
           loading={loading}
-          onMarkAsRead={markRead}
           onMarkAllAsRead={markAllRead}
           onClose={() => setOpen(false)}
-          onNavigate={handleNavigate}
+          onItemClick={handleNotificationClick}
         />
       </PopoverContent>
     </Popover>

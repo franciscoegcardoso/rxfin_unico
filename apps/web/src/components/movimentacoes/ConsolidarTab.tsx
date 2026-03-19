@@ -441,22 +441,22 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="w-8 px-1 py-3 shrink-0">
+              <th className="w-8 px-1 py-2 shrink-0">
                 <Checkbox
                   checked={sortedRows.length > 0 && selectedEstabelecimentos.size === sortedRows.length}
                   onCheckedChange={toggleSelectAll}
                 />
               </th>
-              <th className="w-8 px-1 py-3 shrink-0" />
-              <th className="text-left px-2 py-3 font-medium min-w-[240px] max-w-[340px]">Estabelecimento</th>
-              <th className="text-left px-2 py-3 font-medium w-[110px] shrink-0">Última compra</th>
-              <th className="text-left px-2 py-3 font-medium w-[60px] shrink-0">Ocorrências</th>
-              <th className="text-left px-2 py-3 font-medium w-[110px] shrink-0">Valor médio</th>
-              <th className="text-left px-2 py-3 font-medium w-[80px] shrink-0">Fonte</th>
-              <th className="text-left px-2 py-3 font-medium w-[140px] shrink-0">Banco</th>
-              <th className="text-left px-2 py-3 font-medium w-[160px] shrink-0">Grupo (L1)</th>
-              <th className="text-left px-2 py-3 font-medium min-w-[180px] shrink-0">Categoria (L2)</th>
-              <th className="text-left px-2 py-3 font-medium w-20 shrink-0">Status</th>
+              <th className="w-8 px-1 py-2 shrink-0" />
+              <th className="text-left px-2 py-2 font-medium min-w-[240px] max-w-[340px]">Estabelecimento</th>
+              <th className="text-left px-2 py-2 font-medium w-[110px] shrink-0">Última compra</th>
+              <th className="text-left px-2 py-2 font-medium w-[60px] shrink-0">Ocorrências</th>
+              <th className="text-left px-2 py-2 font-medium w-[110px] shrink-0">Valor médio</th>
+              <th className="text-left px-2 py-2 font-medium w-[80px] shrink-0">Fonte</th>
+              <th className="text-left px-2 py-2 font-medium w-[140px] shrink-0">Banco</th>
+              <th className="text-left px-2 py-2 font-medium w-[160px] shrink-0">Grupo (L1)</th>
+              <th className="text-left px-2 py-2 font-medium min-w-[180px] shrink-0">Categoria (L2)</th>
+              <th className="text-left px-2 py-2 font-medium w-20 shrink-0">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -475,13 +475,13 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
               return (
                 <React.Fragment key={row.estabelecimento}>
                   <tr className={cn('border-b border-border/50 hover:bg-muted/20', borderClass)}>
-                    <td className="px-1 py-2 shrink-0">
+                    <td className="px-1 py-1.5 shrink-0">
                       <Checkbox
                         checked={selectedEstabelecimentos.has(row.estabelecimento)}
                         onCheckedChange={() => toggleSelect(row.estabelecimento)}
                       />
                     </td>
-                    <td className="px-1 py-2 shrink-0">
+                    <td className="px-1 py-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => toggleExpand(row.estabelecimento)}
@@ -494,31 +494,38 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                         )}
                       </button>
                     </td>
-                    <td className="px-2 py-2 min-w-[240px] max-w-[340px] align-top">
-                      <div className="flex flex-col gap-1">
-                        {isDespesa ? (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 rounded px-1 py-0.5 shrink-0 w-fit">
-                            <ArrowDownLeft className="w-2.5 h-2.5" /> Saída
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded px-1 py-0.5 shrink-0 w-fit">
-                            <ArrowUpRight className="w-2.5 h-2.5" /> Entrada
-                          </span>
-                        )}
-                        <span className="text-xs leading-tight break-words whitespace-normal">{row.estabelecimento}</span>
+                    <td className="px-2 py-1.5 min-w-[240px] max-w-[340px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs leading-tight truncate break-words" title={row.estabelecimento}>
+                          {row.estabelecimento}
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="shrink-0 inline-flex">
+                                {isDespesa ? (
+                                  <ArrowDownLeft className="w-3.5 h-3.5 text-red-500" />
+                                ) : (
+                                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
+                                )}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{isDespesa ? 'Saída' : 'Entrada'}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </td>
-                    <td className="px-2 py-2 text-muted-foreground shrink-0">{formatDate(row.ultima_compra)}</td>
-                    <td className="px-2 py-2 shrink-0">{row.total_ocorrencias}x</td>
+                    <td className="px-2 py-1.5 text-muted-foreground shrink-0 text-xs">{formatDate(row.ultima_compra)}</td>
+                    <td className="px-2 py-1.5 shrink-0 text-xs">{row.total_ocorrencias}x</td>
                     <td
                       className={cn(
-                        'px-2 py-2 font-medium shrink-0',
+                        'px-2 py-1.5 font-medium shrink-0 text-xs',
                         isDespesa ? 'text-red-500' : 'text-emerald-600'
                       )}
                     >
                       {formatCurrency(row.valor_medio)}
                     </td>
-                    <td className="px-2 py-2 shrink-0">
+                    <td className="px-2 py-1.5 shrink-0">
                       {row.fonte === 'bank' && (
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                           <Landmark className="h-3.5 w-3.5" /> Conta
@@ -536,7 +543,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                       )}
                     </td>
                     {/* Coluna Banco — linha agrupada: só logo, nome no tooltip */}
-                    <td className="px-3 py-2 w-[140px] shrink-0">
+                    <td className="px-3 py-1.5 w-[140px] shrink-0">
                       {row.bancos_detalhe && row.bancos_detalhe.length > 0 ? (
                         <div className="flex items-center gap-1">
                           {row.bancos_detalhe.slice(0, 3).map((b, i) => (
@@ -561,7 +568,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-2 py-2 shrink-0">
+                    <td className="px-2 py-1.5 shrink-0">
                       <Select
                         value={state?.grupo_id ?? expenseGroups.find((g) => g.name === state?.grupo_nome)?.id ?? ''}
                         onValueChange={(val) => {
@@ -569,7 +576,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                           if (g) setCategory(row.estabelecimento, g.id, g.name, null, null);
                         }}
                       >
-                        <SelectTrigger className="h-7 text-xs w-full min-w-[140px]">
+                        <SelectTrigger className="h-6 text-xs w-full min-w-[140px]">
                           <SelectValue placeholder="Grupo..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -581,7 +588,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                         </SelectContent>
                       </Select>
                     </td>
-                    <td className="px-2 py-2 shrink-0 min-w-[180px]">
+                    <td className="px-2 py-1.5 shrink-0 min-w-[180px]">
                       <div className="space-y-1">
                         <Select
                           value={state?.categoria_id ?? ''}
@@ -591,7 +598,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                           }}
                           disabled={!state?.grupo_nome && expenseGroups.length > 0}
                         >
-                          <SelectTrigger className="h-7 text-xs w-full">
+                          <SelectTrigger className="h-6 text-xs w-full">
                             <SelectValue placeholder="Subcategoria..." />
                           </SelectTrigger>
                           <SelectContent>
@@ -623,7 +630,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-2 shrink-0">
+                    <td className="px-2 py-1.5 shrink-0">
                       {state?.confirmada ? (
                         <span className="text-emerald-600 dark:text-emerald-400" title="Confirmada">
                           <CheckCircle2 className="h-4 w-4" />
@@ -673,19 +680,22 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                                     size={16}
                                   />
                                 </span>
-                                <span>
-                                  {oc.transaction_type === 'receita' ? (
-                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded px-1 py-0.5">
-                                      <ArrowUpRight className="w-2.5 h-2.5" />
-                                      Entrada
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 rounded px-1 py-0.5">
-                                      <ArrowDownLeft className="w-2.5 h-2.5" />
-                                      Saída
-                                    </span>
-                                  )}
-                                </span>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="inline-flex">
+                                          {oc.transaction_type === 'receita' ? (
+                                            <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+                                          ) : (
+                                            <ArrowDownLeft className="w-3 h-3 text-red-500" />
+                                          )}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top">
+                                        {oc.transaction_type === 'receita' ? 'Entrada' : 'Saída'}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 <span
                                   className={cn(
                                     'tabular-nums text-right font-medium',

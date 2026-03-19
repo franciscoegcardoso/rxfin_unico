@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2, Plus, Trash2, CheckCircle2, Circle, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, ArrowLeft, Users, User, Mail, Eye, EyeOff, Lock, Check, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,38 +24,78 @@ interface ProfileAnswers {
   controlLevel: 'nao_acompanho' | 'as_vezes' | 'controlo_bem' | null;
 }
 
-interface IncomeItem {
-  id: string;
+interface RpcCategoryRow {
+  key: string;
   name: string;
-  method: string;
-  enabled: boolean;
-  isDefault: boolean;
-  defaultItemId?: string;
+  icon?: string;
 }
 
-interface ExpenseCategory {
-  id: string;
-  name: string;
+function parseCategories(data: unknown): { income: RpcCategoryRow[]; expense: RpcCategoryRow[] } {
+  const p = data as Record<string, unknown> | null;
+  if (!p) return { income: [], expense: [] };
+  const inc = Array.isArray(p.income) ? p.income : [];
+  const exp = Array.isArray(p.expense) ? p.expense : [];
+  const mapRow = (c: Record<string, unknown>): RpcCategoryRow | null => {
+    const key = String(c.key ?? c.id ?? c.category_id ?? '').trim();
+    if (!key) return null;
+    const name = String(c.name ?? c.category_name ?? 'Categoria');
+    const icon = typeof c.icon === 'string' ? c.icon : undefined;
+    return { key, name, icon };
+  };
+  return {
+    income: inc
+      .map((x) => mapRow(x as Record<string, unknown>))
+      .filter((r): r is RpcCategoryRow => r != null),
+    expense: exp
+      .map((x) => mapRow(x as Record<string, unknown>))
+      .filter((r): r is RpcCategoryRow => r != null),
+  };
+}
+
+function formatBRLInput(n: number) {
+  if (n <= 0) return '';
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+function CategoryAmountRow({
+  icon,
+  label,
+  value,
+  onChange,
+}: {
   icon: string;
-  enabled: boolean;
-  itemCount: number;
-  items: Array<{
-    id: string;
-    name: string;
-    enabled_by_default: boolean;
-  }>;
-}
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const handleChange = (raw: string) => {
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) {
+      onChange(0);
+      return;
+    }
+    onChange(Number(digits) / 100);
+  };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  'Contas da Casa': '🏠',
-  'Alimentação': '🛒',
-  'Transporte': '🚗',
-  'Lazer': '🎬',
-  'Saúde': '❤️',
-  'Investimentos': '📈',
-  'Pets': '🐾',
-  'Pessoal': '👤',
-};
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+      <span className="text-xl shrink-0 w-9 text-center">{icon || '•'}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+      </div>
+      <div className="w-[140px] shrink-0">
+        <Input
+          inputMode="numeric"
+          placeholder="R$ 0,00"
+          className="text-right tabular-nums text-sm h-9"
+          value={formatBRLInput(value)}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={(e) => e.target.select()}
+        />
+      </div>
+    </div>
+  );
+}
 
 const PROFILE_QUESTIONS: Array<{
   key: keyof ProfileAnswers;
@@ -136,14 +177,36 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [localAccountType, setLocalAccountType] = useState<'individual' | 'shared'>(() =>
     (config.accountType as 'individual' | 'shared') ?? 'individual'
   );
-  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>([]);
-  const [incomeLoaded, setIncomeLoaded] = useState(false);
-  const [savingIncome, setSavingIncome] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
-  const [expensesLoaded, setExpensesLoaded] = useState(false);
-  const [savingExpenses, setSavingExpenses] = useState(false);
+  const [categoriesBundle, setCategoriesBundle] = useState<{
+    income: RpcCategoryRow[];
+    expense: RpcCategoryRow[];
+  } | null>(null);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [incomeValues, setIncomeValues] = useState<Record<string, number>>({});
+  const [expenseValues, setExpenseValues] = useState<Record<string, number>>({});
+  const [savingBlockA, setSavingBlockA] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+      const { data, error } = await supabase.rpc('get_onboarding_categories');
+      if (cancelled) return;
+      if (error) {
+        console.error('[BlockA] get_onboarding_categories', error);
+        setCategoriesError('Não foi possível carregar categorias. Tente novamente.');
+        setCategoriesBundle({ income: [], expense: [] });
+      } else {
+        setCategoriesBundle(parseCategories(data));
+      }
+      setCategoriesLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const saveProfileAnswers = async (answers: ProfileAnswers) => {
     if (!user?.id) return;
@@ -152,133 +215,6 @@ export const BlockA: React.FC<BlockAProps> = ({
       await setUserKVValue(user.id, 'onboarding_profile', answers);
     } catch (err) {
       console.warn('[BlockA] saveProfileAnswers falhou (não crítico):', err);
-    }
-  };
-
-  const loadDefaultIncomeItems = async () => {
-    if (incomeLoaded) return;
-    try {
-      const { data } = await supabase
-        .from('default_income_items')
-        .select('id, name, method, enabled_by_default, order_index')
-        .eq('is_active', true)
-        .order('order_index');
-
-      if (data) {
-        const isHighIncome = ['de10ka20k', 'acima20k'].includes(profile.incomeRange ?? '');
-        const isBusiness = profile.mainGoal === 'investir' || isHighIncome;
-
-        const items: IncomeItem[] = data.map((d: { id: string; name: string; method?: string; enabled_by_default?: boolean; order_index?: number }) => ({
-          id: crypto.randomUUID(),
-          name: d.name,
-          method: d.method ?? 'Transferência',
-          enabled:
-            (d.enabled_by_default ?? true) &&
-            !(['Pró-labore', 'Dividendos / JCP'].includes(d.name) && !isBusiness),
-          isDefault: true,
-          defaultItemId: d.id,
-        }));
-        setIncomeItems(items);
-      }
-    } catch (err) {
-      console.warn('[BlockA] loadDefaultIncomeItems erro:', err);
-    } finally {
-      setIncomeLoaded(true);
-    }
-  };
-
-  const saveIncomeItems = async (): Promise<boolean> => {
-    if (!user?.id) return false;
-    setSavingIncome(true);
-    try {
-      const enabled = incomeItems.filter((i) => i.enabled);
-      for (const [idx, item] of enabled.entries()) {
-        await supabase.rpc('upsert_user_income_item', {
-          p_user_id: user.id,
-          p_name: item.name,
-          p_method: item.method,
-          p_enabled: true,
-          p_order_index: (idx + 1) * 10,
-        });
-      }
-      return true;
-    } catch (err) {
-      console.warn('[BlockA] saveIncomeItems erro:', err);
-      return false;
-    } finally {
-      setSavingIncome(false);
-    }
-  };
-
-  const loadDefaultExpenseCategories = async () => {
-    if (expensesLoaded) return;
-    try {
-      const { data } = await supabase
-        .from('default_expense_items')
-        .select('id, category_id, category_name, name, enabled_by_default, order_index')
-        .eq('is_active', true)
-        .order('order_index');
-
-      if (data) {
-        const map = new Map<string, ExpenseCategory>();
-        for (const item of data as Array<{ category_id: string; category_name: string; id: string; name: string; enabled_by_default: boolean; order_index?: number }>) {
-          if (!map.has(item.category_id)) {
-            map.set(item.category_id, {
-              id: item.category_id,
-              name: item.category_name,
-              icon: CATEGORY_ICONS[item.category_name] ?? '📦',
-              enabled: true,
-              itemCount: 0,
-              items: [],
-            });
-          }
-          const cat = map.get(item.category_id)!;
-          cat.items.push({
-            id: item.id,
-            name: item.name,
-            enabled_by_default: item.enabled_by_default,
-          });
-          cat.itemCount++;
-        }
-        setExpenseCategories(Array.from(map.values()));
-      }
-    } catch (err) {
-      console.warn('[BlockA] loadDefaultExpenseCategories erro:', err);
-    } finally {
-      setExpensesLoaded(true);
-    }
-  };
-
-  const saveExpenseCategories = async (): Promise<boolean> => {
-    if (!user?.id) return false;
-    setSavingExpenses(true);
-    try {
-      const enabledCats = expenseCategories.filter((c) => c.enabled);
-      let idx = 0;
-      for (const cat of enabledCats) {
-        for (const item of cat.items) {
-          if (item.enabled_by_default) {
-            await supabase.rpc('upsert_user_expense_item', {
-              p_user_id: user.id,
-              p_name: item.name,
-              p_category_id: cat.id,
-              p_category_name: cat.name,
-              p_expense_type: 'variable',
-              p_is_recurring: false,
-              p_payment_method: 'credit_card',
-              p_enabled: true,
-              p_order_index: (idx + 1) * 10,
-            });
-            idx++;
-          }
-        }
-      }
-      return true;
-    } catch (err) {
-      console.warn('[BlockA] saveExpenseCategories erro:', err);
-      return false;
-    } finally {
-      setSavingExpenses(false);
     }
   };
 
@@ -657,51 +593,19 @@ export const BlockA: React.FC<BlockAProps> = ({
     );
   }
 
-  // ─── Step 3: Cadastro de Receitas ─────────────────────────────────
+  // ─── Step 3: Receitas (valores por categoria) ─────────────────────
   if (step === 3) {
-    if (!incomeLoaded) {
-      loadDefaultIncomeItems();
+    if (categoriesLoading || !categoriesBundle) {
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <RXFinLoadingSpinner size={48} />
-          <p className="text-sm text-muted-foreground">Carregando suas receitas...</p>
+          <p className="text-sm text-muted-foreground">Carregando categorias de receita...</p>
         </div>
       );
     }
 
-    const enabledCount = incomeItems.filter((i) => i.enabled).length;
-
-    const handleToggle = (id: string) => {
-      setIncomeItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item))
-      );
-    };
-
-    const handleAddItem = () => {
-      const name = newItemName.trim();
-      if (!name) return;
-      setIncomeItems((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          name,
-          method: 'Pix',
-          enabled: true,
-          isDefault: false,
-        },
-      ]);
-      setNewItemName('');
-      setShowAddItem(false);
-    };
-
-    const handleRemoveCustom = (id: string) => {
-      setIncomeItems((prev) => prev.filter((i) => i.id !== id));
-    };
-
-    const handleContinueIncome = async () => {
-      await saveIncomeItems();
-      onStepChange(4);
-    };
+    const incomeRows = categoriesBundle.income;
+    const hasIncomePositive = Object.values(incomeValues).some((v) => v > 0);
 
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -716,156 +620,67 @@ export const BlockA: React.FC<BlockAProps> = ({
             Suas receitas
           </p>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            De onde vem o seu dinheiro?
+            Quanto entra por mês?
           </h2>
           <p className="text-sm text-muted-foreground">
-            Ative as fontes de renda que se aplicam a você. Você pode ajustar valores depois.
+            Informe valores aproximados em reais. Você poderá refinar depois com Open Finance ou extratos.
           </p>
         </div>
 
-        <div className="space-y-2 mb-4">
-          {incomeItems.map((item) => (
-            <div
-              key={item.id}
-              className={cn(
-                'flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer',
-                item.enabled ? 'border-primary bg-primary/5' : 'border-border bg-card opacity-60'
-              )}
-              onClick={() => handleToggle(item.id)}
-            >
-              <div className="shrink-0">
-                {item.enabled ? (
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                ) : (
-                  <Circle className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p
-                  className={cn(
-                    'text-sm font-semibold truncate',
-                    item.enabled ? 'text-foreground' : 'text-muted-foreground'
-                  )}
-                >
-                  {item.name}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">{item.method}</p>
-              </div>
-              {!item.isDefault && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveCustom(item.id);
-                  }}
-                  className="shrink-0 p-1 text-muted-foreground hover:text-destructive transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {showAddItem ? (
-          <div className="flex gap-2 mb-4">
-            <Input
-              placeholder="Nome da receita (ex: Aluguel, Pensão...)"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
-              autoFocus
-              className="flex-1"
-            />
-            <Button size="sm" onClick={handleAddItem} disabled={!newItemName.trim()}>
-              Adicionar
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setShowAddItem(false);
-                setNewItemName('');
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAddItem(true)}
-            className="w-full flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-border hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all mb-4"
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            <span className="text-sm">Adicionar outra fonte de renda</span>
-          </button>
+        {categoriesError && (
+          <p className="text-sm text-destructive mb-4">{categoriesError}</p>
         )}
 
-        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{enabledCount}</span>{' '}
-            fonte{enabledCount !== 1 ? 's' : ''} de renda ativa{enabledCount !== 1 ? 's' : ''}. Os
-            valores serão preenchidos após conectar seus bancos.
+        {incomeRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground mb-4">
+            Nenhuma categoria de receita disponível. Avance para continuar — os dados poderão ser
+            ajustados depois.
           </p>
-        </div>
+        ) : (
+          <div className="space-y-2 mb-4">
+            {incomeRows.map((row) => (
+              <CategoryAmountRow
+                key={row.key}
+                icon={row.icon ?? '💰'}
+                label={row.name}
+                value={incomeValues[row.key] ?? 0}
+                onChange={(v) =>
+                  setIncomeValues((prev) => ({
+                    ...prev,
+                    [row.key]: v,
+                  }))
+                }
+              />
+            ))}
+          </div>
+        )}
 
         <Button
           variant="hero"
           size="lg"
           className="w-full"
-          disabled={enabledCount === 0 || savingIncome}
-          onClick={handleContinueIncome}
-        >
-          {savingIncome ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              Continuar <ArrowRight className="ml-2 h-5 w-5" />
-            </>
-          )}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-2 text-muted-foreground"
+          disabled={incomeRows.length > 0 && !hasIncomePositive}
           onClick={() => onStepChange(4)}
         >
-          Pular por agora
+          Continuar <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     );
   }
 
-  // ─── Step 4: Configuração de Despesas por Categoria ───────────────
+  // ─── Step 4: Despesas (valores por categoria) ───────────────────────
   if (step === 4) {
-    if (!expensesLoaded) {
-      loadDefaultExpenseCategories();
+    if (categoriesLoading || !categoriesBundle) {
       return (
         <div className="max-w-2xl mx-auto py-16 flex flex-col items-center gap-4">
           <RXFinLoadingSpinner size={48} />
-          <p className="text-sm text-muted-foreground">Carregando categorias...</p>
+          <p className="text-sm text-muted-foreground">Carregando categorias de despesa...</p>
         </div>
       );
     }
 
-    const enabledCount = expenseCategories.filter((c) => c.enabled).length;
-
-    const handleToggleCat = (id: string) => {
-      setExpenseCategories((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
-      );
-    };
-
-    const handleContinue = async () => {
-      await saveExpenseCategories();
-      onStepChange(5);
-    };
+    const expenseRows = categoriesBundle.expense;
+    const hasExpensePositive = Object.values(expenseValues).some((v) => v > 0);
 
     return (
       <div className="max-w-2xl mx-auto py-4">
@@ -880,102 +695,57 @@ export const BlockA: React.FC<BlockAProps> = ({
             Suas despesas
           </p>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Quais categorias fazem parte da sua vida?
+            Quanto sai por mês?
           </h2>
           <p className="text-sm text-muted-foreground">
-            Ative as que se aplicam a você.
-            Os valores serão preenchidos após conectar seus bancos.
+            Use totais por categoria (aluguel, alimentação, etc.). Estimativas já ajudam o Raio-X.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {expenseCategories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => handleToggleCat(cat.id)}
-              className={cn(
-                'flex items-center gap-3 p-4 rounded-xl border-2 transition-all text-left',
-                cat.enabled
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card opacity-60'
-              )}
-            >
-              <span className="text-2xl shrink-0">{cat.icon}</span>
-              <div className="min-w-0">
-                <p
-                  className={cn(
-                    'text-sm font-semibold leading-tight',
-                    cat.enabled ? 'text-foreground' : 'text-muted-foreground'
-                  )}
-                >
-                  {cat.name}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {cat.itemCount} item{cat.itemCount !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="ml-auto shrink-0">
-                {cat.enabled ? (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                ) : (
-                  <Circle className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
+        {categoriesError && (
+          <p className="text-sm text-destructive mb-4">{categoriesError}</p>
+        )}
 
-        <div className="bg-muted/30 rounded-xl p-3 mb-4 flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{enabledCount}</span>
-            {' '}categoria{enabledCount !== 1 ? 's' : ''} ativa{enabledCount !== 1 ? 's' : ''}.
-            Você poderá ajustar os itens depois.
+        {expenseRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground mb-4">
+            Nenhuma categoria de despesa disponível. Avance para o resumo.
           </p>
-        </div>
+        ) : (
+          <div className="space-y-2 mb-4">
+            {expenseRows.map((row) => (
+              <CategoryAmountRow
+                key={row.key}
+                icon={row.icon ?? '📦'}
+                label={row.name}
+                value={expenseValues[row.key] ?? 0}
+                onChange={(v) =>
+                  setExpenseValues((prev) => ({
+                    ...prev,
+                    [row.key]: v,
+                  }))
+                }
+              />
+            ))}
+          </div>
+        )}
 
         <Button
           variant="hero"
           size="lg"
           className="w-full"
-          disabled={savingExpenses}
-          onClick={handleContinue}
-        >
-          {savingExpenses ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              Continuar <ArrowRight className="ml-2 h-5 w-5" />
-            </>
-          )}
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full mt-2 text-muted-foreground"
+          disabled={expenseRows.length > 0 && !hasExpensePositive}
           onClick={() => onStepChange(5)}
         >
-          Pular por agora
+          Continuar <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     );
   }
 
-  // ─── Step 5: Conquest Card preliminar baseado no perfil ───────────
+  // ─── Step 5: Conquest Card + persistir Block A ─────────────────────
   if (step === 5) {
-    const incomeEstimate: Record<string, number> = {
-      ate2k: 1500,
-      de2ka5k: 3500,
-      de5ka10k: 7500,
-      de10ka20k: 15000,
-      acima20k: 25000,
-    };
-    const estimate = incomeEstimate[profile.incomeRange ?? 'de2ka5k'] ?? 3500;
+    const incomeSum = Object.values(incomeValues).reduce((a, b) => a + b, 0);
+    const expenseSum = Object.values(expenseValues).reduce((a, b) => a + b, 0);
     const goalLabels: Record<string, string> = {
       reserva: 'Montar reserva de emergência',
       dividas: 'Quitar dívidas',
@@ -991,15 +761,59 @@ export const BlockA: React.FC<BlockAProps> = ({
           ? '1 dependente'
           : '2 ou mais';
 
+    const fmtMoney = (n: number) =>
+      n > 0
+        ? `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mês`
+        : '—';
+
     const metrics = [
-      { label: 'Renda estimada', value: `R$ ${estimate.toLocaleString('pt-BR')}/mês` },
+      { label: 'Receitas informadas', value: fmtMoney(incomeSum) },
+      { label: 'Despesas informadas', value: fmtMoney(expenseSum) },
       { label: 'Seu principal objetivo', value: goalLabels[profile.mainGoal ?? 'outro'] ?? '—' },
       { label: 'Dependentes', value: dependentsLabel },
-      { label: 'Próximo passo', value: 'Conectar seus bancos' },
     ];
 
     const insight =
-      'Seu perfil foi identificado. Agora vamos conectar seus bancos para substituir as estimativas pelos seus dados reais.';
+      'Seu perfil e seus números iniciais estão registrados. Na próxima etapa você pode conectar seus bancos para refinar tudo com dados reais.';
+
+    const handleVerRaioX = async () => {
+      if (!user?.id) {
+        toast.error('Sessão inválida. Faça login novamente.');
+        return;
+      }
+      setSavingBlockA(true);
+      try {
+        const incomeData = Object.entries(incomeValues)
+          .filter(([, v]) => v > 0)
+          .map(([key, value]) => ({ key, value }));
+        const expenseData = Object.entries(expenseValues)
+          .filter(([, v]) => v > 0)
+          .map(([key, value]) => ({ key, value }));
+
+        const { error } = await supabase.rpc('save_onboarding_block_a', {
+          p_income_data: incomeData as never,
+          p_expense_data: expenseData as never,
+        });
+        if (error) throw error;
+
+        const { error: trackErr } = await supabase.rpc('track_onboarding_event', {
+          p_event_name: 'block_a_completed',
+          p_step: 5,
+          p_metadata: {
+            income_count: incomeData.length,
+            expense_count: expenseData.length,
+          },
+        } as never);
+        if (trackErr) console.warn('[BlockA] track_onboarding_event', trackErr);
+
+        onComplete();
+      } catch (e) {
+        console.error('[BlockA] save_onboarding_block_a', e);
+        toast.error('Erro ao salvar dados. Tente novamente.');
+      } finally {
+        setSavingBlockA(false);
+      }
+    };
 
     return (
       <div className="py-8">
@@ -1010,8 +824,9 @@ export const BlockA: React.FC<BlockAProps> = ({
           metrics={metrics}
           insight={insight}
           nextLevelPreview="Próximo: conectar suas instituições financeiras para o diagnóstico real."
-          onContinue={onComplete}
+          onContinue={() => void handleVerRaioX()}
           continueLabel="Conectar meus bancos"
+          continueLoading={savingBlockA}
         />
       </div>
     );

@@ -28,6 +28,22 @@ export interface PluggyInvestment {
   source: 'pluggy';
   connector_name: string;
   connector_image_url: string | null;
+  /** IR já retido (campo taxes) — renda fixa */
+  ir_retido?: number;
+  /** IOF retido (campo taxes2) */
+  iof_retido?: number;
+  /** true para LCA, LCI, CRI, CRA */
+  ir_exempt?: boolean;
+  /** 'swing_trade' | 'fii_isento' | null */
+  ir_regime?: string | null;
+  /** alíquota IR (15%, 0%, tabela regressiva) */
+  ir_rate_pct?: number | null;
+  /** saldo convertido BRL para ativos em moeda estrangeira */
+  balance_brl?: number;
+  /** bloco de indexador para distribuição */
+  indexador_bloco?: string;
+  /** 'CDI' | 'SELIC' | 'IPCA' | null */
+  rate_type?: string | null;
 }
 
 export interface ManualAsset {
@@ -61,6 +77,31 @@ export interface BensInvestimentosSummary {
   manual_count: number;
   last_pluggy_sync: string | null;
   has_stale_data: boolean;
+  /** Total IR retido na carteira (estimativa Pluggy) */
+  total_ir_retido?: number;
+  /** Total IOF retido */
+  total_iof_retido?: number;
+}
+
+export interface BlocoByIndexador {
+  bloco: string;
+  total: number;
+  count: number;
+  ir_total: number;
+  pct_carteira: number;
+}
+
+export interface BlocoByCurrency {
+  currency: string;
+  total_brl: number;
+  count: number;
+  pct_carteira: number;
+}
+
+export interface FxRates {
+  USD_BRL: number;
+  EUR_BRL: number;
+  rate_date: string;
 }
 
 export interface BensInvestimentosData {
@@ -68,6 +109,9 @@ export interface BensInvestimentosData {
   manual_assets: ManualAsset[];
   by_type: BensByType[];
   summary: BensInvestimentosSummary;
+  by_indexador?: BlocoByIndexador[];
+  by_currency?: BlocoByCurrency[];
+  fx_rates?: FxRates;
 }
 
 async function fetchBensInvestimentos(assetType: string | null = null): Promise<BensInvestimentosData | null> {

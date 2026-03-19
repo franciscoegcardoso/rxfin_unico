@@ -17,16 +17,20 @@ export function useDemoMode() {
     queryKey: ['onboarding-phase', user?.id],
     queryFn: async () => {
       if (!user?.id) return 'not_started';
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data: stateRow, error } = await supabase
+        .from('onboarding_state' as never)
         .select('onboarding_phase')
-        .eq('id', user.id)
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
       if (error) {
-        console.error('[useDemoMode] Error:', error);
-        return 'not_started';
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_phase')
+          .eq('id', user.id)
+          .maybeSingle();
+        return (profile as { onboarding_phase?: string } | null)?.onboarding_phase ?? 'not_started';
       }
-      return (data as any)?.onboarding_phase ?? 'not_started';
+      return (stateRow as { onboarding_phase?: string } | null)?.onboarding_phase ?? 'not_started';
     },
     enabled: !!user?.id,
     staleTime: 60_000,

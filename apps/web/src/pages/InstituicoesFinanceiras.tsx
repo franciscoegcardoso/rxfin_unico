@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SettingsLayout } from '@/components/layout/SettingsLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,13 +21,32 @@ import { FinanceModeSelector } from '@/components/instituicoes/FinanceModeSelect
 import { FinanceModeToggle } from '@/components/instituicoes/FinanceModeToggle';
 import { cn } from '@/lib/utils';
 
+type NavReconnectState = {
+  autoReconnect?: boolean;
+  itemId?: string;
+  connectorName?: string;
+} | null;
+
 const InstituicoesFinanceiras: React.FC = () => {
   const { config, addFinancialInstitution } = useFinancial();
   const { fetchConnections, fetchAccounts, fetchTransactions } = usePluggyConnect();
   const { mode, setMode, isLoading: modeLoading, hasChosen } = useFinanceMode();
   const { data: bankingOverview, isLoading: bankingLoading } = useBankingOverview();
   const navigate = useNavigate();
+  const location = useLocation();
   const [flowDialogOpen, setFlowDialogOpen] = useState(false);
+  const [pluggyReconnectFromNav, setPluggyReconnectFromNav] = useState<string | undefined>();
+
+  useEffect(() => {
+    const state = location.state as NavReconnectState;
+    if (state?.autoReconnect && state?.itemId) {
+      setMode('openfinance');
+      setPluggyReconnectFromNav(state.itemId);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate, setMode]);
+
+  const clearForcedPluggyReconnect = useCallback(() => setPluggyReconnectFromNav(undefined), []);
 
   const hasBankingInstitutions = (bankingOverview?.connections?.length ?? 0) > 0;
 
@@ -128,7 +147,12 @@ const InstituicoesFinanceiras: React.FC = () => {
         {hasChosen && (
           <>
             {/* Open Finance Section - only in openfinance mode */}
-            {mode === 'openfinance' && <OpenFinanceSection />}
+            {mode === 'openfinance' && (
+              <OpenFinanceSection
+                forcedReconnectItemId={pluggyReconnectFromNav ?? null}
+                onForcedReconnectConsumed={clearForcedPluggyReconnect}
+              />
+            )}
 
             {/* Manual Institutions - only in manual mode */}
             {mode === 'manual' && config.financialInstitutions.length > 0 && (

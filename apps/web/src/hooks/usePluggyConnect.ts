@@ -131,7 +131,7 @@ export function usePluggyConnect() {
       if (itemId) body.itemId = itemId;
       if (redirectUrl) body.redirectUrl = redirectUrl;
       const { data, error } = await supabase.functions.invoke('pluggy-connect', {
-        body: Object.keys(body).length > 0 ? body : undefined,
+        body: Object.keys(body).length > 0 ? body : {},
       });
 
       if (error) throw error;

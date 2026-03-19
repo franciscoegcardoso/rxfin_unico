@@ -11,20 +11,18 @@ interface NotificationDropdownProps {
   notifications: Notification[];
   unreadCount: number;
   loading: boolean;
-  onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
   onClose: () => void;
-  onNavigate: (url: string) => void;
+  onItemClick: (notification: Notification) => void;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   notifications,
   unreadCount,
   loading,
-  onMarkAsRead,
   onMarkAllAsRead,
   onClose,
-  onNavigate,
+  onItemClick,
 }) => {
   return (
     <div className="flex flex-col">
@@ -70,9 +68,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               <NotificationItem
                 key={n.id}
                 notification={n}
-                onMarkRead={onMarkAsRead}
-                onNavigate={onNavigate}
-                onClose={onClose}
+                onItemClick={onItemClick}
               />
             ))}
           </div>

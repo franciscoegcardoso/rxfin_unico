@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Link2 } from 'lucide-react';
 import { usePluggyConnect } from '@/hooks/usePluggyConnect';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 // Pluggy Connect Widget script URL - using versioned URL for stability
@@ -164,6 +165,13 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
     }
 
     setIsOpening(true);
+
+    if (updateItemId) {
+      void supabase.rpc('mark_pluggy_reconnection_started' as never, {
+        p_item_id: updateItemId,
+      } as never);
+    }
+
     const redirectUrl = isMobileSafari ? window.location.href : undefined;
 
     const tokenResult = await getConnectToken(updateItemId, redirectUrl);
