@@ -1,6 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface ServiceStatus {
+  service: string;
+  status: 'ok' | 'error' | 'degraded';
+  latency_ms: number | null;
+  checked_at: string;
+}
+
+export interface CronStatus {
+  jobname: string;
+  schedule: string;
+  last_status: string | null;
+  last_run: string | null;
+  minutes_ago: number;
+}
+
+export interface SyncChartPoint {
+  hour: string;
+  ok: number;
+  errors: number;
+}
+
+export interface TableStat {
+  table_name: string;
+  total_size: string;
+  size_bytes: number;
+  rows: number;
+}
+
+export interface EdgeCategory {
+  category: string;
+  total: number;
+  with_rate_limit: number;
+  with_jwt: number;
+}
+
 export interface ArchitectureHealthSnapshot {
   generated_at: string;
   rls: {
@@ -28,6 +63,22 @@ export interface ArchitectureHealthSnapshot {
   performance: {
     total_indexes: number;
   };
+  ops?: {
+    open_alerts: number;
+    open_incidents: number;
+    pending_deletions: number;
+    active_sync_locks: number;
+    ai_sessions_24h: number;
+    sync_ok_24h: number;
+    active_crons: number;
+    rate_limited_fns: number;
+    latest_kpi: Record<string, unknown> | null;
+  };
+  services?: ServiceStatus[];
+  crons?: CronStatus[];
+  sync_chart?: SyncChartPoint[];
+  top_tables?: TableStat[];
+  edge_categories?: EdgeCategory[];
 }
 
 export function useArchitectureHealth(autoRefreshMs = 0) {

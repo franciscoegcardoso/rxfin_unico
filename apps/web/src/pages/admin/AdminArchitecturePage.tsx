@@ -49,7 +49,15 @@ function computeScore(snap: ArchitectureHealthSnapshot | null): number {
   const permScore = permPolicies === 0 ? 100 : Math.max(0, 100 - permPolicies * 10);
   const syncErrors = snap.data.sync_errors_24h ?? 0;
   const syncScore = syncErrors === 0 ? 100 : Math.max(0, 100 - syncErrors * 5);
-  return rls * 0.35 + safeFuncPct * 0.25 + permScore * 0.2 + syncScore * 0.2;
+  const alertPenalty = ((snap.ops?.open_alerts ?? 0) + (snap.ops?.open_incidents ?? 0)) * 5;
+  const opsScore = Math.max(0, 100 - alertPenalty);
+  return (
+    rls * 0.30 +
+    safeFuncPct * 0.20 +
+    permScore * 0.15 +
+    syncScore * 0.20 +
+    opsScore * 0.15
+  );
 }
 
 function buildIssues(snap: ArchitectureHealthSnapshot | null): { severity: 'critical' | 'high' | 'medium' | 'low'; description: string; phaseId?: string }[] {
@@ -68,6 +76,27 @@ function buildIssues(snap: ArchitectureHealthSnapshot | null): { severity: 'crit
   if ((snap.data.jobs_pending ?? 0) > 100) {
     issues.push({ severity: 'medium', description: `${snap.data.jobs_pending} jobs pendentes na fila`, phaseId: 'phase1' });
   }
+  if ((snap.ops?.open_incidents ?? 0) > 0) {
+    issues.push({
+      severity: 'high',
+      description: `${snap.ops!.open_incidents} incidente(s) aberto(s) no incident_log`,
+      phaseId: 'phase0',
+    });
+  }
+  if ((snap.ops?.pending_deletions ?? 0) > 0) {
+    issues.push({
+      severity: 'medium',
+      description: `${snap.ops!.pending_deletions} exclusão(ões) LGPD aguardando execução`,
+      phaseId: 'phase0',
+    });
+  }
+  if ((snap.ops?.open_alerts ?? 0) > 0) {
+    issues.push({
+      severity: 'medium',
+      description: `${snap.ops!.open_alerts} alerta(s) de sistema não resolvido(s)`,
+      phaseId: 'phase0',
+    });
+  }
   return issues;
 }
 
@@ -85,11 +114,11 @@ const SECURITY_DEFINER_VIEWS = [
 ];
 
 export default function AdminArchitecturePage() {
-  const { data: snapshot, loading, error, lastRefresh, refresh } = useArchitectureHealth(0);
+  const { data: snapshot, loading, error, lastRefresh, refresh } = useArchitectureHealth(30_000);
   const { data: fipeSummary, loading: fipeLoading, error: fipeError, refresh: fipeRefresh } = useFipeAdminSummary();
   const [completedIds, setCompletedIds] = useState<string[]>(() => getArchChecklistCompleted());
   const [cursorModal, setCursorModal] = useState<{ open: boolean; itemId: string | null }>({ open: false, itemId: null });
-  const [activeTab, setActiveTab] = useState('saude');
+  const [activeTab, setActiveTab] = useState('status');
 
   const score = useMemo(() => computeScore(snapshot), [snapshot]);
   const issues = useMemo(() => buildIssues(snapshot), [snapshot]);
@@ -135,13 +164,144 @@ export default function AdminArchitecturePage() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="status">Status</TabsTrigger>
           <TabsTrigger value="saude">Saúde Atual</TabsTrigger>
           <TabsTrigger value="plano">Plano de Execução</TabsTrigger>
           <TabsTrigger value="seguranca">Segurança</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="lgpd">LGPD</TabsTrigger>
           <TabsTrigger value="fipe">FIPE</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="status" className="space-y-6 mt-4">
+          {loading && !snapshot ? (
+            <Skeleton className="h-48 w-full" />
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <ArchMetricCard icon={Activity} value={snapshot?.ops?.sync_ok_24h ?? '—'} label="Syncs OK (24h)" sublabel="Pluggy" />
+                <ArchMetricCard icon={AlertTriangle} value={snapshot?.data?.sync_errors_24h ?? '—'} label="Erros sync (24h)" sublabel="Alvo: 0" />
+                <ArchMetricCard icon={AlertCircle} value={snapshot?.ops?.open_alerts ?? '—'} label="Alertas abertos" />
+                <ArchMetricCard icon={AlertTriangle} value={snapshot?.ops?.open_incidents ?? '—'} label="Incidentes abertos" />
+                <ArchMetricCard icon={RefreshIcon} value={snapshot?.ops?.active_sync_locks ?? '—'} label="Sync locks ativos" />
+                <ArchMetricCard icon={Activity} value={snapshot?.ops?.ai_sessions_24h ?? '—'} label="Sessões AI (24h)" />
+                <ArchMetricCard icon={Database} value={snapshot?.ops?.active_crons ?? '—'} label="Crons ativos" />
+                <ArchMetricCard icon={ShieldCheck} value={snapshot?.ops?.rate_limited_fns ?? '—'} label="Funções com rate limit" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Serviços</CardTitle>
+                    <CardDescription>
+                      {snapshot?.services?.filter((s) => s.status === 'ok').length ?? 0}/
+                      {snapshot?.services?.length ?? 0} operacionais
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {(snapshot?.services ?? []).map((s) => (
+                      <div key={s.service} className="flex items-center justify-between py-1 text-sm border-b last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              s.status === 'ok' ? 'bg-green-500' : s.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+                            }`}
+                          />
+                          <span className="font-mono text-xs">{s.service.replace(/_/g, ' ')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {s.latency_ms !== null && (
+                            <span className="text-xs text-muted-foreground">{s.latency_ms}ms</span>
+                          )}
+                          <span
+                            className={`text-xs font-medium ${
+                              s.status === 'ok' ? 'text-green-600' : s.status === 'error' ? 'text-red-600' : 'text-yellow-600'
+                            }`}
+                          >
+                            {s.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Syncs Pluggy — últimas 24h</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(snapshot?.sync_chart ?? []).length > 0 ? (
+                      <>
+                        <div className="flex gap-[2px] items-end h-14">
+                          {(snapshot?.sync_chart ?? []).map((p, i) => {
+                            const maxOk = Math.max(...(snapshot?.sync_chart ?? []).map((x) => x.ok), 1);
+                            const h = Math.max(4, (p.ok / maxOk) * 56);
+                            return (
+                              <div
+                                key={i}
+                                title={`${p.hour}: ${p.ok} ok, ${p.errors} erros`}
+                                className={`flex-1 rounded-sm ${p.errors > 0 ? 'bg-red-400' : 'bg-green-500'}`}
+                                style={{ height: `${h}px`, opacity: 0.75 }}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-sm bg-green-500 inline-block" />
+                            OK: {snapshot?.ops?.sync_ok_24h ?? 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-sm bg-red-400 inline-block" />
+                            Erros: {snapshot?.data?.sync_errors_24h ?? 0}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nenhum sync nas últimas 24h.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Crons críticos</CardTitle>
+                  <CardDescription>{snapshot?.crons?.length ?? 0} monitorados</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                    {(snapshot?.crons ?? []).map((c, i) => (
+                      <div key={c.jobname} className={`flex items-center gap-2 p-2 text-xs border-b ${i % 2 === 0 ? '' : 'bg-muted/20'}`}>
+                        <span
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            c.last_status === 'succeeded' ? 'bg-green-500' : c.last_status === null ? 'bg-yellow-400' : 'bg-red-500'
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono truncate">{c.jobname}</div>
+                          <div className="text-muted-foreground">
+                            {c.minutes_ago === 0
+                              ? 'agora'
+                              : c.minutes_ago === -1
+                                ? 'nunca rodou'
+                                : c.minutes_ago < 60
+                                  ? `${c.minutes_ago}m atrás`
+                                  : `${Math.floor(c.minutes_ago / 60)}h atrás`}
+                            {' · '}
+                            {c.schedule}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="saude" className="space-y-6 mt-4">
           {loading && !snapshot ? (
@@ -161,6 +321,14 @@ export default function AdminArchitecturePage() {
                   <ArchMetricCard icon={RefreshIcon} value={snapshot?.data?.jobs_pending ?? '—'} label="Jobs pendentes" />
                 </div>
               </div>
+              {snapshot?.ops && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <ArchMetricCard icon={Activity} value={snapshot.ops.sync_ok_24h} label="Syncs OK (24h)" />
+                  <ArchMetricCard icon={AlertCircle} value={snapshot.ops.open_alerts} label="Alertas abertos" />
+                  <ArchMetricCard icon={AlertTriangle} value={snapshot.ops.open_incidents} label="Incidentes" />
+                  <ArchMetricCard icon={RefreshIcon} value={snapshot.ops.active_crons} label="Crons ativos" />
+                </div>
+              )}
               <Card>
                 <CardHeader>
                   <CardTitle>Problemas detectados</CardTitle>
@@ -360,6 +528,115 @@ export default function AdminArchitecturePage() {
                     ))}
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="lgpd" className="space-y-6 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <ArchMetricCard icon={ShieldCheck} value={snapshot?.ops?.pending_deletions ?? 0} label="Exclusões pendentes" sublabel="cooling-off 30 dias" />
+            <ArchMetricCard icon={Database} value="18" label="Políticas de retenção" sublabel="data_retention_policies" />
+            <ArchMetricCard icon={Table2} value="3" label="Documentos legais" sublabel="terms · privacy · cookies" />
+            <ArchMetricCard icon={Activity} value="0" label="Consentimentos ativos" sublabel="user_consents" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Direitos do titular — Art. 18 LGPD</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {[
+                  { label: 'Exportação de dados', rpc: 'export_user_personal_data()', done: true },
+                  { label: 'Exclusão self-service', rpc: 'request_account_deletion()', done: true },
+                  { label: 'Cancelar exclusão', rpc: 'cancel_account_deletion()', done: true },
+                  { label: 'Cooling-off 30 dias', rpc: 'account_deletion_requests', done: true },
+                  { label: 'Consentimento rastreado', rpc: 'user_consents', done: true },
+                  { label: 'Audit de exclusões', rpc: 'deletion_audit_log', done: true },
+                  { label: 'Execução automática', rpc: 'lgpd-execute-scheduled-deletions', done: true },
+                  { label: 'delete-own-account → LGPD RPC', rpc: 'integrar Edge Function', done: false },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-start gap-2 py-1 text-sm border-b last:border-0">
+                    <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${item.done ? 'bg-green-500' : 'bg-yellow-400'}`} />
+                    <div className="flex-1">
+                      <div className={item.done ? '' : 'text-muted-foreground'}>{item.label}</div>
+                      <code className="text-xs text-muted-foreground">{item.rpc}</code>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Fluxo de exclusão self-service</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { step: 1, label: 'Usuário solicita exclusão', detail: 'request_account_deletion() · frontend', color: 'bg-blue-500' },
+                  { step: 2, label: 'Registro com cooling-off', detail: 'account_deletion_requests · 30 dias', color: 'bg-purple-500' },
+                  { step: 3, label: 'Usuário pode cancelar', detail: 'cancel_account_deletion() · até vencer', color: 'bg-green-500' },
+                  { step: 4, label: 'Cron diário 02h verifica', detail: 'lgpd-execute-scheduled-deletions', color: 'bg-yellow-500' },
+                  { step: 5, label: 'admin_delete_user() executa', detail: 'soft-delete + anonimização + audit_trail', color: 'bg-red-500' },
+                ].map((item) => (
+                  <div key={item.step} className="flex gap-3 items-start">
+                    <div className={`w-5 h-5 rounded-full ${item.color} bg-opacity-20 flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <span className="text-xs font-medium">{item.step}</span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{item.label}</div>
+                      <div className="text-xs text-muted-foreground">{item.detail}</div>
+                    </div>
+                  </div>
+                ))}
+
+                <div className="mt-2 rounded-md border border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 p-3">
+                  <p className="text-xs font-medium text-yellow-800 dark:text-yellow-400">Pendente de integração</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">
+                    A Edge Function <code>delete-own-account</code> precisa observar <code>account_deletion_requests</code> e acionar <code>admin_delete_user()</code>.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Políticas de retenção de dados</CardTitle>
+              <CardDescription>18 tipos de dados com base legal definida.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border text-sm overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-3 font-medium">Tipo de dado</th>
+                      <th className="text-left p-3 font-medium">Retenção</th>
+                      <th className="text-left p-3 font-medium">Base legal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { type: 'transactions', days: 3650, basis: 'Obrigação legal (fiscal)' },
+                      { type: 'audit_trail', days: 3650, basis: 'Obrigação legal' },
+                      { type: 'user_consents', days: 3650, basis: 'Obrigação legal' },
+                      { type: 'pluggy_connections', days: 3650, basis: 'Contrato' },
+                      { type: 'ai_chat_messages', days: 365, basis: 'Legítimo interesse' },
+                      { type: 'rebalancing_suggestions', days: 365, basis: 'Legítimo interesse' },
+                      { type: 'analytics_events', days: 90, basis: 'Legítimo interesse' },
+                      { type: 'pluggy_sync_logs', days: 90, basis: 'Legítimo interesse' },
+                      { type: 'monte_carlo_result', days: 90, basis: 'Legítimo interesse' },
+                      { type: 'service_health_log', days: 30, basis: 'Legítimo interesse' },
+                    ].map((row) => (
+                      <tr key={row.type} className="border-b last:border-0">
+                        <td className="p-3 font-mono text-xs">{row.type}</td>
+                        <td className="p-3 text-xs">{row.days >= 3650 ? '10 anos' : row.days >= 365 ? `${row.days / 365} ano(s)` : `${row.days} dias`}</td>
+                        <td className="p-3 text-xs text-muted-foreground">{row.basis}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>

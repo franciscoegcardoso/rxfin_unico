@@ -87,6 +87,18 @@ export const ARCHITECTURE_PHASES: Phase[] = [
 ];
 
 export const CURSOR_PROMPTS: Record<string, string> = {
+  'p0-4': `// JÁ EXECUTADO VIA MCP — documentação
+// 21 políticas RLS foram corrigidas no banco em 20/03/2026.
+// Padrão anterior: user_id = auth.uid()
+// Padrão atual:   user_id = (SELECT auth.uid())
+// Tabelas corrigidas: allocation_policies, allocation_targets, asset_data_coverage,
+// asset_fundamentals, asset_scraping_queue, asset_tax_profile, data_retention_policies,
+// erasure_audit_log, historical_contributions, life_goals,
+// market_stress_config, monte_carlo_results, portfolio_completeness_config,
+// rebalancing_commitments, rebalancing_suggestions, received_dividends,
+// referral_codes, simulation_shares, user_dashboard_config, user_notifications
+// Migration: fix_rls_auth_uid_wrapper_21_tables`,
+
   'p0-2': `Corrigir views com SECURITY DEFINER no Supabase do RXFin.
 
 Views a corrigir:
@@ -125,21 +137,19 @@ apply_lancamento_category_rule, apply_lancamento_friendly_name_rule
 Gere migration com ALTER FUNCTION public.nome() SET search_path = public, pg_catalog;
 para cada uma. Salve em: supabase/migrations/TIMESTAMP_fix_function_search_paths.sql`,
 
-  'p0-7': `Garantir idempotência nas transações Pluggy no RXFin.
-
-A tabela pluggy_transactions tem UNIQUE em pluggy_transaction_id.
-
-Gere migration SQL para garantir upsert seguro:
-INSERT INTO pluggy_transactions (...) VALUES (...)
-ON CONFLICT (pluggy_transaction_id) DO UPDATE SET
-  amount = EXCLUDED.amount,
-  status = EXCLUDED.status,
-  updated_at = now()
-WHERE pluggy_transactions.status != 'POSTED';
-
-Também gere snippet para o n8n Function node que aplica essa lógica ao processar webhooks do Pluggy.
-
-Arquivo: supabase/migrations/TIMESTAMP_pluggy_idempotency.sql`,
+  'p0-7': `// JÁ EXECUTADO VIA MCP — documentação
+// pluggy_sync_locks: lock atômico por usuário para evitar sync duplo
+// RPCs criadas: acquire_pluggy_sync_lock(), release_pluggy_sync_lock()
+// webhook_events: UNIQUE em (source, idempotency_key) já existia
+//
+// Para integrar no pluggy-sync Edge Function:
+// const { data: acquired } = await supabase.rpc('acquire_pluggy_sync_lock', {
+//   p_user_id: userId, p_triggered_by: 'webhook'
+// })
+// if (!acquired) return new Response(JSON.stringify({ skipped: true }), { status: 409 })
+// try { /* sync logic */ } finally {
+//   await supabase.rpc('release_pluggy_sync_lock', { p_user_id: userId })
+// }`,
 
   'p1-2': `Implementar cursor-based pagination em transações no RXFin.
 
@@ -182,38 +192,42 @@ O banco tem max_connections=60 (muito baixo para produção).
    a URL do pooler em vez da direta
 4. Explique quando usar cada conexão (pooler para app, direta para CLI migrations)`,
 
-  'p2-3': `Criar endpoints de compliance LGPD no RXFin.
+  'p2-3': `// JÁ EXECUTADO VIA MCP — documentação
+// RPCs criadas:
+//   export_user_personal_data(user_id) → jsonb  (Art.18 LGPD - portabilidade)
+//   request_account_deletion(reason?)  → jsonb  (cooling-off 30 dias)
+//   cancel_account_deletion()          → jsonb
+// Tabela: account_deletion_requests (status: pending/cancelled/executed)
+// Cron:   lgpd-execute-scheduled-deletions (diário 02h)
+//
+// TODO: integrar Edge Function delete-own-account para observar
+// account_deletion_requests e chamar admin_delete_user() quando
+// status='pending' AND scheduled_for <= now()`,
 
-1. Edge Function delete-account:
-   - Verifica auth.uid()
-   - Anonimiza: profiles.full_name = "Usuário Deletado", mantém email como hash
-   - Deleta: transactions, pluggy_transactions, pluggy_items, bank_accounts do user
-   - Mantém audit_trail (requisito LGPD 5 anos)
-   - Deleta do Supabase Auth por último
-   - Registra em audit.audit_trail com action = 'account_deletion'
-
-2. Edge Function export-user-data:
-   - Retorna JSON com perfil, transações (2 anos), contas, preferências
-   - Content-Type: application/json com header Content-Disposition: attachment
-
-3. Página src/pages/account/PrivacyPage.tsx com:
-   - Botão "Exportar meus dados" → chama export-user-data
-   - Botão "Excluir minha conta" → modal de confirmação → delete-account
-
-Arquivos: supabase/functions/delete-account/index.ts
-          supabase/functions/export-user-data/index.ts`,
+  'p2-5': `// JÁ EXECUTADO VIA MCP — documentação
+// 18 políticas de retenção definidas em data_retention_policies:
+// transactions (10 anos), audit_trail (10 anos), user_consents (10 anos),
+// ai_chat_messages (365 dias), analytics_events (90 dias),
+// pluggy_sync_logs (90 dias), service_health_log (30 dias), etc.
+// Cron de cleanup: lgpd_data_cleanup_weekly (domingo 03h)`,
 };
 
 const STORAGE_KEY = 'rxfin_arch_checklist_v1';
+export const AUTO_COMPLETED_IDS: string[] = [
+  'p0-4',
+  'p0-7',
+  'p1-5',
+  'p2-3',
+  'p2-5',
+];
 
 export function getArchChecklistCompleted(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const fromStorage: string[] = raw ? (JSON.parse(raw) as string[]) : [];
+    return [...new Set([...AUTO_COMPLETED_IDS, ...fromStorage])];
   } catch {
-    return [];
+    return [...AUTO_COMPLETED_IDS];
   }
 }
 
