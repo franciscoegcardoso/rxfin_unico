@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Building2, Car, TrendingUp, Package, Plus, Trash2, Home, DollarSign, CalendarIcon, TrendingDown, Percent, Pencil, Landmark, LayoutGrid, List, Shield, ChevronDown, ChevronRight, RefreshCw, Receipt } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -21,6 +22,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useOverviewSummary } from '@/hooks/useOverviewSummary';
+import { NetWorthHero, HealthScoreCard, ModuleSummaryCard, SparklineCard, NavChips } from '@/components/shared/overview';
 
 type AssetFlowRow = { nome: string; tipo: string; valor: number; flow_origem: string; flow_direction: string; ativo: boolean };
 
@@ -65,10 +68,42 @@ const ESTADO_IMOVEL_OPTIONS: { value: EstadoImovelType; label: string }[] = [
   { value: 'proprio', label: 'Uso próprio' },
 ];
 
+const formatCurrencyBRL = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 const PatrimonioTab: React.FC = () => {
   const { config, updateAsset } = useFinancial();
   const { handleOpenAddDialog, handleEditAsset, handleDeleteAsset, handleAddSeguro, hasActiveInsurance, formatCurrency } = useBensInvestimentos();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
   const isMobile = useIsMobile();
+
+  const navChips = useMemo(
+    () => [
+      {
+        id: 'passivos',
+        label: 'Passivos',
+        sublabel: overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : 'Dívidas e financiamentos',
+        icon: TrendingDown,
+        color: 'bg-red-50 dark:bg-red-950/30',
+        textColor: 'text-red-700 dark:text-red-400',
+        borderColor: 'border border-red-200 dark:border-red-800',
+        path: '/passivos',
+      },
+      {
+        id: 'movimentacoes',
+        label: 'Movimentações',
+        sublabel: 'Extrato e cartão',
+        icon: Receipt,
+        color: 'bg-purple-50 dark:bg-purple-950/30',
+        textColor: 'text-purple-700 dark:text-purple-400',
+        borderColor: 'border border-purple-200 dark:border-purple-800',
+        path: '/movimentacoes',
+      },
+    ],
+    [overview?.has_overdue, overview?.overdue_count]
+  );
   const [patrimonioViewMode, setPatrimonioViewMode] = useState<'list' | 'cards'>('list');
   const [imovelCollapsed, setImovelCollapsed] = useState(false);
   const [veiculoCollapsed, setVeiculoCollapsed] = useState(false);
@@ -310,6 +345,57 @@ const PatrimonioTab: React.FC = () => {
 
   return (
     <>
+      <div className="space-y-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <NetWorthHero
+              netWorth={(overview?.total_assets ?? 0) - (overview?.total_debt ?? 0)}
+              totalAssets={overview?.total_assets ?? 0}
+              totalDebt={overview?.total_debt ?? 0}
+              monthlyDeltaPct={overview?.net_worth_delta_pct ?? null}
+              isLoading={overviewLoading}
+            />
+          </div>
+          <HealthScoreCard
+            score={overview?.health_score ?? null}
+            classification={overview?.health_classification ?? null}
+            isLoading={overviewLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ModuleSummaryCard
+            title="Passivos"
+            subtitle="Dívidas, financiamentos e consórcios"
+            value={formatCurrencyBRL(overview?.total_debt ?? 0)}
+            valueVariant="negative"
+            icon={TrendingDown}
+            iconColor="text-red-500"
+            badge={overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : undefined}
+            onClick={() => navigate('/passivos')}
+            isLoading={overviewLoading}
+          />
+          <ModuleSummaryCard
+            title="Movimentações"
+            subtitle={`Saldo ${new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date())}`}
+            value={formatCurrencyBRL(overview?.month_balance ?? 0)}
+            valueVariant={(overview?.month_balance ?? 0) >= 0 ? 'positive' : 'negative'}
+            icon={Receipt}
+            iconColor="text-purple-500"
+            onClick={() => navigate('/movimentacoes')}
+            isLoading={overviewLoading}
+          />
+        </div>
+
+        {(overview?.sparkline?.length ?? 0) > 0 && (
+          <SparklineCard data={overview!.sparkline} isLoading={overviewLoading} />
+        )}
+
+        <NavChips chips={navChips} currentPath={location.pathname} />
+
+        <div className="border-t border-border/50 pt-4" />
+      </div>
+
       <div className="flex items-center justify-end">
         <Button onClick={() => handleOpenAddDialog()} className="gap-2 w-full sm:w-auto min-h-[44px] touch-manipulation">
           <Plus className="h-4 w-4" />

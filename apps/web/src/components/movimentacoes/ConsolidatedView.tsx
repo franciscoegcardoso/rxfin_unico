@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { LayoutDashboard, List, X, CreditCard, Landmark } from 'lucide-react';
+import { LayoutDashboard, List, X, CreditCard, Landmark, TrendingDown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -13,6 +14,8 @@ import { useCreditCardTransactions } from '@/hooks/useCreditCardTransactions';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { CHART_PALETTE } from '@/components/charts/premiumChartTheme';
+import { useOverviewSummary } from '@/hooks/useOverviewSummary';
+import { NetWorthHero, HealthScoreCard, NavChips } from '@/components/shared/overview';
 
 function KPICard({
   label,
@@ -151,7 +154,39 @@ function ConsolidatedTransactionList({
   );
 }
 
+const formatCurrencyOverview = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
 export function ConsolidatedView() {
+  const location = useLocation();
+  const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
+
+  const navChips = useMemo(
+    () => [
+      {
+        id: 'bens-investimentos',
+        label: 'Bens & Invest.',
+        sublabel: formatCurrencyOverview(overview?.total_assets ?? 0),
+        icon: LayoutDashboard,
+        color: 'bg-emerald-50 dark:bg-emerald-950/30',
+        textColor: 'text-emerald-700 dark:text-emerald-400',
+        borderColor: 'border border-emerald-200 dark:border-emerald-800',
+        path: '/bens-investimentos',
+      },
+      {
+        id: 'passivos',
+        label: 'Passivos',
+        sublabel: overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : 'Dívidas e financiamentos',
+        icon: TrendingDown,
+        color: 'bg-red-50 dark:bg-red-950/30',
+        textColor: 'text-red-700 dark:text-red-400',
+        borderColor: 'border border-red-200 dark:border-red-800',
+        path: '/passivos',
+      },
+    ],
+    [overview?.total_assets, overview?.has_overdue, overview?.overdue_count]
+  );
+
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [sourceFilter, setSourceFilter] = useState<'all' | 'debito' | 'credito'>('all');
@@ -189,6 +224,27 @@ export function ConsolidatedView() {
 
   return (
     <div className="space-y-5">
+      <div className="space-y-4 mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <NetWorthHero
+              netWorth={(overview?.total_assets ?? 0) - (overview?.total_debt ?? 0)}
+              totalAssets={overview?.total_assets ?? 0}
+              totalDebt={overview?.total_debt ?? 0}
+              monthlyDeltaPct={overview?.net_worth_delta_pct ?? null}
+              isLoading={overviewLoading}
+            />
+          </div>
+          <HealthScoreCard
+            score={overview?.health_score ?? null}
+            classification={overview?.health_classification ?? null}
+            isLoading={overviewLoading}
+          />
+        </div>
+        <NavChips chips={navChips} currentPath={location.pathname} />
+        <div className="border-t border-border/50 pt-2" />
+      </div>
+
       <div>
         <Label className="text-xs text-muted-foreground uppercase tracking-wider">Período</Label>
         <MonthSelector selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />

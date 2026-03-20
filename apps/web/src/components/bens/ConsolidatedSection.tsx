@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -28,11 +29,17 @@ import {
   AlertTriangle,
   Shield,
   Plus,
-  Scale
+  Scale,
+  Receipt,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { BalancoPatrimonialSection } from './BalancoPatrimonialSection';
+import { useOverviewSummary } from '@/hooks/useOverviewSummary';
+import { NetWorthHero, HealthScoreCard, ModuleSummaryCard, SparklineCard, NavChips } from '@/components/shared/overview';
+
+const formatCurrencyBRL = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 interface ConsolidatedSectionProps {
   onNavigate?: (tab: string) => void;
@@ -40,6 +47,8 @@ interface ConsolidatedSectionProps {
 
 export const ConsolidatedSection: React.FC<ConsolidatedSectionProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
   const { config } = useFinancial();
   const { isHidden } = useVisibility();
   const { consorcios, financiamentos } = useCreditos();
@@ -187,8 +196,83 @@ export const ConsolidatedSection: React.FC<ConsolidatedSectionProps> = ({ onNavi
     });
   }, [patrimonioAssets, seguros]);
 
+  const navChips = useMemo(
+    () => [
+      {
+        id: 'passivos',
+        label: 'Passivos',
+        sublabel: overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : 'Dívidas e financiamentos',
+        icon: TrendingDown,
+        color: 'bg-red-50 dark:bg-red-950/30',
+        textColor: 'text-red-700 dark:text-red-400',
+        borderColor: 'border border-red-200 dark:border-red-800',
+        path: '/passivos',
+      },
+      {
+        id: 'movimentacoes',
+        label: 'Movimentações',
+        sublabel: 'Extrato e cartão',
+        icon: Receipt,
+        color: 'bg-purple-50 dark:bg-purple-950/30',
+        textColor: 'text-purple-700 dark:text-purple-400',
+        borderColor: 'border border-purple-200 dark:border-purple-800',
+        path: '/movimentacoes',
+      },
+    ],
+    [overview?.has_overdue, overview?.overdue_count]
+  );
+
   return (
     <div className="space-y-6">
+      <div className="space-y-4 mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <NetWorthHero
+              netWorth={(overview?.total_assets ?? 0) - (overview?.total_debt ?? 0)}
+              totalAssets={overview?.total_assets ?? 0}
+              totalDebt={overview?.total_debt ?? 0}
+              monthlyDeltaPct={overview?.net_worth_delta_pct ?? null}
+              isLoading={overviewLoading}
+            />
+          </div>
+          <HealthScoreCard
+            score={overview?.health_score ?? null}
+            classification={overview?.health_classification ?? null}
+            isLoading={overviewLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <ModuleSummaryCard
+            title="Passivos"
+            subtitle="Dívidas, financiamentos e consórcios"
+            value={isHidden ? '••••••' : formatCurrencyBRL(overview?.total_debt ?? 0)}
+            valueVariant="negative"
+            icon={TrendingDown}
+            iconColor="text-red-500"
+            badge={overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : undefined}
+            onClick={() => navigate('/passivos')}
+            isLoading={overviewLoading}
+          />
+          <ModuleSummaryCard
+            title="Movimentações"
+            subtitle={`Saldo ${new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date())}`}
+            value={isHidden ? '••••••' : formatCurrencyBRL(overview?.month_balance ?? 0)}
+            valueVariant={(overview?.month_balance ?? 0) >= 0 ? 'positive' : 'negative'}
+            icon={Receipt}
+            iconColor="text-purple-500"
+            onClick={() => navigate('/movimentacoes')}
+            isLoading={overviewLoading}
+          />
+        </div>
+
+        <SparklineCard data={overview?.sparkline ?? []} isLoading={overviewLoading} />
+
+        <NavChips chips={navChips} currentPath={location.pathname} />
+
+        <div className="border-t border-border/50 pt-4" />
+      </div>
+
       {/* Resumo Consolidado */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
         <CardHeader>

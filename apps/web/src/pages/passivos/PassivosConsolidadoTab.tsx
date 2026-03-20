@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AlertCircle,
   FileText,
@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Calendar,
   ChevronRight,
+  Receipt,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,13 +17,43 @@ import { Progress } from '@/components/ui/progress';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
 import { usePassivosConsolidado } from '@/hooks/usePassivosConsolidado';
+import { useOverviewSummary } from '@/hooks/useOverviewSummary';
+import { NetWorthHero, HealthScoreCard, ModuleSummaryCard, NavChips } from '@/components/shared/overview';
 
 const formatMoney = (value: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 const PassivosConsolidadoTab: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
   const { data, isLoading, error } = usePassivosConsolidado();
+
+  const navChips = useMemo(
+    () => [
+      {
+        id: 'bens-investimentos',
+        label: 'Bens & Invest.',
+        sublabel: formatMoney(overview?.total_assets ?? 0),
+        icon: LayoutDashboard,
+        color: 'bg-emerald-50 dark:bg-emerald-950/30',
+        textColor: 'text-emerald-700 dark:text-emerald-400',
+        borderColor: 'border border-emerald-200 dark:border-emerald-800',
+        path: '/bens-investimentos',
+      },
+      {
+        id: 'movimentacoes',
+        label: 'Movimentações',
+        sublabel: 'Extrato e cartão',
+        icon: Receipt,
+        color: 'bg-purple-50 dark:bg-purple-950/30',
+        textColor: 'text-purple-700 dark:text-purple-400',
+        borderColor: 'border border-purple-200 dark:border-purple-800',
+        path: '/movimentacoes',
+      },
+    ],
+    [overview?.total_assets]
+  );
 
   const refetch = () => window.location.reload();
 
@@ -71,20 +102,7 @@ const PassivosConsolidadoTab: React.FC = () => {
       <Card className="mt-4">
         <CardContent className="p-8 text-center space-y-6">
           <p className="text-muted-foreground">Não há passivos cadastrados.</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button variant="outline" onClick={() => navigate('/passivos/dividas')} className="gap-2">
-              <FileText className="h-4 w-4" />
-              Dívidas
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/passivos/financiamentos')} className="gap-2">
-              <Landmark className="h-4 w-4" />
-              Financiamentos
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/passivos/consorcios')} className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Consórcios
-            </Button>
-          </div>
+          <NavChips chips={navChips} currentPath={location.pathname} />
         </CardContent>
       </Card>
     );
@@ -94,6 +112,39 @@ const PassivosConsolidadoTab: React.FC = () => {
 
   return (
     <div className="space-y-6 py-4">
+      <div className="space-y-4 mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <NetWorthHero
+              netWorth={(overview?.total_assets ?? 0) - (overview?.total_debt ?? 0)}
+              totalAssets={overview?.total_assets ?? 0}
+              totalDebt={overview?.total_debt ?? 0}
+              monthlyDeltaPct={overview?.net_worth_delta_pct ?? null}
+              isLoading={overviewLoading}
+            />
+          </div>
+          <HealthScoreCard
+            score={overview?.health_score ?? null}
+            classification={overview?.health_classification ?? null}
+            isLoading={overviewLoading}
+          />
+        </div>
+
+        <ModuleSummaryCard
+          title="Bens & Investimentos"
+          subtitle="Total de ativos"
+          value={formatMoney(overview?.total_assets ?? 0)}
+          valueVariant="positive"
+          icon={LayoutDashboard}
+          iconColor="text-emerald-500"
+          onClick={() => navigate('/bens-investimentos')}
+          isLoading={overviewLoading}
+        />
+
+        <NavChips chips={navChips} currentPath={location.pathname} />
+        <div className="border-t border-border/50 pt-2" />
+      </div>
+
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <HeaderMetricCard
