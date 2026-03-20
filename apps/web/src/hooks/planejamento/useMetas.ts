@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { usePlanejamentoPage } from '@/hooks/usePlanejamentoPage';
 
 export interface MetaComProgresso {
   id: string;
@@ -19,18 +21,15 @@ export interface MetaComProgresso {
 export function useMetas() {
   const { user } = useAuth();
   const userId = user?.id;
+  const currentMonth = format(new Date(), 'yyyy-MM');
+  const pageQuery = usePlanejamentoPage(userId, currentMonth, 'metas');
 
-  return useQuery({
-    queryKey: ['metas-progresso', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const { data, error } = await supabase.rpc('get_metas_com_progresso', { p_user_id: userId });
-      if (error) throw error;
-      return (data as MetaComProgresso[]) ?? [];
-    },
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 min
-  });
+  return {
+    data: (((pageQuery.data?.tab_data as { metas?: MetaComProgresso[] } | null)?.metas ?? []) as MetaComProgresso[]),
+    isLoading: pageQuery.isLoading,
+    error: pageQuery.error,
+    refetch: pageQuery.refetch,
+  };
 }
 
 export interface AddAporteMetaInput {
@@ -60,6 +59,8 @@ export function useAddAporteMeta() {
       // Invalidate the exact keys used in useMetas and useVersaoMensal (monthly view)
       queryClient.invalidateQueries({ queryKey: ['metas-progresso', userId] });
       queryClient.invalidateQueries({ queryKey: ['visao-mensal-realizado'] });
+      queryClient.invalidateQueries({ queryKey: ['planejamento-page', userId] });
+      queryClient.invalidateQueries({ queryKey: ['monthly-goals', userId] });
     },
   });
 }

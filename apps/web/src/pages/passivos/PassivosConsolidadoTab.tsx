@@ -16,9 +16,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
-import { usePassivosConsolidado } from '@/hooks/usePassivosConsolidado';
+import { usePassivosPage } from '@/hooks/usePassivosPage';
 import { useOverviewSummary } from '@/hooks/useOverviewSummary';
 import { NetWorthHero, HealthScoreCard, ModuleSummaryCard, NavChips } from '@/components/shared/overview';
+import { useAuth } from '@/contexts/AuthContext';
 
 const formatMoney = (value: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -26,8 +27,10 @@ const formatMoney = (value: number): string =>
 const PassivosConsolidadoTab: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
-  const { data, isLoading, error } = usePassivosConsolidado();
+  const { data: pageData, isLoading, error } = usePassivosPage(user?.id, 'consolidado');
+  const data = (pageData?.tab_data ?? null) as any;
 
   const navChips = useMemo(
     () => [

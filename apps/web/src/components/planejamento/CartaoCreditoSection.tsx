@@ -253,12 +253,12 @@ export const CartaoCreditoSection: React.FC<CartaoCreditoSectionProps> = ({
     deleteMultipleTransactions,
     fetchTransactions,
     consolidateInstallmentGroups,
-  } = useCreditCardTransactions();
+  } = useCreditCardTransactions(currentMonth);
 
   const { bills, fetchBills } = useCreditCardBills();
   const { detectRecurring, detecting } = useRecurringDetection();
   const { payments: recurringPayments, syncRecurringPayments } = useRecurringPayments();
-  const { data: recorrentesData } = useRecorrentesCartao();
+  const { data: recorrentesData } = useRecorrentesCartao(currentMonth);
 
   const recorrentesSummaryDescription = useMemo(() => {
     const list = recorrentesData?.compras_recorrentes ?? [];

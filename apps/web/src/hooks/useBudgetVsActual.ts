@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePlanejamentoPage } from '@/hooks/usePlanejamentoPage';
 
 /** Response shape from get_budget_vs_actual RPC */
 export interface BudgetVsActualData {
@@ -10,37 +11,13 @@ export interface BudgetVsActualData {
 }
 
 export function useBudgetVsActual(month: string) {
-  const [data, setData] = useState<BudgetVsActualData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: result, error: rpcError } = await supabase.rpc('get_budget_vs_actual', {
-        p_month: month,
-      });
-      if (rpcError) {
-        setError(rpcError.message);
-        setData(null);
-        return null;
-      }
-      setData((result as BudgetVsActualData) ?? null);
-      return result as BudgetVsActualData;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-      setData(null);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [month]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, loading, error, refetch: fetchData };
+  const { user } = useAuth();
+  const query = usePlanejamentoPage(user?.id, month, 'orcamento');
+  const data = useMemo(() => (query.data?.tab_data ?? null) as BudgetVsActualData | null, [query.data]);
+  return {
+    data,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refetch: query.refetch,
+  };
 }

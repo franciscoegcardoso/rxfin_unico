@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle, FileText, Plus, RefreshCw } from 'lucide-react';
 import { DividaObrigacaoDialog } from '@/components/passivos/DividaObrigacaoDialog';
+import { usePassivosPage } from '@/hooks/usePassivosPage';
+import { useAuth } from '@/contexts/AuthContext';
 
 type PluggyLoan = {
   product_name: string;
@@ -50,37 +52,11 @@ function ProgressBar({ value }: { value: number }) {
 }
 
 export default function PassivosDividasTab() {
-  const [data, setData] = useState<PassivosDividasResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const { data: result, error: rpcError } = await supabase.rpc('get_passivos_dividas');
-        if (rpcError) throw rpcError;
-        if (cancelled) return;
-        setData((result ?? null) as PassivosDividasResponse | null);
-      } catch (err) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        setData(null);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: pageData, isLoading, error } = usePassivosPage(user?.id, 'dividas');
+  const data = (pageData?.tab_data ?? null) as PassivosDividasResponse | null;
 
   const pluggyLoans = data?.pluggy_loans ?? [];
   const manualLoans = data?.manual_loans ?? [];
@@ -103,7 +79,7 @@ export default function PassivosDividasTab() {
               <AlertCircle className="h-4 w-4 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium">Não foi possível carregar</p>
-                <p className="text-xs text-muted-foreground mt-1">{error}</p>
+                <p className="text-xs text-muted-foreground mt-1">{error instanceof Error ? error.message : String(error)}</p>
               </div>
             </div>
             <Button variant="outline" className="gap-2" onClick={() => window.location.reload()}>
@@ -204,7 +180,16 @@ export default function PassivosDividasTab() {
         </ScrollArea>
       )}
     </div>
-    <DividaObrigacaoDialog open={dialogOpen} onOpenChange={setDialogOpen} editingAsset={null} />
+    <DividaObrigacaoDialog
+      open={dialogOpen}
+      onOpenChange={setDialogOpen}
+      editingAsset={null}
+      onSaved={() => {
+        if (user?.id) {
+          void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+        }
+      }}
+    />
     </>
   );
 }

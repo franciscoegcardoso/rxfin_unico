@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Consorcio, ConsorcioInsert, Financiamento, FinanciamentoInsert } from '@/types/credito';
@@ -15,6 +16,7 @@ type ItemResponse<T> = {
 
 export const useCreditos = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [consorcios, setConsorcios] = useState<Consorcio[]>([]);
   const [financiamentos, setFinanciamentos] = useState<Financiamento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,6 +128,9 @@ export const useCreditos = () => {
       });
 
       setConsorcios((prev) => [res.item, ...prev]);
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio adicionado com sucesso!');
       return { data: res.item };
     } catch (err) {
@@ -143,6 +148,9 @@ export const useCreditos = () => {
       }
 
       setConsorcios((prev) => [data as Consorcio, ...prev]);
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio adicionado com sucesso!');
       return { data };
     }
@@ -157,6 +165,9 @@ export const useCreditos = () => {
       });
 
       setConsorcios((prev) => prev.map((c) => (c.id === id ? res.item : c)));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio atualizado!');
       return { data: res.item };
     } catch (err) {
@@ -170,6 +181,9 @@ export const useCreditos = () => {
       }
 
       setConsorcios((prev) => prev.map((c) => (c.id === id ? (data as Consorcio) : c)));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio atualizado!');
       return { data };
     }
@@ -179,6 +193,9 @@ export const useCreditos = () => {
     try {
       await invokeCreditos<{ ok: true }>('DELETE', { type: 'consorcio', id });
       setConsorcios((prev) => prev.filter((c) => c.id !== id));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio excluído!');
       return {};
     } catch (err) {
@@ -192,6 +209,9 @@ export const useCreditos = () => {
       }
 
       setConsorcios((prev) => prev.filter((c) => c.id !== id));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Consórcio excluído!');
       return {};
     }
@@ -207,6 +227,9 @@ export const useCreditos = () => {
       });
 
       setFinanciamentos((prev) => [res.item, ...prev]);
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento adicionado com sucesso!');
       return { data: res.item };
     } catch (err) {
@@ -224,6 +247,9 @@ export const useCreditos = () => {
       }
 
       setFinanciamentos((prev) => [data as Financiamento, ...prev]);
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento adicionado com sucesso!');
       return { data };
     }
@@ -238,6 +264,9 @@ export const useCreditos = () => {
       });
 
       setFinanciamentos((prev) => prev.map((f) => (f.id === id ? res.item : f)));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento atualizado!');
       return { data: res.item };
     } catch (err) {
@@ -256,6 +285,9 @@ export const useCreditos = () => {
       }
 
       setFinanciamentos((prev) => prev.map((f) => (f.id === id ? (data as Financiamento) : f)));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento atualizado!');
       return { data };
     }
@@ -265,6 +297,9 @@ export const useCreditos = () => {
     try {
       await invokeCreditos<{ ok: true }>('DELETE', { type: 'financiamento', id });
       setFinanciamentos((prev) => prev.filter((f) => f.id !== id));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento excluído!');
       return {};
     } catch (err) {
@@ -278,6 +313,9 @@ export const useCreditos = () => {
       }
 
       setFinanciamentos((prev) => prev.filter((f) => f.id !== id));
+      if (user?.id) {
+        void queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+      }
       toast.success('Financiamento excluído!');
       return {};
     }

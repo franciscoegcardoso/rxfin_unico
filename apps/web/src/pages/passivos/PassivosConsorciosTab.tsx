@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle, Plus, RefreshCw, TrendingUp } from 'lucide-react';
 import { ConsorcioDialog } from '@/components/credito/ConsorcioDialog';
 import { useCreditos } from '@/hooks/useCreditos';
+import { usePassivosPage } from '@/hooks/usePassivosPage';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ConsorcioItem = {
   id: string;
@@ -59,38 +61,12 @@ const ProgressBar = ({ value }: { value: number }) => {
 };
 
 export default function PassivosConsorciosTab() {
-  const [data, setData] = useState<PassivosConsorciosResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { addConsorcio } = useCreditos();
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const { data: result, error: rpcError } = await supabase.rpc('get_passivos_consorcios');
-        if (rpcError) throw rpcError;
-        if (cancelled) return;
-        setData((result ?? null) as PassivosConsorciosResponse | null);
-      } catch (err) {
-        if (cancelled) return;
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        setData(null);
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: pageData, isLoading, error } = usePassivosPage(user?.id, 'consorcios');
+  const data = (pageData?.tab_data ?? null) as PassivosConsorciosResponse | null;
 
   const items = data?.consorcios ?? [];
 
@@ -111,7 +87,7 @@ export default function PassivosConsorciosTab() {
               <AlertCircle className="h-4 w-4 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium">Não foi possível carregar</p>
-                <p className="text-xs text-muted-foreground mt-1">{error}</p>
+                <p className="text-xs text-muted-foreground mt-1">{error instanceof Error ? error.message : String(error)}</p>
               </div>
             </div>
             <Button variant="outline" className="gap-2" onClick={() => window.location.reload()}>
@@ -207,7 +183,9 @@ export default function PassivosConsorciosTab() {
       onOpenChange={setDialogOpen}
       onSave={async (payload) => {
         const res = await addConsorcio(payload);
-        if (!res.error) window.location.reload();
+        if (!res.error && user?.id) {
+          await queryClient.invalidateQueries({ queryKey: ['passivos-page', user.id] });
+        }
         return res;
       }}
     />

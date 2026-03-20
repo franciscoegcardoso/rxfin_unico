@@ -50,8 +50,8 @@ function ConsolidatedTransactionList({
   categoryFilter: string | null;
   sourceFilter: 'all' | 'debito' | 'credito';
 }) {
-  const { lancamentos } = useLancamentosRealizados({ paginated: false });
-  const { transactions } = useCreditCardTransactions();
+  const { lancamentos } = useLancamentosRealizados({ paginated: false, mesReferencia: monthRef });
+  const { transactions } = useCreditCardTransactions(monthRef);
 
   const rows = useMemo(() => {
     const list: { id: string; date: string; description: string; category: string; source: 'conta' | 'cartao'; value: number }[] = [];

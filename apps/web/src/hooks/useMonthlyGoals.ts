@@ -41,6 +41,11 @@ export interface MonthlyGoalInput {
   payment_method_goals?: Record<string, number>;
 }
 
+const currentMonthRef = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
 const validBases: CalculationBase[] = ['avg_1_month', 'avg_3_months', 'avg_6_months', 'avg_12_months', 'auto_by_nature'];
 
 function parseCalculationBase(value: string | null | undefined): CalculationBase {
@@ -68,7 +73,7 @@ function mapRows(data: unknown[]): MonthlyGoal[] {
   }));
 }
 
-export function useMonthlyGoals() {
+export function useMonthlyGoals(targetMonth?: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id;
@@ -79,15 +84,18 @@ export function useMonthlyGoals() {
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: ['monthly-goals', userId],
+    queryKey: ['monthly-goals', userId, targetMonth ?? currentMonthRef()],
     queryFn: async () => {
+      const month = targetMonth ?? currentMonthRef();
       const { data, error } = await supabase
         .from('monthly_goals')
         .select('*')
         .eq('user_id', userId!)
-        .order('month', { ascending: false });
+        .eq('month', month)
+        .maybeSingle();
       if (error) throw error;
-      return mapRows(data || []);
+      if (!data) return [];
+      return mapRows([data as unknown as Record<string, unknown>]);
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
@@ -104,7 +112,8 @@ export function useMonthlyGoals() {
   const saveGoal = useCallback(
     async (input: MonthlyGoalInput): Promise<boolean> => {
       if (!user?.id) return false;
-      const current = queryClient.getQueryData<MonthlyGoal[]>(['monthly-goals', user.id]) ?? goals;
+      const month = targetMonth ?? input.month;
+      const current = queryClient.getQueryData<MonthlyGoal[]>(['monthly-goals', user.id, month]) ?? goals;
       const existing = current.find((g) => g.month === input.month);
       try {
         if (existing) {
@@ -140,7 +149,10 @@ export function useMonthlyGoals() {
           ]);
           if (error) throw error;
         }
-        await queryClient.invalidateQueries({ queryKey: ['monthly-goals', user.id] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['monthly-goals', user.id] }),
+          queryClient.invalidateQueries({ queryKey: ['planejamento-page', user.id] }),
+        ]);
         toast.success('Metas salvas com sucesso!');
         return true;
       } catch (err) {
@@ -158,7 +170,10 @@ export function useMonthlyGoals() {
       try {
         const { error } = await supabase.from('monthly_goals').delete().eq('user_id', user.id).eq('month', month);
         if (error) throw error;
-        await queryClient.invalidateQueries({ queryKey: ['monthly-goals', user.id] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['monthly-goals', user.id] }),
+          queryClient.invalidateQueries({ queryKey: ['planejamento-page', user.id] }),
+        ]);
         toast.success('Metas removidas');
         return true;
       } catch (err) {

@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { useMovimentacoesPage } from '@/hooks/useMovimentacoesPage';
 
 export interface RecorrenteItem {
   id: string;
@@ -32,20 +33,14 @@ export interface RecorrentesExtrato {
   };
 }
 
-async function fetchRecorrentesExtrato(): Promise<RecorrentesExtrato | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await supabase.rpc('get_recorrentes_extrato', {
-    p_user_id: user.id,
-  });
-  if (error) throw error;
-  return data as RecorrentesExtrato | null;
-}
-
-export function useRecorrentesExtrato() {
-  return useQuery({
-    queryKey: ['recorrentes-extrato'],
-    queryFn: fetchRecorrentesExtrato,
-    staleTime: 2 * 60 * 1000,
-  });
+export function useRecorrentesExtrato(month?: string) {
+  const { user } = useAuth();
+  const currentMonth = month ?? format(new Date(), 'yyyy-MM');
+  const query = useMovimentacoesPage(user?.id, currentMonth);
+  return {
+    data: (query.data?.recorrentes_extrato ?? null) as RecorrentesExtrato | null,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }

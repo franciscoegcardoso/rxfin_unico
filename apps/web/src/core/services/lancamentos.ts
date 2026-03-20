@@ -22,12 +22,16 @@ function mapRow(d: any): LancamentoRealizado {
 const DEFAULT_PAGE_SIZE = 50;
 
 // ─── Fetch ───────────────────────────────────────────────
-export async function fetchLancamentos(userId: string): Promise<LancamentoRealizado[]> {
-  const { data, error } = await supabase
+export async function fetchLancamentos(userId: string, mesReferencia?: string | null): Promise<LancamentoRealizado[]> {
+  let query = supabase
     .from('lancamentos_realizados_v')
     .select('*')
     .eq('user_id', userId)
     .order('data_registro', { ascending: false });
+  if (mesReferencia != null && mesReferencia !== '') {
+    query = query.eq('mes_referencia', mesReferencia);
+  }
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data || []).map(mapRow);

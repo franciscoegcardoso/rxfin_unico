@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanejamentoPage } from '@/hooks/usePlanejamentoPage';
 
 export interface MesAnual {
   month: string;
@@ -20,40 +21,35 @@ export interface MesAnual {
 export function usePlanejamentoAnual(year: number) {
   const { user } = useAuth();
   const userId = user?.id;
+  const monthRef = `${year}-01`;
+  const query = usePlanejamentoPage(userId, monthRef, 'anual');
 
-  return useQuery({
-    queryKey: ['planejamento-anual', userId, year],
-    queryFn: async (): Promise<MesAnual[]> => {
-      if (!userId) return [];
-      const { data, error } = await supabase.rpc('get_planejamento_anual_com_realizado', {
-        p_user_id: userId,
-        p_year: year,
-      });
-      if (error) throw error;
-
-      const rows = (data as any[]) ?? [];
-      return rows.map((r) => {
-        const saldoRealizado = Number(r.realizado_receita ?? 0) - Number(r.realizado_despesa_extrato ?? 0) - Number(r.realizado_cartao ?? 0);
-        const saldoPlanejado = Number(r.planejado_receita ?? 0) - Number(r.planejado_despesa ?? 0) - Number(r.planejado_cartao ?? 0);
-        return {
-          month: r.month,
-          planejado_receita: Number(r.planejado_receita ?? 0),
-          planejado_despesa: Number(r.planejado_despesa ?? 0),
-          planejado_cartao: Number(r.planejado_cartao ?? 0),
-          realizado_receita: Number(r.realizado_receita ?? 0),
-          realizado_despesa_extrato: Number(r.realizado_despesa_extrato ?? 0),
-          realizado_cartao: Number(r.realizado_cartao ?? 0),
-          saldo_planejado: Number(r.saldo_planejado ?? saldoPlanejado),
-          saldo_realizado: Number(r.saldo_realizado ?? saldoRealizado),
-          has_data: Boolean(r.has_data),
-          has_planning: Boolean(r.has_planning),
-          variacao_saldo: (Number(r.saldo_realizado ?? saldoRealizado) - Number(r.saldo_planejado ?? saldoPlanejado)),
-        } as MesAnual;
-      });
-    },
-    enabled: !!userId && !!year,
-    staleTime: 5 * 60 * 1000, // 5 min
+  const rows = ((query.data?.tab_data as { annual_data?: any[] } | null)?.annual_data ?? []) as any[];
+  const normalized = rows.map((r) => {
+    const saldoRealizado = Number(r.realizado_receita ?? 0) - Number(r.realizado_despesa_extrato ?? 0) - Number(r.realizado_cartao ?? 0);
+    const saldoPlanejado = Number(r.planejado_receita ?? 0) - Number(r.planejado_despesa ?? 0) - Number(r.planejado_cartao ?? 0);
+    return {
+      month: r.month,
+      planejado_receita: Number(r.planejado_receita ?? 0),
+      planejado_despesa: Number(r.planejado_despesa ?? 0),
+      planejado_cartao: Number(r.planejado_cartao ?? 0),
+      realizado_receita: Number(r.realizado_receita ?? 0),
+      realizado_despesa_extrato: Number(r.realizado_despesa_extrato ?? 0),
+      realizado_cartao: Number(r.realizado_cartao ?? 0),
+      saldo_planejado: Number(r.saldo_planejado ?? saldoPlanejado),
+      saldo_realizado: Number(r.saldo_realizado ?? saldoRealizado),
+      has_data: Boolean(r.has_data),
+      has_planning: Boolean(r.has_planning),
+      variacao_saldo: Number(r.saldo_realizado ?? saldoRealizado) - Number(r.saldo_planejado ?? saldoPlanejado),
+    } as MesAnual;
   });
+
+  return {
+    data: normalized,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
 
 export function useCloseMonth() {

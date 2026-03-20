@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlanejamentoPage } from '@/hooks/usePlanejamentoPage';
 
 export interface CategoriaRealizado {
   category_name: string;
@@ -49,21 +50,9 @@ export function useVersaoMensal(mes: string): VersaoMensalComputed {
   const { user } = useAuth();
 
   const userId = user?.id;
+  const pageQuery = usePlanejamentoPage(userId, mes, 'mensal');
 
-  const visaoQuery = useQuery({
-    queryKey: ['visao-mensal-realizado', userId, mes],
-    queryFn: async () => {
-      if (!userId) return null;
-      const { data, error } = await supabase.rpc('get_visao_mensal_realizado', {
-        p_user_id: userId,
-        p_month: mes,
-      });
-      if (error) throw error;
-      return data as VersaoMensalRealizado;
-    },
-    enabled: !!userId && !!mes,
-    staleTime: 5 * 60 * 1000, // 5 min
-  });
+  const visaoData = (pageQuery.data?.tab_data as { realizado?: VersaoMensalRealizado } | null)?.realizado ?? null;
 
   const faturasQuery = useQuery({
     queryKey: ['credit-card-bills', userId, mes],
@@ -82,31 +71,15 @@ export function useVersaoMensal(mes: string): VersaoMensalComputed {
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
-  const goalsQuery = useQuery({
-    queryKey: ['monthly-goals', userId, mes],
-    queryFn: async () => {
-      if (!userId) return null;
-      const { data, error } = await supabase
-        .from('monthly_goals')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('month', mes)
-        .maybeSingle();
+  const goalsData = (pageQuery.data?.goals ?? null) as VersaoMensalMesGoals | null;
 
-      if (error) throw error;
-      return (data as VersaoMensalMesGoals) ?? null;
-    },
-    enabled: !!userId && !!mes,
-    staleTime: 5 * 60 * 1000, // 5 min
-  });
-
-  const isLoading = visaoQuery.isLoading || faturasQuery.isLoading || goalsQuery.isLoading;
+  const isLoading = pageQuery.isLoading || faturasQuery.isLoading;
   const error =
-    (visaoQuery.error?.message || faturasQuery.error?.message || goalsQuery.error?.message || null) as string | null;
+    ((pageQuery.error as Error | null)?.message || faturasQuery.error?.message || null) as string | null;
 
-  const receitas = visaoQuery.data?.receitas ?? 0;
-  const despesas_extrato = visaoQuery.data?.despesas_extrato ?? 0;
-  const por_categoria = visaoQuery.data?.por_categoria ?? {};
+  const receitas = visaoData?.receitas ?? 0;
+  const despesas_extrato = visaoData?.despesas_extrato ?? 0;
+  const por_categoria = visaoData?.por_categoria ?? {};
 
   const faturas_total = (faturasQuery.data || []).reduce((sum, f) => sum + (f.total_value || 0), 0);
   const total_despesas = despesas_extrato + faturas_total;
@@ -119,7 +92,7 @@ export function useVersaoMensal(mes: string): VersaoMensalComputed {
     total_despesas,
     saldo_disponivel,
     por_categoria,
-    monthly_goals: goalsQuery.data ?? null,
+    monthly_goals: goalsData,
     isLoading,
     error,
   };

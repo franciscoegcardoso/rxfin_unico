@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RXFinLoadingSpinner } from '@/components/shared/RXFinLoadingSpinner';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
-import { usePassivosHeader } from '@/hooks/usePassivosHeader';
+import { usePassivosPage, type PassivosTabSlug } from '@/hooks/usePassivosPage';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PassivosPage: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { user } = useAuth();
 
   const VALID_TABS = useMemo(() => ['visao-geral', 'dividas', 'financiamentos', 'consorcios'] as const, []);
   const rawTab = pathname.split('/').filter(Boolean).pop();
@@ -22,7 +24,9 @@ const PassivosPage: React.FC = () => {
       ? (rawTab as (typeof VALID_TABS)[number])
       : 'visao-geral';
 
-  const { data: header, isLoading, error } = usePassivosHeader();
+  const activePassivosTab: PassivosTabSlug = currentTab === 'visao-geral' ? 'consolidado' : (currentTab as PassivosTabSlug);
+  const { data: pageData, isLoading, error } = usePassivosPage(user?.id, activePassivosTab);
+  const header = pageData?.header ?? null;
 
   useEffect(() => {
     if (!rawTab) return;

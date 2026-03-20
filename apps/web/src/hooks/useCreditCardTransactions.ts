@@ -51,6 +51,8 @@ export interface CreditCardTransaction {
   status: string;
   // Original purchase date (from Pluggy metadata)
   purchase_date: string | null;
+  // Month reference from view (YYYY-MM)
+  reference_month?: string | null;
 }
 
 export interface TransactionInput {
@@ -85,7 +87,7 @@ export interface PendingTransaction {
 
 const CREDIT_CARD_TRANSACTIONS_QUERY_KEY = 'credit-card-transactions';
 
-export function useCreditCardTransactions() {
+export function useCreditCardTransactions(currentMonth?: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -95,7 +97,7 @@ export function useCreditCardTransactions() {
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id],
+    queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id, currentMonth ?? ''],
     queryFn: async (): Promise<CreditCardTransaction[]> => {
       if (!user) return [];
       const PAGE_SIZE = 1000;
@@ -104,12 +106,16 @@ export function useCreditCardTransactions() {
       let hasMore = true;
 
       while (hasMore) {
-        const { data, error: fetchError } = await supabase
+        let query = supabase
           .from('credit_card_transactions_v')
           .select('*')
           .eq('user_id', user.id)
           .order('transaction_date', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
+        if (currentMonth) {
+          query = query.eq('reference_month', currentMonth);
+        }
+        const { data, error: fetchError } = await query;
 
         if (fetchError) throw fetchError;
         const page = data || [];
@@ -128,7 +134,7 @@ export function useCreditCardTransactions() {
       })) as CreditCardTransaction[];
     },
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 60_000,
   });
 
   const fetchTransactions = useCallback(() => refetch(), [refetch]);
@@ -414,6 +420,7 @@ export function useCreditCardTransactions() {
       const transactionIds = allInsertedIds;
       if (transactionIds.length > 0) {
         queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ['movimentacoes-page', user.id] });
       }
       return { success: true, transactionIds };
     } catch (err) {
@@ -439,6 +446,7 @@ export function useCreditCardTransactions() {
       if (updateError) throw updateError;
 
       queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-page', user.id] });
       return true;
     } catch (err) {
       console.error('Error updating transaction:', err);
@@ -457,6 +465,7 @@ export function useCreditCardTransactions() {
       if (deleteError) throw deleteError;
 
       queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-page', user.id] });
       toast.success('Transação removida');
       return true;
     } catch (err) {
@@ -478,6 +487,7 @@ export function useCreditCardTransactions() {
       if (deleteError) throw deleteError;
 
       queryClient.invalidateQueries({ queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-page', user.id] });
       toast.success(`${ids.length} transações removidas`);
       return true;
     } catch (err) {

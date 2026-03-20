@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { useMovimentacoesPage } from '@/hooks/useMovimentacoesPage';
 
 export interface RecorrenteCartaoItem {
   id: string;
@@ -32,24 +34,18 @@ export interface RecorrentesCartaoData {
   };
 }
 
-async function fetchRecorrentesCartao(): Promise<RecorrentesCartaoData | null> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await supabase.rpc('get_recorrentes_cartao', {
-    p_user_id: user.id,
-  });
-  if (error) throw error;
-  return data as RecorrentesCartaoData | null;
-}
-
 const QUERY_KEY = ['recorrentes-cartao'];
 
-export function useRecorrentesCartao() {
-  return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: fetchRecorrentesCartao,
-    staleTime: 2 * 60 * 1000,
-  });
+export function useRecorrentesCartao(month?: string) {
+  const { user } = useAuth();
+  const currentMonth = month ?? format(new Date(), 'yyyy-MM');
+  const query = useMovimentacoesPage(user?.id, currentMonth);
+  return {
+    data: (query.data?.recorrentes_cartao ?? null) as RecorrentesCartaoData | null,
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  };
 }
 
 /** Confirm a recurrence (counts toward monthly total). Uses RPC confirmar_recorrente_cartao. */

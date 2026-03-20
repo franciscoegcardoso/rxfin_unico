@@ -41,7 +41,7 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
     () =>
       paginated && uid
         ? lancamentosPaginatedQueryKey(uid, page, pageSize, mesReferencia)
-        : lancamentosListQueryKey(uid || '__none__'),
+        : lancamentosListQueryKey(uid || '__none__', mesReferencia),
     [paginated, uid, page, pageSize, mesReferencia]
   );
 
@@ -60,7 +60,7 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
         );
         return { mode: 'paginated', list: rows, count };
       }
-      const list = await lancamentosService.fetchLancamentos(user.id);
+      const list = await lancamentosService.fetchLancamentos(user.id, mesReferencia ?? undefined);
       return { mode: 'full', list };
     },
     enabled: !!user?.id,
@@ -70,7 +70,10 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
 
   const invalidateLancamentos = useCallback(async () => {
     if (!user?.id) return;
-    await queryClient.invalidateQueries(lancamentosQueryFilter(user.id));
+    await Promise.all([
+      queryClient.invalidateQueries(lancamentosQueryFilter(user.id)),
+      queryClient.invalidateQueries({ queryKey: ['movimentacoes-page', user.id] }),
+    ]);
   }, [queryClient, user?.id]);
 
   const lancamentos =

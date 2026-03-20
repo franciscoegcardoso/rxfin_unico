@@ -310,7 +310,7 @@ export const GoalsSummaryCard: React.FC<GoalsSummaryCardProps> = ({
   isHidden,
 }) => {
   const navigate = useNavigate();
-  const { getGoalByMonth, loading: goalsLoading } = useMonthlyGoals();
+  const { getGoalByMonth, loading: goalsLoading } = useMonthlyGoals(selectedMonth);
   const { getMonthlyComparison, getPreviousMonth, calcMoM } = useGoalsProjectionIntegration();
   
   const savedGoal = getGoalByMonth(selectedMonth);

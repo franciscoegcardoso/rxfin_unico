@@ -11,6 +11,7 @@ interface DividaObrigacaoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingAsset?: Asset | null;
+  onSaved?: () => void;
 }
 
 const SUBTIPO_OPTIONS = [
@@ -22,7 +23,7 @@ const SUBTIPO_OPTIONS = [
 ];
 
 export const DividaObrigacaoDialog: React.FC<DividaObrigacaoDialogProps> = ({
-  open, onOpenChange, editingAsset
+  open, onOpenChange, editingAsset, onSaved
 }) => {
   const { addAsset, updateAsset } = useFinancial();
   const [subTipo, setSubTipo] = useState('divida_obrigacao');
@@ -83,6 +84,7 @@ export const DividaObrigacaoDialog: React.FC<DividaObrigacaoDialogProps> = ({
       } else {
         await addAsset(data);
       }
+      onSaved?.();
       onOpenChange(false);
     } finally {
       setSaving(false);

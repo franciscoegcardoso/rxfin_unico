@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
-import { usePassivosHeader } from '@/hooks/usePassivosHeader';
+import { usePassivosPage } from '@/hooks/usePassivosPage';
 import { useConsolidatedExpenses } from '@/hooks/useConsolidatedExpenses';
 import type { SnapshotPoint } from '@/types/investments';
 
@@ -72,7 +72,8 @@ export function useOverviewSummary(): { data: OverviewSummaryData | undefined; i
   const monthRef = format(new Date(), 'yyyy-MM');
 
   const { data: patrimonio, loading: patrimonioLoading } = usePatrimonioOverview();
-  const { data: passivosHeader, isLoading: passivosLoading } = usePassivosHeader();
+  const { data: passivosData, isLoading: passivosLoading } = usePassivosPage(userId, 'consolidado');
+  const passivosHeader = passivosData?.header;
   const { data: consolidated, loading: consolidatedLoading } = useConsolidatedExpenses(monthRef);
 
   const healthQuery = useQuery({

@@ -17,8 +17,8 @@ export const STALE = {
 } as const;
 
 /** Lista completa de lançamentos (deduplicada entre N componentes no Início). */
-export function lancamentosListQueryKey(userId: string) {
-  return ['lancamentos', userId] as const;
+export function lancamentosListQueryKey(userId: string, mesReferencia?: string | null) {
+  return ['lancamentos', userId, mesReferencia ?? ''] as const;
 }
 
 export function lancamentosPaginatedQueryKey(

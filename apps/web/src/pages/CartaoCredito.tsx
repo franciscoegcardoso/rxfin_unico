@@ -98,7 +98,7 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   const { config } = useFinancial();
   const [pluggyCardDisplay, setPluggyCardDisplay] = useState<Record<string, { bank: string; brand: string; last4: string }>>({});
   const { data, loading, error } = useCreditCardDashboard(selectedMonth);
-  const { transactions: allTransactions } = useCreditCardTransactions();
+  const { transactions: allTransactions } = useCreditCardTransactions(selectedMonth);
   const { data: consolidarData = [] } = useConsolidarEstabelecimentos('card');
   const dashboard = data as DashboardData | null;
 

@@ -126,7 +126,7 @@ export const MetasDoMesTab: React.FC<MetasDoMesTabProps> = ({ initialMonth }) =>
     loading: goalsLoading, 
     getGoalByMonth, 
     saveGoal 
-  } = useMonthlyGoals();
+  } = useMonthlyGoals(initialMonth);
   
   const {
     getProjectedValue: getIntegratedProjectedValue,

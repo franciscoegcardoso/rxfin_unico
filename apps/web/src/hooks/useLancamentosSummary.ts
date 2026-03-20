@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMovimentacoesPage } from '@/hooks/useMovimentacoesPage';
 
 /** Item from get_lancamentos_summary recent/pending (optional use) */
 export interface LancamentoSummaryItem {
@@ -45,42 +46,37 @@ export interface LancamentosSummaryData {
  * Uses auth.uid() when p_user_id is omitted.
  */
 export function useLancamentosSummary(month: string) {
-  const [data, setData] = useState<LancamentosSummaryData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const query = useMovimentacoesPage(user?.id, month);
 
-  const fetchSummary = useCallback(
-    async (pUserId?: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params: Record<string, unknown> = { p_month: month };
-        if (pUserId) params.p_user_id = pUserId;
+  const data = useMemo<LancamentosSummaryData | null>(() => {
+    const summary = query.data?.lancamentos_summary;
+    if (!summary) return null;
+    return {
+      month: summary.month,
+      summary: {
+        total_income: summary.total_income ?? 0,
+        total_expense: summary.total_expense ?? 0,
+        balance: summary.balance ?? 0,
+        count: summary.count_total ?? 0,
+        count_income: summary.count_income ?? 0,
+        count_expense: summary.count_expense ?? 0,
+      },
+      top_categories: summary.top_categories ?? [],
+      by_payment_method: summary.by_payment_method ?? [],
+      paid: summary.paid,
+      pending: summary.pending,
+      overdue: summary.overdue,
+    };
+  }, [query.data]);
 
-        const { data: result, error: rpcError } = await supabase.rpc('get_lancamentos_summary', params);
-
-        if (rpcError) {
-          setError(rpcError.message);
-          setData(null);
-          return null;
-        }
-        setData((result as LancamentosSummaryData) ?? null);
-        return result as LancamentosSummaryData;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
-        setData(null);
-        return null;
-      } finally {
-        setLoading(false);
-      }
+  return {
+    data,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refetch: async () => {
+      await query.refetch();
+      return data;
     },
-    [month]
-  );
-
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
-
-  return { data, loading, error, refetch: fetchSummary };
+  };
 }

@@ -69,6 +69,9 @@ import { applyLancamentoFriendlyNameRule } from '@/utils/lancamentoFriendlyNameR
 type LancamentoTipo = 'entrada' | 'saida';
 
 export const Lancamentos: React.FC = () => {
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+
   const { config, updateMonthlyEntry, updateFinancialInstitution } = useFinancial();
   const { isHidden } = useVisibility();
   const { isManual } = useFinanceMode();
@@ -82,7 +85,7 @@ export const Lancamentos: React.FC = () => {
     updateLancamento,
     updateFriendlyName,
     softDeleteLancamento,
-  } = useLancamentosRealizados();
+  } = useLancamentosRealizados({ mesReferencia: selectedMonth });
   const {
     contas,
     rawContas,
@@ -106,10 +109,6 @@ export const Lancamentos: React.FC = () => {
   const pendingPurchases = getItemsByStatus('pending');
   const enabledIncomes = config.incomeItems.filter(i => i.enabled);
   const enabledExpenses = config.expenseItems.filter(i => i.enabled);
-
-  // Month selector state
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
 
   const { data: rpcSummary, loading: rpcSummaryLoading, error: rpcSummaryError } = useLancamentosSummary(selectedMonth);
 
@@ -137,11 +136,8 @@ export const Lancamentos: React.FC = () => {
     };
   }, [sourceMap]);
 
-  // Filter lancamentos by selected month
-  const filteredByMonth = useMemo(() => 
-    lancamentos.filter(l => l.mes_referencia === selectedMonth),
-    [lancamentos, selectedMonth]
-  );
+  // Month is already filtered at query level for performance.
+  const filteredByMonth = lancamentos;
 
   // Apply search + bank + account filters
   const filteredLancamentos = useMemo(() => {
