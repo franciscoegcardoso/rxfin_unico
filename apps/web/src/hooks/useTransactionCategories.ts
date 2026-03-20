@@ -45,7 +45,7 @@ export function useTransactionIncomeCategories() {
         isStockCompensation: item.is_stock_compensation ?? false,
       })) as TransactionIncomeCategory[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes - these don't change often
+    staleTime: 30 * 60 * 1000,
   });
 }
 
@@ -73,7 +73,7 @@ export function useTransactionExpenseCategories() {
         paymentMethod: item.payment_method,
       })) as TransactionExpenseCategory[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 60 * 1000,
   });
 }
 

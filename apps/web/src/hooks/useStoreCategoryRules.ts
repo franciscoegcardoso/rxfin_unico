@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -16,31 +17,29 @@ export interface StoreCategoryRule {
 
 export function useStoreCategoryRules() {
   const { user } = useAuth();
-  const [rules, setRules] = useState<StoreCategoryRule[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchRules = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
+  const query = useQuery({
+    queryKey: ['store-category-rules', user?.id],
+    queryFn: async (): Promise<StoreCategoryRule[]> => {
       const { data, error } = await supabase
         .from('store_category_rules' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
-      setRules((data as any[]) || []);
-    } catch (err) {
-      console.error('Error fetching store category rules:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+      return ((data as StoreCategoryRule[]) || []);
+    },
+    enabled: !!user?.id,
+    staleTime: 30 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchRules();
-  }, [fetchRules]);
+  const rules = query.data ?? [];
+  const loading = query.isLoading;
+
+  const fetchRules = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['store-category-rules', user?.id] });
+  }, [queryClient, user?.id]);
 
   const createRule = useCallback(async (
     storeName: string,
@@ -65,14 +64,14 @@ export function useStoreCategoryRules() {
       const updatedCount = result?.updated || 0;
 
       toast.success(`Regra criada! ${updatedCount} transação(ões) atualizada(s).`);
-      await fetchRules();
+      await queryClient.invalidateQueries({ queryKey: ['store-category-rules', user?.id] });
       return { success: true, updated: updatedCount };
     } catch (err) {
       console.error('Error creating store category rule:', err);
       toast.error('Erro ao criar regra de categoria');
       return { success: false, updated: 0 };
     }
-  }, [user, fetchRules]);
+  }, [user, queryClient]);
 
   const deleteRule = useCallback(async (id: string): Promise<boolean> => {
     try {
@@ -83,7 +82,7 @@ export function useStoreCategoryRules() {
 
       if (error) throw error;
 
-      setRules(prev => prev.filter(r => r.id !== id));
+      await queryClient.invalidateQueries({ queryKey: ['store-category-rules', user?.id] });
       toast.success('Regra removida');
       return true;
     } catch (err) {
@@ -91,7 +90,7 @@ export function useStoreCategoryRules() {
       toast.error('Erro ao remover regra');
       return false;
     }
-  }, []);
+  }, [queryClient, user?.id]);
 
   const findRuleForStore = useCallback((storeName: string): StoreCategoryRule | undefined => {
     const norm = normalizeForWhitelist(storeName);

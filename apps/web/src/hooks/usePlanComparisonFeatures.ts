@@ -35,6 +35,7 @@ export function usePlanComparisonFeatures(includeInactive = false) {
       if (error) throw error;
       return data as PlanComparisonFeature[];
     },
+    staleTime: 60 * 60 * 1000,
   });
 }
 

@@ -89,7 +89,7 @@ export function useVehicleDepreciation({ assets }: UseVehicleDepreciationProps) 
       return data ?? [];
     },
     enabled: fipeCodes.length > 0 && !!user?.id,
-    staleTime: 60 * 60 * 1000,
+    staleTime: 24 * 60 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
   });
 

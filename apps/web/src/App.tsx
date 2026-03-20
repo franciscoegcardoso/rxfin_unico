@@ -170,12 +170,15 @@ function RootRoute() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      /** Mantém cache após sair da página (observers = 0) — evita refetch ao voltar ao Início */
-      gcTime: 60 * 60 * 1000,
+      gcTime: 1000 * 60 * 30,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+      staleTime: 1000 * 60 * 5,
+    },
+    mutations: {
       retry: 1,
-      /** Default 1 min — evita 13+ refetches ao alternar abas; cada hook pode sobrescrever. */
-      staleTime: 60 * 1000,
     },
   },
 });

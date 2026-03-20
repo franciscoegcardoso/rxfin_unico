@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ChevronDown,
   ChevronRight,
@@ -28,6 +29,7 @@ import {
 import logoRxfin from '@/assets/logo-rxfin-icon.png';
 import logoRxfinWhite from '@/assets/logo-rxfin-white.png';
 import { useTheme } from 'next-themes';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'rxfin-sidebar-collapsed';
 const STORAGE_KEY_WIDTH = 'rxfin-sidebar-width';
@@ -50,7 +52,8 @@ function getSidebarCollapsed(forceCollapsed?: boolean): boolean {
 export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const queryClient = useQueryClient();
   const { isAdmin } = useIsAdmin();
   const { mainItems, groupedSections } = useNavMenuPages();
   const { resolvedTheme } = useTheme();
@@ -164,6 +167,50 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapse
     navigate(path);
   };
 
+  const prefetchByPath = useCallback((path: string) => {
+    if (!user?.id) return;
+    const now = new Date();
+    const monthRef = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    if (path.startsWith('/inicio')) {
+      void queryClient.prefetchQuery({
+        queryKey: ['home-dashboard', user.id, monthRef],
+        queryFn: async () => {
+          const { data, error } = await supabase.rpc('get_home_dashboard', { p_month: monthRef });
+          if (error) throw error;
+          return data;
+        },
+      });
+      return;
+    }
+
+    if (path.startsWith('/bens-investimentos')) {
+      void queryClient.prefetchQuery({
+        queryKey: ['investments-list', user.id],
+        queryFn: async () => {
+          const { data, error } = await supabase.rpc('get_investments_list');
+          if (error) throw error;
+          return data ?? [];
+        },
+      });
+      return;
+    }
+
+    if (path.startsWith('/movimentacoes')) {
+      void queryClient.prefetchQuery({
+        queryKey: ['consolidated-expenses', user.id, monthRef],
+        queryFn: async () => {
+          const { data, error } = await supabase.rpc('get_consolidated_expenses', {
+            p_user_id: user.id,
+            p_month_ref: monthRef,
+          });
+          if (error) throw error;
+          return data;
+        },
+      });
+    }
+  }, [queryClient, user?.id]);
+
   /** Em seções com sub-itens, só destaca o item de path mais específico que bater com a URL (evita dois ativos em rotas aninhadas). */
   const isItemActive = (item: NavMenuItem, sectionItems?: NavMenuItem[]): boolean => {
     if (!isPathActive(item.path)) return false;
@@ -230,6 +277,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapse
                   href={path}
                   className={cn(baseClass, 'justify-center px-2')}
                   onClick={(e) => handleItemClick(item, e, path)}
+                  onMouseEnter={() => prefetchByPath(path)}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   {item.icon && <item.icon className={iconSizeClass} />}
@@ -238,6 +286,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapse
                 <button
                   type="button"
                   onClick={(e) => handleItemClick(item, e, path)}
+                  onMouseEnter={() => prefetchByPath(path)}
                   className={cn(baseClass, 'justify-center px-2 w-full')}
                 >
                   {item.icon && <item.icon className={iconSizeClass} />}
@@ -259,12 +308,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ className, forceCollapse
             href={path}
             className={baseClass}
             onClick={(e) => handleItemClick(item, e, path)}
+            onMouseEnter={() => prefetchByPath(path)}
             aria-current={isActive ? 'page' : undefined}
           >
             {inner}
           </a>
         ) : (
-          <button type="button" onClick={(e) => handleItemClick(item, e, path)} className={cn(baseClass, 'w-full text-left')}>
+          <button
+            type="button"
+            onClick={(e) => handleItemClick(item, e, path)}
+            onMouseEnter={() => prefetchByPath(path)}
+            className={cn(baseClass, 'w-full text-left')}
+          >
             {inner}
           </button>
         )}

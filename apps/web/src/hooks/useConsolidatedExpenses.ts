@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,38 +24,23 @@ export interface ConsolidatedExpensesData {
 
 export function useConsolidatedExpenses(monthRef: string) {
   const { user } = useAuth();
-  const [data, setData] = useState<ConsolidatedExpensesData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['consolidated-expenses', user?.id, monthRef],
+    queryFn: async (): Promise<ConsolidatedExpensesData | null> => {
+      const { data: result, error: rpcError } = await supabase.rpc('get_consolidated_expenses', {
+        p_user_id: user?.id,
+        p_month_ref: monthRef,
+      });
+      if (rpcError) throw rpcError;
+      return (result as ConsolidatedExpensesData) ?? null;
+    },
+    enabled: !!user?.id && !!monthRef,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (!user) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
-
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const { data: result, error: rpcError } = await supabase.rpc('get_consolidated_expenses', {
-          p_user_id: user.id,
-          p_month_ref: monthRef,
-        });
-
-        if (rpcError) throw rpcError;
-        setData(result as ConsolidatedExpensesData);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Erro ao carregar dados consolidados');
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user?.id, monthRef]);
-
-  return { data, loading, error };
+  return {
+    data: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : query.error ? String(query.error) : null,
+  };
 }

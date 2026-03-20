@@ -445,7 +445,7 @@ export function usePluggyInvestments() {
     queryKey: [PLUGGY_INVESTMENTS_QUERY_KEY, uid],
     queryFn: () => fetchPluggyInvestmentsData(uid!),
     enabled: !!uid,
-    staleTime: 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const data = query.data;

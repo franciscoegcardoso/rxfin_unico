@@ -59,7 +59,7 @@ export function useHomeDashboard(month: string, demoUserId?: string | null) {
       return (result as HomeDashboardData) ?? null;
     },
     enabled: !!effectiveUserId && !!month,
-    staleTime: 60 * 1000, // 1 min — dados financeiros do usuário
+    staleTime: 2 * 60 * 1000,
   });
 
   return {

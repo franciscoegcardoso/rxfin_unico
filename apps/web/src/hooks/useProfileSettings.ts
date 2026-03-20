@@ -61,6 +61,6 @@ export function useProfileSettings() {
       return (data as ProfileSettingsData) ?? null;
     },
     enabled: !!user?.id,
-    refetchOnMount: 'always',
+    staleTime: 15 * 60 * 1000,
   });
 }
