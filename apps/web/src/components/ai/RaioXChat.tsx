@@ -221,6 +221,14 @@ export function RaioXChat() {
     const newSessionId = data.id;
     setSessionId(newSessionId);
 
+    if (newSessionId) {
+      supabase.rpc('update_chat_session_source', {
+        p_session_id: newSessionId,
+        p_source_page: window.location.pathname,
+        p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
+      }).then(() => {}).catch(() => {});
+    }
+
     // Register onboarding_started event (idempotent — only if not already registered)
     try {
       const { count } = await supabase
