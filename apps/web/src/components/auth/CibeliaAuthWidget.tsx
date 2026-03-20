@@ -77,10 +77,10 @@ async function sendToCibelia(
     throw new Error(`Erro ${response.status}`);
   }
   const data = (await response.json()) as { content?: string; session_id?: string | null };
-  const sessionId = data.session_id;
-  if (sessionId) {
+  const serverSessionId = data.session_id;
+  if (serverSessionId) {
     supabase.rpc('update_chat_session_source', {
-      p_session_id: sessionId,
+      p_session_id: serverSessionId,
       p_source_page: window.location.pathname,
       p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
     }).then(() => {}).catch(() => {});
