@@ -80,7 +80,74 @@ const PassivosPage: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {/* Summary: oculto na visão geral (a tab já exibe os cards) */}
+        {currentTab === 'visao-geral' && (
+          <div className="space-y-4">
+            <div className="md:hidden space-y-1">
+              {[
+                {
+                  id: 'dividas',
+                  label: 'Dívidas',
+                  value: header?.total_dividas ?? 0,
+                  badge:
+                    header?.has_overdue && (header?.overdue_count ?? 0) > 0
+                      ? `${header.overdue_count} vencida(s)`
+                      : undefined,
+                },
+                { id: 'financiamentos', label: 'Financiamentos', value: header?.total_financiamentos ?? 0 },
+                { id: 'consorcios', label: 'Consórcios', value: header?.total_consorcios ?? 0 },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => navigate(`/passivos/${item.id}`)}
+                  className="w-full flex items-center justify-between px-4 py-3.5 bg-destructive/90 text-destructive-foreground rounded-lg transition-opacity active:opacity-80 text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{item.label}</span>
+                    {item.badge && (
+                      <span className="text-xs bg-destructive-foreground/20 px-1.5 py-0.5 rounded">{item.badge}</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums">{formatMoney(item.value)}</span>
+                </button>
+              ))}
+              <div className="w-full flex items-center justify-between px-4 py-3.5 mt-2 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <span className="text-sm font-semibold text-foreground">Total Passivos</span>
+                <span className="text-sm font-bold tabular-nums text-destructive">{formatMoney(header?.total_passivos ?? 0)}</span>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <HeaderMetricCard
+                  label="Dívidas"
+                  value={formatMoney(header?.total_dividas ?? 0)}
+                  variant="negative"
+                  icon={<FileText className="h-4 w-4" />}
+                />
+                <HeaderMetricCard
+                  label="Financiamentos"
+                  value={formatMoney(header?.total_financiamentos ?? 0)}
+                  variant="blue"
+                  icon={<Landmark className="h-4 w-4" />}
+                />
+                <HeaderMetricCard
+                  label="Consórcios"
+                  value={formatMoney(header?.total_consorcios ?? 0)}
+                  variant="neutral"
+                  icon={<TrendingUp className="h-4 w-4" />}
+                />
+                <HeaderMetricCard
+                  label="Parcela Mensal"
+                  value={formatMoney(header?.parcela_mensal_total ?? 0)}
+                  variant="amber"
+                  icon={<span className="text-sm">R$</span>}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Summary fora da visão geral */}
         {currentTab !== 'visao-geral' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">

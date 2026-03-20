@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, FileText, RefreshCw } from 'lucide-react';
+import { AlertCircle, FileText, Plus, RefreshCw } from 'lucide-react';
+import { DividaObrigacaoDialog } from '@/components/passivos/DividaObrigacaoDialog';
 
 type PluggyLoan = {
   product_name: string;
@@ -52,6 +53,7 @@ export default function PassivosDividasTab() {
   const [data, setData] = useState<PassivosDividasResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +117,18 @@ export default function PassivosDividasTab() {
   }
 
   return (
+    <>
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
+          Dívidas
+        </h2>
+        <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Adicionar dívida
+        </Button>
+      </div>
       {data?.summary?.has_overdue && (data.summary.overdue_count ?? 0) > 0 && (
         <div className="flex items-center gap-2 text-destructive">
           <AlertCircle className="h-4 w-4" />
@@ -124,7 +137,13 @@ export default function PassivosDividasTab() {
       )}
 
       {!hasAnyLoans ? (
-        <EmptyState icon={<FileText className="h-6 w-6 text-muted-foreground" />} description="Nenhuma dívida encontrada." />
+        <EmptyState
+          icon={<FileText className="h-6 w-6 text-muted-foreground" />}
+          title="Nenhuma dívida cadastrada"
+          description="Adicione dívidas manuais para acompanhar seu saldo devedor e evolução."
+          actionLabel="Adicionar dívida"
+          onAction={() => setDialogOpen(true)}
+        />
       ) : (
         <ScrollArea className="h-[520px]">
           <div className="space-y-4">
@@ -185,6 +204,8 @@ export default function PassivosDividasTab() {
         </ScrollArea>
       )}
     </div>
+    <DividaObrigacaoDialog open={dialogOpen} onOpenChange={setDialogOpen} editingAsset={null} />
+    </>
   );
 }
 

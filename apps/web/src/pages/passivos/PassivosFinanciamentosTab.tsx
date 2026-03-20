@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, Landmark, RefreshCw } from 'lucide-react';
+import { AlertCircle, Landmark, Plus, RefreshCw } from 'lucide-react';
+import { FinanciamentoDialog } from '@/components/credito/FinanciamentoDialog';
+import { useCreditos } from '@/hooks/useCreditos';
 
 type FinancingItem = {
   id: string;
@@ -58,6 +60,8 @@ export default function PassivosFinanciamentosTab() {
   const [data, setData] = useState<PassivosFinanciamentosResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { addFinanciamento } = useCreditos();
 
   useEffect(() => {
     let cancelled = false;
@@ -119,9 +123,26 @@ export default function PassivosFinanciamentosTab() {
   }
 
   return (
+    <>
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Landmark className="h-5 w-5 text-primary" />
+          Financiamentos
+        </h2>
+        <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Adicionar financiamento
+        </Button>
+      </div>
       {items.length === 0 ? (
-        <EmptyState icon={<Landmark className="h-6 w-6 text-muted-foreground" />} description="Nenhum financiamento encontrado." />
+        <EmptyState
+          icon={<Landmark className="h-6 w-6 text-muted-foreground" />}
+          title="Nenhum financiamento cadastrado"
+          description="Adicione financiamentos para acompanhar saldo devedor, parcelas e progresso."
+          actionLabel="Adicionar financiamento"
+          onAction={() => setDialogOpen(true)}
+        />
       ) : (
         <ScrollArea className="h-[520px]">
           <div className="space-y-4">
@@ -168,6 +189,16 @@ export default function PassivosFinanciamentosTab() {
         </ScrollArea>
       )}
     </div>
+    <FinanciamentoDialog
+      open={dialogOpen}
+      onOpenChange={setDialogOpen}
+      onSave={async (payload) => {
+        const res = await addFinanciamento(payload);
+        if (!res.error) window.location.reload();
+        return res;
+      }}
+    />
+    </>
   );
 }
 

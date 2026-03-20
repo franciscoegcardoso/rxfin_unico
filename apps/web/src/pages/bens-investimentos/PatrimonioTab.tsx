@@ -17,13 +17,14 @@ import { AssetCostBreakdown } from '@/components/bens/AssetCostBreakdown';
 import { AssetInsuranceBadge } from '@/components/bens/AssetInsuranceBadge';
 import { AssetInsuranceReport } from '@/components/bens/AssetInsuranceReport';
 import { EquityEvolutionSection } from '@/components/bens/EquityEvolutionSection';
-import { assetIcons, propertyAdjustmentOptions, monthOptions } from './constants';
+import { assetIcons, propertyAdjustmentOptions, monthOptions, formatCurrencyBase, TABS } from './constants';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useOverviewSummary } from '@/hooks/useOverviewSummary';
-import { NetWorthHero, HealthScoreCard, ModuleSummaryCard, SparklineCard, NavChips } from '@/components/shared/overview';
+import { NetWorthHero, HealthScoreCard, SparklineCard, NavChips } from '@/components/shared/overview';
+import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 
 type AssetFlowRow = { nome: string; tipo: string; valor: number; flow_origem: string; flow_direction: string; ativo: boolean };
 
@@ -68,15 +69,13 @@ const ESTADO_IMOVEL_OPTIONS: { value: EstadoImovelType; label: string }[] = [
   { value: 'proprio', label: 'Uso próprio' },
 ];
 
-const formatCurrencyBRL = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
 const PatrimonioTab: React.FC = () => {
   const { config, updateAsset } = useFinancial();
   const { handleOpenAddDialog, handleEditAsset, handleDeleteAsset, handleAddSeguro, hasActiveInsurance, formatCurrency } = useBensInvestimentos();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: overview, isLoading: overviewLoading } = useOverviewSummary();
+  const { data: overviewSummary, isLoading: overviewLoading } = useOverviewSummary();
+  const { data: overview } = usePatrimonioOverview();
   const isMobile = useIsMobile();
 
   const navChips = useMemo(
@@ -84,7 +83,7 @@ const PatrimonioTab: React.FC = () => {
       {
         id: 'passivos',
         label: 'Passivos',
-        sublabel: overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : 'Dívidas e financiamentos',
+        sublabel: overviewSummary?.has_overdue ? `${overviewSummary.overdue_count} vencida(s)` : 'Dívidas e financiamentos',
         icon: TrendingDown,
         color: 'bg-red-50 dark:bg-red-950/30',
         textColor: 'text-red-700 dark:text-red-400',
@@ -102,7 +101,7 @@ const PatrimonioTab: React.FC = () => {
         path: '/movimentacoes',
       },
     ],
-    [overview?.has_overdue, overview?.overdue_count]
+    [overviewSummary?.has_overdue, overviewSummary?.overdue_count]
   );
   const [patrimonioViewMode, setPatrimonioViewMode] = useState<'list' | 'cards'>('list');
   const [imovelCollapsed, setImovelCollapsed] = useState(false);
@@ -140,6 +139,85 @@ const PatrimonioTab: React.FC = () => {
   const outrosBens = useMemo(() => patrimonioAssets.filter(a => a.type !== 'property' && a.type !== 'vehicle'), [patrimonioAssets]);
   const imovelCount = imoveis.length;
   const veiculoCount = veiculos.length;
+
+  const tabValues = useMemo(() => {
+    const imoveisTotal = config.assets
+      .filter((a) => !a.isSold && a.type === 'property')
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+
+    const veiculosManual = config.assets
+      .filter((a) => !a.isSold && a.type === 'vehicle')
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+    const veiculosFipe = (overview?.vehicles ?? []).reduce((s, v) => s + (v.fipe_value ?? 0), 0);
+    const veiculosTotal = veiculosFipe > 0 ? veiculosFipe : veiculosManual;
+
+    const investimentosTotal = config.assets
+      .filter((a) => !a.isSold && (a.type === 'investment' || a.type === 'receivable'))
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+
+    const fgtsTotal = config.assets
+      .filter((a) => !a.isSold && (a as unknown as { source?: string }).source === 'fgts')
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+
+    const participacoesTotal = config.assets
+      .filter((a) => !a.isSold && a.type === 'company_stake')
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+
+    const intangiveisTotal = config.assets
+      .filter((a) => !a.isSold && ['intellectual_property', 'license', 'contract_right'].includes(a.type))
+      .reduce((s, a) => s + (a.value ?? 0), 0);
+
+    const segurosCount = (overview?.seguros ?? []).filter((s) => s.is_active).length;
+
+    const totalAtivos = imoveisTotal + veiculosTotal + investimentosTotal + fgtsTotal + participacoesTotal + intangiveisTotal;
+    const totalPassivos =
+      (overview?.financiamentos ?? []).reduce((s, f) => s + (f.saldo_devedor ?? 0), 0) +
+      (overview?.consorcios ?? []).reduce((s, c) => s + (c.valor_carta ?? 0), 0);
+    const patrimonioLiquido = totalAtivos - totalPassivos;
+
+    return {
+      imoveis: imoveisTotal,
+      veiculos: veiculosTotal,
+      investimentos: investimentosTotal,
+      fgts: fgtsTotal,
+      participacoes: participacoesTotal,
+      intangiveis: intangiveisTotal,
+      segurosCount,
+      patrimonioLiquido,
+      totalAtivos,
+      totalPassivos,
+    };
+  }, [config.assets, overview]);
+
+  const handleTabNav = (tabId: string) => navigate(`/bens-investimentos/${tabId}`);
+
+  const tabLabelMap = useMemo(
+    () =>
+      TABS.reduce<Record<string, string>>((acc, tab) => {
+        acc[tab.id] = tab.label;
+        return acc;
+      }, {}),
+    []
+  );
+
+  const mobileListItems = useMemo(
+    () => [
+      { id: 'imoveis', label: tabLabelMap.imoveis ?? 'Meus imóveis', value: tabValues.imoveis, navigable: true },
+      { id: 'veiculos', label: tabLabelMap.veiculos ?? 'Meus veículos', value: tabValues.veiculos, navigable: true },
+      { id: 'investimentos', label: tabLabelMap.investimentos ?? 'Investimentos', value: tabValues.investimentos, navigable: true },
+      { id: 'fgts', label: tabLabelMap.fgts ?? 'FGTS', value: tabValues.fgts, navigable: true },
+      { id: 'participacoes', label: tabLabelMap.participacoes ?? 'Participações', value: tabValues.participacoes, navigable: true },
+      { id: 'intangiveis', label: tabLabelMap.intangiveis ?? 'Intangíveis', value: tabValues.intangiveis, navigable: true },
+      {
+        id: 'seguros',
+        label: tabLabelMap.seguros ?? 'Seguros',
+        value: null as number | null,
+        valueLabel: tabValues.segurosCount > 0 ? `${tabValues.segurosCount} apólice${tabValues.segurosCount > 1 ? 's' : ''}` : '—',
+        navigable: true,
+      },
+    ],
+    [tabLabelMap, tabValues]
+  );
 
   const renderAssetCard = (asset: Asset) => {
     const isSold = asset.isSold;
@@ -345,55 +423,149 @@ const PatrimonioTab: React.FC = () => {
 
   return (
     <>
-      <div className="space-y-4 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="sm:col-span-2">
+      <div className="mb-6 space-y-4">
+        <div className="md:hidden space-y-1">
+          {mobileListItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => item.navigable && handleTabNav(item.id)}
+              className={cn(
+                'w-full flex items-center justify-between px-4 py-3.5',
+                'bg-primary text-primary-foreground',
+                'rounded-lg transition-opacity active:opacity-80',
+                'text-left'
+              )}
+            >
+              <span className="text-sm font-medium">{item.label}</span>
+              <span className="text-sm font-semibold tabular-nums">
+                {item.valueLabel ?? formatCurrencyBase(item.value ?? 0)}
+              </span>
+            </button>
+          ))}
+          <div className="w-full flex items-center justify-between px-4 py-3.5 mt-2 bg-primary/20 dark:bg-primary/10 border border-primary/30 rounded-lg">
+            <span className="text-sm font-semibold text-foreground">Patrimônio Líquido</span>
+            <span
+              className={cn(
+                'text-sm font-bold tabular-nums',
+                tabValues.patrimonioLiquido >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+              )}
+            >
+              {formatCurrencyBase(tabValues.patrimonioLiquido)}
+            </span>
+          </div>
+        </div>
+
+        <div className="hidden md:block lg:hidden">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {mobileListItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleTabNav(item.id)}
+                className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors text-left group"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
+                  <span className="text-base font-semibold tabular-nums text-foreground">
+                    {item.valueLabel ?? formatCurrencyBase(item.value ?? 0)}
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+              </button>
+            ))}
+            <div className="col-span-2 flex items-center justify-between p-4 bg-primary/10 dark:bg-primary/5 border border-primary/20 rounded-lg">
+              <span className="text-sm font-semibold text-foreground">Patrimônio Líquido</span>
+              <span
+                className={cn(
+                  'text-lg font-bold tabular-nums',
+                  tabValues.patrimonioLiquido >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                )}
+              >
+                {formatCurrencyBase(tabValues.patrimonioLiquido)}
+              </span>
+            </div>
+          </div>
+          {(overviewSummary?.sparkline?.length ?? 0) > 0 && (
+            <SparklineCard data={overviewSummary!.sparkline} isLoading={overviewLoading} />
+          )}
+          <div className="mt-4">
+            <NavChips chips={navChips} currentPath={location.pathname} />
+          </div>
+        </div>
+
+        <div className="hidden lg:grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Composição do patrimônio</p>
+            <div className="grid grid-cols-2 gap-3">
+              {mobileListItems.map((item) => {
+                const pct =
+                  tabValues.totalAtivos > 0 && item.value != null && item.value > 0
+                    ? Math.round((item.value / tabValues.totalAtivos) * 100)
+                    : null;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleTabNav(item.id)}
+                    className="flex flex-col gap-2 p-4 text-left bg-card border border-border rounded-lg hover:border-primary/40 hover:bg-muted/30 transition-all group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
+                      {pct != null && <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{pct}%</span>}
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <span className="text-base font-semibold tabular-nums text-foreground">
+                        {item.valueLabel ?? formatCurrencyBase(item.value ?? 0)}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    {pct != null && pct > 0 && (
+                      <div className="h-0.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary/60 rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+              <div className="col-span-2 flex items-center justify-between p-4 bg-primary/10 dark:bg-primary/5 border border-primary/20 rounded-lg">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Patrimônio Líquido</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Ativos menos passivos</p>
+                </div>
+                <span
+                  className={cn(
+                    'text-xl font-bold tabular-nums',
+                    tabValues.patrimonioLiquido >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-destructive'
+                  )}
+                >
+                  {formatCurrencyBase(tabValues.patrimonioLiquido)}
+                </span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <NavChips chips={navChips} currentPath={location.pathname} />
+            </div>
+          </div>
+          <div className="space-y-3">
             <NetWorthHero
-              netWorth={(overview?.total_assets ?? 0) - (overview?.total_debt ?? 0)}
-              totalAssets={overview?.total_assets ?? 0}
-              totalDebt={overview?.total_debt ?? 0}
-              monthlyDeltaPct={overview?.net_worth_delta_pct ?? null}
+              netWorth={tabValues.patrimonioLiquido}
+              totalAssets={tabValues.totalAtivos}
+              totalDebt={tabValues.totalPassivos}
+              monthlyDeltaPct={overviewSummary?.net_worth_delta_pct ?? null}
               isLoading={overviewLoading}
             />
+            <HealthScoreCard
+              score={overviewSummary?.health_score ?? null}
+              classification={overviewSummary?.health_classification ?? null}
+              isLoading={overviewLoading}
+            />
+            {(overviewSummary?.sparkline?.length ?? 0) > 0 && (
+              <SparklineCard data={overviewSummary!.sparkline} isLoading={overviewLoading} />
+            )}
           </div>
-          <HealthScoreCard
-            score={overview?.health_score ?? null}
-            classification={overview?.health_classification ?? null}
-            isLoading={overviewLoading}
-          />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <ModuleSummaryCard
-            title="Passivos"
-            subtitle="Dívidas, financiamentos e consórcios"
-            value={formatCurrencyBRL(overview?.total_debt ?? 0)}
-            valueVariant="negative"
-            icon={TrendingDown}
-            iconColor="text-red-500"
-            badge={overview?.has_overdue ? `${overview.overdue_count} vencida(s)` : undefined}
-            onClick={() => navigate('/passivos')}
-            isLoading={overviewLoading}
-          />
-          <ModuleSummaryCard
-            title="Movimentações"
-            subtitle={`Saldo ${new Intl.DateTimeFormat('pt-BR', { month: 'long' }).format(new Date())}`}
-            value={formatCurrencyBRL(overview?.month_balance ?? 0)}
-            valueVariant={(overview?.month_balance ?? 0) >= 0 ? 'positive' : 'negative'}
-            icon={Receipt}
-            iconColor="text-purple-500"
-            onClick={() => navigate('/movimentacoes')}
-            isLoading={overviewLoading}
-          />
-        </div>
-
-        {(overview?.sparkline?.length ?? 0) > 0 && (
-          <SparklineCard data={overview!.sparkline} isLoading={overviewLoading} />
-        )}
-
-        <NavChips chips={navChips} currentPath={location.pathname} />
-
-        <div className="border-t border-border/50 pt-4" />
+        <div className="border-t border-border/40 pt-4" />
       </div>
 
       <div className="flex items-center justify-end">

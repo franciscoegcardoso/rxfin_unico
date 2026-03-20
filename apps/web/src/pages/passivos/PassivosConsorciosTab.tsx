@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, RefreshCw, TrendingUp } from 'lucide-react';
+import { AlertCircle, Plus, RefreshCw, TrendingUp } from 'lucide-react';
+import { ConsorcioDialog } from '@/components/credito/ConsorcioDialog';
+import { useCreditos } from '@/hooks/useCreditos';
 
 type ConsorcioItem = {
   id: string;
@@ -60,6 +62,8 @@ export default function PassivosConsorciosTab() {
   const [data, setData] = useState<PassivosConsorciosResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { addConsorcio } = useCreditos();
 
   useEffect(() => {
     let cancelled = false;
@@ -121,9 +125,26 @@ export default function PassivosConsorciosTab() {
   }
 
   return (
+    <>
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Consórcios
+        </h2>
+        <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Adicionar consórcio
+        </Button>
+      </div>
       {items.length === 0 ? (
-        <EmptyState icon={<TrendingUp className="h-6 w-6 text-muted-foreground" />} description="Nenhum consórcio encontrado." />
+        <EmptyState
+          icon={<TrendingUp className="h-6 w-6 text-muted-foreground" />}
+          title="Nenhum consórcio cadastrado"
+          description="Adicione consórcios para acompanhar contemplação, parcelas e evolução."
+          actionLabel="Adicionar consórcio"
+          onAction={() => setDialogOpen(true)}
+        />
       ) : (
         <ScrollArea className="h-[520px]">
           <div className="space-y-4">
@@ -181,6 +202,16 @@ export default function PassivosConsorciosTab() {
         </ScrollArea>
       )}
     </div>
+    <ConsorcioDialog
+      open={dialogOpen}
+      onOpenChange={setDialogOpen}
+      onSave={async (payload) => {
+        const res = await addConsorcio(payload);
+        if (!res.error) window.location.reload();
+        return res;
+      }}
+    />
+    </>
   );
 }
 
