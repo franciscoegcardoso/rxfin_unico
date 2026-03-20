@@ -3,7 +3,7 @@ import { X, Send } from 'lucide-react';
 import cibeliaImg from '@/assets/cibelia.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/integrations/supabase/client';
+import { SUPABASE_URL, SUPABASE_ANON_KEY, supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface CibeliaMessage {
@@ -76,7 +76,15 @@ async function sendToCibelia(
   if (!response.ok) {
     throw new Error(`Erro ${response.status}`);
   }
-  const data = await response.json();
+  const data = (await response.json()) as { content?: string; session_id?: string | null };
+  const sessionId = data.session_id;
+  if (sessionId) {
+    supabase.rpc('update_chat_session_source', {
+      p_session_id: sessionId,
+      p_source_page: window.location.pathname,
+      p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
+    }).then(() => {}).catch(() => {});
+  }
   return data.content as string;
 }
 

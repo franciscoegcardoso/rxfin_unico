@@ -7,6 +7,7 @@ export interface OcorrenciaDetalhe {
   account_name: string | null
   fonte: 'bank' | 'card'
   transaction_type: 'despesa' | 'receita'
+  transaction_id?: string | null
 }
 
 export interface BancoDetalhe {
@@ -44,6 +45,13 @@ export interface ConsolidarRowState {
   categoria_nome: string | null
   dirty: boolean
   confirmada: boolean
+  ocorrenciaOverrides?: Record<string, {
+    transaction_id?: string | null
+    grupo_id?: string
+    grupo_nome?: string
+    categoria_id?: string
+    categoria_nome?: string
+  }>
 }
 
 // Retorno de bulk_assign_category_by_store

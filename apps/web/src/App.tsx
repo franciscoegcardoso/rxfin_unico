@@ -329,6 +329,7 @@ const App = () => (
                                   <Route path="configuracoes-hub" element={<ConfiguracoesHub />} />
                                   <Route path="configuracoes-fiscais" element={<ConfiguracoesFiscais />} />
                                   <Route path="instituicoes-financeiras" element={<InstituicoesFinanceiras />} />
+                                  <Route path="conexoes" element={<Navigate to="/instituicoes-financeiras" replace />} />
                                   <Route path="instituicoes" element={<InstituicoesFinanceiras />} />
                                   <Route path="dados-financeiros" element={<DadosFinanceiros />} />
                                   <Route path="dados" element={<DadosFinanceiros />} />

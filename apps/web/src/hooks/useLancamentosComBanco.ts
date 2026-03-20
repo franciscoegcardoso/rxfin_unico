@@ -176,6 +176,22 @@ export function useLancamentosComBanco(
     []
   )
 
+  const toggleConfirmada = useCallback((transactionId: string) => {
+    setRowStates((prev) => {
+      const current = prev[transactionId]
+      if (!current) return prev
+      if (!current.categoria_id && !current.grupo_id) return prev
+      return {
+        ...prev,
+        [transactionId]: {
+          ...current,
+          confirmada: !current.confirmada,
+          dirty: true,
+        },
+      }
+    })
+  }, [])
+
   const pendingCount = useMemo(() => data.filter((r) => r.is_pending).length, [data])
 
   const dirtyCount = useMemo(
@@ -249,6 +265,7 @@ export function useLancamentosComBanco(
     isFetching,
     error: error ?? null,
     setCategory,
+    toggleConfirmada,
     saveAll,
     reset,
     refetch,

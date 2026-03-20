@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { invokePluggySync } from '@/lib/pluggySync';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface RealtimeBalanceAccount {
   id: string;
@@ -74,6 +74,7 @@ async function fetchRealtimeBalance(): Promise<RealtimeBalanceData | null> {
 export function useRealtimeBalance() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [refreshingAccountId, setRefreshingAccountId] = useState<string | null>(null);
   const [refreshCooldownUntil, setRefreshCooldownUntil] = useState<Record<string, number>>({});
 
@@ -86,6 +87,7 @@ export function useRealtimeBalance() {
 
   const refreshAccountBalance = useCallback(
     async (pluggyAccountId: string) => {
+      if (!user?.id) return;
       const now = Date.now();
       if ((refreshCooldownUntil[pluggyAccountId] ?? 0) > now) {
         toast({
@@ -97,36 +99,82 @@ export function useRealtimeBalance() {
       }
       setRefreshingAccountId(pluggyAccountId);
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const { data, error } = await invokePluggySync({
-          action: 'realtime-balance',
-          pluggy_account_id: pluggyAccountId,
+        const { data, error } = await supabase.rpc('get_account_balance_fresh', {
+          p_user_id: user.id,
+          p_account_id: pluggyAccountId,
         });
-        clearTimeout(timeout);
-        if (error) throw new Error(error.message);
-        const result = data as { success?: boolean; balance?: number; update_date_time?: string } | null;
-        await queryClient.invalidateQueries({ queryKey: REALTIME_BALANCE_QUERY_KEY });
-        const newBalance = result?.balance;
+        if (error) throw error;
+        const result = (data ?? null) as {
+          balance: number;
+          balance_updated_at: string | null;
+          balance_age_minutes: number | null;
+          is_stale: boolean;
+          credit_limit: number | null;
+          available_credit_limit: number | null;
+        } | null;
+
+        queryClient.setQueryData<RealtimeBalanceData | null>(REALTIME_BALANCE_QUERY_KEY, (prev) => {
+          if (!prev || !result) return prev;
+          const nextAccounts = prev.accounts.map((acc) =>
+            acc.pluggy_account_id === pluggyAccountId
+              ? {
+                  ...acc,
+                  balance: result.balance ?? acc.balance,
+                  balance_updated_at: result.balance_updated_at ?? acc.balance_updated_at,
+                  balance_age_minutes: result.balance_age_minutes ?? acc.balance_age_minutes,
+                  is_stale: result.is_stale ?? acc.is_stale,
+                  credit_limit: result.credit_limit ?? acc.credit_limit,
+                  available_credit_limit: result.available_credit_limit ?? acc.available_credit_limit,
+                }
+              : acc
+          );
+
+          const totalChecking = nextAccounts
+            .filter(
+              (a) =>
+                a.type === 'BANK' &&
+                (a.subtype === 'CHECKING_ACCOUNT' || (a.subtype ?? '').toLowerCase().includes('checking'))
+            )
+            .reduce((s, a) => s + (a.balance ?? 0), 0);
+          const totalSavings = nextAccounts
+            .filter(
+              (a) =>
+                a.type === 'BANK' &&
+                (a.subtype === 'SAVINGS_ACCOUNT' || (a.subtype ?? '').toLowerCase().includes('savings'))
+            )
+            .reduce((s, a) => s + (a.balance ?? 0), 0);
+
+          return {
+            ...prev,
+            accounts: nextAccounts,
+            summary: {
+              ...prev.summary,
+              total_checking: totalChecking,
+              total_savings: totalSavings,
+              any_stale: nextAccounts.some((a) => !!a.is_stale),
+            },
+          };
+        });
+
         toast({
           title: 'Saldo atualizado',
-          description:
-            newBalance != null
-              ? `Novo saldo: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(newBalance)}`
-              : undefined,
+          duration: 2000,
         });
         setRefreshCooldownUntil((prev) => ({
           ...prev,
           [pluggyAccountId]: now + REFRESH_COOLDOWN_MS,
         }));
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Não foi possível atualizar o saldo.';
-        toast({ title: 'Erro', description: message, variant: 'destructive' });
+      } catch {
+        toast({
+          title: 'Não foi possível atualizar',
+          description: 'tente sincronizar novamente',
+          variant: 'destructive',
+        });
       } finally {
         setRefreshingAccountId(null);
       }
     },
-    [queryClient, toast, refreshCooldownUntil]
+    [queryClient, toast, refreshCooldownUntil, user?.id]
   );
 
   return {

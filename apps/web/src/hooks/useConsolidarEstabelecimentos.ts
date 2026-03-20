@@ -160,6 +160,22 @@ export function useConsolidarEstabelecimentos(
     []
   );
 
+  const toggleConfirmada = useCallback((estabelecimento: string) => {
+    setRowStates((prev) => {
+      const current = prev[estabelecimento];
+      if (!current) return prev;
+      if (!current.categoria_id && !current.grupo_id) return prev;
+      return {
+        ...prev,
+        [estabelecimento]: {
+          ...current,
+          confirmada: !current.confirmada,
+          dirty: true,
+        },
+      };
+    });
+  }, []);
+
   const pendingCount = useMemo(() => {
     return rawData.filter((r) => r.total_pendentes > 0).length;
   }, [rawData]);
@@ -224,6 +240,27 @@ export function useConsolidarEstabelecimentos(
         // continue with other rows
       }
     }
+
+    const overrideItems = Object.values(rowStates)
+      .flatMap((s) => Object.values(s.ocorrenciaOverrides ?? {}))
+      .filter((ov) => ov.transaction_id && (ov.categoria_id || ov.grupo_id) && (ov.categoria_nome || ov.grupo_nome))
+      .map((ov) => ({
+        transaction_id: ov.transaction_id as string,
+        group_category_id: ov.grupo_id ?? null,
+        group_category_name: ov.grupo_nome ?? null,
+        category_id: (ov.categoria_id ?? ov.grupo_id) as string,
+        category_name: (ov.categoria_nome ?? ov.grupo_nome) as string,
+      }));
+
+    if (overrideItems.length > 0) {
+      const { error: batchError } = await supabase.rpc('apply_batch_categories', {
+        p_items: overrideItems,
+      });
+      if (!batchError) {
+        totalUpdated += overrideItems.length;
+      }
+    }
+
     await queryClient.invalidateQueries({ queryKey: ['consolidar-estabelecimentos'] });
     await refetch();
     return { totalUpdated };
@@ -242,6 +279,8 @@ export function useConsolidarEstabelecimentos(
     isLoading,
     error: error ?? null,
     setCategory,
+    setRowStates,
+    toggleConfirmada,
     saveAll,
     reset,
     refetch,

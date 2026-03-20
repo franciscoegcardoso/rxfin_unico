@@ -387,6 +387,15 @@ export function RaioXChat() {
         return;
       }
 
+      const sessionIdFromFn = (data as { session_id?: string | null }).session_id;
+      if (sessionIdFromFn) {
+        supabase.rpc('update_chat_session_source', {
+          p_session_id: sessionIdFromFn,
+          p_source_page: window.location.pathname,
+          p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
+        }).then(() => {}).catch(() => {});
+      }
+
       const rawContent = (data?.content ?? '').trim();
       const noResponsePlaceholders = ['Sem retorno', 'Sem resposta', 'Sem resposta.'];
       const isPlaceholder = !rawContent || noResponsePlaceholders.includes(rawContent);

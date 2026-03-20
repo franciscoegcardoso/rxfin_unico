@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
 import { SecureConnectionBadge } from "@/components/shared/SecureConnectionBadge";
+import { ConsentExpiryBanner } from "@/components/sync/ConsentExpiryBanner";
 import { useBannerState } from "@/hooks/useBannerState";
 
 interface DesktopShellProps {
@@ -43,7 +44,8 @@ export const DesktopShell: React.FC<DesktopShellProps> = ({ forceCollapsed }) =>
             variant={bannerState.banner === "progress_control" ? "control" : "raio_x"}
           />
         )}
-        <div className="flex-1 min-w-0 overflow-y-auto">
+        <div className="flex-1 min-w-0 overflow-y-auto flex flex-col">
+          <ConsentExpiryBanner />
           <Outlet />
         </div>
         <footer className="w-full border-t py-2 px-6 flex justify-center shrink-0">

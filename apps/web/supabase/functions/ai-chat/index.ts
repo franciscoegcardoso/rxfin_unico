@@ -144,6 +144,7 @@ Deno.serve(async (req: Request) => {
     let cibeliaMemory: Record<string, unknown> = {};
     let cibeliaAlerts: Record<string, unknown> = {};
     let pluggyContext: Record<string, unknown> = {};
+    let financialInsightsSummary: Record<string, unknown> = {};
 
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -154,13 +155,14 @@ Deno.serve(async (req: Request) => {
 
       if (user) {
         const currentMonth = new Date().toISOString().slice(0, 7);
-        const [ctxRes, sumRes, rxRes, memRes, alertsRes, pluggyRes] = await Promise.allSettled([
+        const [ctxRes, sumRes, rxRes, memRes, alertsRes, pluggyRes, insightsRes] = await Promise.allSettled([
           supabaseAdmin.rpc('get_ai_user_context',    { p_user_id: user.id }),
           supabaseAdmin.rpc('get_ai_monthly_summary', { p_user_id: user.id, p_month: currentMonth }),
           supabaseAdmin.rpc('get_ai_raio_x_analysis', { p_user_id: user.id, p_month: currentMonth }),
           supabaseAdmin.rpc('get_cibelia_memory',     { p_user_id: user.id }),
           supabaseAdmin.rpc('get_cibelia_alerts',     { p_user_id: user.id, p_limit: 3 }),
           supabaseAdmin.rpc('get_cibelia_pluggy_context', { p_user_id: user.id }),
+          supabaseAdmin.rpc('get_financial_insights_summary', { p_user_id: user.id }),
         ]);
         userContext    = ctxRes.status    === 'fulfilled' ? (ctxRes.value.data    || {}) : {};
         monthlySummary = sumRes.status    === 'fulfilled' ? (sumRes.value.data    || {}) : {};
@@ -168,6 +170,7 @@ Deno.serve(async (req: Request) => {
         cibeliaMemory  = memRes.status    === 'fulfilled' ? (memRes.value.data    || {}) : {};
         cibeliaAlerts  = alertsRes.status === 'fulfilled' ? (alertsRes.value.data || {}) : {};
         pluggyContext  = pluggyRes.status === 'fulfilled' ? (pluggyRes.value.data || {}) : {};
+        financialInsightsSummary = insightsRes.status === 'fulfilled' ? (insightsRes.value.data || {}) : {};
         onboardingCompleted = !!(userContext.onboarding_completed);
 
         try {
@@ -191,7 +194,7 @@ Deno.serve(async (req: Request) => {
       case 'access':     systemPrompt = PHASE_ACCESS_PROMPT; break;
       case 'onboarding': systemPrompt = buildOnboardingPrompt(userContext, cibeliaMemory); break;
       case 'financial':
-      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}, pluggyContext); break;
+      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}, pluggyContext, financialInsightsSummary); break;
     }
 
     if (user && phase === 'financial' && isFirstTurn && (cibeliaAlerts as Record<string,unknown>).count) {
@@ -280,7 +283,7 @@ Deno.serve(async (req: Request) => {
     if (user) {
       supabaseAdmin.from('ai_query_audit').insert({
         user_id: user.id, session_id: session_id || null,
-        sql_query: `phase=${phase} | ctx+summary+raioX+memory+alerts`,
+        sql_query: `phase=${phase} | ctx+summary+raioX+memory+alerts+pluggy+insights`,
         result_summary: { tokens_used: tokensUsed, model: 'deepseek/deepseek-chat-v3-0324', phase, source: 'edge_function_ai_chat_v16' },
         rows_returned: 1, execution_time_ms: latencyMs, status: 'success',
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),

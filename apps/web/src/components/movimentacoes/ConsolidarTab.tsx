@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   CheckCircle2,
   ChevronRight,
@@ -114,6 +115,8 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
     dirtyCount,
     isLoading,
     setCategory,
+    setRowStates,
+    toggleConfirmada,
     saveAll,
     reset,
   } = useConsolidarEstabelecimentos(sourceFilter, filters);
@@ -134,21 +137,9 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
     .filter((r) => rowStates[r.estabelecimento]?.dirty)
     .reduce((acc, r) => acc + r.total_ocorrencias, 0);
 
-  const sortedRows = useMemo(() => {
-    const list = [...filteredData];
-    list.sort((a, b) => {
-      const stateA = rowStates[a.estabelecimento];
-      const stateB = rowStates[b.estabelecimento];
-      const pendentesA = a.total_pendentes > 0 ? 1 : 0;
-      const pendentesB = b.total_pendentes > 0 ? 1 : 0;
-      if (pendentesA !== pendentesB) return pendentesB - pendentesA;
-      const dirtyA = stateA?.dirty ? 1 : 0;
-      const dirtyB = stateB?.dirty ? 1 : 0;
-      if (dirtyA !== dirtyB) return dirtyB - dirtyA;
-      return (stateB?.confirmada ? 1 : 0) - (stateA?.confirmada ? 1 : 0);
-    });
-    return list;
-  }, [filteredData, rowStates]);
+  const sortedRows = filteredData;
+
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const toggleExpand = (estabelecimento: string) => {
     setExpanded((prev) => ({ ...prev, [estabelecimento]: !prev[estabelecimento] }));
@@ -302,6 +293,36 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
     filters.dateFrom != null ||
     filters.dateTo != null;
 
+  type VirtualRowEntry =
+    | { type: 'parent'; key: string; rowIndex: number }
+    | { type: 'child'; key: string; rowIndex: number; childIndex: number; ocKey: string }
+    | { type: 'more'; key: string; rowIndex: number };
+
+  const virtualEntries = useMemo<VirtualRowEntry[]>(() => {
+    const out: VirtualRowEntry[] = [];
+    sortedRows.forEach((row, rowIndex) => {
+      out.push({ type: 'parent', key: `parent-${row.estabelecimento}`, rowIndex });
+      const isExpanded = expanded[row.estabelecimento];
+      if (!isExpanded || !row.ocorrencias_detalhe?.length) return;
+      const visible = showAllMap[row.estabelecimento] ? row.ocorrencias_detalhe : row.ocorrencias_detalhe.slice(0, 5);
+      visible.forEach((oc, childIndex) => {
+        const ocKey = `${row.estabelecimento}::${oc.date}::${oc.amount}::${childIndex}`;
+        out.push({ type: 'child', key: `child-${ocKey}`, rowIndex, childIndex, ocKey });
+      });
+      if (row.ocorrencias_detalhe.length > 5) {
+        out.push({ type: 'more', key: `more-${row.estabelecimento}`, rowIndex });
+      }
+    });
+    return out;
+  }, [sortedRows, expanded, showAllMap]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualEntries.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => (virtualEntries[index]?.type === 'parent' ? 44 : virtualEntries[index]?.type === 'child' ? 36 : 30),
+    overscan: 8,
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-2 py-4">
@@ -337,7 +358,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
       </div>
 
       {/* Filtros */}
-      <div className="shrink-0 mb-3 flex flex-wrap items-center gap-2">
+      <div className="shrink-0 mb-3 flex flex-wrap items-center gap-2 lg:hidden">
         <Input
           placeholder="Buscar estabelecimento"
           value={filters.search}
@@ -467,10 +488,10 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
       </div>
 
       {/* Tabela */}
-      <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-border">
+      <div ref={parentRef} className="flex-1 min-h-0 overflow-auto rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
+            <tr className="border-b border-border bg-muted/30 sticky top-0 z-20">
               <th className="w-8 px-1 py-2 shrink-0">
                 <Checkbox
                   checked={sortedRows.length > 0 && selectedEstabelecimentos.size === sortedRows.length}
@@ -488,11 +509,87 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
               <th className="text-left px-2 py-2 font-medium min-w-[180px] shrink-0">Categoria (L2)</th>
               <th className="text-left px-2 py-2 font-medium w-20 shrink-0">Status</th>
             </tr>
+            <tr className="border-b border-border/50 bg-muted/10 hidden lg:table-row sticky top-[37px] z-10">
+              <td className="px-1 py-1" />
+              <td className="px-1 py-1" />
+              <td className="px-2 py-1">
+                <Input
+                  placeholder="Buscar..."
+                  value={filters.search}
+                  onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                  className="h-6 text-xs border-border/50 bg-background"
+                />
+              </td>
+              <td className="px-2 py-1">
+                <Input
+                  type="date"
+                  value={filters.dateFrom ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value || null }))}
+                  className="h-6 text-xs w-full border-border/50"
+                  title="A partir de"
+                />
+              </td>
+              <td className="px-2 py-1" />
+              <td className="px-2 py-1" />
+              <td className="px-2 py-1">
+                <select
+                  value={filters.fonte[0] ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, fonte: e.target.value ? [e.target.value as 'bank' | 'card' | 'mixed'] : [] }))}
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                >
+                  <option value="">Todos</option>
+                  <option value="bank">Conta</option>
+                  <option value="card">Cartão</option>
+                  <option value="mixed">Misto</option>
+                </select>
+              </td>
+              <td className="px-2 py-1">
+                <select
+                  value={filters.bancos[0] ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, bancos: e.target.value ? [e.target.value] : [] }))}
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                >
+                  <option value="">Todos</option>
+                  {uniqueBancos.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-2 py-1">
+                <select
+                  value={filters.grupoCategoria ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, grupoCategoria: e.target.value || null }))}
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                >
+                  <option value="">Todos</option>
+                  {categories.map((g) => (
+                    <option key={g.id} value={g.name}>{g.name}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-2 py-1" />
+              <td className="px-2 py-1">
+                <select
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFilters((f) => ({ ...f, semCategoria: v === 'pending', naoConfirmados: v === 'unconfirmed' }));
+                  }}
+                >
+                  <option value="">Todos</option>
+                  <option value="pending">Pendentes</option>
+                  <option value="unconfirmed">Não confirmados</option>
+                </select>
+              </td>
+            </tr>
           </thead>
-          <tbody>
-            {sortedRows.map((row) => {
+          <tbody style={{ height: `${rowVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+              const entry = virtualEntries[virtualRow.index];
+              if (!entry) return null;
+              const row = sortedRows[entry.rowIndex];
+              if (!row) return null;
               const state = rowStates[row.estabelecimento];
-              const isExpanded = expanded[row.estabelecimento];
               const isIncome = row.transaction_type === 'receita';
               const isDespesa = row.transaction_type === 'despesa';
               const borderClass =
@@ -505,9 +602,15 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                 state?.grupo_nome ?? categories.find((c) => c.id === state?.grupo_id)?.name ?? null;
               const itemsForGroup = getItemsForGroup(grupoNomeEfetivo);
 
-              return (
-                <React.Fragment key={row.estabelecimento}>
-                  <tr className={cn('border-b border-border/50 hover:bg-muted/20', borderClass)}>
+              if (entry.type === 'parent') {
+                return (
+                  <tr
+                    key={entry.key}
+                    data-index={virtualRow.index}
+                    ref={rowVirtualizer.measureElement}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                    className={cn('border-b border-border/50 hover:bg-muted/20 bg-background', borderClass)}
+                  >
                     <td className="px-1 py-1.5 shrink-0">
                       <Checkbox
                         checked={selectedEstabelecimentos.has(row.estabelecimento)}
@@ -520,7 +623,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                         onClick={() => toggleExpand(row.estabelecimento)}
                         className="p-0.5 rounded hover:bg-muted"
                       >
-                        {isExpanded ? (
+                        {expanded[row.estabelecimento] ? (
                           <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         ) : (
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -704,36 +807,48 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                       </div>
                     </td>
                     <td className="px-2 py-1.5 shrink-0">
-                      {state?.confirmada ? (
-                        <span className="text-emerald-600 dark:text-emerald-400" title="Confirmada">
+                      <button
+                        type="button"
+                        title={state?.confirmada ? 'Confirmado — clique para desconfirmar' : 'Clique para confirmar'}
+                        onClick={() => toggleConfirmada(row.estabelecimento)}
+                        disabled={!state?.categoria_id && !state?.grupo_id}
+                        className={cn(
+                          'flex items-center justify-center w-6 h-6 rounded-full transition-colors',
+                          state?.confirmada ? 'text-emerald-600 hover:text-emerald-700' : state?.dirty ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground hover:text-foreground',
+                          (!state?.categoria_id && !state?.grupo_id) && 'opacity-30 cursor-not-allowed'
+                        )}
+                      >
+                        {state?.confirmada ? (
                           <CheckCircle2 className="h-4 w-4" />
-                        </span>
-                      ) : state?.dirty ? (
-                        <span className="text-amber-500" title="Alterações não salvas">
+                        ) : state?.dirty ? (
                           <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground" title="Pendente">
-                          <span className="inline-block w-3 h-3 rounded-full border border-muted-foreground" />
-                        </span>
-                      )}
+                        ) : (
+                          <span className="inline-block w-3 h-3 rounded-full border border-current" />
+                        )}
+                      </button>
                     </td>
                   </tr>
-                  {isExpanded &&
-                    row.ocorrencias_detalhe &&
-                    row.ocorrencias_detalhe.length > 0 &&
-                    (showAllMap[row.estabelecimento]
-                      ? row.ocorrencias_detalhe
-                      : row.ocorrencias_detalhe.slice(0, 5)
-                    ).map((oc, idx) => {
-                      const bancoDetalhe = row.bancos_detalhe?.find((b) => b.connector_name === oc.banco);
-                      const imgUrl = oc.connector_image_url ?? bancoDetalhe?.connector_image_url ?? null;
-                      const accName = oc.account_name ?? bancoDetalhe?.account_name ?? null;
-                      return (
-                        <tr
-                          key={`${row.estabelecimento}-oc-${idx}`}
-                          className="bg-muted/10 border-b border-border/30 hover:bg-muted/20"
-                        >
+                );
+              }
+
+              if (entry.type === 'child') {
+                const oc = (showAllMap[row.estabelecimento] ? row.ocorrencias_detalhe : row.ocorrencias_detalhe.slice(0, 5))[entry.childIndex];
+                if (!oc) return null;
+                const bancoDetalhe = row.bancos_detalhe?.find((b) => b.connector_name === oc.banco);
+                const imgUrl = oc.connector_image_url ?? bancoDetalhe?.connector_image_url ?? null;
+                const accName = oc.account_name ?? bancoDetalhe?.account_name ?? null;
+                const ocOverride = state?.ocorrenciaOverrides?.[entry.ocKey];
+                const grupoIdEfetivo = ocOverride?.grupo_id ?? state?.grupo_id ?? undefined;
+                const grupoNomeEfetivoOc = ocOverride?.grupo_nome ?? state?.grupo_nome ?? undefined;
+                const catIdEfetivo = ocOverride?.categoria_id ?? state?.categoria_id ?? undefined;
+                const itemsForOc = getItemsForGroup(grupoNomeEfetivoOc ?? null);
+                const hasOverride = !!ocOverride?.categoria_id || !!ocOverride?.grupo_id;
+                return (
+                  <tr
+                    key={entry.key}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                    className="bg-muted/10 border-b border-border/30 hover:bg-muted/20"
+                  >
                           <td className="px-1 py-1.5 w-8 shrink-0" />
                           <td className="px-1 py-1.5 w-8 shrink-0" />
                           <td className="px-2 py-1.5 min-w-[240px] max-w-[340px]">
@@ -797,14 +912,94 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                               size={20}
                             />
                           </td>
-                          <td className="px-2 py-1.5 w-[160px] shrink-0" />
-                          <td className="px-2 py-1.5 min-w-[180px] shrink-0" />
+                          <td className="px-2 py-1.5 w-[160px] shrink-0">
+                            {oc.transaction_type === 'receita' ? (
+                              <span className="text-xs text-muted-foreground/50">—</span>
+                            ) : (
+                              <Select
+                                value={grupoIdEfetivo ?? ''}
+                                onValueChange={(val) => {
+                                  const g = categories.find((x) => x.id === val);
+                                  if (!g) return;
+                                  setRowStates((prev) => ({
+                                    ...prev,
+                                    [row.estabelecimento]: {
+                                      ...prev[row.estabelecimento],
+                                      dirty: true,
+                                      ocorrenciaOverrides: {
+                                        ...prev[row.estabelecimento]?.ocorrenciaOverrides,
+                                        [entry.ocKey]: {
+                                          ...(prev[row.estabelecimento]?.ocorrenciaOverrides?.[entry.ocKey] ?? {}),
+                                          transaction_id: (oc as { transaction_id?: string | null }).transaction_id ?? null,
+                                          grupo_id: g.id,
+                                          grupo_nome: g.name,
+                                        },
+                                      },
+                                    },
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className={cn('h-6 text-xs w-full min-w-[130px]', !hasOverride && grupoIdEfetivo && 'text-muted-foreground/60 border-dashed')}>
+                                  <SelectValue placeholder="Herdado..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((g) => (
+                                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 min-w-[180px] shrink-0">
+                            {oc.transaction_type === 'receita' ? (
+                              <span className="text-xs text-muted-foreground/50">—</span>
+                            ) : (
+                              <Select
+                                value={catIdEfetivo ?? ''}
+                                disabled={!grupoIdEfetivo && !grupoNomeEfetivoOc}
+                                onValueChange={(val) => {
+                                  const item = itemsForOc.find((i) => i.id === val);
+                                  if (!item) return;
+                                  setRowStates((prev) => ({
+                                    ...prev,
+                                    [row.estabelecimento]: {
+                                      ...prev[row.estabelecimento],
+                                      dirty: true,
+                                      ocorrenciaOverrides: {
+                                        ...prev[row.estabelecimento]?.ocorrenciaOverrides,
+                                        [entry.ocKey]: {
+                                          ...(prev[row.estabelecimento]?.ocorrenciaOverrides?.[entry.ocKey] ?? {}),
+                                          transaction_id: (oc as { transaction_id?: string | null }).transaction_id ?? null,
+                                          categoria_id: item.id,
+                                          categoria_nome: item.name,
+                                        },
+                                      },
+                                    },
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className={cn('h-6 text-xs w-full', !hasOverride && catIdEfetivo && 'text-muted-foreground/60 border-dashed')}>
+                                  <SelectValue placeholder="Herdado..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {itemsForOc.map((i) => (
+                                    <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 w-20 shrink-0" />
                         </tr>
-                      );
-                    })}
-                  {isExpanded && row.ocorrencias_detalhe && row.ocorrencias_detalhe.length > 5 && (
-                    <tr className="bg-muted/5">
+                );
+              }
+
+              return (
+                <tr
+                  key={entry.key}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}
+                  className="bg-muted/5"
+                >
                       <td colSpan={11} className="px-2 py-1">
                         {!showAllMap[row.estabelecimento] ? (
                           <button
@@ -824,9 +1019,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                           </button>
                         )}
                       </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                </tr>
               );
             })}
           </tbody>

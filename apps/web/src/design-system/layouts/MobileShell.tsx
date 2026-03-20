@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
+import { ConsentExpiryBanner } from "@/components/sync/ConsentExpiryBanner";
 import { ThemedLogo } from "@/components/ui/themed-logo";
 import { useBannerState } from "@/hooks/useBannerState";
 
@@ -83,6 +84,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
       >
         <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
           <div className="animate-in fade-in duration-200 ease-out">
+            <ConsentExpiryBanner />
             {children}
           </div>
         </ErrorBoundary>

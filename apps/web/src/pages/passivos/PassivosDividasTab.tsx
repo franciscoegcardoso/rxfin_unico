@@ -15,6 +15,15 @@ type PluggyLoan = {
   product_name: string;
   outstanding_balance: number;
   progress_pct?: number | null;
+  cet_annual_pct?: number | null;
+  cet_monthly_pct?: number | null;
+  pre_fixed_rate_pct?: number | null;
+  contract_date?: string | null;
+  amortization_system?: string | null;
+  interest_rates?: unknown[] | null;
+  contracted_fees?: unknown[] | null;
+  warranties?: unknown[] | null;
+  first_installment_due_date?: string | null;
 };
 
 type ManualLoan = {
@@ -41,6 +50,23 @@ type PassivosDividasResponse = {
 
 const formatMoney = (value: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+const formatPct = (value: number): string =>
+  new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+
+const formatDateBr = (value: string): string => {
+  const dateOnly = value.slice(0, 10);
+  const [y, m, d] = dateOnly.split('-');
+  if (!y || !m || !d) return value;
+  return `${d}/${m}/${y}`;
+};
+
+const cetTone = (value: number | null | undefined): string => {
+  if (value == null) return 'bg-muted text-muted-foreground border-border';
+  if (value > 20) return 'bg-red-500/10 text-red-600 border-red-500/30';
+  if (value >= 10) return 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+  return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+};
 
 function ProgressBar({ value }: { value: number }) {
   const pct = Math.max(0, Math.min(100, value));
@@ -111,6 +137,14 @@ export default function PassivosDividasTab() {
           <span className="text-sm font-medium">{data.summary.overdue_count} vencida(s)</span>
         </div>
       )}
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground">CET médio</span>
+        <Badge variant="outline" className={cetTone(data?.summary?.avg_cet_annual_pct)}>
+          {data?.summary?.avg_cet_annual_pct != null
+            ? `${formatPct(data.summary.avg_cet_annual_pct)}% a.a.`
+            : '—'}
+        </Badge>
+      </div>
 
       {!hasAnyLoans ? (
         <EmptyState
@@ -144,6 +178,42 @@ export default function PassivosDividasTab() {
                         <span className="font-medium">{progress.toFixed(0)}%</span>
                       </div>
                       <ProgressBar value={progress} />
+                    </div>
+
+                    <div className="rounded-md border border-border/60 p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Detalhes financeiros</p>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-muted-foreground">CET Anual</span>
+                          <Badge variant="outline" className={cetTone(loan.cet_annual_pct)}>
+                            {loan.cet_annual_pct != null ? `${formatPct(loan.cet_annual_pct)}% a.a.` : '—'}
+                          </Badge>
+                        </div>
+                        {loan.cet_monthly_pct != null && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Taxa Mensal Efetiva</span>
+                            <span className="font-medium">{formatPct(loan.cet_monthly_pct)}% a.m.</span>
+                          </div>
+                        )}
+                        {loan.pre_fixed_rate_pct != null && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Taxa Pré-fixada</span>
+                            <span className="font-medium">{formatPct(loan.pre_fixed_rate_pct)}% a.a.</span>
+                          </div>
+                        )}
+                        {loan.contract_date && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Contratado em</span>
+                            <span className="font-medium">{formatDateBr(loan.contract_date)}</span>
+                          </div>
+                        )}
+                        {loan.amortization_system && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">Sistema de amortização</span>
+                            <span className="font-medium">{loan.amortization_system}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

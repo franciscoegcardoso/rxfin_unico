@@ -2,12 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { RefreshCw, Loader2, AlertCircle, Clock3 } from 'lucide-react';
 import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
 import { formatBalanceAge, getStaleStatus } from '@/utils/formatBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const formatCurrency = (value: number, isHidden: boolean) => {
   if (isHidden) return '••••••';
@@ -121,22 +122,34 @@ export const BalanceSummaryCard: React.FC = () => {
                   {ageLabel && (
                     <span className="text-xs text-muted-foreground shrink-0">{ageLabel}</span>
                   )}
-                  {(acc.is_stale || staleStatus === 'aging') && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      disabled={isRefreshing || onCooldown}
-                      onClick={() => refreshAccountBalance(acc.pluggy_account_id)}
-                      aria-label="Atualizar saldo"
-                    >
-                      {isRefreshing ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+                  {acc.is_stale && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center text-amber-600 shrink-0">
+                            <Clock3 className="h-3.5 w-3.5" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          Saldo pode estar desatualizado (ultima atualização: {ageLabel || 'há varias horas'})
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    disabled={isRefreshing || onCooldown}
+                    onClick={() => refreshAccountBalance(acc.pluggy_account_id)}
+                    aria-label="Atualizar saldo"
+                  >
+                    {isRefreshing ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
                 </div>
               );
             })}

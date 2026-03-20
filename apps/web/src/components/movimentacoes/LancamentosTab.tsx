@@ -126,6 +126,7 @@ export function LancamentosTab({
     isLoading,
     isFetching,
     setCategory,
+    toggleConfirmada,
     saveAll,
     reset,
     refetch,
@@ -377,7 +378,7 @@ export function LancamentosTab({
         )}
       </div>
 
-      <div className="shrink-0 mb-3 flex flex-wrap items-center gap-2">
+      <div className="shrink-0 mb-3 flex flex-wrap items-center gap-2 lg:hidden">
         <Input
           placeholder="Buscar estabelecimento"
           value={filters.search}
@@ -458,6 +459,69 @@ export function LancamentosTab({
               <th className="text-left px-2 py-2 font-medium min-w-[140px] shrink-0">Grupo (L1)</th>
               <th className="text-left px-2 py-2 font-medium min-w-[160px] shrink-0">Categoria</th>
               <th className="text-left px-2 py-2 font-medium w-20 shrink-0">Status</th>
+            </tr>
+            <tr className="border-b border-border/50 bg-muted/10 hidden lg:table-row">
+              <td className="px-1 py-1" />
+              <td className="px-2 py-1">
+                <Input
+                  type="date"
+                  value={filters.dateFrom ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value || null }))}
+                  className="h-6 text-xs w-full border-border/50"
+                />
+              </td>
+              <td className="px-2 py-1">
+                <Input
+                  placeholder="Buscar..."
+                  value={filters.search}
+                  onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                  className="h-6 text-xs border-border/50 bg-background"
+                />
+              </td>
+              <td className="px-2 py-1" />
+              <td className="px-2 py-1">
+                <select
+                  value={source}
+                  disabled
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1 opacity-70"
+                >
+                  <option value="bank">Conta</option>
+                  <option value="card">Cartão</option>
+                </select>
+              </td>
+              <td className="px-2 py-1">
+                <select
+                  value={filters.bancos[0] ?? ''}
+                  onChange={(e) => setFilters((f) => ({ ...f, bancos: e.target.value ? [e.target.value] : [] }))}
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                >
+                  <option value="">Todos</option>
+                  {uniqueBancos.map((b) => (
+                    <option key={b} value={b}>{b.replace('|', ' · ')}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="px-2 py-1">
+                <select
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                  onChange={(e) => setFilters((f) => ({ ...f, semCategoria: e.target.value === 'pending', naoConfirmados: e.target.value === 'unconfirmed' }))}
+                >
+                  <option value="">Todos</option>
+                  <option value="pending">Pendentes</option>
+                  <option value="unconfirmed">Não confirmados</option>
+                </select>
+              </td>
+              <td className="px-2 py-1" />
+              <td className="px-2 py-1">
+                <select
+                  className="h-6 text-xs w-full rounded border border-border/50 bg-background px-1"
+                  onChange={(e) => setFilters((f) => ({ ...f, semCategoria: e.target.value === 'pending', naoConfirmados: e.target.value === 'unconfirmed' }))}
+                >
+                  <option value="">Todos</option>
+                  <option value="pending">Pendentes</option>
+                  <option value="unconfirmed">Não confirmados</option>
+                </select>
+              </td>
             </tr>
           </thead>
           <tbody>
@@ -676,19 +740,25 @@ export function LancamentosTab({
                     )}
                   </td>
                   <td className="px-2 py-1.5 shrink-0">
-                    {state?.confirmada && !state?.dirty ? (
-                      <span className="text-emerald-600 dark:text-emerald-400" title="Confirmada">
+                    <button
+                      type="button"
+                      title={state?.confirmada ? 'Confirmado — clique para desconfirmar' : 'Clique para confirmar'}
+                      onClick={() => toggleConfirmada(row.transaction_id)}
+                      disabled={!state?.categoria_id && !state?.grupo_id}
+                      className={cn(
+                        'flex items-center justify-center w-6 h-6 rounded-full transition-colors',
+                        state?.confirmada ? 'text-emerald-600 hover:text-emerald-700' : state?.dirty ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground hover:text-foreground',
+                        (!state?.categoria_id && !state?.grupo_id) && 'opacity-30 cursor-not-allowed'
+                      )}
+                    >
+                      {state?.confirmada ? (
                         <CheckCircle2 className="h-4 w-4" />
-                      </span>
-                    ) : state?.dirty ? (
-                      <span className="text-amber-500" title="Alterações não salvas">
+                      ) : state?.dirty ? (
                         <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground" title="Pendente">
-                        <span className="inline-block w-3 h-3 rounded-full border border-muted-foreground" />
-                      </span>
-                    )}
+                      ) : (
+                        <span className="inline-block w-3 h-3 rounded-full border border-current" />
+                      )}
+                    </button>
                   </td>
                 </tr>
               )
