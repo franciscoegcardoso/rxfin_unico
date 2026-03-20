@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Legend,
 } from 'recharts';
@@ -51,6 +51,114 @@ const fmtCompact = (v: number) => {
 };
 
 type BenchmarkKey = 'CDI' | 'IPCA' | 'IBOVESPA';
+
+type EvolutionChartRow = {
+  date: string;
+  isEstimated: boolean;
+  carteira: number;
+  benchmark: number;
+};
+
+/** Série do gráfico: benchmark com taxa diária composta no período real (evita distorção vs patrimônio). */
+function buildChartSeries(
+  snapshotHistory: SnapshotPoint[],
+  viewMode: 'rentabilidade' | 'patrimonio',
+  benchmark: BenchmarkKey,
+  benchmarks: Benchmarks | null
+): EvolutionChartRow[] {
+  if (!snapshotHistory || snapshotHistory.length < 2) return [];
+
+  const baseTotal = snapshotHistory[0].total_brl;
+  if (!Number.isFinite(baseTotal) || baseTotal <= 0) return [];
+
+  const baseDate = new Date(snapshotHistory[0].date);
+  const lastDate = new Date(snapshotHistory[snapshotHistory.length - 1].date);
+  const totalDias = Math.max(
+    (lastDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
+    1
+  );
+
+  const bmkTotal =
+    benchmark === 'CDI'
+      ? (benchmarks?.cdi.desde_inicio ?? 0)
+      : benchmark === 'IPCA'
+        ? (benchmarks?.ipca.desde_inicio ?? 0)
+        : (benchmarks?.ibovespa.desde_inicio ?? 0);
+
+  const taxaDiaria = Math.pow(1 + bmkTotal / 100, 1 / totalDias) - 1;
+
+  return snapshotHistory.map((snap) => {
+    const snapDate = new Date(snap.date);
+    const diasDecorridos = Math.max(
+      (snapDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
+      0
+    );
+
+    const carteiraPct = (snap.total_brl / baseTotal - 1) * 100;
+    const bmkPct = (Math.pow(1 + taxaDiaria, diasDecorridos) - 1) * 100;
+
+    return {
+      date: snap.date,
+      isEstimated: snap.completeness_pct === 0,
+      carteira:
+        viewMode === 'rentabilidade'
+          ? parseFloat(carteiraPct.toFixed(2))
+          : snap.total_brl,
+      benchmark:
+        viewMode === 'rentabilidade'
+          ? parseFloat(bmkPct.toFixed(2))
+          : baseTotal * (1 + bmkPct / 100),
+    };
+  });
+}
+
+function EvolutionChartTooltip({
+  active,
+  payload,
+  label,
+  viewMode,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    name?: string;
+    value?: number;
+    color?: string;
+    dataKey?: string;
+    payload?: EvolutionChartRow;
+  }>;
+  label?: string;
+  viewMode: 'rentabilidade' | 'patrimonio';
+}) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  const isEst = row?.isEstimated;
+
+  return (
+    <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-sm text-xs">
+      <p className="font-medium mb-1 text-muted-foreground">
+        {label != null && label !== ''
+          ? format(new Date(String(label)), 'MMM/yyyy', { locale: ptBR })
+          : ''}
+      </p>
+      {payload.map((p) => (
+        <div key={String(p.dataKey ?? p.name)} className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
+          <span className="text-muted-foreground">{p.name}:</span>
+          <span className="font-medium">
+            {viewMode === 'rentabilidade'
+              ? `${(p.value ?? 0) >= 0 ? '+' : ''}${(p.value ?? 0).toFixed(2).replace('.', ',')}%`
+              : (p.value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        </div>
+      ))}
+      {isEst && (
+        <p className="text-muted-foreground/60 mt-1 text-[10px]">
+          * Estimativa baseada em CDI
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function VisoesComplementares({
   snapshotHistory,
@@ -145,31 +253,8 @@ function PortfolioEvolutionChart({
   const [viewMode, setViewMode] = useState<'rentabilidade' | 'patrimonio'>('rentabilidade');
   const [benchmark, setBenchmark] = useState<BenchmarkKey>('CDI');
 
-  const hasEnoughData = snapshotHistory.length >= 3;
-  const baseTotal = snapshotHistory[0]?.total_brl ?? 1;
-
-  const chartData = snapshotHistory.map((snap, i) => {
-    const carteiraPct = (snap.total_brl / baseTotal - 1) * 100;
-    const diasProporcao = i / Math.max(snapshotHistory.length - 1, 1);
-    const bmkPct =
-      benchmark === 'CDI'
-        ? (benchmarks?.cdi.desde_inicio ?? 0) * diasProporcao
-        : benchmark === 'IPCA'
-          ? (benchmarks?.ipca.desde_inicio ?? 0) * diasProporcao
-          : (benchmarks?.ibovespa.desde_inicio ?? 0) * diasProporcao;
-
-    return {
-      date: snap.date,
-      carteira:
-        viewMode === 'rentabilidade'
-          ? parseFloat(carteiraPct.toFixed(2))
-          : snap.total_brl,
-      benchmark:
-        viewMode === 'rentabilidade'
-          ? parseFloat(bmkPct.toFixed(2))
-          : baseTotal * (1 + bmkPct / 100),
-    };
-  });
+  const hasEnoughData = snapshotHistory.length >= 2;
+  const chartData = buildChartSeries(snapshotHistory, viewMode, benchmark, benchmarks);
 
   const rendPct =
     performanceSummary && performanceSummary.total_aplicado > 0
@@ -283,24 +368,35 @@ function PortfolioEvolutionChart({
               tick={{ fontSize: 10 }}
             />
             <YAxis
+              domain={
+                viewMode === 'rentabilidade'
+                  ? ['auto', 'auto']
+                  : [
+                      (min: number) => Math.floor(min * 0.95),
+                      (max: number) => Math.ceil(max * 1.02),
+                    ]
+              }
               tickFormatter={(v: number) =>
                 viewMode === 'rentabilidade' ? `${Number(v).toFixed(0)}%` : fmtCompact(Number(v))
               }
               tick={{ fontSize: 10 }}
-              width={viewMode === 'rentabilidade' ? 42 : 52}
+              width={viewMode === 'rentabilidade' ? 42 : 56}
             />
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                viewMode === 'rentabilidade' ? fmtPct(value) : fmt(value),
-                name,
-              ]}
-              labelFormatter={(l) => format(new Date(String(l)), 'dd/MM/yyyy', { locale: ptBR })}
+            <RechartsTooltip
+              content={(props) => (
+                <EvolutionChartTooltip
+                  active={props.active}
+                  payload={props.payload}
+                  label={props.label}
+                  viewMode={viewMode}
+                />
+              )}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type="monotone"
               dataKey="carteira"
-              name="Carteira"
+              name={viewMode === 'rentabilidade' ? 'Patrimônio (com aportes)' : 'Patrimônio'}
               stroke="#F59E0B"
               strokeWidth={2}
               dot={false}
@@ -317,6 +413,11 @@ function PortfolioEvolutionChart({
             />
           </LineChart>
         </ResponsiveContainer>
+      )}
+      {hasEnoughData && viewMode === 'rentabilidade' && (
+        <p className="text-[10px] text-muted-foreground mt-1">
+          * A curva inclui novos aportes realizados no período
+        </p>
       )}
     </div>
   );

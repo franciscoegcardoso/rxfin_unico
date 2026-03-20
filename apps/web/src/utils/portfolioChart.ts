@@ -15,29 +15,46 @@ function getBenchmarkValue(benchmarks: Benchmarks, benchmark: BenchmarkKey): num
   return benchmarks.ibovespa.desde_inicio;
 }
 
+/** CDI/IPCA/Ibov como taxa diária composta no período real (alinhado a VisoesComplementares). */
 export function buildChartSeries(
   data: PortfolioPerformance,
   viewMode: ViewMode,
   benchmark: BenchmarkKey
 ): ChartPoint[] {
   const snapshots = data.snapshot_history ?? [];
-  if (snapshots.length === 0) return [];
+  if (snapshots.length < 2) return [];
 
-  const basePatrimonio = snapshots[0]?.total_brl ?? 0;
-  const benchmarkTotalPct = getBenchmarkValue(data.benchmarks, benchmark);
-  const denom = Math.max(snapshots.length - 1, 1);
+  const baseTotal = snapshots[0]?.total_brl ?? 0;
+  if (!Number.isFinite(baseTotal) || baseTotal <= 0) return [];
 
-  return snapshots.map((snap, idx) => {
-    const carteiraPct = basePatrimonio > 0 ? ((snap.total_brl / basePatrimonio) - 1) * 100 : 0;
-    const progress = idx / denom;
-    const benchmarkPctAtPoint = benchmarkTotalPct * progress;
+  const baseDate = new Date(snapshots[0].date);
+  const lastDate = new Date(snapshots[snapshots.length - 1].date);
+  const totalDias = Math.max(
+    (lastDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
+    1
+  );
+
+  const bmkTotal = getBenchmarkValue(data.benchmarks, benchmark);
+  const taxaDiaria = Math.pow(1 + bmkTotal / 100, 1 / totalDias) - 1;
+
+  return snapshots.map((snap) => {
+    const snapDate = new Date(snap.date);
+    const diasDecorridos = Math.max(
+      (snapDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
+      0
+    );
+
+    const carteiraPct = (snap.total_brl / baseTotal - 1) * 100;
+    const bmkPct = (Math.pow(1 + taxaDiaria, diasDecorridos) - 1) * 100;
+
     return {
       date: snap.date,
-      carteira: viewMode === 'rentabilidade' ? Number(carteiraPct.toFixed(2)) : snap.total_brl,
+      carteira:
+        viewMode === 'rentabilidade' ? Number(carteiraPct.toFixed(2)) : snap.total_brl,
       benchmark:
         viewMode === 'rentabilidade'
-          ? Number(benchmarkPctAtPoint.toFixed(2))
-          : basePatrimonio * (1 + benchmarkPctAtPoint / 100),
+          ? Number(bmkPct.toFixed(2))
+          : baseTotal * (1 + bmkPct / 100),
     };
   });
 }

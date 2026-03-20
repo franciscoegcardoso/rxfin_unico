@@ -119,6 +119,8 @@ export interface OnboardingStatus {
 export interface SnapshotPoint {
   date: string;
   total_brl: number;
+  /** 0 = ponto estimado (backfill); null/undefined se não enviado */
+  completeness_pct?: number | null;
   by_class: {
     renda_fixa?: number;
     acoes?: number;

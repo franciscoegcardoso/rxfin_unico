@@ -76,6 +76,10 @@ function parseSnapshotHistory(raw: unknown): SnapshotPoint[] {
       return {
         date: String(o.date ?? ''),
         total_brl: Number(o.total_brl ?? 0),
+        completeness_pct:
+          o.completeness_pct != null && o.completeness_pct !== ''
+            ? Number(o.completeness_pct)
+            : null,
         by_class,
       };
     })

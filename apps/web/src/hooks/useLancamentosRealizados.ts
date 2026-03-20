@@ -45,6 +45,8 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
     [paginated, uid, page, pageSize, mesReferencia]
   );
 
+  const monthValid = mesReferencia == null || mesReferencia.length === 7;
+
   const { data, isPending, isFetching, error: queryError } = useQuery({
     queryKey,
     queryFn: async (): Promise<LancamentosQueryResult> => {
@@ -63,7 +65,7 @@ export function useLancamentosRealizados(options: UseLancamentosRealizadosOption
       const list = await lancamentosService.fetchLancamentos(user.id, mesReferencia ?? undefined);
       return { mode: 'full', list };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && monthValid,
     staleTime: STALE.LANCAMENTOS,
     gcTime: STALE.GC_LANCAMENTOS,
   });

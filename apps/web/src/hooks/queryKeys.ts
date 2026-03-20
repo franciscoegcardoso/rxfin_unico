@@ -16,9 +16,21 @@ export const STALE = {
   GC_LANCAMENTOS: 60 * 60 * 1000,
 } as const;
 
+/**
+ * Segmento estável do mês na query key.
+ * - `__all__` = sem filtro de mês (lista completa)
+ * - `YYYY-MM` = filtro válido
+ * - `invalid-month` = mês inválido (query desativada no hook; nunca use "" no cache)
+ */
+export function lancamentosMesSegment(mesReferencia?: string | null): string {
+  if (mesReferencia == null) return '__all__';
+  if (mesReferencia.length === 7) return mesReferencia;
+  return 'invalid-month';
+}
+
 /** Lista completa de lançamentos (deduplicada entre N componentes no Início). */
 export function lancamentosListQueryKey(userId: string, mesReferencia?: string | null) {
-  return ['lancamentos', userId, mesReferencia ?? ''] as const;
+  return ['lancamentos', userId, lancamentosMesSegment(mesReferencia)] as const;
 }
 
 export function lancamentosPaginatedQueryKey(
@@ -27,7 +39,7 @@ export function lancamentosPaginatedQueryKey(
   pageSize: number,
   mesReferencia: string | null | undefined
 ) {
-  return ['lancamentos', userId, 'paginated', page, pageSize, mesReferencia ?? ''] as const;
+  return ['lancamentos', userId, 'paginated', page, pageSize, lancamentosMesSegment(mesReferencia)] as const;
 }
 
 /** Invalida lista + todas as págin paginadas do utilizador. */

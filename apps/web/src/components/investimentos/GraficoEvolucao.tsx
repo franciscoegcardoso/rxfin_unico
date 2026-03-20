@@ -84,7 +84,7 @@ export function GraficoEvolucao({ data }: Props) {
       </div>
 
       <div className="px-2 pb-4 pt-3">
-        {data.summary.snapshot_count < 7 ? (
+        {(data.snapshot_history?.length ?? 0) < 2 ? (
           <div className="h-48 flex flex-col items-center justify-center gap-2 text-muted-foreground">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />

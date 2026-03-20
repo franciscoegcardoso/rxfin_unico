@@ -87,9 +87,21 @@ export interface PendingTransaction {
 
 const CREDIT_CARD_TRANSACTIONS_QUERY_KEY = 'credit-card-transactions';
 
+function creditCardMonthSegment(currentMonth?: string) {
+  if (currentMonth == null) return '__all__';
+  if (currentMonth.length === 7) return currentMonth;
+  return 'invalid-month';
+}
+
 export function useCreditCardTransactions(currentMonth?: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const monthSegment = creditCardMonthSegment(currentMonth);
+  const monthFilterActive = !!currentMonth && currentMonth.length === 7;
+  /** Sem argumento = lista completa (ex.: diálogos). Mês inválido ou "" = não executar (evita varrer a view inteira). */
+  const queryEnabled =
+    !!user?.id && (currentMonth === undefined || currentMonth.length === 7);
 
   const {
     data: transactions = [],
@@ -97,7 +109,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
     error: queryError,
     refetch,
   } = useQuery({
-    queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id, currentMonth ?? ''],
+    queryKey: [CREDIT_CARD_TRANSACTIONS_QUERY_KEY, user?.id, monthSegment],
     queryFn: async (): Promise<CreditCardTransaction[]> => {
       if (!user) return [];
       const PAGE_SIZE = 1000;
@@ -112,7 +124,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
           .eq('user_id', user.id)
           .order('transaction_date', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
-        if (currentMonth) {
+        if (monthFilterActive) {
           query = query.eq('reference_month', currentMonth);
         }
         const { data, error: fetchError } = await query;
@@ -133,7 +145,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
             : 'À vista',
       })) as CreditCardTransaction[];
     },
-    enabled: !!user?.id,
+    enabled: queryEnabled,
     staleTime: 60_000,
   });
 
