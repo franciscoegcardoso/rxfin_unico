@@ -60,7 +60,7 @@ function createSessionId(): string {
 async function sendToCibelia(
   messages: CibeliaMessage[],
   sessionId: string
-): Promise<string> {
+): Promise<{ content: string; sessionIdFromServer: string | null }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 28000);
   try {
@@ -86,15 +86,11 @@ async function sendToCibelia(
       throw new Error(`Erro ${response.status}`);
     }
     const data = (await response.json()) as { content?: string; session_id?: string | null };
-    const serverSessionId = data.session_id;
-    if (serverSessionId) {
-      supabase.rpc('update_chat_session_source', {
-        p_session_id: serverSessionId,
-        p_source_page: window.location.pathname,
-        p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
-      }).then(() => {}).catch(() => {});
-    }
-    return data.content as string;
+    const sessionIdFromServer = data.session_id ?? null;
+    return {
+      content: (data.content ?? '') as string,
+      sessionIdFromServer,
+    };
   } finally {
     clearTimeout(timeoutId);
   }
@@ -108,6 +104,8 @@ export const CibeliaAuthWidget: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const sessionIdRef = useRef<string>(createSessionId());
+  /** Sincroniza source_page/session_type só na primeira vez que a EF devolve cada session_id */
+  const efSessionSourceSyncedRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -136,7 +134,27 @@ export const CibeliaAuthWidget: React.FC = () => {
 
     try {
       const history = [...messages, userMessage];
-      const content = await sendToCibelia(history, sessionIdRef.current);
+      const { content, sessionIdFromServer } = await sendToCibelia(history, sessionIdRef.current);
+
+      if (
+        sessionIdFromServer &&
+        efSessionSourceSyncedRef.current !== sessionIdFromServer
+      ) {
+        efSessionSourceSyncedRef.current = sessionIdFromServer;
+        supabase
+          .rpc('update_chat_session_source', {
+            p_session_id: sessionIdFromServer,
+            p_source_page:
+              typeof window !== 'undefined' ? window.location.pathname : null,
+            p_session_type:
+              typeof window !== 'undefined' &&
+              window.location.pathname === '/cibelia'
+                ? 'standalone'
+                : 'widget',
+          })
+          .then(() => {})
+          .catch(() => {});
+      }
 
       // Extrai quick replies da resposta antes de exibir
       const extracted = extractQuickReplies(content);

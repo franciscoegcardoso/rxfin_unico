@@ -119,6 +119,8 @@ export function RaioXChat() {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const [feedbackMap, setFeedbackMap] = useState<Map<number, 'helpful' | 'incorrect'>>(new Map());
   const [feedbackLoading, setFeedbackLoading] = useState<Set<number>>(new Set());
+  /** Evita repetir update_chat_session_source em toda mensagem quando a EF devolve o mesmo session_id */
+  const efSessionSourceSyncedRef = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
@@ -231,11 +233,18 @@ export function RaioXChat() {
     setSessionId(newSessionId);
 
     if (newSessionId) {
-      supabase.rpc('update_chat_session_source', {
-        p_session_id: newSessionId,
-        p_source_page: window.location.pathname,
-        p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
-      }).then(() => {}).catch(() => {});
+      supabase
+        .rpc('update_chat_session_source', {
+          p_session_id: newSessionId,
+          p_source_page:
+            typeof window !== 'undefined' ? window.location.pathname : null,
+          p_session_type:
+            typeof window !== 'undefined' && window.location.pathname === '/cibelia'
+              ? 'standalone'
+              : 'widget',
+        })
+        .then(() => {})
+        .catch(() => {});
     }
 
     // Register onboarding_started event (idempotent — only if not already registered)
@@ -429,12 +438,25 @@ export function RaioXChat() {
       }
 
       const sessionIdFromFn = (data as { session_id?: string | null }).session_id;
-      if (sessionIdFromFn) {
-        supabase.rpc('update_chat_session_source', {
-          p_session_id: sessionIdFromFn,
-          p_source_page: window.location.pathname,
-          p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
-        }).then(() => {}).catch(() => {});
+      // Atualizar source_page e session_type da sessão criada pela EF (uma vez por session_id retornado)
+      if (
+        sessionIdFromFn &&
+        efSessionSourceSyncedRef.current !== sessionIdFromFn
+      ) {
+        efSessionSourceSyncedRef.current = sessionIdFromFn;
+        supabase
+          .rpc('update_chat_session_source', {
+            p_session_id: sessionIdFromFn,
+            p_source_page:
+              typeof window !== 'undefined' ? window.location.pathname : null,
+            p_session_type:
+              typeof window !== 'undefined' &&
+              window.location.pathname === '/cibelia'
+                ? 'standalone'
+                : 'widget',
+          })
+          .then(() => {})
+          .catch(() => {});
       }
 
       const rawContent = (data?.content ?? '').trim();
