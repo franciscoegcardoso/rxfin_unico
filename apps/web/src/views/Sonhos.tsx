@@ -208,7 +208,7 @@ export const Sonhos: React.FC = () => {
           title="Sonhos"
           description="Acompanhe e personalize suas metas de longo prazo"
           icon={<Target className="h-5 w-5 text-primary" />}
-          backTo="/planejamento"
+          backTo="/planejamento-mensal"
           backLabel="Planejamento"
         >
           <VisibilityToggle />

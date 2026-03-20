@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,12 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, ArrowLeft, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowLeft, Loader2, X } from 'lucide-react';
 import { useLancamentosRealizados, LancamentoInput } from '@/hooks/useLancamentosRealizados';
 import { useTransactionCategories } from '@/hooks/useTransactionCategories';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import type { EnrichTransactionResponse } from '@/types/enrichTransaction';
 
 type TransactionType = 'receita' | 'despesa' | null;
 
@@ -47,8 +49,15 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
 }) => {
   const { addLancamento, loading } = useLancamentosRealizados();
   const { incomeCategories, expenseGroups, expenseItems, isLoading: loadingCategories } = useTransactionCategories();
-  
+
+  const categoryTouchedByUserRef = useRef(false);
+  const enrichRequestRef = useRef(0);
+
   const [transactionType, setTransactionType] = useState<TransactionType>(defaultType);
+  const [enrichLoading, setEnrichLoading] = useState(false);
+  const [aiChip, setAiChip] = useState<{ categoryName: string } | null>(null);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+
   const [formData, setFormData] = useState({
     nome: '',
     valor: 0,
@@ -66,6 +75,11 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
   );
 
   const resetForm = () => {
+    categoryTouchedByUserRef.current = false;
+    enrichRequestRef.current = 0;
+    setEnrichLoading(false);
+    setAiChip(null);
+    setSuggestionDismissed(false);
     setFormData({
       nome: '',
       valor: 0,
@@ -102,6 +116,10 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
     const lancamentoInput: LancamentoInput = {
       tipo: transactionType as 'receita' | 'despesa',
       categoria: formData.categoria,
+      category_id:
+        transactionType === 'despesa' && formData.categoriaId
+          ? formData.categoriaId
+          : undefined,
       nome: formData.nome.trim(),
       valor_previsto: formData.valor,
       valor_realizado: formData.valor,
@@ -128,6 +146,66 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
       setTransactionType(defaultType);
     }
   }, [open, defaultType]);
+
+  const handleDescriptionBlur = useCallback(async () => {
+    if (!transactionType) return;
+    if (categoryTouchedByUserRef.current) return;
+    const desc = formData.nome.trim();
+    if (desc.length < 4) return;
+
+    const req = ++enrichRequestRef.current;
+    setEnrichLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-transaction', {
+        body: {
+          description: desc,
+          amount: formData.valor > 0 ? formData.valor : undefined,
+        },
+      });
+      if (req !== enrichRequestRef.current) return;
+      if (error) return;
+      const payload = data as EnrichTransactionResponse | null;
+      const suggestion = payload?.suggestion;
+      if (!suggestion?.category_id) return;
+      if (categoryTouchedByUserRef.current) return;
+
+      setAiChip({ categoryName: suggestion.category_name });
+      setSuggestionDismissed(false);
+
+      if (transactionType === 'despesa') {
+        const item =
+          expenseItems.find((i) => i.categoryId === suggestion.category_id) ||
+          expenseItems.find(
+            (i) =>
+              !!suggestion.category_name &&
+              i.categoryName.toLowerCase() === suggestion.category_name.toLowerCase()
+          );
+        if (item) {
+          setFormData((prev) => ({
+            ...prev,
+            categoria: item.categoryName,
+            categoriaId: item.categoryId,
+            expenseNature: item.expenseNature || 'variable',
+          }));
+        }
+      } else {
+        const income =
+          incomeCategories.find((i) => i.id === suggestion.category_id) ||
+          incomeCategories.find(
+            (i) =>
+              suggestion.category_name &&
+              i.name.toLowerCase() === suggestion.category_name.toLowerCase()
+          );
+        if (income) {
+          setFormData((prev) => ({ ...prev, categoria: income.name }));
+        }
+      }
+    } catch {
+      /* feature off ou rede — silencioso */
+    } finally {
+      if (req === enrichRequestRef.current) setEnrichLoading(false);
+    }
+  }, [transactionType, formData.nome, formData.valor, expenseItems, incomeCategories]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -173,13 +251,40 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="nome">Descrição *</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="nome">Descrição *</Label>
+                  {enrichLoading && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" aria-hidden />
+                  )}
+                </div>
                 <Input
                   id="nome"
                   placeholder={transactionType === 'receita' ? 'Ex: Salário, Freelance...' : 'Ex: Supermercado, Uber...'}
                   value={formData.nome}
-                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, nome: e.target.value }))}
+                  onBlur={handleDescriptionBlur}
                 />
+                {aiChip && !suggestionDismissed && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+                      <span aria-hidden>💡</span>
+                      <span>
+                        Sugerido pela IA: <span className="font-medium text-foreground">{aiChip.categoryName}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="rounded p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5"
+                        aria-label="Descartar sugestão"
+                        onClick={() => {
+                          setSuggestionDismissed(true);
+                          setAiChip(null);
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -202,6 +307,7 @@ export const QuickTransactionDialog: React.FC<QuickTransactionDialogProps> = ({
                   <Select
                     value={formData.categoria}
                     onValueChange={(value) => {
+                      categoryTouchedByUserRef.current = true;
                       if (transactionType === 'despesa') {
                         // Find the expense item to get expense_nature
                         const expenseItem = expenseItems.find(item => item.categoryName === value);

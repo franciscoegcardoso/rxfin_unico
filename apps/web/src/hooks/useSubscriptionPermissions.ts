@@ -23,6 +23,17 @@ interface PageWithPlan {
   is_active_users: boolean;
 }
 
+/** Agrupa sub-rotas à página canônica do `pages.path` no Supabase (ex.: /planejamento-mensal/metas → /planejamento-mensal). */
+function canonicalPathForPageLookup(route: string): string {
+  const raw = route.split('?')[0];
+  const r = raw.replace(/\/+$/, '') || '/';
+  if (r === '/planejamento-mensal' || r.startsWith('/planejamento-mensal/')) return '/planejamento-mensal';
+  if (r === '/planejamento' || r.startsWith('/planejamento/')) return '/planejamento-mensal';
+  if (r === '/planejamento-anual' || r.startsWith('/planejamento-anual/')) return '/planejamento-anual';
+  if (r === '/meu-ir' || r.startsWith('/meu-ir/')) return '/meu-ir';
+  return r;
+}
+
 export const useSubscriptionPermissions = () => {
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
@@ -110,7 +121,8 @@ export const useSubscriptionPermissions = () => {
     if (impersonationContext?.impersonatedRole === 'admin') return true;
     if (!impersonationContext?.isImpersonating && isAdmin) return true;
 
-    const page = pages.find((p) => p.path === route);
+    const lookup = canonicalPathForPageLookup(route);
+    const page = pages.find((p) => p.path === lookup);
     if (!page) return true;
     if (!page.is_active_users) return false;
 
@@ -120,7 +132,8 @@ export const useSubscriptionPermissions = () => {
   };
 
   const getRequiredPlanForRoute = (route: string): string | null => {
-    const page = pages.find((p) => p.path === route);
+    const lookup = canonicalPathForPageLookup(route);
+    const page = pages.find((p) => p.path === lookup);
     return page?.min_plan_slug || null;
   };
 

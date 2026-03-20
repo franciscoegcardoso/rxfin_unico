@@ -45,6 +45,7 @@ import { PainelMoedas } from '@/components/investimentos/PainelMoedas';
 import { GraficoEvolucao } from '@/components/investimentos/GraficoEvolucao';
 import { TabelaEvolucaoAnual } from '@/components/investimentos/TabelaEvolucaoAnual';
 import { RentabilidadeComparada } from '@/components/investimentos/RentabilidadeComparada';
+import { VisoesComplementares } from '@/components/investimentos/VisoesComplementares';
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos';
 import type { InvestmentGroupView } from '@/components/investimentos/types';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -182,6 +183,10 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     allInvestments,
     syncAlertRows,
     onboardingStatus,
+    snapshotHistory,
+    annualEvolution,
+    benchmarks,
+    performanceSummary,
   } = usePluggyInvestments();
 
   const queryClient = useQueryClient();
@@ -614,6 +619,13 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
           )}
         </CardContent>
       </Card>
+
+      <VisoesComplementares
+        snapshotHistory={snapshotHistory}
+        annualEvolution={annualEvolution}
+        benchmarks={benchmarks}
+        performanceSummary={performanceSummary}
+      />
 
       {showRpcListSkeleton ? (
         <div className="w-full rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">

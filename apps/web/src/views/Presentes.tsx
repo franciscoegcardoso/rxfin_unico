@@ -575,7 +575,7 @@ export const Presentes: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="space-y-1">
-            <BackLink to="/planejamento" label="Planejamento" className="mb-1" />
+            <BackLink to="/planejamento-mensal" label="Planejamento" className="mb-1" />
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">Presentes</h1>
               <PageHelpSlideDialog content={PAGE_HELP_SLIDE_CONTENT.listaPresentes} />

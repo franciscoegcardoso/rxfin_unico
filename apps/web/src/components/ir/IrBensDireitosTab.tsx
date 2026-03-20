@@ -80,7 +80,11 @@ export interface IrBensDireitosTabProps {
   onNavigateToReconcile?: () => void;
 }
 
-function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosTabProps) {
+function IrBensDireitosTab({
+  anoCalendario: anoCalendarioProp,
+  onImportIRClick,
+  onNavigateToReconcile,
+}: IrBensDireitosTabProps) {
   const [anoSelecionado, setAnoSelecionado] = useState<number | null>(anoCalendarioProp ?? null);
   const [data, setData] = useState<IrBensDireitos | null>(null);
   const [loading, setLoading] = useState(true);
@@ -156,9 +160,15 @@ function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosT
         <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
         <p className="text-sm font-medium text-foreground mb-1">Importe seu IR para ver os bens declarados</p>
         <p className="text-xs text-muted-foreground mb-4">Acesse Meu IR e importe sua declaração.</p>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/meu-ir">Ir para Meu IR</Link>
-        </Button>
+        {onImportIRClick ? (
+          <Button type="button" variant="outline" size="sm" onClick={onImportIRClick}>
+            Importar declaração
+          </Button>
+        ) : (
+          <Button asChild variant="outline" size="sm">
+            <Link to="/meu-ir">Ir para Meu IR</Link>
+          </Button>
+        )}
       </div>
     );
   }
@@ -166,6 +176,11 @@ function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosT
   const anos = data.anos_disponiveis ?? [];
   const tot = data.totais;
   const hasBens = (data.grupos?.length ?? 0) > 0 && data.grupos.some((g) => (g.bens?.length ?? 0) > 0);
+  const pendingReconcileCount =
+    data.grupos?.reduce(
+      (acc, g) => acc + (g.bens?.filter((b) => b.reconciliation_status === 'pending').length ?? 0),
+      0
+    ) ?? 0;
 
   if (!hasBens) {
     return (
@@ -244,6 +259,14 @@ function IrBensDireitosTab({ anoCalendario: anoCalendarioProp }: IrBensDireitosT
               variant={(tot.bens_sem_valor_mercado ?? 0) > 0 ? 'amber' : 'neutral'}
             />
           </div>
+
+          {onNavigateToReconcile && pendingReconcileCount > 0 && (
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" size="sm" onClick={onNavigateToReconcile}>
+                Reconciliar {pendingReconcileCount} pendente{pendingReconcileCount !== 1 ? 's' : ''}
+              </Button>
+            </div>
+          )}
 
           <Accordion type="multiple" className="w-full space-y-2">
             {data.grupos?.map((grupo) => (

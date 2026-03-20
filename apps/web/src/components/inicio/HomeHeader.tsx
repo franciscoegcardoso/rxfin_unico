@@ -4,7 +4,19 @@ import { ptBR } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRealtimeBalance, getTotalCheckingBalance } from '@/hooks/useRealtimeBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
+import { allBalancesFresh } from '@/utils/formatBalance';
+import { BalanceLiveStatusBadge } from '@/components/inicio/BalanceLiveStatusBadge';
 import { cn } from '@/lib/utils';
+
+function filterCheckingAccounts<T extends { type: string; subtype: string | null }>(
+  accounts: T[]
+): T[] {
+  return accounts.filter(
+    (a) =>
+      a.type === 'BANK' &&
+      (a.subtype === 'CHECKING_ACCOUNT' || (a.subtype ?? '').toLowerCase().includes('checking'))
+  );
+}
 
 const formatCurrency = (value: number, isHidden: boolean) => {
   if (isHidden) return '••••••';
@@ -107,18 +119,23 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             >
               Saldo em contas
             </p>
-            <p
-              className="tabular-nums mt-0.5"
-              style={{
-                fontSize: '22px',
-                fontWeight: 600,
-                letterSpacing: '-0.02em',
-                fontFamily: 'var(--font-numeric)',
-                color: 'hsl(var(--color-text-primary))',
-              }}
-            >
-              {formatCurrency(totalChecking, isHidden)}
-            </p>
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 mt-0.5">
+              <p
+                className="tabular-nums"
+                style={{
+                  fontSize: '22px',
+                  fontWeight: 600,
+                  letterSpacing: '-0.02em',
+                  fontFamily: 'var(--font-numeric)',
+                  color: 'hsl(var(--color-text-primary))',
+                }}
+              >
+                {formatCurrency(totalChecking, isHidden)}
+              </p>
+              {showBalanceFreshnessBadge && (
+                <BalanceLiveStatusBadge live={headerBalanceLive} />
+              )}
+            </div>
           </div>
         )}
       </div>

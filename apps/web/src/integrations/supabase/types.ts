@@ -386,6 +386,7 @@ export type Database = {
           id: string
           model_used: string
           session_type: string
+          source_page: string | null
           started_at: string
           status: string
           token_limit: number
@@ -400,6 +401,7 @@ export type Database = {
           id?: string
           model_used?: string
           session_type?: string
+          source_page?: string | null
           started_at?: string
           status?: string
           token_limit?: number
@@ -414,6 +416,7 @@ export type Database = {
           id?: string
           model_used?: string
           session_type?: string
+          source_page?: string | null
           started_at?: string
           status?: string
           token_limit?: number

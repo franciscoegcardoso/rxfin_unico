@@ -65,7 +65,7 @@ export const AcoesImediatas: React.FC = () => {
           Configurar
         </Badge>
       ) : null,
-      href: '/planejamento/metas',
+      href: '/planejamento-mensal/metas',
     },
   ];
 

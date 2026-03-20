@@ -1317,7 +1317,7 @@ export const Parametros: React.FC = () => {
                 onClick={() => {
                   setDependencyBlockOpen(false);
                   setIncomeToDelete(null);
-                  navigate('/planejamento');
+                  navigate('/planejamento-mensal');
                 }}
               >
                 Ir para Planejamento
@@ -1379,7 +1379,7 @@ export const Parametros: React.FC = () => {
                 onClick={() => {
                   setExpenseDependencyBlockOpen(false);
                   setExpenseToDelete(null);
-                  navigate('/planejamento');
+                  navigate('/planejamento-mensal');
                 }}
               >
                 Ir para Planejamento

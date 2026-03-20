@@ -128,6 +128,11 @@ export function RaioXChat() {
     }
   }, [shouldStartAIOnboarding]);
 
+  // Página dedicada /cibelia: abre o painel automaticamente
+  useEffect(() => {
+    if (pathname === '/cibelia') setIsOpen(true);
+  }, [pathname]);
+
   // Register onboarding_started event once per session
   useEffect(() => {
     if (!user?.id || !sessionId || hasRegisteredOnboardingRef.current) return;
@@ -192,13 +197,15 @@ export function RaioXChat() {
     const completed = profile?.onboarding_completed ?? false;
     setOnboardingCompleted(completed);
 
-    const sessionType = completed ? 'consulta' : 'onboarding';
+    /** standalone = rota /cibelia; widget = bolha global no restante do app */
+    const sessionTypeUi = pathname === '/cibelia' ? 'standalone' : 'widget';
 
     const { data, error } = await supabase
       .from('ai_chat_sessions')
       .insert({
         user_id: user.id,
-        session_type: sessionType,
+        session_type: sessionTypeUi,
+        source_page: pathname,
         model_used: model.id,
         status: 'active',
         token_limit: model.tokenLimit,
@@ -240,7 +247,7 @@ export function RaioXChat() {
     }
 
     return { sessionId: newSessionId, onboardingCompleted: completed };
-  }, [user?.id, sessionId, onboardingCompleted]);
+  }, [user?.id, sessionId, onboardingCompleted, pathname, model.id, model.tokenLimit]);
 
   // Send onboarding greeting when chat opens for first time
   useEffect(() => {

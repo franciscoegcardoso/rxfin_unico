@@ -59,7 +59,7 @@ export const AVAILABLE_FEATURES: FeatureDefinition[] = [
     icon: 'Target',
     category: 'planejamento',
     defaultEnabled: true,
-    routes: ['/planejamento?tab=metas'],
+    routes: ['/planejamento-mensal/metas', '/planejamento?tab=metas'],
   },
   {
     slug: 'sonhos',
@@ -77,7 +77,7 @@ export const AVAILABLE_FEATURES: FeatureDefinition[] = [
     icon: 'Calendar',
     category: 'planejamento',
     defaultEnabled: true,
-    routes: ['/planejamento'],
+    routes: ['/planejamento-mensal', '/planejamento'],
   },
   {
     slug: 'planejamento-anual',

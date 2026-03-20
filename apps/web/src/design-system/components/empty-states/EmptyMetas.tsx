@@ -10,7 +10,7 @@ export interface EmptyMetasProps {
 
 export const EmptyMetas: React.FC<EmptyMetasProps> = ({
   className,
-  ctaHref = '/planejamento',
+  ctaHref = '/planejamento-mensal',
 }) => (
   <div
     className={cn(

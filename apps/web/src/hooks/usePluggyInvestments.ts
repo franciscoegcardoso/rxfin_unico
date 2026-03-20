@@ -7,14 +7,95 @@ import type {
   InvestmentTotalsV2,
   InvestmentSummaryV3Row,
   OnboardingStatus,
+  SnapshotPoint,
+  AnnualRow,
+  Benchmarks,
+  BenchmarkPeriod,
+  PerformanceSummary,
 } from '@/types/investments';
 
-/** Resposta de `get_investments_page_data` (consolida summary, totals, sync, onboarding). */
+/** Resposta de `get_investments_page_data` (consolida summary, totals, sync, onboarding, visões). */
 interface GetInvestmentsPageDataResult {
   summary?: InvestmentSummaryV3Row[] | null;
   totals?: Record<string, unknown>[] | null;
   sync_status?: SyncStatusRow[] | null;
   onboarding?: OnboardingStatus[] | null;
+  snapshot_history?: unknown;
+  annual_evolution?: unknown;
+  benchmarks?: unknown;
+  performance_summary?: unknown;
+}
+
+function parseBenchmarkPeriod(o: unknown): BenchmarkPeriod {
+  const r = (o && typeof o === 'object' ? o : {}) as Record<string, unknown>;
+  return {
+    no_mes: Number(r.no_mes ?? 0),
+    no_semestre: Number(r.no_semestre ?? 0),
+    no_ano: Number(r.no_ano ?? 0),
+    doze_meses: Number(r.doze_meses ?? 0),
+    desde_inicio: Number(r.desde_inicio ?? 0),
+  };
+}
+
+function parseBenchmarks(raw: unknown): Benchmarks | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const b = raw as Record<string, unknown>;
+  if (!b.cdi || !b.ipca || !b.ibovespa) return null;
+  return {
+    cdi: parseBenchmarkPeriod(b.cdi),
+    ipca: parseBenchmarkPeriod(b.ipca),
+    ibovespa: parseBenchmarkPeriod(b.ibovespa),
+  };
+}
+
+function parseSnapshotHistory(raw: unknown): SnapshotPoint[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((p) => {
+      const o = p as Record<string, unknown>;
+      const bc = o.by_class;
+      const by_class: SnapshotPoint['by_class'] = {};
+      if (bc && typeof bc === 'object' && !Array.isArray(bc)) {
+        for (const [k, v] of Object.entries(bc as Record<string, unknown>)) {
+          const n = Number(v);
+          if (!Number.isNaN(n)) by_class[k] = n;
+        }
+      }
+      return {
+        date: String(o.date ?? ''),
+        total_brl: Number(o.total_brl ?? 0),
+        by_class,
+      };
+    })
+    .filter((p) => p.date.length > 0);
+}
+
+function parseAnnualEvolution(raw: unknown): AnnualRow[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((p) => {
+    const o = p as Record<string, unknown>;
+    return {
+      ano: Number(o.ano ?? 0),
+      aportes: Number(o.aportes ?? 0),
+      ir_pago: Number(o.ir_pago ?? 0),
+      iof_pago: Number(o.iof_pago ?? 0),
+      cdi_pct: Number(o.cdi_pct ?? 0),
+      ipca_pct: Number(o.ipca_pct ?? 0),
+    };
+  });
+}
+
+function parsePerformanceSummary(raw: unknown): PerformanceSummary | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  return {
+    patrimonio_atual: Number(o.patrimonio_atual ?? 0),
+    total_aplicado: Number(o.total_aplicado ?? 0),
+    total_ir_retido: Number(o.total_ir_retido ?? 0),
+    primeira_aportacao: String(o.primeira_aportacao ?? ''),
+    data_referencia: String(o.data_referencia ?? ''),
+    snapshot_count: Number(o.snapshot_count ?? 0),
+  };
 }
 
 export const PLUGGY_INVESTMENTS_QUERY_KEY = 'pluggy-investments-page' as const;
@@ -165,6 +246,10 @@ export interface PluggyInvestmentsQueryResult {
   summary: InvestmentSummary[];
   totalBalance: number;
   hasSyncedData: boolean;
+  snapshotHistory: SnapshotPoint[];
+  annualEvolution: AnnualRow[];
+  benchmarks: Benchmarks | null;
+  performanceSummary: PerformanceSummary | null;
 }
 
 async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestmentsQueryResult> {
@@ -182,6 +267,10 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
   let tot: InvestmentTotalsV2 | null = null;
   let syncRows: SyncStatusRow[] = [];
   let onboarding: OnboardingStatus | null = null;
+  let snapshotHistory: SnapshotPoint[] = [];
+  let annualEvolution: AnnualRow[] = [];
+  let benchmarks: Benchmarks | null = null;
+  let performanceSummary: PerformanceSummary | null = null;
 
   const pageDataResult = await supabase.rpc('get_investments_page_data', { p_user_id: userId });
   const pageData = pageDataResult.data as GetInvestmentsPageDataResult | null;
@@ -225,6 +314,10 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
         sync_coverage_pct: row.sync_coverage_pct != null ? Number(row.sync_coverage_pct) : null,
       };
     }
+    snapshotHistory = parseSnapshotHistory(pageData.snapshot_history);
+    annualEvolution = parseAnnualEvolution(pageData.annual_evolution);
+    benchmarks = parseBenchmarks(pageData.benchmarks);
+    performanceSummary = parsePerformanceSummary(pageData.performance_summary);
   } else {
     const legacySum = await supabase.rpc('get_pluggy_investments_summary_v2', { p_user_id: userId });
     if (!legacySum.error && Array.isArray(legacySum.data)) {
@@ -284,6 +377,10 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
     summary,
     totalBalance,
     hasSyncedData,
+    snapshotHistory,
+    annualEvolution,
+    benchmarks,
+    performanceSummary,
   };
 }
 
@@ -317,6 +414,10 @@ export function usePluggyInvestments() {
   const syncStatusRows = data?.syncStatusRows ?? [];
   const onboardingStatus = data?.onboardingStatus ?? null;
   const hasSyncedData = data?.hasSyncedData ?? false;
+  const snapshotHistory = data?.snapshotHistory ?? [];
+  const annualEvolution = data?.annualEvolution ?? [];
+  const benchmarks = data?.benchmarks ?? null;
+  const performanceSummary = data?.performanceSummary ?? null;
 
   /** Só “carregando” no primeiro fetch; refetch em background não esconde dados. */
   const loading = query.isPending || (query.isFetching && !data);
@@ -432,5 +533,9 @@ export function usePluggyInvestments() {
     hasActiveFilters,
     allInvestments: investments,
     summaryByCategory,
+    snapshotHistory,
+    annualEvolution,
+    benchmarks,
+    performanceSummary,
   };
 }

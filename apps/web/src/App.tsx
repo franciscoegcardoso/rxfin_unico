@@ -71,7 +71,10 @@ const PlanejamentoLayout = lazy(() => import("./pages/planejamento/PlanejamentoL
 const VisaoMensalTab = lazy(() => import("./pages/Planejamento"));
 const MetasTab = lazy(() => import("./pages/planejamento/MetasTab"));
 const AnalisesTab = lazy(() => import("./pages/planejamento/AnalisesTab"));
-const PlanejamentoAnual = lazy(() => import("./pages/PlanejamentoAnual"));
+const PlanejamentoAnualLayout = lazy(() => import("./pages/planejamento-anual/PlanejamentoAnualLayout"));
+const PlanejamentoAnualVisaoGeral = lazy(() => import("./pages/planejamento-anual/PlanejamentoAnualVisaoGeral"));
+const PlanoAnualTab = lazy(() => import("./pages/planejamento-anual/PlanoAnualTab"));
+const Plano30AnosTab = lazy(() => import("./pages/planejamento-anual/Plano30AnosTab"));
 
 const FluxoFinanceiro = lazy(() => import("./pages/FluxoFinanceiro"));
 const FinanceiroLayout = lazy(() => import("./pages/financeiro/FinanceiroLayout"));
@@ -98,7 +101,10 @@ const PortabilidadeCredito = lazy(() => import("./pages/renegociacao/Portabilida
 const ConsolidacaoDividas = lazy(() => import("./pages/renegociacao/ConsolidacaoDividas"));
 
 const GestaoVeiculos = lazy(() => import("./pages/GestaoVeiculos"));
-const MeuIR = lazy(() => import("./pages/MeuIR"));
+const MeuIRLayout = lazy(() => import("./pages/meu-ir/MeuIRLayout"));
+const MeuIROrganizar = lazy(() => import("./pages/meu-ir/MeuIROrganizar"));
+const MeuIRHistorico = lazy(() => import("./pages/meu-ir/MeuIRHistorico"));
+const CibeliaPage = lazy(() => import("./pages/CibeliaPage"));
 const ConfiguracoesFiscais = lazy(() => import("./pages/ConfiguracoesFiscais"));
 const Seguros = lazy(() => import("./pages/Seguros"));
 const Presentes = lazy(() => import("./pages/Presentes"));
@@ -238,7 +244,7 @@ const App = () => (
                                     <Route path="seguros" element={<SegurosTab />} />
                                     <Route path="participacoes" element={<ParticipacaoTab />} />
                                     <Route path="intangiveis" element={<IntangiveisTab />} />
-                                    <Route path="historico-ir" element={<Navigate to="/meu-ir/historico-ir" replace />} />
+                                    <Route path="historico-ir" element={<Navigate to="/meu-ir/historico" replace />} />
                                   </Route>
 
                                   <Route path="passivos" element={<PassivosPage />}>
@@ -250,15 +256,24 @@ const App = () => (
                                   </Route>
                                   <Route path="cartao-credito" element={<Navigate to="/movimentacoes/cartao-credito" replace />} />
 
-                                  <Route path="planejamento" element={<PlanejamentoLayout />}>
-                                    <Route index element={<Navigate to="visao-mensal" replace />} />
-                                    <Route path="visao-mensal" element={<VisaoMensalTab />} />
+                                  <Route path="planejamento-mensal" element={<PlanejamentoLayout />}>
+                                    <Route index element={<VisaoMensalTab />} />
                                     <Route path="metas" element={<MetasTab />} />
                                     <Route path="analises" element={<AnalisesTab />} />
                                   </Route>
-                                  <Route path="planejamento-anual" element={<PlanejamentoAnual />} />
+                                  <Route path="planejamento" element={<Navigate to="/planejamento-mensal" replace />} />
+                                  <Route path="planejamento/visao-mensal" element={<Navigate to="/planejamento-mensal" replace />} />
+                                  <Route path="planejamento/metas" element={<Navigate to="/planejamento-mensal/metas" replace />} />
+                                  <Route path="planejamento/analises" element={<Navigate to="/planejamento-mensal/analises" replace />} />
+                                  <Route path="planejamento-anual" element={<PlanejamentoAnualLayout />}>
+                                    <Route index element={<PlanejamentoAnualVisaoGeral />} />
+                                    <Route path="plano2anos" element={<PlanoAnualTab />} />
+                                    <Route path="plano30anos" element={<Plano30AnosTab />} />
+                                    <Route path="plano-anual" element={<Navigate to="/planejamento-anual/plano2anos" replace />} />
+                                    <Route path="plano-30-anos" element={<Navigate to="/planejamento-anual/plano30anos" replace />} />
+                                  </Route>
                                   <Route path="planejamento-cartao" element={<Navigate to="/movimentacoes/cartao-credito" replace />} />
-                                  <Route path="metas-mensais" element={<Navigate to="/planejamento?tab=metas" replace />} />
+                                  <Route path="metas-mensais" element={<Navigate to="/planejamento-mensal/metas" replace />} />
 
                                   <Route path="registro-compras" element={<RegistroCompras />} />
                                   <Route path="compras" element={<Navigate to="/registro-compras" replace />} />
@@ -308,8 +323,16 @@ const App = () => (
                                   <Route path="presentes" element={<Presentes />} />
                                   <Route path="rx-split" element={<RXSplit />} />
                                   <Route path="dividir-conta" element={<DividirConta />} />
-                                  <Route path="meu-ir" element={<MeuIR />} />
-                                  <Route path="meu-ir/historico-ir" element={<MeuIR defaultTab="historico-ir" />} />
+                                  <Route path="meu-ir" element={<MeuIRLayout />}>
+                                    <Route index element={<MeuIROrganizar />} />
+                                    <Route path="historico" element={<MeuIRHistorico />} />
+                                    <Route
+                                      path="bens-direitos"
+                                      element={<Navigate to="/meu-ir/historico" state={{ scrollTo: 'bens' }} replace />}
+                                    />
+                                    <Route path="historico-ir" element={<Navigate to="/meu-ir/historico" replace />} />
+                                  </Route>
+                                  <Route path="cibelia" element={<CibeliaPage />} />
                                 </Route>
 
                                 <Route path="/perfil" element={<Navigate to="/minha-conta?tab=perfil" replace />} />

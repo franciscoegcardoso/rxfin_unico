@@ -185,7 +185,7 @@ export const BlockD: React.FC<BlockDProps> = ({
           </p>
           <div className="space-y-2">
             {[
-              { label: 'Visão Mensal do Fluxo', route: '/planejamento/visao-mensal' },
+              { label: 'Visão Mensal do Fluxo', route: '/planejamento-mensal' },
               { label: 'Planejamento Anual', route: '/planejamento-anual' },
               { label: 'Bens & Investimentos', route: '/bens-investimentos' },
             ].map(({ label, route }) => (

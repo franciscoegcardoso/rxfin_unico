@@ -182,7 +182,7 @@ const QuickActionsSection: React.FC<{
     { 
       icon: <FileText className="h-6 w-6 text-nubank-foreground" />, 
       label: 'Extrato',
-      onClick: () => navigate('/planejamento')
+      onClick: () => navigate('/planejamento-mensal')
     },
     { 
       icon: <Settings className="h-6 w-6 text-nubank-foreground" />, 
@@ -192,7 +192,7 @@ const QuickActionsSection: React.FC<{
     { 
       icon: <History className="h-6 w-6 text-nubank-foreground" />, 
       label: 'Histórico',
-      onClick: () => navigate('/planejamento')
+      onClick: () => navigate('/planejamento-mensal')
     },
   ];
 

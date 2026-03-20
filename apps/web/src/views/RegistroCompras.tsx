@@ -509,7 +509,7 @@ const RegistroCompras: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <BackLink to="/planejamento" label="Voltar ao Planejamento" />
+            <BackLink to="/planejamento-mensal" label="Voltar ao Planejamento" />
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <ShoppingCart className="h-6 w-6 text-primary" />

@@ -158,11 +158,24 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
   }, []);
 
   const handleConnect = useCallback(async () => {
-    console.log('handleConnect called, scriptLoaded:', scriptLoaded, 'PluggyConnect:', !!window.PluggyConnect);
-    if (!scriptLoaded) { toast({ title: 'Aguarde', description: 'Carregando widget de conexão...' }); return; }
+    console.log(
+      'handleConnect called, scriptLoadedRef:',
+      scriptLoadedRef.current,
+      'PluggyConnect:',
+      !!window.PluggyConnect
+    );
+    // Ref é síncrona após detectar script no DOM; state scriptLoaded pode atrasar 1 frame (re-montagem com key).
+    if (!scriptLoadedRef.current && !window.PluggyConnect) {
+      toast({ title: 'Aguarde', description: 'Carregando widget de conexão...' });
+      return;
+    }
     if (!window.PluggyConnect) {
       console.error('Pluggy Connect not available on window');
-      toast({ title: 'Erro', description: 'Widget de conexão não disponível. Recarregue a página.', variant: 'destructive' });
+      toast({
+        title: 'Erro',
+        description: 'Widget de conexão não disponível. Recarregue a página.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -242,9 +255,10 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
         variant: 'destructive',
       });
     }
-  }, [scriptLoaded, getConnectToken, saveConnection, triggerSync, onSuccess, onSaving, updateItemId, selectedConnectorId, toast]);
+  }, [getConnectToken, saveConnection, triggerSync, onSuccess, onSaving, updateItemId, selectedConnectorId, toast]);
 
-  const buttonDisabled = isLoading || isOpening || !scriptLoaded;
+  const pluggyReady = typeof window !== 'undefined' && !!window.PluggyConnect;
+  const buttonDisabled = isLoading || isOpening || (!scriptLoaded && !pluggyReady);
 
   return (
     <Button
@@ -258,11 +272,20 @@ export const PluggyConnectButton: React.FC<PluggyConnectButtonProps> = ({
       className={className}
     >
       {isLoading || isOpening ? (
-        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{isOpening ? 'Abrindo...' : 'Conectando...'}</>
-      ) : !scriptLoaded ? (
-        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Carregando...</>
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          {isOpening ? 'Abrindo...' : 'Conectando...'}
+        </>
+      ) : !scriptLoaded && !pluggyReady ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Carregando...
+        </>
       ) : (
-        <><Link2 className="mr-2 h-4 w-4" />{updateItemId ? 'Reconectar' : 'Conectar Banco'}</>
+        <>
+          <Link2 className="mr-2 h-4 w-4" />
+          {updateItemId ? 'Reconectar' : 'Conectar Banco'}
+        </>
       )}
     </Button>
   );

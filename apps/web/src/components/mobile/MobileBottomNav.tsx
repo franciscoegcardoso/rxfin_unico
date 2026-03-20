@@ -29,13 +29,13 @@ const navItems: NavItem[] = [
   { icon: Home, label: 'Início', path: '/inicio' },
   { icon: Building2, label: 'Patrimônio', path: '/bens-investimentos' },
   // FAB placeholder
-  { icon: CalendarRange, label: 'Planejar', path: '/planejamento' },
+  { icon: CalendarRange, label: 'Planejar', path: '/planejamento-mensal' },
   { icon: Menu, label: 'Mais', path: '' },
 ];
 
 // Map routes to human-readable feature names
 const ROUTE_FEATURE_NAMES: Record<string, string> = {
-  '/planejamento': 'Planejamento Mensal',
+  '/planejamento-mensal': 'Planejamento Mensal',
   '/bens-investimentos': 'Patrimônio',
 };
 
@@ -48,7 +48,7 @@ export const MobileBottomNav: React.FC = () => {
   
   // Check availability for each path
   const inicioAvailability = usePageAvailability('/inicio');
-  const planejamentoAvailability = usePageAvailability('/planejamento');
+  const planejamentoAvailability = usePageAvailability('/planejamento-mensal');
   const patrimonioAvailability = usePageAvailability('/bens-investimentos');
 
   const isActive = (path: string) => {
@@ -63,15 +63,15 @@ export const MobileBottomNav: React.FC = () => {
 
   const isComingSoon = (path: string) => {
     if (path === '/inicio') return !inicioAvailability.isAvailable;
-    if (path === '/planejamento') return !planejamentoAvailability.isAvailable;
-    if (path === '/bens-investimentos') return !patrimonioAvailability.isAvailable;
+    if (path === '/planejamento-mensal') return !planejamentoAvailability.isAvailable;
+if (path === '/bens-investimentos') return !patrimonioAvailability.isAvailable;
     return false;
   };
 
   const canAdminBypass = (path: string) => {
     if (path === '/inicio') return inicioAvailability.canAdminBypass;
-    if (path === '/planejamento') return planejamentoAvailability.canAdminBypass;
-    if (path === '/bens-investimentos') return patrimonioAvailability.canAdminBypass;
+    if (path === '/planejamento-mensal') return planejamentoAvailability.canAdminBypass;
+if (path === '/bens-investimentos') return patrimonioAvailability.canAdminBypass;
     return false;
   };
 

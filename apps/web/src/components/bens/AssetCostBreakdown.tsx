@@ -236,7 +236,7 @@ export const AssetCostBreakdown: React.FC<AssetCostBreakdownProps> = ({ assets }
     toast.success(`"${itemName}" adicionado ao planejamento com projeção de ${formatCurrency(monthlyValue)}/mês!`, {
       action: {
         label: 'Ver Planejamento',
-        onClick: () => navigate('/planejamento'),
+        onClick: () => navigate('/planejamento-mensal'),
       },
     });
   };
@@ -283,7 +283,7 @@ export const AssetCostBreakdown: React.FC<AssetCostBreakdownProps> = ({ assets }
       );
       
       toast.success(`"${itemName}" adicionado com projeção de ${formatCurrency(monthlyValue)}/mês!`, {
-        action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento') },
+        action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento-mensal') },
       });
     } else {
       const selectedMonthsLabels = costConfig.selectedMonths.map(m => months[m - 1]).join(', ');
@@ -314,7 +314,7 @@ export const AssetCostBreakdown: React.FC<AssetCostBreakdownProps> = ({ assets }
         `"${expense.name}" configurado para ${costConfig.selectedMonths.length} mês(es)!`,
         {
           description: `Valor: ${formatCurrency(valuePerMonth)} por parcela - Projeção automática ativada`,
-          action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento') },
+          action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento-mensal') },
         }
       );
     }
@@ -381,7 +381,7 @@ export const AssetCostBreakdown: React.FC<AssetCostBreakdownProps> = ({ assets }
 
     toast.success(`"${expense.name}" vinculado ao planejamento!`, {
       description: `Média mensal: ${formatCurrency(monthlyAvg)}`,
-      action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento') },
+      action: { label: 'Ver Planejamento', onClick: () => navigate('/planejamento-mensal') },
     });
   };
 

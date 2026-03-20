@@ -245,7 +245,7 @@ const PlanejamentoAnual: React.FC = () => {
                           key={row.monthKey}
                           role="button"
                           tabIndex={0}
-                          onClick={() => navigate(`/planejamento/visao-mensal?mes=${row.monthKey}`)}
+                          onClick={() => navigate(`/planejamento-mensal?mes=${row.monthKey}`)}
                           className={cn(
                             'rounded-xl border border-border bg-card p-3 min-w-[140px] md:min-w-0 shrink-0 cursor-pointer select-none transition-transform',
                             isHighlighted && 'ring-2 ring-primary animate-pulse',
@@ -256,7 +256,7 @@ const PlanejamentoAnual: React.FC = () => {
                           )}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
-                              navigate(`/planejamento/visao-mensal?mes=${row.monthKey}`);
+                              navigate(`/planejamento-mensal?mes=${row.monthKey}`);
                             }
                           }}
                         >
@@ -269,7 +269,7 @@ const PlanejamentoAnual: React.FC = () => {
                                   className="text-[10px] text-muted-foreground underline underline-offset-2 cursor-pointer hover:text-foreground transition-colors"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate('/planejamento/visao-mensal');
+                                    navigate('/planejamento-mensal');
                                   }}
                                   title="Configurar planejamento mensal"
                                 >

@@ -114,3 +114,52 @@ export interface OnboardingStatus {
   has_new_connection: boolean;
   newest_connector_name: string | null;
 }
+
+/** Histórico de snapshots (campo `snapshot_history` em get_investments_page_data). */
+export interface SnapshotPoint {
+  date: string;
+  total_brl: number;
+  by_class: {
+    renda_fixa?: number;
+    acoes?: number;
+    fii?: number;
+    internacional?: number;
+    alternativo?: number;
+    [key: string]: number | undefined;
+  };
+}
+
+/** Linha anual (campo `annual_evolution` em get_investments_page_data). */
+export interface AnnualRow {
+  ano: number;
+  aportes: number;
+  ir_pago: number;
+  iof_pago: number;
+  cdi_pct: number;
+  ipca_pct: number;
+}
+
+export interface BenchmarkPeriod {
+  no_mes: number;
+  no_semestre: number;
+  no_ano: number;
+  doze_meses: number;
+  desde_inicio: number;
+}
+
+/** Benchmarks (campo `benchmarks` em get_investments_page_data). */
+export interface Benchmarks {
+  cdi: BenchmarkPeriod;
+  ipca: BenchmarkPeriod;
+  ibovespa: BenchmarkPeriod;
+}
+
+/** Resumo de performance (campo `performance_summary` em get_investments_page_data). */
+export interface PerformanceSummary {
+  patrimonio_atual: number;
+  total_aplicado: number;
+  total_ir_retido: number;
+  primeira_aportacao: string;
+  data_referencia: string;
+  snapshot_count: number;
+}

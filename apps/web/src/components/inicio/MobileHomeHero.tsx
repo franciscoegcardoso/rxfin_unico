@@ -8,6 +8,18 @@ import { useHomeShortcuts } from '@/hooks/useHomeShortcuts';
 import { EditShortcutsDialog } from '@/components/inicio/EditShortcutsDialog';
 import { Pencil } from 'lucide-react';
 import { useRealtimeBalance, getTotalCheckingBalance } from '@/hooks/useRealtimeBalance';
+import { allBalancesFresh } from '@/utils/formatBalance';
+import { BalanceLiveStatusBadge } from '@/components/inicio/BalanceLiveStatusBadge';
+
+function filterCheckingAccounts<T extends { type: string; subtype: string | null }>(
+  accounts: T[]
+): T[] {
+  return accounts.filter(
+    (a) =>
+      a.type === 'BANK' &&
+      (a.subtype === 'CHECKING_ACCOUNT' || (a.subtype ?? '').toLowerCase().includes('checking'))
+  );
+}
 
 interface MobileHomeHeroProps {
   firstName: string;
@@ -52,9 +64,14 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName }) => 
         <div className="mb-6">
           <h1 className="text-lg font-medium text-primary-foreground">Olá, {firstName || 'Usuário'} 👋</h1>
           <p className="text-xs text-primary-foreground/70 mt-0.5">Saldo em contas</p>
-          <p className="font-numeric font-bold tracking-[-0.02em] leading-none tabular-nums text-2xl sm:text-[32px] mt-1 text-primary-foreground">
-            {balanceLoading && !balanceData ? '—' : formatCurrency(totalContas)}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+            <p className="font-numeric font-bold tracking-[-0.02em] leading-none tabular-nums text-2xl sm:text-[32px] text-primary-foreground">
+              {balanceLoading && !balanceData ? '—' : formatCurrency(totalContas)}
+            </p>
+            {showBalanceFreshnessBadge && !balanceLoading && (
+              <BalanceLiveStatusBadge live={headerBalanceLive} variant="onPrimary" />
+            )}
+          </div>
         </div>
 
         {/* Quick actions */}

@@ -397,7 +397,7 @@ export const GoalsSummaryCard: React.FC<GoalsSummaryCardProps> = ({
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/planejamento?tab=metas')}
+              onClick={() => navigate('/planejamento-mensal/metas')}
               className="gap-1 text-muted-foreground hover:text-foreground"
             >
               {hasGoals ? 'Editar' : 'Configurar'}

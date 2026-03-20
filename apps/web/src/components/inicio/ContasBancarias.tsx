@@ -1,7 +1,8 @@
 import React from 'react';
-import { useRealtimeBalance, type RealtimeBalanceAccount } from '@/hooks/useRealtimeBalance';
+import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
 import { useVisibility } from '@/contexts/VisibilityContext';
-import { formatBalanceAge } from '@/utils/formatBalance';
+import { formatBalanceAge, isRealtimeBalanceFresh } from '@/utils/formatBalance';
+import { BalanceLiveStatusBadge } from '@/components/inicio/BalanceLiveStatusBadge';
 import { ConnectorLogo } from '@/components/openfinance/ConnectorLogo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -88,12 +89,15 @@ export const ContasBancarias: React.FC = () => {
                 {getAccountTypeLabel(acc.subtype)}
               </p>
             </div>
-            <p
-              className="text-sm font-semibold tabular-nums shrink-0"
-              style={{ color: 'hsl(var(--color-text-primary))', fontFamily: 'var(--font-numeric)', letterSpacing: '-0.01em' }}
-            >
-              {formatCurrency(acc.balance ?? 0, isHidden)}
-            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <p
+                className="text-sm font-semibold tabular-nums"
+                style={{ color: 'hsl(var(--color-text-primary))', fontFamily: 'var(--font-numeric)', letterSpacing: '-0.01em' }}
+              >
+                {formatCurrency(acc.balance ?? 0, isHidden)}
+              </p>
+              <BalanceLiveStatusBadge live={isRealtimeBalanceFresh(acc)} />
+            </div>
             {acc.balance_age_minutes != null && (
               <span className="text-[10px] text-[hsl(var(--color-text-tertiary))] shrink-0">
                 {formatBalanceAge(acc.balance_age_minutes)}

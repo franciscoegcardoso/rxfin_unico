@@ -41,7 +41,7 @@ export function usePageTracking(): void {
       } catch {
         // never let tracking break the app
       }
-    }, 0);
+    }, 1500);
     return () => clearTimeout(t);
   }, [pathname]);
 }
