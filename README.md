@@ -54,6 +54,17 @@ npm run build:web
 | `typecheck` | Type check (Turbo) |
 | `test` | Testes (Turbo) |
 | `supabase:functions:deploy` | Deploy das Edge Functions (exige `SUPABASE_PROJECT_ID`) |
+| `db:types` | Regenera `apps/web/src/types/database.types.ts` a partir do projeto Supabase |
+
+## Atualizar tipos do banco
+
+Após qualquer migration, executar:
+
+```bash
+npm run db:types
+```
+
+(Isso sobrescreve `apps/web/src/types/database.types.ts`, usado pelo `createClient<Database>` do app web.)
 
 ## Deploy
 

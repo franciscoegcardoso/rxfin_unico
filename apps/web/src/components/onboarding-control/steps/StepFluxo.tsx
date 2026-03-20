@@ -56,6 +56,7 @@ export const StepFluxo: React.FC<StepFluxoProps> = ({ userId, onComplete }) => {
       transaction_type: 'despesa',
       amount: Number(valor),
       transaction_date: today,
+      // partition key — obrigatório para pruning
       reference_month: currentMonth,
       payment_date: today,
       category_name: categoria,

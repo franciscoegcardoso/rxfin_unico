@@ -450,6 +450,7 @@ export function usePluggyInvestments() {
     queryFn: () => fetchPluggyInvestmentsData(uid!),
     enabled: !!uid,
     staleTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
   });
 
   const data = query.data;

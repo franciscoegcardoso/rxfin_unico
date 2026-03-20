@@ -28,6 +28,7 @@ export function useTransactionSourceMap() {
     if (!user) return;
 
     const load = async () => {
+      // full-range intencional — sem pruning (mapa id → fonte para toda a base do usuário)
       const { data, error } = await supabase
         .from('pluggy_transactions')
         .select('pluggy_transaction_id, account_id')

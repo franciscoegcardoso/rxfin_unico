@@ -48,6 +48,7 @@ export default function LancamentosScreen() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } = useInfiniteQuery({
     queryKey: ['transactions-list', user?.id],
     queryFn: async ({ pageParam = 0 }) => {
+      // full-range intencional — sem pruning (lista paginada por transaction_date)
       const { data: rows, error } = await supabase
         .from('transactions')
         .select('id, description, amount, transaction_type, transaction_date, category_name')

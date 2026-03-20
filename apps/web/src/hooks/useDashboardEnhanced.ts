@@ -38,5 +38,7 @@ export function useDashboardEnhanced(month: string) {
       return (data as DashboardEnhancedData) ?? null;
     },
     enabled: !!user?.id && !!month,
+    staleTime: 5 * 60 * 1000, // 5 min — alinhado com TTL do rpc_cache no banco
+    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
   });
 }

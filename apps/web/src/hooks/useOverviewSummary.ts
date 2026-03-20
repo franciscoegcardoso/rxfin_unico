@@ -103,6 +103,7 @@ export function useOverviewSummary(): { data: OverviewSummaryData | undefined; i
     },
     enabled: !!userId,
     staleTime: STALE_MS,
+    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
   });
 
   const base = useMemo(() => {

@@ -27,10 +27,14 @@ const WELCOME_MESSAGE: CibeliaMessage = {
   content: 'Oi! Sou a Cibélia 😊 Como posso te ajudar aqui na entrada?',
 };
 
-const ERROR_MESSAGE: CibeliaMessage = {
-  role: 'assistant',
-  content: 'Ops, tive um probleminha. Tenta de novo daqui a pouco? 🙏',
-};
+function isAbortLikeError(err: unknown): boolean {
+  if (err == null) return false;
+  if (typeof err === 'object' && err !== null && 'name' in err && (err as { name: string }).name === 'AbortError') {
+    return true;
+  }
+  const msg = String((err as { message?: string })?.message ?? err ?? '').toLowerCase();
+  return msg.includes('abort') || msg.includes('aborted');
+}
 
 // Extrai quick replies da resposta do assistente (formato "👉 [ Op1 ] [ Op2 ]")
 function extractQuickReplies(content: string): QuickReply[] {
@@ -57,35 +61,43 @@ async function sendToCibelia(
   messages: CibeliaMessage[],
   sessionId: string
 ): Promise<string> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify({
-      messages,
-      session_id: sessionId,
-      page_context: {
-        phase: 'access',
-        path: typeof window !== 'undefined' ? window.location.pathname : '/',
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 28000);
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
       },
-    }),
-  });
+      body: JSON.stringify({
+        messages,
+        session_id: sessionId,
+        page_context: {
+          phase: 'access',
+          path: typeof window !== 'undefined' ? window.location.pathname : '/',
+        },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    throw new Error(`Erro ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status}`);
+    }
+    const data = (await response.json()) as { content?: string; session_id?: string | null };
+    const serverSessionId = data.session_id;
+    if (serverSessionId) {
+      supabase.rpc('update_chat_session_source', {
+        p_session_id: serverSessionId,
+        p_source_page: window.location.pathname,
+        p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
+      }).then(() => {}).catch(() => {});
+    }
+    return data.content as string;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  const data = (await response.json()) as { content?: string; session_id?: string | null };
-  const serverSessionId = data.session_id;
-  if (serverSessionId) {
-    supabase.rpc('update_chat_session_source', {
-      p_session_id: serverSessionId,
-      p_source_page: window.location.pathname,
-      p_session_type: window.location.pathname === '/cibelia' ? 'standalone' : 'widget',
-    }).then(() => {}).catch(() => {});
-  }
-  return data.content as string;
 }
 
 export const CibeliaAuthWidget: React.FC = () => {
@@ -134,8 +146,11 @@ export const CibeliaAuthWidget: React.FC = () => {
       if (extracted.length > 0) {
         setQuickReplies(extracted);
       }
-    } catch {
-      setMessages((prev) => [...prev, ERROR_MESSAGE]);
+    } catch (err: unknown) {
+      const fallbackMsg = isAbortLikeError(err)
+        ? 'Estou demorando mais que o normal para responder. Tente novamente em alguns instantes — seus dados estão seguros.'
+        : 'Encontrei uma instabilidade técnica agora. Tente novamente em alguns segundos.';
+      setMessages((prev) => [...prev, { role: 'assistant', content: fallbackMsg }]);
     } finally {
       setIsLoading(false);
     }

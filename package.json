@@ -21,7 +21,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "supabase:functions:deploy": "supabase functions deploy --project-ref $SUPABASE_PROJECT_ID",
-    "gen:types": "supabase gen types typescript --project-id kneaniaifzgqibpajyji > apps/web/src/types/supabase.ts"
+    "gen:types": "supabase gen types typescript --project-id kneaniaifzgqibpajyji > apps/web/src/types/supabase.ts",
+    "db:types": "supabase gen types typescript --project-id kneaniaifzgqibpajyji --schema public > apps/web/src/types/database.types.ts"
   },
   "devDependencies": {
     "react-native": "0.83.2",

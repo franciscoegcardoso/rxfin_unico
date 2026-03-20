@@ -99,6 +99,7 @@ export function usePluggyConnect() {
 
   const fetchTransactions = useCallback(async (accountId?: string, fromDate?: string) => {
     try {
+      // full-range intencional — sem pruning (últimas 500; opcionalmente filtro por data)
       let query = supabase
         .from('pluggy_transactions')
         .select('*')
@@ -109,6 +110,7 @@ export function usePluggyConnect() {
       }
 
       if (fromDate) {
+        // date range — reduz escopo quando o caller informa período
         query = query.gte('date', fromDate);
       }
 

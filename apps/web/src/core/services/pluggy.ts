@@ -74,6 +74,7 @@ export async function getTransacoesBancarias(
   accountId?: string,
   limit = 50
 ): Promise<PluggyTransaction[]> {
+  // full-range intencional — sem pruning (lista recente via limit + order date)
   let query = supabase
     .from('pluggy_transactions')
     .select('*')

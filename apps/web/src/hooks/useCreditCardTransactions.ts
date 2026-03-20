@@ -116,6 +116,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
       let allResults: any[] = [];
       let from = 0;
       let hasMore = true;
+      // Com mês: .eq(reference_month) = partition key — pruning; sem mês: full-range intencional — sem pruning
 
       while (hasMore) {
         let query = supabase
@@ -125,6 +126,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
           .order('transaction_date', { ascending: false })
           .range(from, from + PAGE_SIZE - 1);
         if (monthFilterActive) {
+          // partition key — obrigatório para pruning
           query = query.eq('reference_month', currentMonth);
         }
         const { data, error: fetchError } = await query;
@@ -535,6 +537,7 @@ export function useCreditCardTransactions(currentMonth?: string) {
 
         const metadataById = new Map<string, unknown>();
         if (pluggyIds.length > 0) {
+          // full-range intencional — sem pruning (lookup por UUID para metadados de parcela)
           const { data: pluggyRows } = await supabase
             .from('pluggy_transactions')
             .select('id,credit_card_metadata')

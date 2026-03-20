@@ -55,6 +55,15 @@ interface Message {
   };
 }
 
+function isAbortLikeError(err: unknown): boolean {
+  if (err == null) return false;
+  if (typeof err === 'object' && err !== null && 'name' in err && (err as { name: string }).name === 'AbortError') {
+    return true;
+  }
+  const msg = String((err as { message?: string })?.message ?? err ?? '').toLowerCase();
+  return msg.includes('abort') || msg.includes('aborted');
+}
+
 const getWelcomeMessage = (firstName: string): Message => ({
   role: 'assistant',
   content: `Olá, ${firstName}! 😊\nComo eu posso te ajudar hoje?`,
@@ -340,11 +349,43 @@ export function RaioXChat() {
         pageContext,
       });
 
-      const { data, error: fnError } = await supabase.functions.invoke('ai-chat', {
-        body,
-      });
+      const abortController = new AbortController();
+      const abortTimeoutId = setTimeout(() => abortController.abort(), 28000);
+
+      let data: Awaited<ReturnType<typeof supabase.functions.invoke>>['data'];
+      let fnError: Awaited<ReturnType<typeof supabase.functions.invoke>>['error'];
+
+      try {
+        const result = await supabase.functions.invoke('ai-chat', {
+          body,
+          signal: abortController.signal,
+        });
+        data = result.data;
+        fnError = result.error;
+      } catch (invokeErr: unknown) {
+        const fallbackMsg = isAbortLikeError(invokeErr)
+          ? 'Estou demorando mais que o normal para responder. Tente novamente em alguns instantes — seus dados estão seguros.'
+          : 'Encontrei uma instabilidade técnica agora. Tente novamente em alguns segundos.';
+        setMessages((prev) => [...prev, { role: 'assistant', content: fallbackMsg }]);
+        setLastFailedMessage(msg);
+        return;
+      } finally {
+        clearTimeout(abortTimeoutId);
+      }
 
       if (fnError) {
+        if (isAbortLikeError(fnError)) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'assistant',
+              content:
+                'Estou demorando mais que o normal para responder. Tente novamente em alguns instantes — seus dados estão seguros.',
+            },
+          ]);
+          setLastFailedMessage(msg);
+          return;
+        }
         const status = (fnError as any)?.status;
         if (status === 429) {
           toast.error('Você atingiu o limite de perguntas. Tente novamente em alguns minutos.');
@@ -467,10 +508,15 @@ export function RaioXChat() {
       if (sess && realTotalTokens > sess.token_limit * 0.8) {
         setTokenWarning(true);
       }
-    } catch (err: any) {
-      if (err.message !== 'rate_limit' && err.message !== 'unauthorized') {
+    } catch (err: unknown) {
+      const code = err && typeof err === 'object' && 'message' in err ? String((err as Error).message) : '';
+      if (code !== 'rate_limit' && code !== 'unauthorized') {
+        const fallbackMsg = isAbortLikeError(err)
+          ? 'Estou demorando mais que o normal para responder. Tente novamente em alguns instantes — seus dados estão seguros.'
+          : 'Encontrei uma instabilidade técnica agora. Tente novamente em alguns segundos.';
+        setMessages((prev) => [...prev, { role: 'assistant', content: fallbackMsg }]);
         setLastFailedMessage(msg);
-        toast.error(err?.message || 'Erro ao conectar com a Cibélia. Tente novamente.');
+        toast.error((err as Error)?.message || 'Erro ao conectar com a Cibélia. Tente novamente.');
       }
     } finally {
       setIsLoading(false);

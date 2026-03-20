@@ -33,6 +33,7 @@ export function usePassivosPage(userId: string | undefined, activeTab: PassivosT
       return (data ?? {}) as PassivosPageData;
     },
     staleTime: 60_000,
+    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
     enabled: !!userId,
   });
 }

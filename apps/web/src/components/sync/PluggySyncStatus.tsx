@@ -62,6 +62,7 @@ export const PluggySyncStatus: React.FC<PluggySyncStatusProps> = ({
           .select('id, connector_name, status, last_sync_at')
           .in('id', connIds)
           .is('deleted_at', null),
+        // full-range intencional — sem pruning (amostra recente p/ última data de tx por conexão)
         supabase
           .from('pluggy_transactions')
           .select('account_id, date')

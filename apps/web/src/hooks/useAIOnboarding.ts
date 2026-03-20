@@ -48,6 +48,7 @@ export function useAIOnboarding() {
             .from('lancamentos_realizados_v')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id),
+          // full-range intencional — sem pruning (checagem de existência de qualquer lançamento)
           supabase
             .from('pluggy_transactions')
             .select('id', { count: 'exact', head: true })

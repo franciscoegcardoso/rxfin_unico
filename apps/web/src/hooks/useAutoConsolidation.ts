@@ -77,6 +77,7 @@ export function useAutoConsolidation() {
           const pluggyIds = nullInstTxs.map((t: any) => t.pluggy_transaction_id).filter(Boolean) as string[];
           const metaMap = new Map<string, unknown>();
           if (pluggyIds.length > 0) {
+            // full-range intencional — sem pruning (lookup por UUID para metadados de parcela)
             const { data: pRows } = await supabase
               .from('pluggy_transactions')
               .select('id,credit_card_metadata')

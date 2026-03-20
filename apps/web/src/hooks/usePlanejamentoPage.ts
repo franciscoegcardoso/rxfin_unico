@@ -35,6 +35,7 @@ export function usePlanejamentoPage(
       return (data ?? {}) as PlanejamentoPageData;
     },
     staleTime: 60_000,
+    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
     enabled: !!userId && !!currentMonth,
   });
 }
