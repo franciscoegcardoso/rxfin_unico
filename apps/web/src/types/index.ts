@@ -40,6 +40,8 @@ export interface TransactionItem {
   categoria: string;
   data_pagamento: string | null;
   data_vencimento: string | null;
+  /** Quando true, excluída dos totais de fluxo de caixa */
+  is_internal_transfer?: boolean;
 }
 
 export interface UserInfo {

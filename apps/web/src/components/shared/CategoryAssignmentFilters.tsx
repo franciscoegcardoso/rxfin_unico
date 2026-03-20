@@ -1,6 +1,8 @@
 import React from 'react';
-import { Calendar, Landmark, CreditCard, Filter, Tag } from 'lucide-react';
+import { Calendar, Landmark, CreditCard, Filter, Tag, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -68,6 +70,9 @@ interface CategoryAssignmentFiltersProps {
   onClearFilters?: () => void;
   hasActiveFilters?: boolean;
   compact?: boolean;
+  /** Quando true, transferências internas ficam ocultas na listagem (padrão). */
+  hideInternalTransfers?: boolean;
+  onHideInternalTransfersChange?: (hide: boolean) => void;
 }
 
 export function CategoryAssignmentFilters({
@@ -188,6 +193,24 @@ export function CategoryAssignmentFilters({
           <Button variant="ghost" size={btnSize} className={cn(btnClass, 'text-muted-foreground')} onClick={onClearFilters}>
             Limpar filtros
           </Button>
+        )}
+
+        {hideInternalTransfers != null && onHideInternalTransfersChange && (
+          <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/30 px-2 py-1">
+            <ArrowLeftRight className={cn('shrink-0 text-muted-foreground', compact ? 'h-3 w-3' : 'h-3.5 w-3.5')} />
+            <Label
+              htmlFor="hide-internal-tx"
+              className={cn('text-muted-foreground cursor-pointer', compact ? 'text-[10px]' : 'text-xs')}
+            >
+              Ocultar transferências internas
+            </Label>
+            <Switch
+              id="hide-internal-tx"
+              checked={hideInternalTransfers}
+              onCheckedChange={onHideInternalTransfersChange}
+              className="scale-90"
+            />
+          </div>
         )}
       </div>
     </div>

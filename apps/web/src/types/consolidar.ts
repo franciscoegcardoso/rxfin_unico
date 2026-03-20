@@ -94,6 +94,8 @@ export interface Lancamento {
   is_income: boolean
   /** Apenas cartão — pluggy account id */
   card_id: string | null
+  /** Excluída do fluxo de caixa / totais quando true */
+  is_internal_transfer: boolean
 }
 
 export interface LancamentoRowState {

@@ -4,6 +4,7 @@ import {
   Loader2,
   ArrowDownLeft,
   ArrowUpRight,
+  ArrowLeftRight,
   Landmark,
   CreditCard,
   CheckSquare,
@@ -12,7 +13,18 @@ import {
   Zap,
   AlertTriangle,
   Trash2,
+  MoreVertical,
 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Badge } from '@/components/ui/badge'
+import { invalidateAfterInternalTransferToggle } from '@/lib/invalidateAfterInternalTransfer'
 import { useLancamentosComBanco, type LancamentosSource } from '@/hooks/useLancamentosComBanco'
 import {
   Select,
@@ -45,7 +57,7 @@ import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import type { LancamentoFilters } from '@/types/consolidar'
+import type { Lancamento, LancamentoFilters } from '@/types/consolidar'
 import { BancoLogo } from '@/components/shared/BancoLogo'
 import { useUserCategories } from '@/hooks/useUserCategories'
 import type {
@@ -90,6 +102,8 @@ export interface LancamentosTabProps {
   statusFilter: StatusFilterValue
   bankOrCardValue: string
   categoryFilterValue: string
+  /** Ocultar linhas com transferência interna (default: sim). */
+  hideInternalTransfers?: boolean
   onSaveComplete: (rowsUpdated: number, rpcUpdates: number) => void
   onClose?: () => void
   requestCloseRef?: React.RefObject<(() => void) | null>
@@ -184,8 +198,9 @@ export function LancamentosTab({
     if (filters.naoConfirmados) list = list.filter((r) => !r.is_category_confirmed)
     if (filters.dateFrom) list = list.filter((r) => r.tx_date >= filters.dateFrom!)
     if (filters.dateTo) list = list.filter((r) => r.tx_date <= filters.dateTo!)
+    if (hideInternalTransfers) list = list.filter((r) => !r.is_internal_transfer)
     return list
-  }, [data, filters, statusFilter, bankOrCardValue, categoryFilterValue, source])
+  }, [data, filters, statusFilter, bankOrCardValue, categoryFilterValue, source, hideInternalTransfers])
 
   const sortedRows = useMemo(() => {
     const list = [...filteredData]
@@ -315,6 +330,29 @@ export function LancamentosTab({
   const handleDiscard = () => {
     reset()
     setSelectedIds(new Set())
+  }
+
+  const handleToggleInternalTransfer = async (row: Lancamento) => {
+    const next = !row.is_internal_transfer
+    setTogglingTransferId(row.transaction_id)
+    try {
+      const { error } = await supabase.rpc('toggle_internal_transfer', {
+        p_transaction_id: row.transaction_id,
+        p_is_transfer: next,
+      })
+      if (error) throw error
+      toast.success(
+        next
+          ? 'Marcado como transferência interna — excluído do fluxo de caixa'
+          : 'Marcação removida'
+      )
+      await invalidateAfterInternalTransferToggle(queryClient, user?.id)
+      await refetch()
+    } catch {
+      toast.error('Não foi possível atualizar a transferência interna.')
+    } finally {
+      setTogglingTransferId(null)
+    }
   }
 
   const handleSaveAll = async () => {
@@ -458,6 +496,9 @@ export function LancamentosTab({
               <th className="text-left px-2 py-2 font-medium w-[100px] shrink-0">Banco</th>
               <th className="text-left px-2 py-2 font-medium min-w-[140px] shrink-0">Grupo (L1)</th>
               <th className="text-left px-2 py-2 font-medium min-w-[160px] shrink-0">Categoria</th>
+              <th className="text-center px-1 py-2 font-medium w-10 shrink-0" aria-label="Ações">
+                ···
+              </th>
               <th className="text-left px-2 py-2 font-medium w-20 shrink-0">Status</th>
             </tr>
             <tr className="border-b border-border/50 bg-muted/10 hidden lg:table-row">
@@ -522,6 +563,7 @@ export function LancamentosTab({
                   <option value="unconfirmed">Não confirmados</option>
                 </select>
               </td>
+              <td className="px-1 py-1" />
             </tr>
           </thead>
           <tbody>
@@ -553,10 +595,19 @@ export function LancamentosTab({
                     {formatDate(row.tx_date)}
                   </td>
                   <td className="px-2 py-1.5 min-w-[200px]">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                       <span className="text-xs leading-tight truncate break-words" title={row.estabelecimento}>
                         {row.estabelecimento}
                       </span>
+                      {row.is_internal_transfer && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-normal gap-0.5 px-1.5 py-0 h-5 bg-muted text-muted-foreground border-0"
+                        >
+                          <ArrowLeftRight className="h-3 w-3" />
+                          Transferência interna
+                        </Badge>
+                      )}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -738,6 +789,41 @@ export function LancamentosTab({
                           )}
                       </div>
                     )}
+                  </td>
+                  <td className="px-1 py-1.5 shrink-0 text-center" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          disabled={togglingTransferId === row.transaction_id}
+                          aria-label="Ações do lançamento"
+                        >
+                          {togglingTransferId === row.transaction_id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <MoreVertical className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        {row.is_internal_transfer ? (
+                          <DropdownMenuItem
+                            onClick={() => void handleToggleInternalTransfer(row)}
+                          >
+                            Remover marcação de transferência interna
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => void handleToggleInternalTransfer(row)}
+                          >
+                            Marcar como transferência interna
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                   <td className="px-2 py-1.5 shrink-0">
                     <button

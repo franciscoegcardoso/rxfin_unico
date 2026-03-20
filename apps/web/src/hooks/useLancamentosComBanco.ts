@@ -74,6 +74,7 @@ function normalizeRow(r: Record<string, unknown>): Lancamento {
     is_pending: Boolean(r.is_pending),
     is_income: isIncome,
     card_id: r.card_id ? String(r.card_id) : null,
+    is_internal_transfer: Boolean(r.is_internal_transfer),
   }
 }
 

@@ -7823,12 +7823,21 @@ export type Database = {
           grupo_categoria_nome: string | null
           is_category_confirmed: boolean
           is_income: boolean
+          is_internal_transfer: boolean
           is_pending: boolean
           transaction_id: string
           transaction_type: string
           tx_date: string
           card_id: string | null
         }[]
+      }
+      detect_and_mark_internal_transfers: {
+        Args: { p_dry_run?: boolean }
+        Returns: Json
+      }
+      toggle_internal_transfer: {
+        Args: { p_is_transfer: boolean; p_transaction_id: string }
+        Returns: undefined
       }
       get_onboarding_categories: { Args: never; Returns: Json }
       get_onboarding_contextual_insight: {

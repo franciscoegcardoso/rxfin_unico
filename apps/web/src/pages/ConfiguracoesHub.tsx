@@ -7,6 +7,7 @@ import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
 import { Settings, UserCog, SlidersHorizontal, Landmark, Crown, Receipt, Tag, Wallet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { InternalTransfersReviewCard } from '@/components/configuracoes/InternalTransfersReviewCard';
 
 const configItems: HubItem[] = [
   {
@@ -65,30 +66,36 @@ export const ConfiguracoesHub: React.FC = () => {
         />
 
         {isMobile ? (
-          <MobileHubList items={configItems} />
+          <div className="space-y-4">
+            <MobileHubList items={configItems} />
+            <InternalTransfersReviewCard />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {configItems.map((item) => (
-              <Link key={item.id} to={item.path!}>
-                <Card className="h-full hover:shadow-md transition-all hover:border-primary/50 cursor-pointer group">
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className={`h-12 w-12 rounded-xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                        <item.icon className="h-6 w-6" />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {configItems.map((item) => (
+                <Link key={item.id} to={item.path!}>
+                  <Card className="h-full hover:shadow-md transition-all hover:border-primary/50 cursor-pointer group">
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-4">
+                        <div className={`h-12 w-12 rounded-xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                          <item.icon className="h-6 w-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {item.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {item.description}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {item.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            <InternalTransfersReviewCard />
           </div>
         )}
       </PageContainer>

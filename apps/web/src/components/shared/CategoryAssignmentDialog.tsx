@@ -24,6 +24,7 @@ import {
 } from '@/components/shared/CategoryAssignmentFilters';
 import type { LancamentoRealizado } from '@/hooks/useLancamentosRealizados';
 import { toast } from 'sonner';
+import { readHideInternalTransfers, writeShowInternalTransfers } from '@/lib/internalTransferPreferences';
 
 export type CategoryAssignmentTab = 'cartao' | 'conta' | 'consolidar';
 
@@ -107,6 +108,11 @@ const CategoryAssignmentContent: React.FC<{
   const [bankValue, setBankValue] = useState<string>('all');
   const [categoryValue, setCategoryValue] = useState<string>('all');
   const [cardValue, setCardValue] = useState<string>('all');
+  const [hideInternalTransfers, setHideInternalTransfers] = useState(true);
+
+  useEffect(() => {
+    setHideInternalTransfers(readHideInternalTransfers());
+  }, []);
 
   useEffect(() => {
     if (open) setActiveTab(defaultTab);
@@ -317,6 +323,11 @@ const CategoryAssignmentContent: React.FC<{
           onClearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters}
           compact
+          hideInternalTransfers={hideInternalTransfers}
+          onHideInternalTransfersChange={(hide) => {
+            setHideInternalTransfers(hide);
+            writeShowInternalTransfers(!hide);
+          }}
         />
       </div>
       )}
@@ -342,6 +353,7 @@ const CategoryAssignmentContent: React.FC<{
                 statusFilter={status}
                 bankOrCardValue={cardValue}
                 categoryFilterValue={categoryValue}
+                hideInternalTransfers={hideInternalTransfers}
                 onSaveComplete={() => {
                   void fetchLancamentos();
                   void fetchTransactions();
@@ -360,6 +372,7 @@ const CategoryAssignmentContent: React.FC<{
                 statusFilter={status}
                 bankOrCardValue={bankValue}
                 categoryFilterValue={categoryValue}
+                hideInternalTransfers={hideInternalTransfers}
                 onSaveComplete={() => {
                   void fetchLancamentos();
                   void fetchTransactions();
