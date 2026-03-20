@@ -25,7 +25,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Badge } from '@/components/ui/badge'
 import { invalidateAfterInternalTransferToggle } from '@/lib/invalidateAfterInternalTransfer'
-import { useLancamentosComBanco, type LancamentosSource } from '@/hooks/useLancamentosComBanco'
+import {
+  useLancamentosComBanco,
+  type LancamentosSource,
+  periodoToReferenceMonth,
+} from '@/hooks/useLancamentosComBanco'
 import {
   Select,
   SelectContent,
@@ -121,9 +125,13 @@ export function LancamentosTab({
   onClose,
   requestCloseRef,
   enabled = true,
+  hideInternalTransfers = true,
 }: LancamentosTabProps) {
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [filters, setFilters] = useState<LancamentoFilters>(defaultFilters)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [togglingTransferId, setTogglingTransferId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [bulkGrupoId, setBulkGrupoId] = useState('')
   const [bulkCatId, setBulkCatId] = useState('')
@@ -145,6 +153,8 @@ export function LancamentosTab({
     reset,
     refetch,
   } = useLancamentosComBanco(source, period, { enabled })
+
+  const referenceMonthForInvalidation = periodoToReferenceMonth(period)
 
   const { data: userCats } = useUserCategories()
 
@@ -346,7 +356,11 @@ export function LancamentosTab({
           ? 'Marcado como transferência interna — excluído do fluxo de caixa'
           : 'Marcação removida'
       )
-      await invalidateAfterInternalTransferToggle(queryClient, user?.id)
+      await invalidateAfterInternalTransferToggle(
+        queryClient,
+        user?.id,
+        referenceMonthForInvalidation
+      )
       await refetch()
     } catch {
       toast.error('Não foi possível atualizar a transferência interna.')

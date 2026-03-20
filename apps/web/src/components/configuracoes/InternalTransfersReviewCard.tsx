@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { format } from 'date-fns'
 import { ArrowLeftRight, Loader2, ScanSearch, Wand2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -102,7 +103,8 @@ export const InternalTransfersReviewCard: React.FC = () => {
       })
       if (error) throw error
       toast.success('Transferências internas marcadas automaticamente.')
-      await invalidateAfterInternalTransferToggle(queryClient, user?.id)
+      const monthRef = format(new Date(), 'yyyy-MM')
+      await invalidateAfterInternalTransferToggle(queryClient, user?.id, monthRef)
       setConfirmOpen(false)
     } catch (e) {
       console.error(e)
