@@ -49,6 +49,47 @@ function buildPluggyBlock(pluggyContext: Record<string, unknown>): string {
   const expectedRecurring = (pluggyContext?.expected_monthly_expenses_recurring as number) ?? 0;
   const totalInvestments = (pluggyContext?.total_investments_balance as number) ?? 0;
 
+  const cashflowCreditM1 = (pluggyContext?.cashflow_credit_m1 as number) ?? 0;
+  const cashflowDebitM1 = (pluggyContext?.cashflow_debit_m1 as number) ?? 0;
+  const cashflowNetM1 = (pluggyContext?.cashflow_net_m1 as number) ?? 0;
+  const cashflowCreditM3 = (pluggyContext?.cashflow_credit_m3 as number) ?? 0;
+  const cashflowDebitM3 = (pluggyContext?.cashflow_debit_m3 as number) ?? 0;
+  const cashflowNetM3 = (pluggyContext?.cashflow_net_m3 as number) ?? 0;
+  const ratioCreditDebitM3 = pluggyContext?.ratio_creditdebit_m3 as number | undefined;
+  const ratioInflowCommitmentM3 = pluggyContext?.ratio_inflow_commitment_m3 as number | undefined;
+  const topCategoriesM6 = (pluggyContext?.top_categories_m6 as Array<{ category?: string; total?: number; amount?: number }>) ?? [];
+  const insightsSnap = pluggyContext?.insights_snapshot_at as string | undefined;
+  const insightsSnapBr = insightsSnap
+    ? new Date(insightsSnap).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+    : '';
+
+  const ratioM3Line =
+    ratioCreditDebitM3 != null && !Number.isNaN(ratioCreditDebitM3)
+      ? `${ratioCreditDebitM3.toFixed(2)} ${ratioCreditDebitM3 >= 1 ? '(positivo — mais entradas que saídas)' : '(NEGATIVO — gastando mais do que entra)'}`
+      : '—';
+  const ratioCommitLine =
+    ratioInflowCommitmentM3 != null && !Number.isNaN(ratioInflowCommitmentM3)
+      ? ratioInflowCommitmentM3.toFixed(2)
+      : '—';
+  const top6Line =
+    topCategoriesM6.length > 0
+      ? topCategoriesM6
+          .slice(0, 8)
+          .map((c) => {
+            const amt = c.total ?? c.amount ?? 0;
+            return `${String(c.category ?? 'N/A')}: ${fmtBrl(amt)}`;
+          })
+          .join('; ')
+      : '';
+
+  const cashflowBlock = `
+[FLUXO DE CAIXA — DADOS PLUGGY OPEN FINANCE]
+${insightsSnapBr ? `Referência insights: ${insightsSnapBr}\n` : ''}Mês atual: entradas ${fmtBrl(cashflowCreditM1)} | saídas ${fmtBrl(cashflowDebitM1)} | saldo ${fmtBrl(cashflowNetM1)}
+Últimos 3 meses: entradas ${fmtBrl(cashflowCreditM3)} | saídas ${fmtBrl(cashflowDebitM3)} | saldo ${fmtBrl(cashflowNetM3)}
+Ratio entradas/saídas (3m): ${ratioM3Line}
+Ratio inflow vs compromissos (3m): ${ratioCommitLine}
+${top6Line ? `Top categorias de gasto (6m): ${top6Line}\n` : ''}`;
+
   const expenseTrendLabel = expenseTrend > 0 ? `↑ ${expenseTrend.toFixed(1)}% acima da média` : expenseTrend < 0 ? `↓ ${Math.abs(expenseTrend).toFixed(1)}% abaixo da média` : 'estável';
   const incomeTrendLabel = incomeTrend > 0 ? `↑ ${incomeTrend.toFixed(1)}%` : incomeTrend < 0 ? `↓ ${Math.abs(incomeTrend).toFixed(1)}%` : 'estável';
 
@@ -65,6 +106,7 @@ Período: ${snapshotAt}
 - Saldo devedor total: ${fmtBrl(totalOutstanding)}${hasOverdue ? ' ⚠️ parcelas em atraso' : ''}
 - Compromissos fixos esperados: ${fmtBrl(expectedRecurring)}/mês
 - Carteira de investimentos: ${fmtBrl(totalInvestments)}
+${cashflowBlock.trim()}
 ════════════════════════════════════════════════
 Estes dados são de LEITURA SOMENTE e devem embasar análises precisas.
 Quando o usuário perguntar sobre gastos, receitas ou comparações com meses anteriores,

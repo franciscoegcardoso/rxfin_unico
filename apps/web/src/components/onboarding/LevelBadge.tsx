@@ -17,7 +17,9 @@ const LEVEL_CONFIG = [
 ];
 
 export const LevelBadge: React.FC<LevelBadgeProps> = ({ currentLevel, currentStepInBlock = 0, totalStepsInBlock = 1 }) => {
-  const config = LEVEL_CONFIG[Math.min(currentLevel, 4)];
+  const raw = Number(currentLevel);
+  const safeLevel = Number.isFinite(raw) ? Math.min(Math.max(0, raw), LEVEL_CONFIG.length - 1) : 0;
+  const config = LEVEL_CONFIG[safeLevel];
   const Icon = config.icon;
   const progress = totalStepsInBlock > 0 ? (currentStepInBlock / totalStepsInBlock) * 100 : 0;
 
@@ -28,7 +30,7 @@ export const LevelBadge: React.FC<LevelBadgeProps> = ({ currentLevel, currentSte
     )}>
       <Icon className="h-3.5 w-3.5" />
       <span>{config.label}</span>
-      {currentLevel > 0 && currentLevel < 4 && progress > 0 && (
+      {safeLevel > 0 && safeLevel < 4 && progress > 0 && (
         <div className="h-1.5 w-8 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden ml-1">
           <div className="h-full bg-current rounded-full transition-all" style={{ width: `${progress}%` }} />
         </div>

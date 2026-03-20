@@ -11,7 +11,7 @@ import { useFinancial } from '@/contexts/FinancialContext';
 import { financialInstitutions, investmentTypes } from '@/data/defaultData';
 import { Asset, InvestmentType } from '@/types/financial';
 import { InteractiveTreemap, type TreemapItem } from '@/components/charts/InteractiveTreemap';
-import { AssetLogo } from '@/components/ui/AssetLogo';
+import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo';
 import {
   TrendingUp,
   Plus,
@@ -626,10 +626,6 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                           const assetPercentage = totalInvestments > 0 
                             ? (asset.value / totalInvestments) * 100 
                             : 0;
-                          if (asset.investmentType?.toUpperCase() === 'FIXED_INCOME') {
-                            console.log('RENDA FIXA logo_url:', asset.logo_url, asset.investmentTicker);
-                          }
-
                           return (
                             <div
                               key={asset.id}
@@ -640,7 +636,11 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                                   ticker={asset.investmentTicker}
                                   assetType={assetTypeForLogo(asset.investmentType)}
                                   logoUrl={asset.logo_url}
-                                  companyDomain={asset.company_domain}
+                                  companyDomain={
+                                    isFixedIncomeAssetType(asset.investmentType)
+                                      ? undefined
+                                      : asset.company_domain
+                                  }
                                   name={asset.name}
                                   size="md"
                                   showTooltip
@@ -787,7 +787,11 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                                 ticker={asset.investmentTicker}
                                 assetType={assetTypeForLogo(asset.investmentType)}
                                 logoUrl={asset.logo_url}
-                                companyDomain={asset.company_domain}
+                                companyDomain={
+                                  isFixedIncomeAssetType(asset.investmentType)
+                                    ? undefined
+                                    : asset.company_domain
+                                }
                                 name={asset.name}
                                 size="md"
                                 showTooltip

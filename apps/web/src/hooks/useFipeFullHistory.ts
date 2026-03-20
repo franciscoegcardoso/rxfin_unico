@@ -18,6 +18,12 @@ export interface ParsedHistoryPoint {
 }
 
 import { getCachedValue, setCachedValue, cleanupOldCacheKeys } from '@/utils/kvCacheUtils';
+import {
+  computeWlsProjectionFromHistory,
+  type FipeHistoryProjectionMeta,
+} from '@/utils/fipeProjectionWls';
+
+export type { FipeHistoryProjectionMeta };
 
 // Cache for cohort data only (history comes from database now)
 const COHORT_CACHE_KEY_PREFIX = 'cohort_v2_';
@@ -76,6 +82,8 @@ export function mapVehicleTypeToV2(type: 'carros' | 'motos' | 'caminhoes'): Vehi
 
 export interface UseFipeFullHistoryReturn {
   priceHistory: ParsedHistoryPoint[];
+  /** Meta de projeção (WLS 18m, λ=0.94) calculada sobre o mesmo histórico exibido */
+  historyProjectionMeta: FipeHistoryProjectionMeta | null;
   loading: boolean;
   progress: { current: number; total: number } | null;
   error: string | null;
@@ -176,6 +184,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
     setError(null);
     setProgress(null);
     setPriceHistory([]);
+    setHistoryProjectionMeta(null);
 
     // year_id vem como "2023-5"; extrair apenas o ano inteiro (Number("2023-5") => NaN)
     const modelYearInt = parseInt(String(modelYear).split('-')[0], 10);
@@ -198,6 +207,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
       if (rpcError || !rpcData || !Array.isArray(rpcData) || rpcData.length === 0) {
         if (mountedRef.current) {
           setPriceHistory([]);
+          setHistoryProjectionMeta(null);
           setError(rpcError?.message || 'Histórico não disponível para este veículo.');
           setLoading(false);
         }
@@ -221,6 +231,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
       if (points.length === 0) {
         if (mountedRef.current) {
           setPriceHistory([]);
+          setHistoryProjectionMeta(null);
           setError('Histórico não disponível para este veículo.');
           setLoading(false);
         }
@@ -228,8 +239,10 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
       }
 
       points[0].isLaunchPrice = true;
+      const projectionMeta = computeWlsProjectionFromHistory(points);
       if (mountedRef.current) {
         setPriceHistory(points);
+        setHistoryProjectionMeta(projectionMeta);
         setProgress(null);
         setError(null);
         setIsPartial(false);
@@ -249,6 +262,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
       
       if (mountedRef.current) {
         setPriceHistory([]);
+        setHistoryProjectionMeta(null);
         setError(err instanceof Error ? err.message : 'Erro ao carregar histórico.');
         setProgress(null);
         setIsPartial(false);
@@ -300,6 +314,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
       if (mountedRef.current && fullPoints.length > 0) {
         fullPoints[0].isLaunchPrice = true;
         setPriceHistory(fullPoints);
+        setHistoryProjectionMeta(computeWlsProjectionFromHistory(fullPoints));
         setIsPartial(false);
         setError(null);
       }
@@ -310,6 +325,7 @@ export function useFipeFullHistory(): UseFipeFullHistoryReturn {
 
   return {
     priceHistory,
+    historyProjectionMeta,
     loading,
     progress,
     error,

@@ -234,6 +234,21 @@ export const CartaoCreditoSection: React.FC<CartaoCreditoSectionProps> = ({
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const viewMode = 'cobranca' as const;
 
+  /** Mês visível — deve existir antes de hooks que dependem dele (evita TDZ / crash na rota cartão). */
+  const [todayYear] = useState(() => new Date().getFullYear());
+  const [todayMonth] = useState(() => new Date().getMonth());
+  const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
+
+  const selectedDate = useMemo(() => {
+    return new Date(todayYear, todayMonth + selectedMonthOffset, 1);
+  }, [todayYear, todayMonth, selectedMonthOffset]);
+
+  const currentYear = selectedDate.getFullYear();
+  const currentMonthNum = selectedDate.getMonth() + 1;
+  const currentMonth = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
+
+  const selectedMonthLabel = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';
     if (value === 0) return 'R$ 0';
@@ -339,20 +354,6 @@ export const CartaoCreditoSection: React.FC<CartaoCreditoSectionProps> = ({
     };
     fetchNumbers();
   }, [user]);
-
-  const [todayYear] = useState(() => new Date().getFullYear());
-  const [todayMonth] = useState(() => new Date().getMonth());
-  const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
-
-  const selectedDate = useMemo(() => {
-    return new Date(todayYear, todayMonth + selectedMonthOffset, 1);
-  }, [todayYear, todayMonth, selectedMonthOffset]);
-
-  const currentYear = selectedDate.getFullYear();
-  const currentMonthNum = selectedDate.getMonth() + 1;
-  const currentMonth = `${currentYear}-${String(currentMonthNum).padStart(2, '0')}`;
-
-  const selectedMonthLabel = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
   // Active billing month based on open bills (for "Atual" marker)
   const activeBillingMonth = useMemo(() => {

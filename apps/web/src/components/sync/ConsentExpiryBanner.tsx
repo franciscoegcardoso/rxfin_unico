@@ -40,14 +40,14 @@ export const ConsentExpiryBanner: React.FC = () => {
 
     let msg = '';
     if (v === 'expired') {
-      msg = `A autorização do ${name} expirou. Reconecte para retomar a sincronização.`;
+      msg = `${name} parou de sincronizar. A autorização expirou.`;
     } else if (v === 'critical') {
-      msg = `A autorização do ${name} expira em ${p.days_remaining} ${p.days_remaining === 1 ? 'dia' : 'dias'}. Renove agora para não perder dados.`;
+      msg = `Renove ${name} em ${p.days_remaining} ${p.days_remaining === 1 ? 'dia' : 'dias'}.`;
     } else {
       msg = `Sua conexão com ${name} expira em ${p.days_remaining} ${p.days_remaining === 1 ? 'dia' : 'dias'}.`;
     }
     if (extra > 0) {
-      msg += ` e mais ${extra} ${extra === 1 ? 'conexão' : 'conexões'}`;
+      msg += ` + ${extra} ${extra === 1 ? 'outra conexão' : 'outras conexões'}`;
     }
 
     return { primary: p, variant: v, message: msg };
@@ -85,7 +85,13 @@ export const ConsentExpiryBanner: React.FC = () => {
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1 sm:justify-start">
           <Button variant="secondary" size="sm" className="h-8 text-xs" asChild>
-            <Link to={CONNECTIONS_PATH}>Renovar</Link>
+            <Link to={CONNECTIONS_PATH}>
+              {variant === 'expired'
+                ? 'Reconectar →'
+                : variant === 'critical'
+                  ? 'Renovar agora →'
+                  : 'Renovar →'}
+            </Link>
           </Button>
           <Button
             type="button"

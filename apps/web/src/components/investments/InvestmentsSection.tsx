@@ -43,6 +43,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo';
 import { cn } from '@/lib/utils';
 
 const TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType }> = {
@@ -588,9 +589,6 @@ export const InvestmentsSection: React.FC = () => {
                       const rend = getRendimentoDisplay(inv);
                       const invTaxes = (inv.taxes ?? 0) + (inv.taxes2 ?? 0);
                       const showTaxesCol = inv.type === 'FIXED_INCOME';
-                      if (inv.type === 'FIXED_INCOME') {
-                        console.log('RENDA FIXA logo_url:', (inv as { logo_url?: string | null }).logo_url, inv.code);
-                      }
                       return (
                         <tr key={inv.id} className="border-t border-border/50">
                           <td className="p-3 max-w-[180px]">
@@ -599,7 +597,11 @@ export const InvestmentsSection: React.FC = () => {
                                 ticker={inv.code ?? undefined}
                                 assetType={inv.type ?? ''}
                                 logoUrl={(inv as { logo_url?: string | null }).logo_url}
-                                companyDomain={(inv as { company_domain?: string | null }).company_domain}
+                                companyDomain={
+                                  isFixedIncomeAssetType(inv.type)
+                                    ? undefined
+                                    : (inv as { company_domain?: string | null }).company_domain
+                                }
                                 name={inv.marketing_name ?? inv.name ?? inv.issuer ?? undefined}
                                 size="md"
                               />

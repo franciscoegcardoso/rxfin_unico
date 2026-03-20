@@ -97,7 +97,7 @@ const PlanejamentoLayout: React.FC = () => {
             </nav>
           </div>
 
-          <Outlet />
+          <Outlet key={location.pathname} />
         </div>
       </div>
     </AppLayout>

@@ -46,7 +46,7 @@ O uso de **`.from('...' as any)`** ou **`.rpc('...' as any)`** indica que o Type
 | user_trash | useUserTrash, core/trash | sim (Views) | view criada na Fase 3; types podem ter sido gerados antes |
 | user_drivers | useUserDrivers | sim | idem |
 | v_user_plan | useAdminUsers | sim (Views) | idem |
-| credit_card_bills_with_totals | useCreditCardBills | sim (Views) | view existe em types |
+| credit_card_bills | useCreditCardBills | sim (Tables) | tabela base |
 | lancamento_metadata | usePluggyBankSync | sim | idem |
 | user_income_items / user_expense_items | FinancialContext, useUserParameters | sim | idem |
 | user_financial_institutions | useUserFinancialInstitutions | sim | idem |
@@ -70,7 +70,7 @@ O uso de **`.from('...' as any)`** ou **`.rpc('...' as any)`** indica que o Type
 
 ### Tabelas do app em `public`
 - **Confirmado:** todas as tabelas e views de aplicação nas migrations estão em **`public`**.
-- **Views** `user_trash`, `v_user_plan`, `credit_card_transactions_v`, `lancamentos_realizados_v`, `sync_jobs_v`, `credit_card_bills_with_totals`, `v_crm_kanban` estão (ou devem estar) em `public`; o frontend referencia apenas por nome, sem prefixo de schema (PostgREST usa o schema configurado no projeto).
+- **Views** `user_trash`, `v_user_plan`, `credit_card_transactions_v`, `lancamentos_realizados_v`, `sync_jobs_v`, `v_crm_kanban` estão (ou devem estar) em `public`; faturas de cartão usam a tabela `credit_card_bills` (não há view `credit_card_bills_with_totals`); o frontend referencia apenas por nome, sem prefixo de schema (PostgREST usa o schema configurado no projeto).
 
 ### Frontend e nomes do schema
 - O frontend usa **apenas** nomes de tabela/view (ex.: `supabase.from('user_trash')`), sem qualificar schema no código.

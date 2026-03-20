@@ -139,7 +139,7 @@ export const BlockA: React.FC<BlockAProps> = ({
   const [savingShared, setSavingShared] = useState(false);
   const [sharedError, setSharedError] = useState('');
   const [localAccountType, setLocalAccountType] = useState<'individual' | 'shared'>(() =>
-    (config.accountType as 'individual' | 'shared') ?? 'individual'
+    ((config?.accountType ?? 'individual') as 'individual' | 'shared')
   );
   const [savingBlockA, setSavingBlockA] = useState(false);
 
@@ -398,12 +398,12 @@ export const BlockA: React.FC<BlockAProps> = ({
                 }}
                 className={cn(
                   'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center',
-                  config.accountType === value
+                  (config?.accountType ?? localAccountType) === value
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:border-primary/50'
                 )}
               >
-                <Icon className={cn('h-6 w-6', config.accountType === value ? 'text-primary' : 'text-muted-foreground')} />
+                <Icon className={cn('h-6 w-6', (config?.accountType ?? localAccountType) === value ? 'text-primary' : 'text-muted-foreground')} />
                 <span className="text-sm font-medium">{label}</span>
                 <span className="text-xs text-muted-foreground">{sub}</span>
               </button>

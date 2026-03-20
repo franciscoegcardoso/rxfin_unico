@@ -1,5 +1,5 @@
 import React from 'react'
-import { AssetLogo } from '@/components/ui/AssetLogo'
+import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
 import { simplifyFundSubtype } from '@/utils/investimentos'
 
@@ -34,7 +34,9 @@ export function AssetNameCell({ item }: { item: PluggyInvestment }) {
         ticker={ticker}
         assetType={item.type ?? ''}
         logoUrl={item.logo_url ?? null}
-        companyDomain={item.company_domain ?? null}
+        companyDomain={
+          isFixedIncomeAssetType(item.type) ? null : item.company_domain ?? null
+        }
         name={display}
         size="sm"
       />

@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
-import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import { useLancamentosAll } from '@/contexts/LancamentosAllContext';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -84,7 +84,7 @@ const CustomLegend: React.FC<{ payload?: Array<{ value: string; color: string }>
 };
 
 export const CashFlowChart: React.FC = () => {
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
   const { isHidden } = useVisibility();
   const isMobile = useIsMobile();
 

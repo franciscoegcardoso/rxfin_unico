@@ -24,11 +24,14 @@ function getStatus(currentLevel: number, level: number): StepStatus {
 }
 
 export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentStepInBlock = 0, totalStepsInBlock = 1 }) => {
+  const levelNum = Number(currentLevel);
+  const safeLevel = Number.isFinite(levelNum) ? levelNum : 0;
+
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-muted/50 rounded-xl mb-4">
       {LEVELS.map((step, i) => {
-        const status = getStatus(currentLevel, step.level);
-        const prevCompleted = i > 0 && getStatus(currentLevel, LEVELS[i - 1].level) === 'completed';
+        const status = getStatus(safeLevel, step.level);
+        const prevCompleted = i > 0 && getStatus(safeLevel, LEVELS[i - 1].level) === 'completed';
         return (
           <React.Fragment key={step.level}>
             {/* Connector line between steps */}
@@ -77,7 +80,9 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ currentLevel, currentSte
 
 /** Subtitle for the currently active level (for use below the stepper). currentLevel 0 = level 1 (Identidade), etc. */
 export function getActiveLevelSubtitle(currentLevel: number): string | null {
-  const level = LEVELS.find((l) => l.level === currentLevel + 1);
+  const n = Number(currentLevel);
+  if (!Number.isFinite(n)) return null;
+  const level = LEVELS.find((l) => l.level === n + 1);
   return level?.subtitle ?? null;
 }
 

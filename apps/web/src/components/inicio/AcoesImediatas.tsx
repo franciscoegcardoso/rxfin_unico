@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, AlertCircle, CalendarClock, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import { useLancamentosAll } from '@/contexts/LancamentosAllContext';
 import { useCompromissos } from '@/hooks/useCompromissos';
 import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
 import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
@@ -11,7 +11,7 @@ import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { cn } from '@/lib/utils';
 
 export const AcoesImediatas: React.FC = () => {
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
   const { data: compromissosData } = useCompromissos();
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
   const { isFeatureEnabled } = useFeaturePreferences();

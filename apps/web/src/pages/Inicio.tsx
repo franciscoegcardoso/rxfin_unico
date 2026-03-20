@@ -46,7 +46,7 @@ import { useMonthSummary } from "@/hooks/useMonthSummary";
 import { UpcomingEventsCard } from "@/components/inicio/UpcomingEventsCard";
 import { EconomicIndicators } from "@/components/dashboard/EconomicIndicators";
 import { useMonthlyGoals } from "@/hooks/useMonthlyGoals";
-import { useLancamentosRealizados } from "@/hooks/useLancamentosRealizados";
+import { LancamentosAllProvider, useLancamentosAll } from "@/contexts/LancamentosAllContext";
 import { isBillPaymentTransaction } from "@/hooks/useBillPaymentReconciliation";
 import { useHomeDashboard } from "@/hooks/useHomeDashboard";
 import { useBankingOverview } from "@/hooks/useBankingOverview";
@@ -205,7 +205,7 @@ const FluxoPlaceholderCard: React.FC = () => {
   );
 };
 
-const Inicio: React.FC = () => {
+const InicioPageInner: React.FC = () => {
   const { config } = useFinancial();
   const { user } = useAuth();
   const { isHidden } = useVisibility();
@@ -245,7 +245,7 @@ const Inicio: React.FC = () => {
   }, [recurringPayments]);
 
   const { goals: monthlyGoals, getGoalByMonth } = useMonthlyGoals();
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
 
   const showMetasMensais = isFeatureEnabled("metas-mensais");
 
@@ -655,5 +655,11 @@ const Inicio: React.FC = () => {
     </AppLayout>
   );
 };
+
+const Inicio: React.FC = () => (
+  <LancamentosAllProvider>
+    <InicioPageInner />
+  </LancamentosAllProvider>
+);
 
 export default Inicio;

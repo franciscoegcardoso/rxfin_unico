@@ -95,13 +95,13 @@ export default function FGTSPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          <Wallet className="h-6 w-6 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-primary" />
           FGTS
-        </h1>
-        <Button onClick={() => setNewAccountModalOpen(true)} className="gap-2">
+        </h2>
+        <Button size="sm" className="gap-1.5" onClick={() => setNewAccountModalOpen(true)}>
           <Plus className="h-4 w-4" />
-          Conta
+          Adicionar conta FGTS
         </Button>
       </div>
 
@@ -130,9 +130,9 @@ export default function FGTSPage() {
               <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
                 Cadastre suas contas FGTS por empregador para acompanhar saldo e depósitos mensais.
               </p>
-              <Button className="mt-4 gap-2" onClick={() => setNewAccountModalOpen(true)}>
+              <Button size="sm" className="mt-4 gap-1.5" onClick={() => setNewAccountModalOpen(true)}>
                 <Plus className="h-4 w-4" />
-                + Adicionar conta FGTS
+                Adicionar conta FGTS
               </Button>
             </CardContent>
           </Card>

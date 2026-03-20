@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NotFound = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
     supabase.rpc('track_route_event', {
@@ -48,7 +50,7 @@ const NotFound = () => {
             A página que você procura não existe ou foi movida.
           </p>
         </div>
-        <div className="flex justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
           <button
             type="button"
             onClick={() => navigate('/inicio')}
@@ -57,6 +59,15 @@ const NotFound = () => {
           >
             Voltar ao Início
           </button>
+          {!user && (
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 rounded-md font-medium border border-border bg-background text-foreground hover:bg-muted/60 transition-colors"
+            >
+              Ir para o Login
+            </button>
+          )}
         </div>
       </div>
     </div>

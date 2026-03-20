@@ -16,6 +16,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from 'recharts';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -52,9 +53,25 @@ const fmtCompact = (v: number) => {
 
 type BenchmarkKey = 'CDI' | 'IPCA' | 'IBOVESPA';
 
+/** Referência para sinalizar meses com aportes relevantes (curva de patrimônio). */
+const APORTES_CONHECIDOS: Array<{ mes: string; valor: number; descricao: string }> = [
+  { mes: '2025-07', valor: 44_000, descricao: 'Aportes jul/25: LCA + CDB Rodobens + Trend Cash' },
+  { mes: '2025-11', valor: 79_000, descricao: 'Aportes nov/25: Tivio Institucional + Arx Denali' },
+  { mes: '2026-01', valor: 18_508, descricao: 'Aportes jan/26: CDB Neon + CPLE3' },
+];
+
+function isAportePoint(date: string): { isAporte: boolean; valor: number; descricao: string } | null {
+  const mesAno = date.substring(0, 7);
+  const aporte = APORTES_CONHECIDOS.find((a) => a.mes === mesAno);
+  return aporte ? { isAporte: true, valor: aporte.valor, descricao: aporte.descricao } : null;
+}
+
 type EvolutionChartRow = {
   date: string;
   isEstimated: boolean;
+  isAporte: boolean;
+  aporteValor: number;
+  aporteDescricao: string;
   carteira: number;
   benchmark: number;
 };
@@ -130,30 +147,45 @@ function EvolutionChartTooltip({
   viewMode: 'rentabilidade' | 'patrimonio';
 }) {
   if (!active || !payload?.length) return null;
-  const row = payload[0]?.payload;
-  const isEst = row?.isEstimated;
+  const point = payload[0]?.payload;
+  const isEst = point?.isEstimated;
+  const isAporte = point?.isAporte;
+
+  const fmtCurrency = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-sm text-xs">
-      <p className="font-medium mb-1 text-muted-foreground">
+    <div className="bg-background border border-border rounded-lg px-3 py-2.5 shadow-sm text-xs min-w-[180px]">
+      <p className="font-medium text-muted-foreground mb-2">
         {label != null && label !== ''
-          ? format(new Date(String(label)), 'MMM/yyyy', { locale: ptBR })
+          ? format(new Date(String(label)), 'MMM yyyy', { locale: ptBR })
           : ''}
       </p>
       {payload.map((p) => (
-        <div key={String(p.dataKey ?? p.name)} className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
-          <span className="text-muted-foreground">{p.name}:</span>
-          <span className="font-medium">
+        <div key={String(p.dataKey ?? p.name)} className="flex items-center justify-between gap-3 mb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: p.color }} />
+            <span className="text-muted-foreground truncate">{p.name}</span>
+          </div>
+          <span className="font-medium tabular-nums shrink-0">
             {viewMode === 'rentabilidade'
               ? `${(p.value ?? 0) >= 0 ? '+' : ''}${(p.value ?? 0).toFixed(2).replace('.', ',')}%`
-              : (p.value ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              : fmtCurrency(p.value ?? 0)}
           </span>
         </div>
       ))}
-      {isEst && (
-        <p className="text-muted-foreground/60 mt-1 text-[10px]">
-          * Estimativa baseada em CDI
+      {isAporte && point && (
+        <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+            <span className="text-[10px]">📥</span>
+            <span className="font-medium text-[10px]">Aporte: +{fmtCurrency(point.aporteValor)}</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{point.aporteDescricao}</p>
+        </div>
+      )}
+      {isEst && !isAporte && (
+        <p className="text-[10px] text-muted-foreground/60 mt-1.5 pt-1.5 border-t border-border/30">
+          * Valor estimado (CDI sobre aportes)
         </p>
       )}
     </div>
@@ -342,24 +374,38 @@ function PortfolioEvolutionChart({
       </div>
 
       {!hasEnoughData ? (
-        <div className="h-48 flex flex-col items-center justify-center gap-2 bg-muted/10 rounded-lg">
-          <TrendingUp className="w-8 h-8 text-muted-foreground" />
-          <p className="text-sm font-medium text-muted-foreground">Histórico em construção</p>
-          <p className="text-xs text-muted-foreground text-center max-w-xs">
-            O gráfico ficará disponível após alguns dias de uso. Seus dados são coletados
-            automaticamente todo dia.
-          </p>
-          <div className="flex gap-4 mt-1 flex-wrap justify-center">
-            {snapshotHistory.map((s) => (
-              <div key={s.date} className="text-center">
-                <p className="text-xs font-medium tabular-nums">{fmtCompact(s.total_brl)}</p>
-                <p className="text-[10px] text-muted-foreground">{s.date}</p>
-              </div>
-            ))}
+        <div className="h-44 flex flex-col items-center justify-center gap-3 bg-muted/10 rounded-lg border border-border/30 px-3">
+          <TrendingUp className="w-8 h-8 text-muted-foreground/40" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-muted-foreground">Histórico em construção</p>
+            <p className="text-xs text-muted-foreground/70 mt-1 max-w-xs">
+              O gráfico acumula dados diariamente via Open Finance. Retorne amanhã para ver a evolução.
+            </p>
           </div>
+          {snapshotHistory.length > 0 && (
+            <div className="flex flex-wrap gap-3 justify-center text-xs text-muted-foreground/60">
+              {snapshotHistory.map((s) => (
+                <span key={s.date} className="tabular-nums">
+                  {new Date(s.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}:{' '}
+                  {s.total_brl.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={260}>
+        <>
+          {viewMode === 'rentabilidade' && (
+            <p className="text-[10px] text-muted-foreground bg-muted/30 rounded px-2 py-1 mb-2">
+              ⚠️ A curva inclui novos aportes — os picos representam entrada de capital, não rendimento de
+              mercado. Use &quot;Por patrimônio&quot; para ver a evolução total.
+            </p>
+          )}
+          <ResponsiveContainer width="100%" height={260}>
           <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.08} />
             <XAxis
@@ -411,13 +457,39 @@ function PortfolioEvolutionChart({
               dot={false}
               strokeDasharray="4 2"
             />
+            {chartData
+              .filter((d) => d.isAporte)
+              .map((d) => (
+                <ReferenceLine
+                  key={d.date}
+                  x={d.date}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="3 3"
+                  strokeOpacity={0.5}
+                  strokeWidth={1}
+                  label={{
+                    value: `+${(d.aporteValor / 1000).toFixed(0)}k`,
+                    position: 'insideTopRight',
+                    fontSize: 10,
+                    fill: 'hsl(var(--muted-foreground))',
+                    dy: -4,
+                  }}
+                />
+              ))}
           </LineChart>
         </ResponsiveContainer>
-      )}
-      {hasEnoughData && viewMode === 'rentabilidade' && (
-        <p className="text-[10px] text-muted-foreground mt-1">
-          * A curva inclui novos aportes realizados no período
-        </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-3 border-t border-dashed border-muted-foreground/50" />
+              <span>Ponto de aporte</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 border-t border-muted-foreground/30" />
+              <span>Valor estimado via CDI</span>
+            </div>
+            <span>· Os saltos verticais representam novos aportes, não rendimento</span>
+          </div>
+        </>
       )}
     </div>
   );

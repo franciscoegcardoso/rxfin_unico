@@ -85,11 +85,12 @@ export function useRealtimeBalance() {
     refetchOnWindowFocus: true,
   });
 
+  /** `accountRowId` = uuid da linha em `pluggy_accounts.id` (RPC `get_account_balance_fresh`). */
   const refreshAccountBalance = useCallback(
-    async (pluggyAccountId: string) => {
+    async (accountRowId: string) => {
       if (!user?.id) return;
       const now = Date.now();
-      if ((refreshCooldownUntil[pluggyAccountId] ?? 0) > now) {
+      if ((refreshCooldownUntil[accountRowId] ?? 0) > now) {
         toast({
           title: 'Aguarde',
           description: 'Atualização disponível em alguns segundos.',
@@ -97,14 +98,16 @@ export function useRealtimeBalance() {
         });
         return;
       }
-      setRefreshingAccountId(pluggyAccountId);
+      setRefreshingAccountId(accountRowId);
       try {
         const { data, error } = await supabase.rpc('get_account_balance_fresh', {
           p_user_id: user.id,
-          p_account_id: pluggyAccountId,
+          p_account_id: accountRowId,
         });
         if (error) throw error;
-        const result = (data ?? null) as {
+        const raw = data as unknown;
+        const row = Array.isArray(raw) ? raw[0] : raw;
+        const result = (row ?? null) as {
           balance: number;
           balance_updated_at: string | null;
           balance_age_minutes: number | null;
@@ -116,7 +119,7 @@ export function useRealtimeBalance() {
         queryClient.setQueryData<RealtimeBalanceData | null>(REALTIME_BALANCE_QUERY_KEY, (prev) => {
           if (!prev || !result) return prev;
           const nextAccounts = prev.accounts.map((acc) =>
-            acc.pluggy_account_id === pluggyAccountId
+            acc.id === accountRowId
               ? {
                   ...acc,
                   balance: result.balance ?? acc.balance,
@@ -162,7 +165,7 @@ export function useRealtimeBalance() {
         });
         setRefreshCooldownUntil((prev) => ({
           ...prev,
-          [pluggyAccountId]: now + REFRESH_COOLDOWN_MS,
+          [accountRowId]: now + REFRESH_COOLDOWN_MS,
         }));
       } catch {
         toast({
@@ -184,7 +187,7 @@ export function useRealtimeBalance() {
     refetch: query.refetch,
     refreshAccountBalance,
     refreshingAccountId,
-    isRefreshCooldown: (pluggyAccountId: string) =>
-      (refreshCooldownUntil[pluggyAccountId] ?? 0) > Date.now(),
+    isRefreshCooldown: (accountRowId: string) =>
+      (refreshCooldownUntil[accountRowId] ?? 0) > Date.now(),
   };
 }

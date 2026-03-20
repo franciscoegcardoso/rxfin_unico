@@ -141,7 +141,9 @@ export function useOnboardingCheckpoint() {
   const currentPhase: OnboardingPhase = (checkpoint.onboarding_phase as OnboardingPhase) ?? 'not_started';
   const currentControlPhase: ControlPhase = (checkpoint.onboarding_control_phase as ControlPhase) ?? 'not_started';
   const controlDone: boolean = checkpoint.onboarding_control_done ?? false;
-  const currentLevel = LEVEL_MAP[currentPhase] ?? 0;
+  const mappedLevel = LEVEL_MAP[currentPhase];
+  const currentLevel =
+    typeof mappedLevel === 'number' && Number.isFinite(mappedLevel) ? mappedLevel : 0;
 
   const advancePhase = useCallback(
     async (newPhase: OnboardingPhase): Promise<boolean> => {

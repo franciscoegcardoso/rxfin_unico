@@ -93,8 +93,8 @@ export const BalanceSummaryCard: React.FC = () => {
             {displayAccounts.map((acc) => {
               const staleStatus = getStaleStatus(acc.is_stale, acc.balance_age_minutes);
               const ageLabel = formatBalanceAge(acc.balance_age_minutes);
-              const isRefreshing = refreshingAccountId === acc.pluggy_account_id;
-              const onCooldown = isRefreshCooldown(acc.pluggy_account_id);
+              const isRefreshing = refreshingAccountId === acc.id;
+              const onCooldown = isRefreshCooldown(acc.id);
 
               return (
                 <div
@@ -141,7 +141,7 @@ export const BalanceSummaryCard: React.FC = () => {
                     size="icon"
                     className="h-7 w-7 shrink-0"
                     disabled={isRefreshing || onCooldown}
-                    onClick={() => refreshAccountBalance(acc.pluggy_account_id)}
+                    onClick={() => refreshAccountBalance(acc.id)}
                     aria-label="Atualizar saldo"
                   >
                     {isRefreshing ? (

@@ -55,39 +55,36 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   });
 
   const needsOnboardingCheck = location.pathname === '/inicio' && !localStorage.getItem(ONBOARDING_CACHE_KEY);
+  const isInicioRoute = location.pathname === '/inicio';
   const ONBOARDING_RPC_TIMEOUT_MS = 8_000;
 
+  /** Sempre corre em /inicio com sessão — não usar `needsOnboardingCheck` em `enabled` (com cache LS a query ficava disabled e presa em "pending" no DevTools). */
   const { data: settingsData, isPending: onboardingCheckPending } = useQuery({
     queryKey: ['onboarding-status', user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
       const timeoutPromise = new Promise<null>((resolve) => {
         setTimeout(() => resolve(null), ONBOARDING_RPC_TIMEOUT_MS);
       });
       const rpcPromise = Promise.all([
         supabase.rpc('get_user_profile_settings'),
-        user?.id
-          ? supabase
-              .from('onboarding_state')
-              .select('onboarding_phase')
-              .eq('user_id', user.id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
+        supabase.from('onboarding_state').select('onboarding_phase').eq('user_id', user.id).maybeSingle(),
       ]).then(([settingsRes, stateRes]) => {
-        if (settingsRes.error) return null;
+        if (settingsRes.error) throw settingsRes.error;
         return {
           ...(settingsRes.data as object),
-          onboarding_phase: stateRes.data?.onboarding_phase ?? (settingsRes.data as any)?.onboarding_phase ?? null,
+          onboarding_phase:
+            stateRes.data?.onboarding_phase ??
+            (settingsRes.data as { onboarding_phase?: string } | null)?.onboarding_phase ??
+            null,
         };
       });
-      try {
-        return await Promise.race([rpcPromise, timeoutPromise]);
-      } catch {
-        return null;
-      }
+      return await Promise.race([rpcPromise, timeoutPromise]);
     },
-    enabled: !!user?.id && needsOnboardingCheck,
+    enabled: !!user?.id && isInicioRoute,
     staleTime: 60_000,
-    retry: 1,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10_000),
   });
 
   // Considerar "não redirecionar" se: onboarding concluído OU já está em andamento

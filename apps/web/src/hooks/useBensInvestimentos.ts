@@ -142,6 +142,10 @@ async function fetchBensInvestimentos(assetType: string | null = null): Promise<
   return data as BensInvestimentosData | null;
 }
 
+/**
+ * Se dados de logo_url parecerem antigos no browser após deploy, invalidar:
+ * `queryClient.invalidateQueries({ queryKey: ['bens-investimentos'] })` ou limpar storage + hard reload.
+ */
 export function useBensInvestimentos(assetType: string | null = null) {
   return useQuery({
     queryKey: ['bens-investimentos', assetType],

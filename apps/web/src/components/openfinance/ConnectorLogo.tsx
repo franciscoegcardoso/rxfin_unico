@@ -30,7 +30,8 @@ export const ConnectorLogo: React.FC<ConnectorLogoProps> = ({
 
   const firstLetter = connectorName?.charAt(0)?.toUpperCase() || '?';
   const bgColor = primaryColor ? `#${primaryColor.replace(/^#/, '')}` : undefined;
-  const { px, radius, fontSize } = SIZE_MAP[size];
+  const resolvedSize = SIZE_MAP[size] ? size : 'md';
+  const { px, radius, fontSize } = SIZE_MAP[resolvedSize];
 
   const containerClass = cn(
     'shrink-0 flex items-center justify-center overflow-hidden',

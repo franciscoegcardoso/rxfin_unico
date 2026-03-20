@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingDown, LineChart, BarChart3 } from 'lucide-react';
 import { SuspenseTimeSeriesChart, SuspenseCohortMatrix } from '@/components/simuladores/LazyChartComponents';
 
-import type { ParsedHistoryPoint } from '@/hooks/useFipeFullHistory';
+import type { FipeHistoryProjectionMeta, ParsedHistoryPoint } from '@/hooks/useFipeFullHistory';
 import type { CohortAnalysisData } from '@/utils/depreciationRegression';
 import type { DepreciationEngineResult, ConsideredModelInfo } from '@/utils/depreciationCoreEngine';
 
@@ -21,6 +21,7 @@ interface FipeHistoryAnalysisDialogProps {
   engineV2Result: DepreciationEngineResult | null;
   consideredModels?: ConsideredModelInfo[];
   familyName?: string | null;
+  historyProjectionMeta?: FipeHistoryProjectionMeta | null;
   // For cohort matrix
   fipeCode: string;
   // State
@@ -52,11 +53,19 @@ export const FipeHistoryAnalysisDialog: React.FC<FipeHistoryAnalysisDialogProps>
         >
           <LineChart className="h-4 w-4" />
           <span>Análise Histórica</span>
-          {engineV2Result && (
-            <Badge variant="secondary" className="text-[10px] ml-1">
-              {(engineV2Result.metadata.annualRatePhaseA * 100).toFixed(1)}%/ano
-            </Badge>
-          )}
+          {(() => {
+            const wls = historyProjectionMeta && modelYear !== 32000 ? historyProjectionMeta : null;
+            const pct = wls
+              ? wls.projectionRateAnnual * 100
+              : engineV2Result
+                ? engineV2Result.metadata.annualRatePhaseA * 100
+                : null;
+            return pct != null ? (
+              <Badge variant="secondary" className="text-[10px] ml-1">
+                {pct.toFixed(1)}%/ano
+              </Badge>
+            ) : null;
+          })()}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -86,6 +95,7 @@ export const FipeHistoryAnalysisDialog: React.FC<FipeHistoryAnalysisDialogProps>
                 engineV2Result={engineV2Result}
                 consideredModels={consideredModels}
                 familyName={familyName}
+                historyProjectionMeta={historyProjectionMeta ?? null}
               />
             </div>
           )}

@@ -56,6 +56,12 @@ type ResponsePayload = {
   source?: 'database' | 'api' | 'partial';
   partial?: boolean; // True if more data is being fetched in background
   restricted?: boolean;
+  /** Taxa composta mensal estimada (WLS log-linear, últimos 18 meses, λ=0.94) */
+  projectionRate?: number;
+  /** Taxa composta anual equivalente: (1 + projectionRate)^12 - 1 */
+  projectionRateAnnual?: number;
+  stdDevMonthly?: number;
+  stabilizationZone?: boolean;
   stats?: {
     cacheHits: number;
     queryTimeMs: number;
@@ -64,6 +70,8 @@ type ResponsePayload = {
   };
   error?: string;
   suggestion?: string; // User-friendly suggestion on error
+  /** Média IPCA ~últimos 3 anos (a.a.); fixo até integração com tabela */
+  ipca3yAvg?: number;
 };
 
 // =============================================================================
@@ -71,6 +79,8 @@ type ResponsePayload = {
 // =============================================================================
 // OPTIMIZED after stress testing: avg response was 25s with 10-33% success rate
 const PARTIAL_DATA_MIN_POINTS = 2; // Reduced from 3 - return partial data even with minimal cache
+/** Referência anualizada ~média IPCA 3 anos (pode vir de tabela no futuro) */
+const IPCA_3Y_AVG_AA = 0.046;
 const FALLBACK_TIMEOUT_MS = 18000; // Reduced from 25s - fail faster, trigger background fetch sooner
 
 // =============================================================================
@@ -234,6 +244,62 @@ function transformToHistoryPoints(cachedPrices: CachedPrice[]): HistoryPoint[] {
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
+const WLS_LAMBDA = 0.94;
+const WLS_MONTHS = 18;
+const WLS_MIN_POINTS = 6;
+
+function computeWlsProjectionMeta(points: HistoryPoint[]): Pick<
+  ResponsePayload,
+  "projectionRate" | "projectionRateAnnual" | "stdDevMonthly" | "stabilizationZone"
+> | undefined {
+  const sorted = [...points].filter((p) => p.price > 0).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+  if (sorted.length < WLS_MIN_POINTS) return undefined;
+
+  const slice = sorted.slice(-WLS_MONTHS);
+  const n = slice.length;
+  const ys = slice.map((p) => Math.log(p.price));
+
+  let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.pow(WLS_LAMBDA, n - 1 - i);
+    const x = i;
+    const y = ys[i];
+    sw += w;
+    swx += w * x;
+    swy += w * y;
+    swxx += w * x * x;
+    swxy += w * x * y;
+  }
+  const den = sw * swxx - swx * swx;
+  if (Math.abs(den) < 1e-14) return undefined;
+
+  const b = (sw * swxy - swx * swy) / den;
+  const a = (swy - b * swx) / sw;
+  const monthlyMultiplier = Math.exp(b);
+  const projectionRate = monthlyMultiplier - 1;
+  const projectionRateAnnual = Math.pow(monthlyMultiplier, 12) - 1;
+
+  let sumWRes2 = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.pow(WLS_LAMBDA, n - 1 - i);
+    const res = ys[i] - (a + b * i);
+    sumWRes2 += w * res * res;
+  }
+  const stdDevMonthly = Math.sqrt(sumWRes2 / sw);
+  const stabilizationZone = Math.abs(projectionRateAnnual) < 0.03;
+
+  return { projectionRate, projectionRateAnnual, stdDevMonthly, stabilizationZone };
+}
+
+function withProjectionFields(payload: ResponsePayload): ResponsePayload {
+  const withIpca: ResponsePayload = { ...payload, ipca3yAvg: IPCA_3Y_AVG_AA };
+  if (!withIpca.success || !withIpca.points?.length) return withIpca;
+  const meta = computeWlsProjectionMeta(withIpca.points);
+  return meta ? { ...withIpca, ...meta } : withIpca;
+}
+
 // =============================================================================
 // FALLBACK TO LEGACY API
 // When database coverage is inadequate, call the legacy fipe-full-history function
@@ -277,7 +343,7 @@ async function callLegacyFipeFullHistory(
     
     const data = await response.json();
     
-    return {
+    const base: ResponsePayload = {
       success: data.success,
       points: data.points,
       source: 'api',
@@ -290,6 +356,7 @@ async function callLegacyFipeFullHistory(
         coverageStatus: 'api_fallback',
       },
     };
+    return withProjectionFields(base);
   } catch (err) {
     console.error("[fipe-history-v2] Legacy fallback error:", err);
     
@@ -389,7 +456,7 @@ serve(async (req) => {
       console.log(`[fipe-history-v2] ✅ Database-only response: ${historyPoints.length} points in ${totalTimeMs}ms`);
       
       return new Response(
-        JSON.stringify({
+        JSON.stringify(withProjectionFields({
           success: true,
           points: historyPoints,
           source: 'database',
@@ -401,7 +468,7 @@ serve(async (req) => {
             totalTimeMs,
             coverageStatus: coverage.status,
           },
-        } as ResponsePayload),
+        })),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -417,7 +484,7 @@ serve(async (req) => {
       console.log(`[fipe-history-v2] ⚡ Returning partial data: ${historyPoints.length} points in ${totalTimeMs}ms (background fetch triggered)`);
       
       return new Response(
-        JSON.stringify({
+        JSON.stringify(withProjectionFields({
           success: true,
           points: historyPoints,
           source: 'partial',
@@ -429,7 +496,7 @@ serve(async (req) => {
             totalTimeMs,
             coverageStatus: coverage.status + '_partial',
           },
-        } as ResponsePayload),
+        })),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -448,7 +515,7 @@ serve(async (req) => {
     console.log(`[fipe-history-v2] API fallback complete: ${legacyResult.points?.length || 0} points in ${totalTimeMs}ms`);
     
     return new Response(
-      JSON.stringify(legacyResult),
+      JSON.stringify(withProjectionFields(legacyResult)),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
     

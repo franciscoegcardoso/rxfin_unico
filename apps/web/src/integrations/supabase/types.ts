@@ -1339,13 +1339,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "credit_card_transactions_credit_card_bill_id_fkey"
-            columns: ["credit_card_bill_id"]
-            isOneToOne: false
-            referencedRelation: "credit_card_bills_with_totals"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "credit_card_transactions_purchase_registry_id_fkey"
             columns: ["purchase_registry_id"]
             isOneToOne: false
@@ -1448,13 +1441,6 @@ export type Database = {
             columns: ["credit_card_bill_id"]
             isOneToOne: false
             referencedRelation: "credit_card_bills"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_card_transactions_credit_card_bill_id_fkey"
-            columns: ["credit_card_bill_id"]
-            isOneToOne: false
-            referencedRelation: "credit_card_bills_with_totals"
             referencedColumns: ["id"]
           },
           {
@@ -5249,13 +5235,6 @@ export type Database = {
             referencedRelation: "credit_card_bills"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "pluggy_transactions_bill_id_fkey"
-            columns: ["bill_id"]
-            isOneToOne: false
-            referencedRelation: "credit_card_bills_with_totals"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {
@@ -7253,48 +7232,6 @@ export type Database = {
       }
     }
     Views: {
-      credit_card_bills_with_totals: {
-        Row: {
-          billing_month: string | null
-          card_id: string | null
-          card_name: string | null
-          closing_date: string | null
-          computed_total: number | null
-          connector_image_url: string | null
-          connector_primary_color: string | null
-          created_at: string | null
-          due_date: string | null
-          has_total_divergence: boolean | null
-          id: string | null
-          lancamento_id: string | null
-          paid_amount: number | null
-          payment_source: string | null
-          pending_total: number | null
-          pluggy_bill_id: string | null
-          requires_manual_check: boolean | null
-          status: string | null
-          total_value: number | null
-          transaction_count: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "credit_card_bills_lancamento_id_fkey"
-            columns: ["lancamento_id"]
-            isOneToOne: false
-            referencedRelation: "lancamentos_realizados"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "credit_card_bills_lancamento_id_fkey"
-            columns: ["lancamento_id"]
-            isOneToOne: false
-            referencedRelation: "v_lancamentos_full"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       depreciation_backtest_summary: {
         Row: {
           avg_bias: number | null

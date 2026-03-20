@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useVisibility } from '@/contexts/VisibilityContext';
-import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import { useLancamentosAll } from '@/contexts/LancamentosAllContext';
 import { useContasPagarReceber } from '@/hooks/useContasPagarReceber';
 import { useMonthSummary } from '@/hooks/useMonthSummary';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
@@ -226,7 +226,7 @@ function getMonthKeysForPeriod(period: BudgetCompositionPeriod): string[] {
 
 export const BudgetCompositionCard: React.FC = () => {
   const { isHidden } = useVisibility();
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
   const isMobile = useIsMobile();
   const [period, setPeriod] = useState<BudgetCompositionPeriod>('this_month');
 
@@ -312,7 +312,7 @@ export const BudgetCompositionCard: React.FC = () => {
 // ─── Categorização Pendente ─────────────────────────────────
 
 export const PendingCategorizationCard: React.FC = () => {
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
   const navigate = useNavigate();
 
   const currentMonth = format(new Date(), 'yyyy-MM');

@@ -28,7 +28,12 @@ export function lancamentosMesSegment(mesReferencia?: string | null): string {
   return 'invalid-month';
 }
 
-/** Lista completa de lançamentos (deduplicada entre N componentes no Início). */
+/**
+ * Lista de lançamentos para React Query.
+ * Com `mesReferencia` null/undefined → segmento `__all__` (lista completa).
+ * No Início, preferir uma única subscrição via `LancamentosAllProvider` + `useGlobalLancamentosQuery`
+ * (`hooks/useGlobalLancamentos.ts`) em vez de vários `useLancamentosRealizados()`.
+ */
 export function lancamentosListQueryKey(userId: string, mesReferencia?: string | null) {
   return ['lancamentos', userId, lancamentosMesSegment(mesReferencia)] as const;
 }

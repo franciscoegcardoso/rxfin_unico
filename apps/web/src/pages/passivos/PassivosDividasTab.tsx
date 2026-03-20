@@ -6,15 +6,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { AlertCircle, FileText, Plus, RefreshCw } from 'lucide-react';
 import { DividaObrigacaoDialog } from '@/components/passivos/DividaObrigacaoDialog';
 import { usePassivosPage } from '@/hooks/usePassivosPage';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 type PluggyLoan = {
+  id?: string;
   product_name: string;
   outstanding_balance: number;
   progress_pct?: number | null;
+  total_installments?: number | null;
+  is_overdue?: boolean;
   cet_annual_pct?: number | null;
   cet_monthly_pct?: number | null;
   pre_fixed_rate_pct?: number | null;
@@ -22,6 +31,7 @@ type PluggyLoan = {
   amortization_system?: string | null;
   interest_rates?: unknown[] | null;
   contracted_fees?: unknown[] | null;
+  contracted_finance_charges?: unknown[] | null;
   warranties?: unknown[] | null;
   first_installment_due_date?: string | null;
 };
@@ -44,6 +54,7 @@ type PassivosDividasResponse = {
     overdue_count: number;
     has_overdue: boolean;
     avg_cet_annual_pct: number;
+    max_cet_annual_pct?: number | null;
   };
   fetched_at: string;
 };
@@ -68,11 +79,30 @@ const cetTone = (value: number | null | undefined): string => {
   return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
 };
 
-function ProgressBar({ value }: { value: number }) {
+function formatAmortizationSystem(code: string | null | undefined): string {
+  if (!code) return '';
+  const c = code.trim().toUpperCase();
+  if (c === 'SAC') return 'SAC';
+  if (c === 'PRICE') return 'PRICE (Tabela Price)';
+  if (c === 'WITHOUT_AMORTIZATION_SYSTEM') return 'Crédito Rotativo';
+  return code;
+}
+
+function ProgressBar({
+  value,
+  variant = 'default',
+}: {
+  value: number;
+  variant?: 'default' | 'destructive';
+}) {
   const pct = Math.max(0, Math.min(100, value));
+  const fill =
+    variant === 'destructive'
+      ? 'bg-destructive'
+      : 'bg-primary';
   return (
     <div className="h-2 w-full rounded-full bg-muted/70 overflow-hidden">
-      <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+      <div className={cn('h-full rounded-full transition-all', fill)} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -137,13 +167,23 @@ export default function PassivosDividasTab() {
           <span className="text-sm font-medium">{data.summary.overdue_count} vencida(s)</span>
         </div>
       )}
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">CET médio</span>
-        <Badge variant="outline" className={cetTone(data?.summary?.avg_cet_annual_pct)}>
-          {data?.summary?.avg_cet_annual_pct != null
-            ? `${formatPct(data.summary.avg_cet_annual_pct)}% a.a.`
-            : '—'}
-        </Badge>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">CET médio</span>
+          <Badge variant="outline" className={cetTone(data?.summary?.avg_cet_annual_pct)}>
+            {data?.summary?.avg_cet_annual_pct != null
+              ? `${formatPct(data.summary.avg_cet_annual_pct)}% a.a.`
+              : '—'}
+          </Badge>
+        </div>
+        {data?.summary?.max_cet_annual_pct != null && (
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">CET máximo</span>
+            <Badge variant="outline" className={cetTone(data.summary.max_cet_annual_pct)}>
+              {`${formatPct(data.summary.max_cet_annual_pct)}% a.a.`}
+            </Badge>
+          </div>
+        )}
       </div>
 
       {!hasAnyLoans ? (
@@ -157,41 +197,69 @@ export default function PassivosDividasTab() {
       ) : (
         <ScrollArea className="h-[520px]">
           <div className="space-y-4">
-            {pluggyLoans.map((loan) => {
+            {pluggyLoans.map((loan, loanIdx) => {
               const progress = typeof loan.progress_pct === 'number' ? loan.progress_pct : 0;
+              const ti = loan.total_installments;
+              const showProgressBar = ti == null || ti > 0;
+              const isRevolvingSlot = ti === 0;
+              const overdue = loan.is_overdue === true;
+              const cardKey = loan.id ?? `pluggy-${loan.product_name}-${loanIdx}`;
+              const amoLabel = formatAmortizationSystem(loan.amortization_system);
               return (
-                <Card key={`pluggy-${loan.product_name}`}>
+                <Card key={cardKey}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium truncate">{loan.product_name}</p>
                         <p className="text-xs text-muted-foreground">Open Finance</p>
                       </div>
-                      <Badge variant="outline" className="shrink-0">
-                        {formatMoney(loan.outstanding_balance)}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <Badge variant="outline">
+                          {formatMoney(loan.outstanding_balance)}
+                        </Badge>
+                        {overdue && (
+                          <Badge variant="destructive" className="text-[10px]">
+                            Em atraso
+                          </Badge>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Progresso</span>
-                        <span className="font-medium">{progress.toFixed(0)}%</span>
+                    {isRevolvingSlot ? (
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        Crédito Rotativo
+                      </Badge>
+                    ) : showProgressBar ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Progresso</span>
+                          <span className="font-medium">{progress.toFixed(0)}%</span>
+                        </div>
+                        <ProgressBar value={progress} variant={overdue ? 'destructive' : 'default'} />
                       </div>
-                      <ProgressBar value={progress} />
-                    </div>
+                    ) : null}
 
                     <div className="rounded-md border border-border/60 p-3 space-y-2">
                       <p className="text-xs font-medium text-muted-foreground">Detalhes financeiros</p>
                       <div className="space-y-1.5 text-xs">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-muted-foreground">CET Anual</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/50">
+                                CET Anual
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-xs">
+                              Custo Efetivo Total — inclui juros, tarifas e seguros
+                            </TooltipContent>
+                          </Tooltip>
                           <Badge variant="outline" className={cetTone(loan.cet_annual_pct)}>
                             {loan.cet_annual_pct != null ? `${formatPct(loan.cet_annual_pct)}% a.a.` : '—'}
                           </Badge>
                         </div>
-                        {loan.cet_monthly_pct != null && (
+                        {loan.cet_monthly_pct != null && loan.cet_monthly_pct > 0 && (
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-muted-foreground">Taxa Mensal Efetiva</span>
+                            <span className="text-muted-foreground">Taxa Mensal</span>
                             <span className="font-medium">{formatPct(loan.cet_monthly_pct)}% a.m.</span>
                           </div>
                         )}
@@ -207,10 +275,16 @@ export default function PassivosDividasTab() {
                             <span className="font-medium">{formatDateBr(loan.contract_date)}</span>
                           </div>
                         )}
-                        {loan.amortization_system && (
+                        {loan.first_installment_due_date && (
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground">1ª parcela</span>
+                            <span className="font-medium">{formatDateBr(loan.first_installment_due_date)}</span>
+                          </div>
+                        )}
+                        {amoLabel && (
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-muted-foreground">Sistema de amortização</span>
-                            <span className="font-medium">{loan.amortization_system}</span>
+                            <span className="font-medium">{amoLabel}</span>
                           </div>
                         )}
                       </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ const TAB_INACTIVE = 'border-transparent';
 
 const MeuIRLayout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const year = new Date().getFullYear();
 
   return (
@@ -81,7 +82,7 @@ const MeuIRLayout: React.FC = () => {
             </nav>
 
             <div className="mt-6">
-              <Outlet />
+              <Outlet key={location.pathname} />
             </div>
           </div>
         </div>

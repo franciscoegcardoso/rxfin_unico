@@ -442,6 +442,7 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
                       engineV2Result={depreciationEngineV2.result}
                       consideredModels={depreciationEngineV2.consideredModels}
                       familyName={depreciationEngineV2.familyName}
+                      historyProjectionMeta={fipeHistory.historyProjectionMeta}
                       fipeCode={fipe.price.CodigoFipe}
                       hasHistory={fipeHistory.hasHistory}
                     />

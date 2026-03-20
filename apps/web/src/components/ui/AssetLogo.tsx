@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { CRYPTO_LOGO_MAP } from '@/lib/crypto-logo-map';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,20 @@ export const LOGODEV_TOKEN_DEFAULT = 'pk_Dp3UH6feRJSHIK2iM3-Y0g';
 /** Tipos com ícone público em icons.brapi.dev (SVG, sem token). */
 const BRAPI_TYPES_UPPER = new Set(['STOCK', 'REAL_ESTATE_FUND', 'ETF', 'BDR']);
 const BRAPI_TYPES_RAW = new Set(['stock_br', 'fii', 'etf_br', 'bdr']);
+
+/** Renda fixa / fundos: priorizar só `logo_url` do banco; não misturar fallback Logo.dev por domínio quando já houver URL (evita domínios incorretos derivados de issuer). */
+const FIXED_INCOME_TYPES = new Set([
+  'FIXED_INCOME',
+  'TREASURE_DIRECT',
+  'MUTUAL_FUND',
+  'PENSION_VGBL',
+  'PENSION_PGBL',
+]);
+
+/** Pluggy / manual: tipos em que o logo oficial vem de `logo_url` (não usar `companyDomain` nos cards). */
+export function isFixedIncomeAssetType(assetType: string | null | undefined): boolean {
+  return FIXED_INCOME_TYPES.has((assetType || '').toUpperCase());
+}
 
 /** Tickers típicos B3 (ações, FII, BDR) para tentar icons.brapi.dev mesmo com tipo Pluggy "EQUITY". */
 function isLikelyBrazilianListingTicker(ticker: string): boolean {
@@ -53,8 +67,10 @@ export function normalizeLegacyLogoUrl(url: string, token: string = LOGODEV_TOKE
 }
 
 /**
- * Cadeia de fallbacks para o avatar — sem uso de domínios descontinuados.
- * FIXED_INCOME / fundos: só `logoUrl` normalizado + Logo.dev por domínio (sem CDNs de ticker B3).
+ * Cadeia de fallbacks — só `logo_url` do banco, icons.brapi.dev (quando aplicável) e img.logo.dev;
+ * sem URLs de serviços legados de logo-por-domínio de terceiros.
+ * Renda fixa / fundo com `logoUrl`: não adiciona fallback por `companyDomain` (evita domínio errado).
+ * Renda fixa sem logo: ainda permite `companyDomain` (ex.: cadastro manual).
  */
 export function buildFallbackChain(
   ticker: string | undefined | null,
@@ -65,6 +81,8 @@ export function buildFallbackChain(
 ): string[] {
   const urls: string[] = [];
   const t = ticker?.trim().toUpperCase() ?? '';
+  const typeUpper = (assetType || '').toUpperCase();
+  const isFixedIncome = FIXED_INCOME_TYPES.has(typeUpper);
 
   if (logoUrl?.trim()) {
     urls.push(normalizeLegacyLogoUrl(logoUrl.trim(), token));
@@ -79,15 +97,16 @@ export function buildFallbackChain(
     urls.push(`https://raw.githubusercontent.com/nancydotso/logos/main/${t}.png`);
   }
 
-  const typeUpper = (assetType || '').toUpperCase();
   const isCrypto = typeUpper === 'CRYPTO' || assetType === 'crypto';
   if (isCrypto && t) {
     const cryptoUrl = CRYPTO_LOGO_MAP[t];
     if (cryptoUrl) urls.push(cryptoUrl);
   }
 
-  if (companyDomain?.trim()) {
-    const domain = companyDomain.trim().replace(/^https?:\/\//, '').split('/')[0];
+  const allowCompanyDomain =
+    !!companyDomain?.trim() && (!isFixedIncome || !logoUrl?.trim());
+  if (allowCompanyDomain) {
+    const domain = companyDomain!.trim().replace(/^https?:\/\//, '').split('/')[0];
     if (domain) {
       urls.push(`https://img.logo.dev/${domain}?token=${token}&size=64`);
     }
@@ -110,14 +129,6 @@ function getAvatarColor(seed: string): string {
   const idx = seed.charCodeAt(0) % colors.length;
   return colors[idx];
 }
-
-const FIXED_INCOME_TYPES = new Set([
-  'FIXED_INCOME',
-  'TREASURE_DIRECT',
-  'MUTUAL_FUND',
-  'PENSION_VGBL',
-  'PENSION_PGBL',
-]);
 
 function getInitials(
   name?: string | null,
@@ -175,6 +186,14 @@ export function AssetLogo({
   showTooltip = false,
 }: AssetLogoProps) {
   const [fallbackIndex, setFallbackIndex] = useState(0);
+
+  /** Log temporário (só DEV): confirma props em RF/fundos — remover quando não precisar de evidência. */
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (isFixedIncomeAssetType(assetType)) {
+      console.log('[AssetLogo FIXED]', { ticker, assetType, logoUrl, companyDomain });
+    }
+  }, [ticker, assetType, logoUrl, companyDomain]);
 
   const logodevToken =
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGODEV_TOKEN) ||

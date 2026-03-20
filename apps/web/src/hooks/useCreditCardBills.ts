@@ -23,7 +23,7 @@ export interface CreditCardBill {
   connector_image_url: string | null;
   connector_primary_color: string | null;
   pluggy_bill_id: string | null;
-  // Campos calculados da view credit_card_bills_with_totals
+  /** Campos opcionais (p.ex. agregações client-side ou extensões futuras); não vêm da tabela base */
   computed_total?: number;
   pending_total?: number;
   transaction_count?: number;
@@ -50,22 +50,13 @@ export function useCreditCardBills() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: viewError } = await supabase
-        .from('credit_card_bills_with_totals' as any)
+      const { data, error: fetchError } = await supabase
+        .from('credit_card_bills')
         .select('*')
         .eq('user_id', user.id)
         .order('due_date', { ascending: false });
 
-      if (viewError) {
-        const { data: fallback, error: tableError } = await supabase
-          .from('credit_card_bills')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('due_date', { ascending: false });
-        if (tableError) throw tableError;
-        setBills((fallback || []) as unknown as CreditCardBill[]);
-        return;
-      }
+      if (fetchError) throw fetchError;
       setBills((data || []) as unknown as CreditCardBill[]);
     } catch (err) {
       console.error('Error fetching bills:', err);

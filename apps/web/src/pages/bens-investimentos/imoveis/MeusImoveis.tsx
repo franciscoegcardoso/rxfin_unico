@@ -213,22 +213,29 @@ const MeusImoveis: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="flex items-center justify-end">
-        <Button onClick={() => handleOpenAddDialog(undefined, undefined, 'property')} className="gap-2 w-full sm:w-auto min-h-[44px] touch-manipulation">
-          <Plus className="h-4 w-4" />
-          Adicionar imóvel
-        </Button>
-      </div>
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-xl font-semibold text-foreground">Meus Imóveis</h2>
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-          <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-3" onClick={() => setViewMode('list')}>
-            <List className="h-4 w-4" />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <Home className="h-5 w-5 text-primary shrink-0" />
+          Meus Imóveis
+        </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={() => handleOpenAddDialog(undefined, undefined, 'property')}
+          >
+            <Plus className="h-4 w-4" />
+            Adicionar imóvel
           </Button>
-          <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-3" onClick={() => setViewMode('cards')}>
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-3" onClick={() => setViewMode('list')}>
+              <List className="h-4 w-4" />
+            </Button>
+            <Button variant={viewMode === 'cards' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-3" onClick={() => setViewMode('cards')}>
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
       {imoveis.length === 0 ? (
@@ -305,7 +312,7 @@ const MeusImoveis: React.FC = () => {
         </div>
       )}
       <AssetCostBreakdown assets={config.assets} />
-    </>
+    </div>
   );
 };
 

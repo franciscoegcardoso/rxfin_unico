@@ -1116,11 +1116,20 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
         <MobileSectionDrawer
           title="Curva de Depreciação"
           icon={<TrendingDown className="h-4 w-4 text-primary" />}
-          badge={depreciationEngineV2.result ? (
-            <Badge className="bg-primary/20 text-primary border-0 text-[10px]">
-              {(depreciationEngineV2.result.metadata.annualRatePhaseA * 100).toFixed(1)}%/ano
-            </Badge>
-          ) : undefined}
+          badge={(() => {
+            const wls =
+              fipe.price.AnoModelo !== 32000 ? fipeHistory.historyProjectionMeta : null;
+            const pct = wls
+              ? wls.projectionRateAnnual * 100
+              : depreciationEngineV2.result?.metadata.annualRatePhaseA != null
+                ? depreciationEngineV2.result.metadata.annualRatePhaseA * 100
+                : null;
+            return pct != null ? (
+              <Badge className="bg-primary/20 text-primary border-0 text-[10px]">
+                {pct.toFixed(1)}%/ano
+              </Badge>
+            ) : undefined;
+          })()}
           isTabletOrMobile={isTabletOrMobile}
         >
           <SuspenseTimeSeriesChart
@@ -1134,6 +1143,7 @@ export const FipeSimulator: React.FC<FipeSimulatorProps> = ({ registeredVehicles
             engineV2Result={depreciationEngineV2.result}
             consideredModels={depreciationEngineV2.consideredModels}
             familyName={depreciationEngineV2.familyName}
+            historyProjectionMeta={fipeHistory.historyProjectionMeta}
           />
         </MobileSectionDrawer>
       )}

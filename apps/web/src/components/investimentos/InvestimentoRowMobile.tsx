@@ -1,7 +1,7 @@
 import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { AssetLogo } from '@/components/ui/AssetLogo'
+import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
 import { formatCurrency, formatDateShort } from '@/utils/investimentos'
 import { InvestimentoDetalhesMobile } from './InvestimentoDetalhesMobile'
@@ -29,7 +29,16 @@ export function InvestimentoRowMobile({
         onClick={onToggle}
         className="w-full flex items-center gap-2.5 px-3.5 py-2.5 border-b border-border/40 hover:bg-muted/20 active:bg-muted/40 transition-colors text-left"
       >
-        <AssetLogo ticker={ticker} assetType={item.type ?? ''} logoUrl={item.logo_url ?? null} companyDomain={item.company_domain ?? null} name={display} size="md" />
+        <AssetLogo
+          ticker={ticker}
+          assetType={item.type ?? ''}
+          logoUrl={item.logo_url ?? null}
+          companyDomain={
+            isFixedIncomeAssetType(item.type) ? null : item.company_domain ?? null
+          }
+          name={display}
+          size="md"
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className="text-sm font-medium truncate max-w-[180px]">{display}</span>

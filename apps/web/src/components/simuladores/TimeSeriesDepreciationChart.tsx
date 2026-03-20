@@ -31,7 +31,7 @@ import {
 } from 'recharts';
 import { premiumGrid, premiumXAxis, premiumYAxis } from '@/components/charts/premiumChartTheme';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ParsedHistoryPoint } from '@/hooks/useFipeFullHistory';
+import { ParsedHistoryPoint, type FipeHistoryProjectionMeta } from '@/hooks/useFipeFullHistory';
 import { calculateProjectionFromHistory, HistoricalPricePoint, CohortAnalysisData } from '@/utils/depreciationRegression';
 import type { DepreciationEngineResult, ConfidenceLevel, DataMethod, ConsideredModelInfo } from '@/utils/depreciationCoreEngine';
 import { ConsideredModelsInfo } from './ConsideredModelsInfo';
@@ -50,6 +50,8 @@ interface TimeSeriesDepreciationChartProps {
   consideredModels?: ConsideredModelInfo[];
   /** Nome da família quando usando agregação por família */
   familyName?: string | null;
+  /** WLS (últimos 18 meses) — mesma fonte que alimenta projeção, legenda e tooltip */
+  historyProjectionMeta?: FipeHistoryProjectionMeta | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -166,7 +168,9 @@ const MethodologyDialog: React.FC<{
   periodStart: string;
   periodEnd: string;
   totalPoints: number;
-}> = ({ periodStart, periodEnd, totalPoints }) => (
+  projectionAnnualPercentFormatted: string | null;
+  isZeroKm: boolean;
+}> = ({ periodStart, periodEnd, totalPoints, projectionAnnualPercentFormatted, isZeroKm }) => (
   <Dialog>
     <DialogTrigger asChild>
       <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
@@ -206,17 +210,35 @@ const MethodologyDialog: React.FC<{
           </ul>
         </div>
 
-        {/* Regressão Log-Linear */}
+        {/* Projeção */}
         <div>
           <h4 className="font-semibold mb-2">Projeção (Linha Tracejada)</h4>
           <div className="text-muted-foreground text-xs space-y-2">
-            <p>A projeção utiliza <strong>Regressão Log-Linear</strong> com os seguintes passos:</p>
-            <ol className="list-decimal list-inside space-y-1 pl-2">
-              <li>Normalização dos preços para escala logarítmica (LN)</li>
-              <li>Ajuste de curva exponencial: P(t) = e^(C) × t^B</li>
-              <li>Projeção iterativa: cada valor é o anterior × taxa YoY</li>
-              <li>Para modelos estabilizados (retenção Y1→Y2 ≥ 98%): fator +1.02% a.a.</li>
-            </ol>
+            {projectionAnnualPercentFormatted && (
+              <p>
+                Taxa exibida no gráfico (legenda e cards):{' '}
+                <strong>{projectionAnnualPercentFormatted} a.a.</strong>
+              </p>
+            )}
+            {!isZeroKm && (
+              <p>
+                Taxa calculada por <strong>Weighted Least Squares (WLS)</strong> nos últimos 18 meses da
+                série histórica, com decaimento exponencial dos pesos <strong>λ = 0,94</strong> (mês mais
+                recente com maior peso). O preço projetado em cada horizonte segue composição mensal:{' '}
+                <strong>P<sub>t</sub> = P<sub>atual</sub> × (1 + r)<sup>n</sup></strong>, com{' '}
+                <em>r</em> = taxa mensal estimada e <em>n</em> = meses à frente.
+              </p>
+            )}
+            {isZeroKm && (
+              <p>
+                Para veículos <strong>0 km</strong>, a linha tracejada utiliza a curva de depreciação por
+                idade do motor (safra/coorte), não a regressão WLS do histórico do modelo usado.
+              </p>
+            )}
+            <p className="text-muted-foreground/90">
+              Demais detalhes de hierarquia de fontes (match exato, família, marca) permanecem no motor de
+              depreciação quando aplicável.
+            </p>
           </div>
         </div>
 
@@ -263,6 +285,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
   engineV2Result,
   consideredModels = [],
   familyName,
+  historyProjectionMeta = null,
 }) => {
   const isMobile = useIsMobile();
   const isZeroKm = modelYear === 32000;
@@ -284,6 +307,8 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
     if (priceHistory.length === 0 || loading) {
       return { chartData: [], metrics: null, projectionInfo: null, timeDomain: null };
     }
+
+    const wlsMeta = !isZeroKm && historyProjectionMeta ? historyProjectionMeta : null;
     
     // =========================================================================
     // v6.0: Display ALL monthly data points from backend (no December-only filter)
@@ -316,8 +341,38 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
       rSquared: number;
       annualRate: number;
     } | null = null;
-    
-    if (engineV2Result && engineV2Result.curve.length > 0) {
+
+    if (wlsMeta) {
+      const lastHistoricalDate = filteredHistory[filteredHistory.length - 1].date;
+      const lastHistoricalYear = lastHistoricalDate.getUTCFullYear();
+      const lastHistoricalMonth = lastHistoricalDate.getUTCMonth();
+      const projectionStartsThisYear = lastHistoricalMonth < 11;
+      const r = wlsMeta.projectionRate;
+
+      const projectedPoints: Array<{ date: Date; price: number; monthLabel: string }> = [];
+      for (let year = 1; year <= 5; year++) {
+        const yearOffset = projectionStartsThisYear ? year - 1 : year;
+        const targetYear = lastHistoricalYear + yearOffset;
+        const monthsAhead = 12 * year;
+        const price = lastHistoricalPrice * Math.pow(1 + r, monthsAhead);
+        projectedPoints.push({
+          date: new Date(Date.UTC(targetYear, 11, 1)),
+          price,
+          monthLabel: `Dez/${targetYear}`,
+        });
+      }
+
+      projection = {
+        projectedPoints,
+        annualRate: wlsMeta.projectionRateAnnual,
+        rSquared: 0,
+        usedFallback: false,
+        fallbackReason: undefined,
+        strategy: 'standard_regression',
+        cohortData: undefined,
+      };
+      engineV2Metadata = null;
+    } else if (engineV2Result && engineV2Result.curve.length > 0) {
       // Use Core Engine V2 projection (para 0km, launchYear = 32000 — ponto x=0 é o lançamento)
       const launchYear = isZeroKm ? modelYear : modelYear - 1;
       const lastHistoricalDate = filteredHistory[filteredHistory.length - 1].date;
@@ -439,7 +494,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
     // Adiciona pontos de projeção - calculados pela regressão log-linear
     // A projeção começa do último ponto histórico e gera 5 anos no futuro
     const projectionData = projection.projectedPoints.map((point, idx) => {
-      const projectedDepreciation = ((point.price - lastHistoricalPrice) / lastHistoricalPrice) * 100;
+      const projectedDepreciation = (point.price / lastHistoricalPrice - 1) * 100;
       
       return {
         date: point.date,
@@ -483,11 +538,15 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
     const totalVariationPercent = ((lastHistoricalPrice - firstPrice) / firstPrice) * 100;
     const monthsCount = historyForChart.length;
     const avgMonthlyVariation = totalVariation / Math.max(monthsCount - 1, 1);
-    const annualizedRate = (totalVariationPercent / Math.max(monthsCount - 1, 1)) * 12;
+    const annualizedRate = wlsMeta
+      ? wlsMeta.projectionRateAnnual * 100
+      : (totalVariationPercent / Math.max(monthsCount - 1, 1)) * 12;
     
-    // Projeção em 5 anos
-    const price5Years = projection.projectedPoints[4]?.price || lastHistoricalPrice;
-    const depreciation5Years = ((price5Years - lastHistoricalPrice) / lastHistoricalPrice) * 100;
+    // Projeção em 5 anos (60 meses a partir do último fechamento histórico)
+    const price5Years = wlsMeta
+      ? lastHistoricalPrice * Math.pow(1 + wlsMeta.projectionRate, 60)
+      : projection.projectedPoints[4]?.price || lastHistoricalPrice;
+    const depreciation5Years = ((price5Years / lastHistoricalPrice) - 1) * 100;
     
     return {
       chartData: allData,
@@ -516,7 +575,7 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
         engineV2: engineV2Metadata,
       },
     };
-  }, [priceHistory, cohortData, engineV2Result, modelYear, isZeroKm, currentPrice]);
+  }, [priceHistory, cohortData, engineV2Result, modelYear, isZeroKm, currentPrice, historyProjectionMeta]);
 
   // Filtra dados baseado no toggle de projeção
   // IMPORTANT: Hooks must be called unconditionally - moved before early return
@@ -752,6 +811,12 @@ export const TimeSeriesDepreciationChart: React.FC<TimeSeriesDepreciationChartPr
                 periodStart={metrics.periodStart}
                 periodEnd={metrics.periodEnd}
                 totalPoints={metrics.monthsCount}
+                projectionAnnualPercentFormatted={
+                  projectionInfo
+                    ? `${(projectionInfo.annualRate * 100).toFixed(1).replace('.', ',')}%`
+                    : null
+                }
+                isZeroKm={isZeroKm}
               />
             </div>
           </div>

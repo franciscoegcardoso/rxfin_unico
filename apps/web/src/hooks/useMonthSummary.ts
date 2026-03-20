@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useHomeDashboard } from '@/hooks/useHomeDashboard';
-import { useLancamentosRealizados } from '@/hooks/useLancamentosRealizados';
+import { useLancamentosAll } from '@/contexts/LancamentosAllContext';
 import { useCreditCardBills } from '@/hooks/useCreditCardBills';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 
@@ -11,7 +11,7 @@ import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
  */
 export function useMonthSummary(currentMonth: string, demoUserId?: string | null) {
   const { data: dashboardData } = useHomeDashboard(currentMonth, demoUserId);
-  const { lancamentos } = useLancamentosRealizados();
+  const { lancamentos } = useLancamentosAll();
   const { bills } = useCreditCardBills();
 
   return useMemo(() => {

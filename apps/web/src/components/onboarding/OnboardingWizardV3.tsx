@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemedLogo } from '@/components/ui/themed-logo';
@@ -106,12 +106,18 @@ export const OnboardingWizardV3: React.FC = () => {
   // Restore draft on mount (step)
   useEffect(() => {
     if (draftRestored) return;
-    getDraft().then((draft) => {
-      if (draft && draft.currentBlock === activeBlock && draft.currentStep > 0) {
-        setStep(draft.currentStep);
-      }
-      setDraftRestored(true);
-    });
+    void getDraft()
+      .then((draft) => {
+        if (draft && draft.currentBlock === activeBlock && draft.currentStep > 0) {
+          setStep(draft.currentStep);
+        }
+      })
+      .catch((e) => {
+        console.warn('[OnboardingWizardV3] getDraft failed (non-fatal):', e);
+      })
+      .finally(() => {
+        setDraftRestored(true);
+      });
   }, [activeBlock, draftRestored, getDraft]);
 
   // Auto-save step changes to draft
@@ -302,49 +308,42 @@ export const OnboardingWizardV3: React.FC = () => {
 
       {/* Content */}
       <main className="flex-1 px-4 pb-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${activeBlock}-${step}`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-          >
-            {activeBlock === 'A' && (
-              <BlockA
-                step={step}
-                onStepChange={handleStepChange}
-                onComplete={handleBlockAComplete}
-                onSaveDraft={saveDraft}
-              />
-            )}
-            {activeBlock === 'B' && (
-              <BlockB
-                step={step}
-                onStepChange={handleStepChange}
-                onComplete={handleBlockBComplete}
-                onSaveDraft={saveDraft}
-                snapshot={snapshot}
-              />
-            )}
-            {activeBlock === 'C' && (
-              <BlockC
-                step={step}
-                onStepChange={handleStepChange}
-                onComplete={handleBlockCComplete}
-                onSaveDraft={saveDraft}
-              />
-            )}
-            {activeBlock === 'D' && (
-              <BlockD
-                step={step}
-                onStepChange={handleStepChange}
-                onComplete={handleBlockDComplete}
-                onSaveDraft={saveDraft}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {/* Sem AnimatePresence no conteúdo principal: exit+remount por step gerava crash em alguns browsers ao sair do step 0. */}
+        <div key={`${activeBlock}-${step}`} className="animate-in fade-in-0 slide-in-from-right-2 duration-200">
+          {activeBlock === 'A' && (
+            <BlockA
+              step={step}
+              onStepChange={handleStepChange}
+              onComplete={handleBlockAComplete}
+              onSaveDraft={saveDraft}
+            />
+          )}
+          {activeBlock === 'B' && (
+            <BlockB
+              step={step}
+              onStepChange={handleStepChange}
+              onComplete={handleBlockBComplete}
+              onSaveDraft={saveDraft}
+              snapshot={snapshot}
+            />
+          )}
+          {activeBlock === 'C' && (
+            <BlockC
+              step={step}
+              onStepChange={handleStepChange}
+              onComplete={handleBlockCComplete}
+              onSaveDraft={saveDraft}
+            />
+          )}
+          {activeBlock === 'D' && (
+            <BlockD
+              step={step}
+              onStepChange={handleStepChange}
+              onComplete={handleBlockDComplete}
+              onSaveDraft={saveDraft}
+            />
+          )}
+        </div>
       </main>
     </div>
   );

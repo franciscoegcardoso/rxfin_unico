@@ -8,6 +8,10 @@ export interface PluggyLoan {
   contract_amount: number | null;
   outstanding_balance: number | null;
   cet_annual_pct: number | null;
+  cet_monthly_pct?: number | null;
+  pre_fixed_rate_pct?: number | null;
+  contract_date?: string | null;
+  first_installment_due_date?: string | null;
   due_date: string | null;
   total_installments: number | null;
   paid_installments: number | null;
@@ -44,6 +48,7 @@ export interface EndividamentoSummary {
   overdue_count: number;
   has_overdue: boolean;
   avg_cet_annual_pct: number | null;
+  max_cet_annual_pct?: number | null;
 }
 
 export interface EndividamentoData {

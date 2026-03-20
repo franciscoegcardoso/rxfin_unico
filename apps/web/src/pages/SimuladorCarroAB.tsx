@@ -3,7 +3,10 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { useFipe, VehicleType, formatFipeYearName } from '@/hooks/useFipe';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
-import { FipeHistoryComparisonChart } from '@/components/simuladores/FipeHistoryComparisonChart';
+import {
+  FipeHistoryComparisonChart,
+  readStoredFipeProjectionYears,
+} from '@/components/simuladores/FipeHistoryComparisonChart';
 import { useVehicleConsumption } from '@/hooks/useVehicleConsumption';
 import { useDepreciationEngineV2 } from '@/hooks/useDepreciationEngineV2';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -426,6 +429,8 @@ const SimuladorCarroAB: React.FC = () => {
     else setShowProjectionAB(false);
   }, [hasZeroKmVehicle]);
 
+  const [comparisonProjectionYears, setComparisonProjectionYears] = useState(readStoredFipeProjectionYears);
+
   // COST OVERRIDES - permite usuário editar custos estimados na tabela comparativa
   // ============================================================================
   type CostKey = 'ipva' | 'insurance' | 'fuel' | 'maintenance' | 'licensing' | 'tires' | 'depreciation' | 'opportunityCost';
@@ -500,11 +505,15 @@ const SimuladorCarroAB: React.FC = () => {
         modelYear: fipeInfoA.modelYear,
         engineV2Result: depreciationEngineA.result,
         cohortData: fipeHistoryA.cohortData,
+        historyProjectionMeta: fipeHistoryA.historyProjectionMeta,
+        projectionYears: comparisonProjectionYears,
       }),
     [
       configA.isZeroKm,
       fipeHistoryA.priceHistory,
       fipeHistoryA.cohortData,
+      fipeHistoryA.historyProjectionMeta,
+      comparisonProjectionYears,
       valueA,
       fipeInfoA.modelYear,
       depreciationEngineA.result,
@@ -519,11 +528,15 @@ const SimuladorCarroAB: React.FC = () => {
         modelYear: fipeInfoB.modelYear,
         engineV2Result: depreciationEngineB.result,
         cohortData: fipeHistoryB.cohortData,
+        historyProjectionMeta: fipeHistoryB.historyProjectionMeta,
+        projectionYears: comparisonProjectionYears,
       }),
     [
       configB.isZeroKm,
       fipeHistoryB.priceHistory,
       fipeHistoryB.cohortData,
+      fipeHistoryB.historyProjectionMeta,
+      comparisonProjectionYears,
       valueB,
       fipeInfoB.modelYear,
       depreciationEngineB.result,
@@ -1482,6 +1495,9 @@ const SimuladorCarroAB: React.FC = () => {
                 hasHistoryB={chartDataB.length > 0}
                 showProjection={showProjectionAB}
                 hasZeroKmVehicle={hasZeroKmVehicle}
+                onProjectionYearsChange={setComparisonProjectionYears}
+                stabilizationZoneA={fipeHistoryA.historyProjectionMeta?.stabilizationZoneDetail ?? undefined}
+                stabilizationZoneB={fipeHistoryB.historyProjectionMeta?.stabilizationZoneDetail ?? undefined}
                 projectionControl={
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <Switch
