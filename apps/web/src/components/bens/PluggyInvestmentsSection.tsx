@@ -56,6 +56,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -370,34 +371,36 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
       {byIndexador.length > 0 && <PainelIndexador byIndexador={byIndexador} />}
       {byCurrency.length > 1 && <PainelMoedas byCurrency={byCurrency} fxRates={fxRates ?? undefined} />}
       {portfolioPerformanceQuery.data && (
-        <Card className="border border-border/80">
-          <CardHeader className="pb-2">
-            <button
-              className="w-full flex items-center justify-between gap-3"
-              onClick={() => setShowPerformance((prev) => !prev)}
-            >
-              <CardTitle className="text-base flex items-center gap-2">
-                <GitCompare className="h-4 w-4 text-primary" />
-                Performance da carteira
-              </CardTitle>
-              {showPerformance ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </CardHeader>
-          {showPerformance && (
-            <CardContent className="space-y-4">
-              <GraficoEvolucao data={portfolioPerformanceQuery.data} />
-              <TabelaEvolucaoAnual data={portfolioPerformanceQuery.data} />
-              <RentabilidadeComparada data={portfolioPerformanceQuery.data} />
-              <p className="text-[11px] text-muted-foreground">
-                Benchmarks a partir de jun/2025 podem incluir estimativas baseadas em dados publicos.
-              </p>
-            </CardContent>
-          )}
-        </Card>
+        <SectionErrorBoundary fallbackTitle="Graficos de Bens e Investimentos">
+          <Card className="border border-border/80">
+            <CardHeader className="pb-2">
+              <button
+                className="w-full flex items-center justify-between gap-3"
+                onClick={() => setShowPerformance((prev) => !prev)}
+              >
+                <CardTitle className="text-base flex items-center gap-2">
+                  <GitCompare className="h-4 w-4 text-primary" />
+                  Performance da carteira
+                </CardTitle>
+                {showPerformance ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+            </CardHeader>
+            {showPerformance && (
+              <CardContent className="space-y-4">
+                <GraficoEvolucao data={portfolioPerformanceQuery.data} />
+                <TabelaEvolucaoAnual data={portfolioPerformanceQuery.data} />
+                <RentabilidadeComparada data={portfolioPerformanceQuery.data} />
+                <p className="text-[11px] text-muted-foreground">
+                  Benchmarks a partir de jun/2025 podem incluir estimativas baseadas em dados publicos.
+                </p>
+              </CardContent>
+            )}
+          </Card>
+        </SectionErrorBoundary>
       )}
 
       {/* Header */}
@@ -575,79 +578,83 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
             </div>
           )}
 
-          {/* Chart */}
-          {treemapData.length > 0 && chartType === 'treemap' && (
-            <InteractiveTreemap
-              data={treemapData}
-              formatValue={formatCurrency}
-              height={200}
-              groupSmallItems={false}
-            />
-          )}
+          <SectionErrorBoundary fallbackTitle="Graficos de Bens e Investimentos">
+            {/* Chart */}
+            {treemapData.length > 0 && chartType === 'treemap' && (
+              <InteractiveTreemap
+                data={treemapData}
+                formatValue={formatCurrency}
+                height={200}
+                groupSmallItems={false}
+              />
+            )}
 
-          {treemapData.length > 0 && chartType === 'pie' && (
-            <div>
-              <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={treemapData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={85}
-                      paddingAngle={2}
-                      dataKey="value"
-                      nameKey="name"
-                      animationDuration={400}
-                    >
-                      {treemapData.map((entry, index) => (
-                        <Cell key={entry.id} fill={entry.color || `hsl(${index * 60}, 70%, 50%)`} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (!active || !payload?.length) return null;
-                        const item = payload[0].payload;
-                        const total = treemapData.reduce((s, d) => s + d.value, 0);
-                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
-                        return (
-                          <div className="bg-card border rounded-lg shadow-lg p-2.5 text-xs">
-                            <p className="font-semibold text-sm">{item.name}</p>
-                            <p className="text-muted-foreground mt-1">{formatCurrency(item.value)}</p>
-                            <p className="text-muted-foreground">{pct}%</p>
-                          </div>
-                        );
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+            {treemapData.length > 0 && chartType === 'pie' && (
+              <div>
+                <div style={{ height: 200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={treemapData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={2}
+                        dataKey="value"
+                        nameKey="name"
+                        animationDuration={400}
+                      >
+                        {treemapData.map((entry, index) => (
+                          <Cell key={entry.id} fill={entry.color || `hsl(${index * 60}, 70%, 50%)`} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const item = payload[0].payload;
+                          const total = treemapData.reduce((s, d) => s + d.value, 0);
+                          const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
+                          return (
+                            <div className="bg-card border rounded-lg shadow-lg p-2.5 text-xs">
+                              <p className="font-semibold text-sm">{item.name}</p>
+                              <p className="text-muted-foreground mt-1">{formatCurrency(item.value)}</p>
+                              <p className="text-muted-foreground">{pct}%</p>
+                            </div>
+                          );
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Pie legend */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 text-xs mt-3">
+                  {treemapData.map((item) => {
+                    const total = treemapData.reduce((s, d) => s + d.value, 0);
+                    const pct = total > 0 ? ((item.value / total) * 100).toFixed(0) : '0';
+                    return (
+                      <div key={item.id} className="flex items-center gap-1.5 p-1.5 rounded">
+                        <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className="truncate flex-1 font-medium">{item.name}</span>
+                        <span className="text-muted-foreground shrink-0">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              {/* Pie legend */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 text-xs mt-3">
-                {treemapData.map((item) => {
-                  const total = treemapData.reduce((s, d) => s + d.value, 0);
-                  const pct = total > 0 ? ((item.value / total) * 100).toFixed(0) : '0';
-                  return (
-                    <div key={item.id} className="flex items-center gap-1.5 p-1.5 rounded">
-                      <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="truncate flex-1 font-medium">{item.name}</span>
-                      <span className="text-muted-foreground shrink-0">{pct}%</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+            )}
+          </SectionErrorBoundary>
         </CardContent>
       </Card>
 
-      <VisoesComplementares
-        snapshotHistory={snapshotHistory}
-        annualEvolution={annualEvolution}
-        benchmarks={benchmarks}
-        performanceSummary={performanceSummary}
-      />
+      <SectionErrorBoundary fallbackTitle="Graficos de Bens e Investimentos">
+        <VisoesComplementares
+          snapshotHistory={snapshotHistory}
+          annualEvolution={annualEvolution}
+          benchmarks={benchmarks}
+          performanceSummary={performanceSummary}
+        />
+      </SectionErrorBoundary>
 
       {showRpcListSkeleton ? (
         <div className="w-full rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">

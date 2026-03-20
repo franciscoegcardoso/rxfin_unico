@@ -36,6 +36,7 @@ import { useManualInvestments } from '@/hooks/useManualInvestments';
 import { ManualInvestmentModal } from '@/components/investimentos/ManualInvestmentModal';
 import { ManualInvestmentsList } from '@/components/investimentos/ManualInvestmentsList';
 import type { ManualInvestment } from '@/types/investments';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', {
@@ -350,10 +351,12 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   if (investments.length === 0) {
     return (
       <div className="space-y-6">
-        <PluggyInvestmentsSection
-          refreshTrigger={pluggyRefreshTrigger}
-          onAddManual={openManualModal}
-        />
+        <SectionErrorBoundary fallbackTitle="Status Open Finance / Pluggy">
+          <PluggyInvestmentsSection
+            refreshTrigger={pluggyRefreshTrigger}
+            onAddManual={openManualModal}
+          />
+        </SectionErrorBoundary>
         <ManualInvestmentsList
           items={manualInv.items}
           onEdit={(item) => {
@@ -397,10 +400,12 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
   return (
     <div className="space-y-6">
       {/* Investimentos via Open Finance (Pluggy) */}
-      <PluggyInvestmentsSection
-        refreshTrigger={pluggyRefreshTrigger}
-        onAddManual={openManualModal}
-      />
+      <SectionErrorBoundary fallbackTitle="Status Open Finance / Pluggy">
+        <PluggyInvestmentsSection
+          refreshTrigger={pluggyRefreshTrigger}
+          onAddManual={openManualModal}
+        />
+      </SectionErrorBoundary>
 
       <ManualInvestmentsList
         items={manualInv.items}

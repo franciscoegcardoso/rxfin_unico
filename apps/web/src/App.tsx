@@ -21,7 +21,8 @@ import { MagicLinkHandler } from "@/components/auth/MagicLinkHandler";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { TrackingProvider } from "@/contexts/TrackingContext";
 import { RXFinLoadingSpinner } from "@/components/shared/RXFinLoadingSpinner";
-import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { ScrollToTop } from "@/components/shared/ScrollToTop";
 import { AdminSecureLayout } from '@/components/admin/AdminSecureLayout';
 import { AdminAuditDashboard } from '@/pages/admin/AdminAuditDashboard';
@@ -181,7 +182,8 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
       <AuthProvider>
         <FinancialProvider>
           <VisibilityProvider>
@@ -199,10 +201,13 @@ const App = () => (
                         <MagicLinkHandler>
                           <ImpersonationFloater />
                           <CookieConsentBanner />
-                          <RaioXChat />
+                          <SectionErrorBoundary fallbackTitle="Chat Cibelia / AI">
+                            <RaioXChat />
+                          </SectionErrorBoundary>
                           <ErrorBoundary>
-                            <Suspense fallback={<PageSkeleton />}>
-                              <Routes>
+                            <SectionErrorBoundary fallbackTitle="Carregamento de paginas">
+                              <Suspense fallback={<PageSkeleton />}>
+                                <Routes>
                                 <Route path="/" element={<RootRoute />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/signup" element={<Signup />} />
@@ -296,7 +301,14 @@ const App = () => (
 
                                   <Route path="simuladores" element={<HubSimuladores />} />
                                   <Route path="simuladores/:category" element={<Simuladores />} />
-                                  <Route path="simuladores/veiculos/simulador-fipe" element={<SimuladorFipe />} />
+                                  <Route
+                                    path="simuladores/veiculos/simulador-fipe"
+                                    element={
+                                      <SectionErrorBoundary fallbackTitle="Modulo de Simulador FIPE">
+                                        <SimuladorFipe />
+                                      </SectionErrorBoundary>
+                                    }
+                                  />
                                   <Route path="simuladores/veiculos/simulador-carro-ab" element={<SimuladorCarroAB />} />
                                   <Route path="simuladores/veiculos/simulador-custo-oportunidade-carro" element={<SimuladorCustoOportunidadeCarro />} />
                                   <Route path="simuladores/dividas/renegociacao-dividas" element={<RenegociacaoDividas />} />
@@ -336,7 +348,14 @@ const App = () => (
                                   <Route path="presentes" element={<Presentes />} />
                                   <Route path="rx-split" element={<RXSplit />} />
                                   <Route path="dividir-conta" element={<DividirConta />} />
-                                  <Route path="meu-ir" element={<MeuIRLayout />}>
+                                  <Route
+                                    path="meu-ir"
+                                    element={
+                                      <SectionErrorBoundary fallbackTitle="Modulo Meu IR">
+                                        <MeuIRLayout />
+                                      </SectionErrorBoundary>
+                                    }
+                                  >
                                     <Route index element={<MeuIROrganizar />} />
                                     <Route path="historico" element={<MeuIRHistorico />} />
                                     <Route
@@ -405,8 +424,9 @@ const App = () => (
 
                                 <Route path="/403" element={<Forbidden />} />
                                 <Route path="*" element={<NotFound />} />
-                              </Routes>
-                            </Suspense>
+                                </Routes>
+                              </Suspense>
+                            </SectionErrorBoundary>
                           </ErrorBoundary>
                         </MagicLinkHandler>
                       </TrackingProvider>
@@ -418,7 +438,8 @@ const App = () => (
           </VisibilityProvider>
         </FinancialProvider>
       </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </QueryClientProvider>
 );
 
