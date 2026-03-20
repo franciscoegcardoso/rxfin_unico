@@ -40,6 +40,9 @@ export const MobileHomeHero: React.FC<MobileHomeHeroProps> = ({ firstName }) => 
   };
 
   const totalContas = getTotalCheckingBalance(balanceData);
+  const checkingAccounts = filterCheckingAccounts(balanceData?.accounts ?? []);
+  const showBalanceFreshnessBadge = checkingAccounts.length > 0;
+  const headerBalanceLive = allBalancesFresh(checkingAccounts);
 
   const formatCurrency = (value: number) => {
     if (isHidden) return '••••••';

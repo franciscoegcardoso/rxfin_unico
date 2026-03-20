@@ -54,6 +54,9 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
   );
 
   const totalChecking = getTotalCheckingBalance(data);
+  const checkingAccounts = filterCheckingAccounts(data?.accounts ?? []);
+  const showBalanceFreshnessBadge = checkingAccounts.length > 0;
+  const headerBalanceLive = allBalancesFresh(checkingAccounts);
 
   return (
     <header
