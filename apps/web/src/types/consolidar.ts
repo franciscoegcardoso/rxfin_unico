@@ -2,6 +2,8 @@ export interface OcorrenciaDetalhe {
   date: string           // 'YYYY-MM-DD'
   amount: number
   banco: string
+  /** Ícone do conector (retorno RPC em ocorrencias_detalhe). */
+  connector_image_url?: string | null
   account_name: string | null
   fonte: 'bank' | 'card'
   transaction_type: 'despesa' | 'receita'

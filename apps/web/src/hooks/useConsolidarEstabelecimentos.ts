@@ -32,11 +32,15 @@ function normalizeRow(row: Record<string, unknown>): ConsolidarEstabelecimento {
   const hasNewFormat = Array.isArray(ocorrencias_detalhe);
 
   const builtOcorrencias: OcorrenciaDetalhe[] = hasNewFormat
-    ? ocorrencias_detalhe
+    ? ocorrencias_detalhe.map((oc) => ({
+        ...oc,
+        connector_image_url: oc.connector_image_url ?? null,
+      }))
     : todas_as_datas.map((date) => ({
         date,
         amount: total_ocorrencias > 0 ? total_gasto / total_ocorrencias : 0,
         banco: '',
+        connector_image_url: null,
         account_name: null,
         fonte,
         transaction_type: 'despesa' as const,
@@ -82,10 +86,11 @@ export function useConsolidarEstabelecimentos(
     error,
     refetch,
   } = useQuery({
-    queryKey: ['consolidar-estabelecimentos', sourceFilter],
+    /** Sempre o mesmo payload da RPC (conta + cartão); escopo bank/card só no cliente. */
+    queryKey: ['consolidar-estabelecimentos'],
     queryFn: async () => {
       const { data, error: err } = await supabase.rpc('get_consolidar_estabelecimentos', {
-        p_source_filter: sourceFilter,
+        p_source_filter: null,
       });
       if (err) throw err;
       const rows = (data ?? []) as Record<string, unknown>[];
@@ -94,9 +99,19 @@ export function useConsolidarEstabelecimentos(
     enabled: true,
   });
 
+  /** Filtra por fonte quando o consumidor é só Conta ou só Cartão (ex.: badge em outras páginas). */
+  const scopedData = useMemo(() => {
+    if (!sourceFilter) return rawData;
+    return rawData.filter((r) => {
+      if (sourceFilter === 'bank') return r.fonte === 'bank' || r.fonte === 'mixed';
+      if (sourceFilter === 'card') return r.fonte === 'card' || r.fonte === 'mixed';
+      return true;
+    });
+  }, [rawData, sourceFilter]);
+
   const initialRowStates = useMemo(() => {
     const map: Record<string, ConsolidarRowState> = {};
-    rawData.forEach((row) => {
+    scopedData.forEach((row) => {
       const prefillCatId = row.ai_sugestao_id && !row.categoria_id_atual ? null : row.categoria_id_atual;
       const prefillCatNome = row.ai_sugestao_id && !row.categoria_nome_atual ? null : row.categoria_nome_atual;
       map[row.estabelecimento] = {
@@ -110,7 +125,7 @@ export function useConsolidarEstabelecimentos(
       };
     });
     return map;
-  }, [rawData]);
+  }, [scopedData]);
 
   const [rowStates, setRowStates] = useState<Record<string, ConsolidarRowState>>(initialRowStates);
 
@@ -154,7 +169,7 @@ export function useConsolidarEstabelecimentos(
   }, [rowStates]);
 
   const filteredData = useMemo(() => {
-    let list = [...rawData];
+    let list = [...scopedData];
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase().trim();
       list = list.filter((r) => r.estabelecimento.toLowerCase().includes(q));
@@ -181,7 +196,7 @@ export function useConsolidarEstabelecimentos(
       list = list.filter((r) => r.ultima_compra <= filters.dateTo!);
     }
     return list;
-  }, [rawData, filters]);
+  }, [scopedData, filters]);
 
   const saveAll = useCallback(async (): Promise<{ totalUpdated: number }> => {
     let totalUpdated = 0;
@@ -209,7 +224,7 @@ export function useConsolidarEstabelecimentos(
         // continue with other rows
       }
     }
-    await queryClient.invalidateQueries({ queryKey: ['consolidar-estabelecimentos', sourceFilter] });
+    await queryClient.invalidateQueries({ queryKey: ['consolidar-estabelecimentos'] });
     await refetch();
     return { totalUpdated };
   }, [rowStates, sourceFilter, queryClient, refetch]);
@@ -219,7 +234,7 @@ export function useConsolidarEstabelecimentos(
   }, [initialRowStates]);
 
   return {
-    data: rawData,
+    data: scopedData,
     filteredData,
     rowStates,
     pendingCount,

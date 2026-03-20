@@ -50,7 +50,8 @@ import {
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ConsolidarFilters } from '@/types/consolidar';
@@ -80,6 +81,14 @@ const formatDate = (iso: string) => {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;
 };
+
+function formatOcorrenciaDate(iso: string) {
+  try {
+    return format(parseISO(String(iso).slice(0, 10)), 'dd/MM/yyyy', { locale: ptBR });
+  } catch {
+    return formatDate(String(iso));
+  }
+}
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 }).format(value);
@@ -360,7 +369,16 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
             </div>
           </PopoverContent>
         </Popover>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap items-center">
+          <Button
+            type="button"
+            variant={filters.fonte.length === 0 ? 'default' : 'outline'}
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setFilters((prev) => ({ ...prev, fonte: [] }))}
+          >
+            Todos
+          </Button>
           {(['bank', 'card', 'mixed'] as const).map((f) => (
             <Button
               key={f}
@@ -701,87 +719,98 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                       )}
                     </td>
                   </tr>
-                  {/* Sub-linhas expandidas: Data | Banco (logo) | Tipo | Valor */}
-                  {isExpanded && row.ocorrencias_detalhe && row.ocorrencias_detalhe.length > 0 && (
-                    <tr>
-                      <td colSpan={2} />
-                      <td colSpan={9} className="pb-2 pt-0 px-0">
-                        <div className="ml-2 border-l-2 border-muted pl-3 space-y-0">
-                          <div
-                            className="grid text-[10px] text-muted-foreground font-medium pb-1 select-none"
-                            style={{ gridTemplateColumns: '100px 36px 72px 100px' }}
+                  {isExpanded &&
+                    row.ocorrencias_detalhe &&
+                    row.ocorrencias_detalhe.length > 0 &&
+                    (showAllMap[row.estabelecimento]
+                      ? row.ocorrencias_detalhe
+                      : row.ocorrencias_detalhe.slice(0, 5)
+                    ).map((oc, idx) => {
+                      const bancoDetalhe = row.bancos_detalhe?.find((b) => b.connector_name === oc.banco);
+                      const imgUrl = oc.connector_image_url ?? bancoDetalhe?.connector_image_url ?? null;
+                      const accName = oc.account_name ?? bancoDetalhe?.account_name ?? null;
+                      return (
+                        <tr
+                          key={`${row.estabelecimento}-oc-${idx}`}
+                          className="bg-muted/10 border-b border-border/30 hover:bg-muted/20"
+                        >
+                          <td className="px-1 py-1.5 w-8 shrink-0" />
+                          <td className="px-1 py-1.5 w-8 shrink-0" />
+                          <td className="px-2 py-1.5 min-w-[240px] max-w-[340px]">
+                            <div className="flex items-center gap-2 pl-4">
+                              {oc.transaction_type === 'despesa' ? (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 rounded px-1 py-0.5 w-fit">
+                                  <ArrowDownLeft className="w-2.5 h-2.5 shrink-0" /> Saída
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded px-1 py-0.5 w-fit">
+                                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0" /> Entrada
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5 w-[110px] text-xs text-muted-foreground tabular-nums shrink-0">
+                            {oc.date ? formatOcorrenciaDate(oc.date) : '—'}
+                          </td>
+                          <td className="px-2 py-1.5 w-[60px] shrink-0" />
+                          <td
+                            className={cn(
+                              'px-2 py-1.5 w-[110px] text-right tabular-nums font-medium text-xs shrink-0',
+                              oc.transaction_type === 'despesa' ? 'text-red-500' : 'text-emerald-600'
+                            )}
                           >
-                            <span>Data</span>
-                            <span className="text-center">Banco</span>
-                            <span>Tipo</span>
-                            <span className="text-right">Valor</span>
-                          </div>
-                          {(showAllMap[row.estabelecimento] ? row.ocorrencias_detalhe : row.ocorrencias_detalhe.slice(0, 5)).map((oc, idx) => {
-                            const bancoDetalhe = row.bancos_detalhe?.find((b) => b.connector_name === oc.banco);
-                            return (
-                              <div
-                                key={idx}
-                                className="grid items-center py-0.5 text-xs hover:bg-muted/30 rounded"
-                                style={{ gridTemplateColumns: '100px 36px 72px 100px' }}
-                              >
-                                <span className="text-muted-foreground tabular-nums">
-                                  {format(new Date(oc.date), 'dd/MM/yyyy')}
-                                </span>
-                                <span className="flex justify-center">
-                                  <BancoLogo
-                                    connector_name={oc.banco}
-                                    connector_image_url={bancoDetalhe?.connector_image_url ?? null}
-                                    account_name={bancoDetalhe?.account_name ?? null}
-                                    size={16}
-                                  />
-                                </span>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="inline-flex">
-                                          {oc.transaction_type === 'receita' ? (
-                                            <ArrowUpRight className="w-3 h-3 text-emerald-600" />
-                                          ) : (
-                                            <ArrowDownLeft className="w-3 h-3 text-red-500" />
-                                          )}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top">
-                                        {oc.transaction_type === 'receita' ? 'Entrada' : 'Saída'}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                <span
-                                  className={cn(
-                                    'tabular-nums text-right font-medium',
-                                    oc.transaction_type === 'receita' ? 'text-emerald-600' : 'text-red-500'
-                                  )}
-                                >
-                                  {oc.transaction_type === 'despesa' ? '- ' : '+ '}
-                                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(oc.amount)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                          {!showAllMap[row.estabelecimento] && row.ocorrencias_detalhe.length > 5 && (
-                            <button
-                              type="button"
-                              onClick={() => setShowAllMap((prev) => ({ ...prev, [row.estabelecimento]: true }))}
-                              className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 mt-1 ml-0"
-                            >
-                              + {row.ocorrencias_detalhe.length - 5} mais
-                            </button>
-                          )}
-                          {showAllMap[row.estabelecimento] && row.ocorrencias_detalhe.length > 5 && (
-                            <button
-                              type="button"
-                              onClick={() => setShowAllMap((prev) => ({ ...prev, [row.estabelecimento]: false }))}
-                              className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2 mt-1"
-                            >
-                              Mostrar menos
-                            </button>
-                          )}
-                        </div>
+                            {oc.transaction_type === 'despesa' ? '- ' : '+ '}
+                            {new Intl.NumberFormat('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL',
+                              minimumFractionDigits: 2,
+                            }).format(Math.abs(Number(oc.amount)))}
+                          </td>
+                          <td className="px-2 py-1.5 w-[80px] shrink-0">
+                            {oc.fonte === 'card' ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <CreditCard className="h-3.5 w-3.5 shrink-0" /> Cartão
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <Landmark className="h-3.5 w-3.5 shrink-0" /> Conta
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-1.5 w-[140px] shrink-0">
+                            <BancoLogo
+                              connector_name={String(oc.banco ?? '')}
+                              connector_image_url={imgUrl}
+                              account_name={accName}
+                              size={20}
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 w-[160px] shrink-0" />
+                          <td className="px-2 py-1.5 min-w-[180px] shrink-0" />
+                          <td className="px-2 py-1.5 w-20 shrink-0" />
+                        </tr>
+                      );
+                    })}
+                  {isExpanded && row.ocorrencias_detalhe && row.ocorrencias_detalhe.length > 5 && (
+                    <tr className="bg-muted/5">
+                      <td colSpan={11} className="px-2 py-1">
+                        {!showAllMap[row.estabelecimento] ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllMap((prev) => ({ ...prev, [row.estabelecimento]: true }))}
+                            className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                          >
+                            + {row.ocorrencias_detalhe.length - 5} mais
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllMap((prev) => ({ ...prev, [row.estabelecimento]: false }))}
+                            className="text-[10px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                          >
+                            Mostrar menos
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )}

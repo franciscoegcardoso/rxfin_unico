@@ -90,8 +90,8 @@ const CategoryAssignmentContent: React.FC<{
   const [activeTab, setActiveTab] = useState<CategoryAssignmentTab>(defaultTab);
   const { user } = useAuth();
   const [pluggyAccountNumbers, setPluggyAccountNumbers] = useState<Record<string, PluggyCardInfo>>({});
-  const sourceFilter = defaultTab === 'conta' ? 'bank' : defaultTab === 'cartao' ? 'card' : null;
-  const { data: consolidarData = [] } = useConsolidarEstabelecimentos(sourceFilter);
+  /** Consolidar: sempre carregar conta + cartão na RPC; filtros Conta/Cartão/Misto são só na UI da aba. */
+  const { data: consolidarData = [] } = useConsolidarEstabelecimentos(null);
   const consolidarPendingCount = consolidarData.filter((r) => r.total_pendentes > 0).length;
   const { data: expenseCategories = [] } = useExpenseCategories();
   const { data: userCats } = useUserCategories();
@@ -324,7 +324,7 @@ const CategoryAssignmentContent: React.FC<{
       <div className="overflow-y-auto flex-1 min-h-0 mt-2">
         {activeTab === 'consolidar' ? (
           <ConsolidarTab
-            sourceFilter={sourceFilter}
+            sourceFilter={null}
             categories={categoriesForConsolidar}
             onSaveComplete={(est, tx) => {
               onSaveConsolidarComplete?.(est, tx);
