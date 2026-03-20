@@ -52,7 +52,12 @@ import { OutdatedConnectionBanner } from '@/components/sync/OutdatedConnectionBa
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO, addMonths } from 'date-fns';
 
-import { useLancamentosRealizados, LancamentoRealizado, LancamentoInput } from '@/hooks/useLancamentosRealizados';
+import {
+  useLancamentosRealizados,
+  type LancamentoRealizado,
+  type LancamentoInput,
+} from '@/hooks/useLancamentosRealizados';
+import { PeriodFilterControls, type PeriodPreset } from '@/components/lancamentos/PeriodFilterControls';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
 import { useLancamentosSummary } from '@/hooks/useLancamentosSummary';
 import { useContasPagarReceber, Conta, ContaInput, ContaTipo } from '@/hooks/useContasPagarReceber';
@@ -77,6 +82,36 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useRecurringBadges } from '@/hooks/useRecurringBadges';
 
 type LancamentoTipo = 'entrada' | 'saida';
+
+const TODOS_DIALOG_PAGE_SIZE = 50;
+
+function shiftYearMonth(ym: string, delta: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, (m - 1) + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function lastNMonthsSet(ym: string, n: number): Set<string> {
+  const set = new Set<string>();
+  for (let i = 0; i < n; i++) {
+    set.add(shiftYearMonth(ym, -i));
+  }
+  return set;
+}
+
+function lancamentoDateKey(l: LancamentoRealizado): string {
+  return l.data_pagamento || l.data_vencimento || l.data_registro?.slice(0, 10) || '';
+}
+
+function getGrupoLabel(l: LancamentoRealizado): string {
+  if (l.group_category_name) return l.group_category_name;
+  if (l.category_id) {
+    const ec = expenseCategories.find((c) => c.id === l.category_id);
+    if (ec) return ec.name;
+  }
+  if (l.tipo === 'receita') return 'Receitas';
+  return '—';
+}
 
 interface LancamentosProps {
   embedded?: boolean;
@@ -162,6 +197,14 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
   const [markAsPaidLoading, setMarkAsPaidLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
+  /** Filtros locais do diálogo "Todos os Lançamentos" (independentes da lista principal) */
+  const [todosDialogPeriod, setTodosDialogPeriod] = useState<PeriodPreset>('thisMonth');
+  const [todosDialogCustomFrom, setTodosDialogCustomFrom] = useState('');
+  const [todosDialogCustomTo, setTodosDialogCustomTo] = useState('');
+  const [todosDialogSearch, setTodosDialogSearch] = useState('');
+  const [todosDialogCategory, setTodosDialogCategory] = useState<string>('all');
+  const [todosDialogPage, setTodosDialogPage] = useState(0);
+
   // Extract unique banks and account types from sourceMap
   const { availableBanks, availableAccountTypes } = useMemo(() => {
     const bankMap = new Map<string, { imageUrl: string | null; primaryColor: string | null }>();
@@ -241,21 +284,97 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
     [filteredLancamentos]
   );
 
-  const allLancamentos = useMemo(() => 
-    [...filteredLancamentos].sort((a, b) => (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(a.data_pagamento || a.data_vencimento || a.data_registro || '')),
-    [filteredLancamentos]
-  );
+  const todosDialogPeriodFiltered = useMemo(() => {
+    const list = allLancamentosForAnalytics;
+    if (!list.length) return [];
+    if (todosDialogPeriod === 'thisMonth') {
+      return list.filter((l) => l.mes_referencia === selectedMonth);
+    }
+    if (todosDialogPeriod === 'lastMonth') {
+      const m = shiftYearMonth(selectedMonth, -1);
+      return list.filter((l) => l.mes_referencia === m);
+    }
+    if (todosDialogPeriod === 'last3Months') {
+      const months = lastNMonthsSet(selectedMonth, 3);
+      return list.filter((l) => months.has(l.mes_referencia));
+    }
+    if (todosDialogPeriod === 'custom' && todosDialogCustomFrom && todosDialogCustomTo) {
+      return list.filter((l) => {
+        const d = lancamentoDateKey(l);
+        return d >= todosDialogCustomFrom && d <= todosDialogCustomTo;
+      });
+    }
+    return list;
+  }, [
+    allLancamentosForAnalytics,
+    todosDialogPeriod,
+    selectedMonth,
+    todosDialogCustomFrom,
+    todosDialogCustomTo,
+  ]);
+
+  const todosDialogFiltered = useMemo(() => {
+    let rows = todosDialogPeriodFiltered;
+    if (todosDialogCategory !== 'all') {
+      rows = rows.filter((l) => l.categoria === todosDialogCategory);
+    }
+    if (todosDialogSearch.trim()) {
+      const q = todosDialogSearch.trim().toLowerCase();
+      rows = rows.filter(
+        (l) =>
+          l.nome.toLowerCase().includes(q) ||
+          (l.friendly_name && l.friendly_name.toLowerCase().includes(q)) ||
+          l.categoria.toLowerCase().includes(q)
+      );
+    }
+    return [...rows].sort((a, b) =>
+      (b.data_pagamento || b.data_vencimento || b.data_registro || '').localeCompare(
+        a.data_pagamento || a.data_vencimento || a.data_registro || ''
+      )
+    );
+  }, [todosDialogPeriodFiltered, todosDialogCategory, todosDialogSearch]);
+
+  const todosDialogTotalCount = todosDialogFiltered.length;
+  const todosDialogTotalPages = Math.max(1, Math.ceil(todosDialogTotalCount / TODOS_DIALOG_PAGE_SIZE));
+
+  const todosDialogPagedRows = useMemo(() => {
+    const from = todosDialogPage * TODOS_DIALOG_PAGE_SIZE;
+    return todosDialogFiltered.slice(from, from + TODOS_DIALOG_PAGE_SIZE);
+  }, [todosDialogFiltered, todosDialogPage]);
+
+  const todosDialogCategoryOptions = useMemo(() => {
+    const s = new Set<string>();
+    todosDialogPeriodFiltered.forEach((l) => s.add(l.categoria));
+    return Array.from(s).sort();
+  }, [todosDialogPeriodFiltered]);
 
   const isMobile = useIsMobile();
-  const lancamentosGroupedByDate = useMemo(() => {
+  const todosDialogGroupedByDate = useMemo(() => {
     const map = new Map<string, LancamentoRealizado[]>();
-    allLancamentos.forEach((l) => {
-      const dateStr = l.data_pagamento || l.data_vencimento || l.data_registro?.slice(0, 10) || '—';
+    todosDialogFiltered.forEach((l) => {
+      const dateStr = lancamentoDateKey(l) || '—';
       if (!map.has(dateStr)) map.set(dateStr, []);
       map.get(dateStr)!.push(l);
     });
     return Array.from(map.entries()).sort(([a], [b]) => b.localeCompare(a));
-  }, [allLancamentos]);
+  }, [todosDialogFiltered]);
+
+  useEffect(() => {
+    setTodosDialogPage(0);
+  }, [
+    todosDialogPeriod,
+    todosDialogCustomFrom,
+    todosDialogCustomTo,
+    todosDialogSearch,
+    todosDialogCategory,
+    selectedMonth,
+  ]);
+
+  useEffect(() => {
+    if (todosDialogPage >= todosDialogTotalPages) {
+      setTodosDialogPage(Math.max(0, todosDialogTotalPages - 1));
+    }
+  }, [todosDialogPage, todosDialogTotalPages]);
 
   // Warranty state
   const warranty = useWarrantyState();
@@ -1421,52 +1540,78 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
 
             {/* Dialog "Todos os Lançamentos" aberto pelo CTA */}
             <Dialog open={todosLancamentosDialogOpen} onOpenChange={setTodosLancamentosDialogOpen}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+              <DialogContent className="max-w-[min(96rem,calc(100vw-1.5rem))] w-full max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
                 <DialogHeader className="shrink-0 px-6 pt-6 pb-2">
                   <DialogTitle className="flex items-center gap-2">
                     <Layers className="h-5 w-5 text-primary" />
-                    Todos os Lançamentos ({totalCount})
+                    Todos os Lançamentos ({todosDialogTotalCount})
                   </DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
-              {categoryFilter != null && (
-                <div className="flex items-center gap-2 px-4 py-2 mb-2 bg-muted/50 rounded-lg text-sm">
-                  <span>
-                    Filtrando por: <strong>{categoryFilter}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCategoryFilter(null)}
-                    className="ml-auto text-muted-foreground hover:text-foreground p-1 rounded-md"
-                    aria-label="Remover filtro de categoria"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                <div className="shrink-0 px-6 pb-3 flex flex-col gap-3 border-b border-border/80">
+                  <div className="flex flex-col lg:flex-row lg:flex-wrap gap-3 lg:items-end">
+                    <PeriodFilterControls
+                      className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-end"
+                      value={todosDialogPeriod}
+                      onChange={setTodosDialogPeriod}
+                      customFrom={todosDialogCustomFrom}
+                      customTo={todosDialogCustomTo}
+                      onCustomFromChange={setTodosDialogCustomFrom}
+                      onCustomToChange={setTodosDialogCustomTo}
+                    />
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-[200px]">
+                      <Label className="text-xs text-muted-foreground">Buscar</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Nome do lançamento…"
+                          value={todosDialogSearch}
+                          onChange={(e) => setTodosDialogSearch(e.target.value)}
+                          className="h-9 pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 min-w-[180px]">
+                      <Label className="text-xs text-muted-foreground">Categoria</Label>
+                      <Select value={todosDialogCategory} onValueChange={setTodosDialogCategory}>
+                        <SelectTrigger className="h-9 bg-background">
+                          <SelectValue placeholder="Todas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as categorias</SelectItem>
+                          {todosDialogCategoryOptions.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {totalCount > 0 && (
+                <div className="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
+              {todosDialogTotalCount > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-[hsl(var(--color-border-subtle))] mb-2">
                   <p className="text-xs sm:text-sm text-muted-foreground order-2 sm:order-1">
-                    <span className="sm:hidden">p. {page + 1}/{Math.max(1, totalPages)}</span>
-                    <span className="hidden sm:inline">Página {page + 1} de {Math.max(1, totalPages)} ({totalCount} registro{totalCount !== 1 ? 's' : ''})</span>
+                    <span className="sm:hidden">p. {todosDialogPage + 1}/{todosDialogTotalPages}</span>
+                    <span className="hidden sm:inline">Página {todosDialogPage + 1} de {todosDialogTotalPages} ({todosDialogTotalCount} registro{todosDialogTotalCount !== 1 ? 's' : ''})</span>
                   </p>
                   <div className="flex items-center gap-1 order-1 sm:order-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="min-h-[36px] touch-manipulation border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] hover:bg-accent hover:text-accent-foreground"
-                      onClick={() => setPage((p) => Math.max(0, p - 1))}
-                      disabled={page === 0}
+                      onClick={() => setTodosDialogPage((p) => Math.max(0, p - 1))}
+                      disabled={todosDialogPage === 0}
                     >
                       Anterior
                     </Button>
-                    <span className="text-xs text-muted-foreground px-1 sm:hidden">{page + 1}</span>
+                    <span className="text-xs text-muted-foreground px-1 sm:hidden">{todosDialogPage + 1}</span>
                     <Button
                       variant="outline"
                       size="sm"
                       className="min-h-[36px] touch-manipulation border-[hsl(var(--color-border))] bg-[hsl(var(--color-surface-base))] text-[hsl(var(--color-text-primary))] hover:bg-accent hover:text-accent-foreground"
-                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                      disabled={page >= Math.max(1, totalPages) - 1}
+                      onClick={() => setTodosDialogPage((p) => Math.min(todosDialogTotalPages - 1, p + 1))}
+                      disabled={todosDialogPage >= todosDialogTotalPages - 1}
                     >
                       Próxima
                     </Button>
@@ -1475,7 +1620,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               )}
               {lancamentosError ? (
                 <ErrorCard message="Não foi possível carregar os dados." onRetry={() => fetchLancamentos()} />
-              ) : loading ? (
+              ) : loadingAllForAnalytics ? (
                 <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] overflow-hidden">
                   <div className="bg-[hsl(var(--color-surface-sunken))] h-10 border-b border-[hsl(var(--color-border-default))]" />
                   {[...Array(6)].map((_, i) => (
@@ -1488,7 +1633,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                     </div>
                   ))}
                 </div>
-              ) : allLancamentos.length === 0 ? (
+              ) : todosDialogFiltered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
                   <div className="w-12 h-12 rounded-full bg-[hsl(var(--color-surface-sunken))] flex items-center justify-center">
                     <Receipt className="w-5 h-5 text-[hsl(var(--color-text-tertiary))]" />
@@ -1502,7 +1647,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                 </div>
               ) : isMobile ? (
                 <div className="space-y-4">
-                  {lancamentosGroupedByDate.map(([dateStr, items]) => (
+                  {todosDialogGroupedByDate.map(([dateStr, items]) => (
                     <div key={dateStr}>
                       <p className="text-xs text-muted-foreground uppercase tracking-wider py-2">
                         {dateStr === '—' ? 'Sem data' : parseLocalDate(dateStr).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -1530,6 +1675,14 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                     <RecurringBadge info={badgeMap[item.source_id]} />
                                   )}
                                 </div>
+                                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">
+                                  {getGrupoLabel(item)} · {item.categoria}
+                                  {(() => {
+                                    const s = item.source_id ? getSourceInfo(item.source_id) : null;
+                                    const b = s?.institution ?? item.account_name;
+                                    return b ? ` · ${b}` : '';
+                                  })()}
+                                </p>
                                 <p className="text-xs text-[hsl(var(--color-text-tertiary))] mt-0.5">
                                   {item.data_pagamento
                                     ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
@@ -1549,21 +1702,25 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
               ) : (
                 <div className="rounded-[var(--radius-lg)] border border-[hsl(var(--color-border-default))] bg-[hsl(var(--color-surface-raised))] shadow-[var(--shadow-sm)] overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px] border-collapse">
+                    <table className="w-full min-w-[980px] border-collapse">
                       <thead>
                         <tr className="bg-[hsl(var(--color-surface-sunken))] border-b border-[hsl(var(--color-border-default))]">
-                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))]">Nome</th>
-                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-left hidden sm:table-cell text-[hsl(var(--color-text-tertiary))]">Categoria</th>
-                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Valor</th>
-                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-4 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Data</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))] w-[120px]">Banco</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))] max-w-[140px]">Grupo</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))] max-w-[160px]">Categoria</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-left text-[hsl(var(--color-text-tertiary))] min-w-[200px]">Nome</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Valor</th>
+                          <th className="text-[10px] font-semibold uppercase tracking-[0.07em] h-10 px-3 whitespace-nowrap text-right text-[hsl(var(--color-text-tertiary))]">Data</th>
                           <th className="w-10 h-10" aria-label="Pago" />
                         </tr>
                       </thead>
                       <tbody>
-                        {allLancamentos.map((item) => {
+                        {todosDialogPagedRows.map((item) => {
                           const isEntrada = item.tipo === 'receita';
                           const recon = getReconciliation(item.id);
                           const isPaid = !!item.data_pagamento;
+                          const src = item.source_id ? getSourceInfo(item.source_id) : null;
+                          const bankLabel = src?.institution ?? item.account_name ?? '—';
                           return (
                             <tr
                               key={item.id}
@@ -1573,7 +1730,30 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                               )}
                               onClick={() => { setDetailItem(item); setDetailDialogOpen(true); }}
                             >
-                              <td className="px-4 py-3 text-[13px] text-[hsl(var(--color-text-primary))]">
+                              <td className="px-3 py-2.5 align-middle">
+                                <div className="flex items-center gap-2 min-w-0 max-w-[140px]">
+                                  {src?.imageUrl ? (
+                                    <ConnectorLogo
+                                      imageUrl={src.imageUrl}
+                                      primaryColor={src.primaryColor}
+                                      connectorName={bankLabel}
+                                      size="xs"
+                                    />
+                                  ) : (
+                                    <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center shrink-0">
+                                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                  <span className="text-[12px] text-[hsl(var(--color-text-primary))] truncate" title={bankLabel}>
+                                    {bankLabel}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5 text-[12px] text-[hsl(var(--color-text-secondary))] truncate max-w-[140px]" title={getGrupoLabel(item)}>
+                                {getGrupoLabel(item)}
+                              </td>
+                              <td className="px-3 py-2.5 text-[12px] text-[hsl(var(--color-text-primary))] truncate max-w-[160px]">{item.categoria}</td>
+                              <td className="px-3 py-2.5 text-[13px] text-[hsl(var(--color-text-primary))]">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <p className="font-medium truncate">{item.friendly_name || item.nome}</p>
                                   {recon?.matched && recon.cardName && (
@@ -1591,16 +1771,15 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-[13px] text-[hsl(var(--color-text-primary))] truncate hidden sm:table-cell">{item.categoria}</td>
-                              <td className={cn('px-4 py-3 font-numeric text-[13px] font-semibold tracking-[-0.01em] tabular-nums whitespace-nowrap text-right', isEntrada ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]')}>
+                              <td className={cn('px-3 py-2.5 font-numeric text-[13px] font-semibold tracking-[-0.01em] tabular-nums whitespace-nowrap text-right', isEntrada ? 'text-[hsl(var(--color-text-success))]' : 'text-[hsl(var(--color-text-danger))]')}>
                                 {isEntrada ? '+ ' : '- '}{formatCurrency(item.valor_realizado ?? item.valor_previsto)}
                               </td>
-                              <td className="px-4 py-3 text-[12px] text-[hsl(var(--color-text-secondary))] tabular-nums whitespace-nowrap text-right">
+                              <td className="px-3 py-2.5 text-[12px] text-[hsl(var(--color-text-secondary))] tabular-nums whitespace-nowrap text-right">
                                 {item.data_pagamento
                                   ? parseLocalDate(item.data_pagamento).toLocaleDateString('pt-BR')
                                   : (item.data_registro ? parseLocalDate(item.data_registro).toLocaleDateString('pt-BR') : '—')}
                               </td>
-                              <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
+                              <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
                                   checked={isPaid}
                                   onCheckedChange={(checked) => { markLancamentoPaid(item.id, checked === true); }}
