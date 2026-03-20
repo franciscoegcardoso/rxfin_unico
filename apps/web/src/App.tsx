@@ -43,114 +43,119 @@ import Forbidden from "./pages/Forbidden";
 import BemVindo from "./pages/BemVindo";
 
 // ─── LAZY: carregam só quando a rota é acessada ───────────────────────────────
-const Inicio = lazy(() => import("./pages/Inicio"));
-const Parametros = lazy(() => import("./pages/Parametros"));
-const MovimentacoesPage = lazy(() => import("./pages/MovimentacoesPage"));
-const Contas = lazy(() => import("./pages/Contas"));
-const MinhaConta = lazy(() => import("./pages/MinhaConta"));
-const ConfiguracoesHub = lazy(() => import("./pages/ConfiguracoesHub"));
-const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const Inicio = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Inicio"));
+const Parametros = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Parametros"));
+const MovimentacoesPage = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/MovimentacoesPage"));
+const Contas = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Contas"));
+const MinhaConta = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/MinhaConta"));
+const ConfiguracoesHub = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/ConfiguracoesHub"));
+const Notificacoes = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Notificacoes"));
 
-const BensInvestimentosLayout = lazy(() => import("./pages/bens-investimentos/BensInvestimentosLayout"));
-const ConsolidadoTab = lazy(() => import("./pages/bens-investimentos/ConsolidadoTab"));
-const MeusImoveis = lazy(() => import("./pages/bens-investimentos/imoveis/MeusImoveis"));
-const MeusVeiculos = lazy(() => import("./pages/bens-investimentos/veiculos/MeusVeiculos"));
-const InvestimentosTab = lazy(() => import("./pages/bens-investimentos/InvestimentosTab"));
-const FGTSPage = lazy(() => import("./pages/bens-investimentos/fgts/FGTSPage"));
-const PassivosPage = lazy(() => import("./pages/PassivosPage"));
-const PassivosConsolidadoTab = lazy(() => import("./pages/passivos/PassivosConsolidadoTab"));
-const PassivosDividasTab = lazy(() => import("./pages/passivos/PassivosDividasTab"));
-const PassivosFinanciamentosTab = lazy(() => import("./pages/passivos/PassivosFinanciamentosTab"));
-const PassivosConsorciosTab = lazy(() => import("./pages/passivos/PassivosConsorciosTab"));
-const SegurosTab = lazy(() => import("./pages/bens-investimentos/SegurosTab"));
-const ParticipacaoTab = lazy(() => import("./pages/bens-investimentos/ParticipacaoTab"));
-const IntangiveisTab = lazy(() => import("./pages/bens-investimentos/IntangiveisTab"));
-const AlocacaoRoute = lazy(() => import("./pages/alocacao/AlocacaoRoute").then((m) => ({ default: m.AlocacaoRoute })));
+const BensInvestimentosLayout = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/BensInvestimentosLayout"));
+const ConsolidadoTab = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/ConsolidadoTab"));
+const MeusImoveis = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/imoveis/MeusImoveis"));
+const MeusVeiculos = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/veiculos/MeusVeiculos"));
+const InvestimentosTab = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/InvestimentosTab"));
+const FGTSPage = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/fgts/FGTSPage"));
+const PassivosPage = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/PassivosPage"));
+const PassivosConsolidadoTab = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/passivos/PassivosConsolidadoTab"));
+const PassivosDividasTab = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/passivos/PassivosDividasTab"));
+const PassivosFinanciamentosTab = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/passivos/PassivosFinanciamentosTab"));
+const PassivosConsorciosTab = lazy(() => import(/* webpackChunkName: "movimentacoes" */ "./pages/passivos/PassivosConsorciosTab"));
+const SegurosTab = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/SegurosTab"));
+const ParticipacaoTab = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/ParticipacaoTab"));
+const IntangiveisTab = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/IntangiveisTab"));
+const AlocacaoRoute = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/alocacao/AlocacaoRoute").then((m) => ({ default: m.AlocacaoRoute })));
 
-const PlanejamentoLayout = lazy(() => import("./pages/planejamento/PlanejamentoLayout"));
-const VisaoMensalTab = lazy(() => import("./pages/Planejamento"));
-const MetasTab = lazy(() => import("./pages/planejamento/MetasTab"));
-const AnalisesTab = lazy(() => import("./pages/planejamento/AnalisesTab"));
-const PlanejamentoAnualLayout = lazy(() => import("./pages/planejamento-anual/PlanejamentoAnualLayout"));
-const PlanejamentoAnualVisaoGeral = lazy(() => import("./pages/planejamento-anual/PlanejamentoAnualVisaoGeral"));
-const PlanoAnualTab = lazy(() => import("./pages/planejamento-anual/PlanoAnualTab"));
-const Plano30AnosTab = lazy(() => import("./pages/planejamento-anual/Plano30AnosTab"));
+const PlanejamentoLayout = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento/PlanejamentoLayout"));
+const VisaoMensalTab = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/Planejamento"));
+const MetasTab = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento/MetasTab"));
+const AnalisesTab = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento/AnalisesTab"));
+const PlanejamentoAnualLayout = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento-anual/PlanejamentoAnualLayout"));
+const PlanejamentoAnualVisaoGeral = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento-anual/PlanejamentoAnualVisaoGeral"));
+const PlanoAnualTab = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento-anual/PlanoAnualTab"));
+const Plano30AnosTab = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/planejamento-anual/Plano30AnosTab"));
 
-const FluxoFinanceiro = lazy(() => import("./pages/FluxoFinanceiro"));
-const FinanceiroLayout = lazy(() => import("./pages/financeiro/FinanceiroLayout"));
-const PlanosTab = lazy(() => import("./pages/financeiro/PlanosTab"));
-const PagamentosTab = lazy(() => import("./pages/financeiro/PagamentosTab"));
-const HistoricoPagamentos = lazy(() => import("./pages/HistoricoPagamentos"));
-const IndicacoesTab = lazy(() => import("./pages/financeiro/IndicacoesTab"));
+const FluxoFinanceiro = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/FluxoFinanceiro"));
+const FinanceiroLayout = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/financeiro/FinanceiroLayout"));
+const PlanosTab = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/financeiro/PlanosTab"));
+const PagamentosTab = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/financeiro/PagamentosTab"));
+const HistoricoPagamentos = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/HistoricoPagamentos"));
+const IndicacoesTab = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/financeiro/IndicacoesTab"));
 
-const Simuladores = lazy(() => import("./pages/Simuladores"));
-const SimuladorFipe = lazy(() => import("./pages/SimuladorFipe"));
-const SimuladorFinanciamento = lazy(() => import("./pages/SimuladorFinanciamento"));
-const SimuladorCustoHora = lazy(() => import("./pages/SimuladorCustoHora"));
-const HubSimuladores = lazy(() => import("./pages/simuladores/Hub"));
-const SimuladorCustoOportunidadeCarro = lazy(() => import("./pages/SimuladorCustoOportunidadeCarro"));
-const SimuladorCarroAB = lazy(() => import("./pages/SimuladorCarroAB"));
-const SimuladorDescontoJusto = lazy(() => import("./pages/SimuladorDescontoJusto"));
-const SimuladorDinamico = lazy(() => import("./pages/SimuladorDinamico"));
-const EconoGraph = lazy(() => import("./pages/EconoGraph"));
+const Simuladores = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/Simuladores"));
+const SimuladorFipe = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorFipe"));
+const SimuladorFinanciamento = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorFinanciamento"));
+const SimuladorCustoHora = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorCustoHora"));
+const HubSimuladores = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/simuladores/Hub"));
+const SimuladorCustoOportunidadeCarro = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorCustoOportunidadeCarro"));
+const SimuladorCarroAB = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorCarroAB"));
+const SimuladorDescontoJusto = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorDescontoJusto"));
+const SimuladorDinamico = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/SimuladorDinamico"));
+const EconoGraph = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/EconoGraph"));
 
-const RenegociacaoDividas = lazy(() => import("./pages/RenegociacaoDividas"));
-const QuitacaoDesconto = lazy(() => import("./pages/renegociacao/QuitacaoDesconto"));
-const ParcelamentoDivida = lazy(() => import("./pages/renegociacao/ParcelamentoDivida"));
-const PortabilidadeCredito = lazy(() => import("./pages/renegociacao/PortabilidadeCredito"));
-const ConsolidacaoDividas = lazy(() => import("./pages/renegociacao/ConsolidacaoDividas"));
+const RenegociacaoDividas = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/RenegociacaoDividas"));
+const QuitacaoDesconto = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/renegociacao/QuitacaoDesconto"));
+const ParcelamentoDivida = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/renegociacao/ParcelamentoDivida"));
+const PortabilidadeCredito = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/renegociacao/PortabilidadeCredito"));
+const ConsolidacaoDividas = lazy(() => import(/* webpackChunkName: "simuladores" */ "./pages/renegociacao/ConsolidacaoDividas"));
 
-const GestaoVeiculos = lazy(() => import("./pages/GestaoVeiculos"));
-const MeuIRLayout = lazy(() => import("./pages/meu-ir/MeuIRLayout"));
-const MeuIROrganizar = lazy(() => import("./pages/meu-ir/MeuIROrganizar"));
-const MeuIRHistorico = lazy(() => import("./pages/meu-ir/MeuIRHistorico"));
-const CibeliaPage = lazy(() => import("./pages/CibeliaPage"));
-const ConfiguracoesFiscais = lazy(() => import("./pages/ConfiguracoesFiscais"));
-const Seguros = lazy(() => import("./pages/Seguros"));
-const Presentes = lazy(() => import("./pages/Presentes"));
-const RXSplit = lazy(() => import("./pages/RXSplit"));
-const DividirConta = lazy(() => import("./pages/DividirConta"));
-const Alertas = lazy(() => import("./pages/Alertas"));
-const Recorrentes = lazy(() => import("./pages/Recorrentes"));
-const Lixeira = lazy(() => import("./pages/Lixeira"));
-const RegistroCompras = lazy(() => import("./pages/RegistroCompras"));
-const PacotesOrcamento = lazy(() => import("./pages/PacotesOrcamento"));
-const Sonhos = lazy(() => import("./pages/Sonhos"));
-const InstituicoesFinanceiras = lazy(() => import("./pages/InstituicoesFinanceiras"));
-const DadosFinanceiros = lazy(() => import("./pages/DadosFinanceiros"));
-const LegalDocument = lazy(() => import("./pages/LegalDocument"));
+const GestaoVeiculos = lazy(() => import(/* webpackChunkName: "bens" */ "./pages/GestaoVeiculos"));
+const MeuIRLayout = lazy(() => import(/* webpackChunkName: "ir" */ "./pages/meu-ir/MeuIRLayout"));
+const MeuIROrganizar = lazy(() => import(/* webpackChunkName: "ir" */ "./pages/meu-ir/MeuIROrganizar"));
+const MeuIRHistorico = lazy(() => import(/* webpackChunkName: "ir" */ "./pages/meu-ir/MeuIRHistorico"));
+const CibeliaPage = lazy(() => import(/* webpackChunkName: "tools" */ "./pages/CibeliaPage"));
+const ConfiguracoesFiscais = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/ConfiguracoesFiscais"));
+const Seguros = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/Seguros"));
+const Presentes = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/Presentes"));
+const RXSplit = lazy(() => import(/* webpackChunkName: "tools" */ "./pages/RXSplit"));
+const DividirConta = lazy(() => import(/* webpackChunkName: "tools" */ "./pages/DividirConta"));
+const Alertas = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Alertas"));
+const Recorrentes = lazy(() => import(/* webpackChunkName: "core" */ "./pages/Recorrentes"));
+const Lixeira = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/Lixeira"));
+const RegistroCompras = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/RegistroCompras"));
+const PacotesOrcamento = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/PacotesOrcamento"));
+const Sonhos = lazy(() => import(/* webpackChunkName: "planejamento" */ "./pages/Sonhos"));
+const InstituicoesFinanceiras = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/InstituicoesFinanceiras"));
+const DadosFinanceiros = lazy(() => import(/* webpackChunkName: "configuracoes" */ "./pages/DadosFinanceiros"));
+const LegalDocument = lazy(() => import(/* webpackChunkName: "core" */ "./pages/LegalDocument"));
 
 const OnboardingWizardV3 = lazy(() =>
-  import("./components/onboarding/OnboardingWizardV3").then(m => ({ default: m.OnboardingWizardV3 }))
+  import(/* webpackChunkName: "core" */ "./components/onboarding/OnboardingWizardV3").then(m => ({ default: m.OnboardingWizardV3 }))
+);
+const OnboardingControlWizard = lazy(() =>
+  import(/* webpackChunkName: "core" */ './components/onboarding-control/OnboardingControlWizard').then(m => ({
+    default: m.OnboardingControlWizard,
+  }))
 );
 
-import Admin from "./pages/admin/Admin";
-const AdminUsuarios = lazy(() => import('./pages/admin/AdminUsuarios'));
-const AdminPlanos = lazy(() => import('./pages/admin/AdminPlanos'));
-const AdminPaginas = lazy(() => import('./pages/admin/AdminPaginas'));
-const AdminEmails = lazy(() => import('./pages/admin/AdminEmails'));
-const AdminTermos = lazy(() => import('./pages/admin/AdminTermos'));
-const AdminNotificacoes = lazy(() => import('./pages/admin/AdminNotificacoes'));
-const AdminDeploy = lazy(() => import('./pages/admin/AdminDeploy'));
-const AdminRollbacks = lazy(() => import('./pages/admin/AdminRollbacks'));
-const DatabaseHealthDashboard = lazy(() => import('./pages/admin/DatabaseHealthDashboard'));
-const AdminMarketing = lazy(() => import('./pages/admin/AdminMarketing'));
-const AIFeedback = lazy(() => import('./pages/admin/AIFeedback'));
-const AIMetrics = lazy(() => import('./pages/admin/AIMetrics'));
-const AdminCRM = lazy(() => import('./pages/admin/AdminCRM'));
-const CrmAutomations = lazy(() => import('./pages/admin/CrmAutomations'));
-const AdminAfiliados = lazy(() => import('./pages/admin/AdminAfiliados'));
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const Estrategico = lazy(() => import('./pages/admin/Estrategico'));
-const AdminImpersonate = lazy(() => import('./pages/admin/AdminImpersonate'));
-const AdminArchitecturePage = lazy(() => import('./pages/admin/AdminArchitecturePage'));
-const AdminInfraestrutura = lazy(() => import('./pages/admin/AdminInfraestrutura'));
-const AdminPluggy = lazy(() => import('./pages/admin/AdminPluggy'));
-const AdminSimuladores = lazy(() => import('./pages/admin/AdminSimuladores'));
-const ApiKeysPage = lazy(() => import('./pages/admin/ApiKeysPage'));
-const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage'));
+const Admin = lazy(() => import(/* webpackChunkName: "admin" */ "./pages/admin/Admin"));
+const AdminUsuarios = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminUsuarios'));
+const AdminPlanos = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminPlanos'));
+const AdminPaginas = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminPaginas'));
+const AdminEmails = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminEmails'));
+const AdminTermos = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminTermos'));
+const AdminNotificacoes = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminNotificacoes'));
+const AdminDeploy = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminDeploy'));
+const AdminRollbacks = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminRollbacks'));
+const DatabaseHealthDashboard = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/DatabaseHealthDashboard'));
+const AdminMarketing = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminMarketing'));
+const AIFeedback = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AIFeedback'));
+const AIMetrics = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AIMetrics'));
+const AdminCRM = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminCRM'));
+const CrmAutomations = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/CrmAutomations'));
+const AdminAfiliados = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminAfiliados'));
+const AdminDashboard = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminDashboard'));
+const Estrategico = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/Estrategico'));
+const AdminImpersonate = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminImpersonate'));
+const AdminArchitecturePage = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminArchitecturePage'));
+const AdminInfraestrutura = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminInfraestrutura'));
+const AdminPluggy = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminPluggy'));
+const AdminSimuladores = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminSimuladores'));
+const ApiKeysPage = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/ApiKeysPage'));
+const AdminRolesPage = lazy(() => import(/* webpackChunkName: "admin" */ './pages/admin/AdminRolesPage'));
 
-const PageFallback = () => <RXFinLoadingSpinner height="h-screen" />;
+const PageSkeleton = () => <RXFinLoadingSpinner height="h-screen" />;
 
 function RootRoute() {
   return (
@@ -196,7 +201,7 @@ const App = () => (
                           <CookieConsentBanner />
                           <RaioXChat />
                           <ErrorBoundary>
-                            <Suspense fallback={<PageFallback />}>
+                            <Suspense fallback={<PageSkeleton />}>
                               <Routes>
                                 <Route path="/" element={<RootRoute />} />
                                 <Route path="/login" element={<Login />} />
@@ -209,9 +214,17 @@ const App = () => (
                                 <Route path="/planos" element={<Navigate to="/financeiro/planos" replace />} />
 
                                 <Route path="/onboarding" element={<ProtectedRoute><OnboardingWizardV3 /></ProtectedRoute>} />
+                                <Route
+                                  path="/onboarding-control"
+                                  element={
+                                    <ProtectedRoute>
+                                      <OnboardingControlWizard />
+                                    </ProtectedRoute>
+                                  }
+                                />
                                 <Route path="/onboarding2" element={<Navigate to="/onboarding" replace />} />
                                 <Route path="/onboarding-v2" element={<Navigate to="/onboarding" replace />} />
-                                <Route path="/onboarding-controle" element={<Navigate to="/onboarding" replace />} />
+                                <Route path="/onboarding-controle" element={<Navigate to="/onboarding-control" replace />} />
                                 <Route path="/onboarding-raio-x" element={<Navigate to="/onboarding" replace />} />
                                 <Route path="/app" element={<Navigate to="/inicio" replace />} />
 

@@ -30,7 +30,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { usePluggyInvestments, InvestmentCategory, InvestmentCategoryData } from '@/hooks/usePluggyInvestments';
 import { useInvestmentsList } from '@/hooks/useInvestmentsList';
-import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
 import { usePortfolioPerformance } from '@/hooks/usePortfolioPerformance';
 import { groupInvestments } from '@/utils/groupInvestments';
 import { InvestmentSyncAlert } from '@/components/investimentos/InvestmentSyncAlert';
@@ -47,6 +46,7 @@ import { TabelaEvolucaoAnual } from '@/components/investimentos/TabelaEvolucaoAn
 import { RentabilidadeComparada } from '@/components/investimentos/RentabilidadeComparada';
 import { VisoesComplementares } from '@/components/investimentos/VisoesComplementares';
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos';
+import type { BensInvestimentosSummary } from '@/hooks/useBensInvestimentos';
 import type { InvestmentGroupView } from '@/components/investimentos/types';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
@@ -187,11 +187,15 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     annualEvolution,
     benchmarks,
     performanceSummary,
+    pluggyInvestments,
+    manualInvestments,
+    byIndexador,
+    byCurrency,
+    fxRates,
   } = usePluggyInvestments();
 
   const queryClient = useQueryClient();
   const investmentsListQuery = useInvestmentsList();
-  const { data: bensData } = useBensInvestimentos(null);
   const portfolioPerformanceQuery = usePortfolioPerformance();
 
   const rpcItems = investmentsListQuery.data;
@@ -271,8 +275,8 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
   }, [categories, rpcGrouped]);
 
   const redesignedGroups = useMemo<InvestmentGroupView[]>(() => {
-    const pluggyItems = (bensData?.pluggy_investments ?? []) as PluggyInvestment[]
-    const manualItems = (bensData?.manual_investments ?? []).map(mapManualInvestmentToListItem)
+    const pluggyItems = pluggyInvestments as PluggyInvestment[]
+    const manualItems = manualInvestments.map(mapManualInvestmentToListItem)
     const items = [...pluggyItems, ...manualItems]
     if (!items.length) return []
     const map = new Map<string, PluggyInvestment[]>()
@@ -308,7 +312,25 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         }
       })
       .sort((a, b) => b.totalBalance - a.totalBalance)
-  }, [bensData?.pluggy_investments, bensData?.manual_investments]);
+  }, [pluggyInvestments, manualInvestments]);
+
+  const fiscalSummary = useMemo<BensInvestimentosSummary | null>(() => {
+    const total_ir_retido = pluggyInvestments.reduce((sum, i) => sum + Number(i.ir_retido ?? i.taxes ?? 0), 0);
+    const total_iof_retido = pluggyInvestments.reduce((sum, i) => sum + Number(i.iof_retido ?? i.taxes2 ?? 0), 0);
+    const total_pluggy_balance = pluggyInvestments.reduce((sum, i) => sum + Number(i.balance ?? 0), 0);
+    if (total_ir_retido === 0 && total_iof_retido === 0) return null;
+    return {
+      total_pluggy_balance,
+      total_pluggy_profit: 0,
+      total_manual_value: totals?.manual_gross ?? 0,
+      pluggy_count: pluggyInvestments.length,
+      manual_count: totals?.manual_count ?? 0,
+      last_pluggy_sync: null,
+      has_stale_data: Boolean(totals?.has_stale_data),
+      total_ir_retido,
+      total_iof_retido,
+    };
+  }, [pluggyInvestments, totals]);
 
   const manualCount = totals?.manual_count ?? 0;
   if (allInvestments.length === 0 && !isLoading && syncAlertRows.length === 0 && manualCount === 0) {
@@ -344,9 +366,9 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
       )}
       <InvestmentSyncAlert rows={syncAlertRows} onRefresh={refetch} />
 
-      {bensData?.summary && <PainelFiscal summary={bensData.summary} />}
-      {bensData?.by_indexador && bensData.by_indexador.length > 0 && <PainelIndexador byIndexador={bensData.by_indexador} />}
-      {bensData?.by_currency && bensData.by_currency.length > 1 && <PainelMoedas byCurrency={bensData.by_currency} fxRates={bensData.fx_rates} />}
+      {fiscalSummary && <PainelFiscal summary={fiscalSummary} />}
+      {byIndexador.length > 0 && <PainelIndexador byIndexador={byIndexador} />}
+      {byCurrency.length > 1 && <PainelMoedas byCurrency={byCurrency} fxRates={fxRates ?? undefined} />}
       {portfolioPerformanceQuery.data && (
         <Card className="border border-border/80">
           <CardHeader className="pb-2">

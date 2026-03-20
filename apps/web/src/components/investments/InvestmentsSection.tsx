@@ -588,6 +588,9 @@ export const InvestmentsSection: React.FC = () => {
                       const rend = getRendimentoDisplay(inv);
                       const invTaxes = (inv.taxes ?? 0) + (inv.taxes2 ?? 0);
                       const showTaxesCol = inv.type === 'FIXED_INCOME';
+                      if (inv.type === 'FIXED_INCOME') {
+                        console.log('RENDA FIXA logo_url:', (inv as { logo_url?: string | null }).logo_url, inv.code);
+                      }
                       return (
                         <tr key={inv.id} className="border-t border-border/50">
                           <td className="p-3 max-w-[180px]">

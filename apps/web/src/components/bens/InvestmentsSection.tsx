@@ -621,6 +621,9 @@ export const InvestmentsSection: React.FC<InvestmentsSectionProps> = ({
                           const assetPercentage = totalInvestments > 0 
                             ? (asset.value / totalInvestments) * 100 
                             : 0;
+                          if (asset.investmentType?.toUpperCase() === 'FIXED_INCOME') {
+                            console.log('RENDA FIXA logo_url:', asset.logo_url, asset.investmentTicker);
+                          }
 
                           return (
                             <div

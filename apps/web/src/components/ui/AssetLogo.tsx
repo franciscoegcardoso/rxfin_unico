@@ -34,23 +34,20 @@ function isBrapiTickerType(assetType: string, ticker?: string | null): boolean {
   return false;
 }
 
-/**
- * Converte URL legada `logo.clearbit.com/…` para `img.logo.dev` (evita ERR_NAME_NOT_RESOLVED).
- * Não deve existir no banco; defesa em profundidade se cache ou dado antigo ainda vier.
- */
+/** Normaliza URL de logo recebida do banco. */
 export function normalizeLegacyLogoUrl(url: string, token: string = LOGODEV_TOKEN_DEFAULT): string {
   const trimmed = url.trim();
-  if (!trimmed || !/logo\.clearbit\.com/i.test(trimmed)) return trimmed;
+  if (!trimmed) return trimmed;
   try {
     const href = trimmed.startsWith('http') ? trimmed : `https://${trimmed}`;
     const u = new URL(href);
-    if (!/\.clearbit\.com$/i.test(u.hostname)) return trimmed;
-    const domain = u.pathname.replace(/^\//, '').split('/')[0]?.split('?')[0];
-    if (!domain) return trimmed;
-    return `https://img.logo.dev/${domain}?token=${token}&size=64`;
+    if (/^img\.logo\.dev$/i.test(u.hostname) && !u.searchParams.get('token')) {
+      u.searchParams.set('token', token);
+      if (!u.searchParams.get('size')) u.searchParams.set('size', '64');
+      return u.toString();
+    }
+    return trimmed;
   } catch {
-    const m = trimmed.match(/logo\.clearbit\.com\/([^/?#]+)/i);
-    if (m?.[1]) return `https://img.logo.dev/${m[1]}?token=${token}&size=64`;
     return trimmed;
   }
 }

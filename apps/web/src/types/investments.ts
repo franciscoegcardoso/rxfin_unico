@@ -163,3 +163,49 @@ export interface PerformanceSummary {
   data_referencia: string;
   snapshot_count: number;
 }
+
+/** Ativo Pluggy detalhado retornado em `pluggy_investments` do page_data. */
+export interface PagePluggyInvestment {
+  [key: string]: unknown;
+}
+
+/** Bem/ativo manual retornado em `manual_assets` do page_data. */
+export interface ManualAsset {
+  id: string;
+  name: string;
+  asset_type: string | null;
+  category: string | null;
+  current_value: number | null;
+  purchase_value: number | null;
+  purchase_date: string | null;
+  status: string | null;
+  source: 'manual';
+  brand: string | null;
+  model: string | null;
+  year_model: number | null;
+  fipe_code: string | null;
+}
+
+/** Bloco de indexador retornado em `by_indexador` do page_data. */
+export interface IndexadorBloco {
+  bloco: string;
+  total: number;
+  count: number;
+  ir_total: number;
+  pct_carteira: number;
+}
+
+/** Bloco de moeda retornado em `by_currency` do page_data. */
+export interface CurrencyBloco {
+  currency: string;
+  total_brl: number;
+  count: number;
+  pct_carteira: number;
+}
+
+/** Cotações de câmbio retornadas em `fx_rates` do page_data. */
+export interface FxRates {
+  USD_BRL: number;
+  EUR_BRL: number;
+  rate_date: string;
+}

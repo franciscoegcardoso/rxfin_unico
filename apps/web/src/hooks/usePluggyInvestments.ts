@@ -12,6 +12,11 @@ import type {
   Benchmarks,
   BenchmarkPeriod,
   PerformanceSummary,
+  ManualInvestment,
+  ManualAsset,
+  IndexadorBloco,
+  CurrencyBloco,
+  FxRates,
 } from '@/types/investments';
 
 /** Resposta de `get_investments_page_data` (consolida summary, totals, sync, onboarding, visões). */
@@ -20,10 +25,17 @@ interface GetInvestmentsPageDataResult {
   totals?: Record<string, unknown>[] | null;
   sync_status?: SyncStatusRow[] | null;
   onboarding?: OnboardingStatus[] | null;
+  pluggy_investments?: PluggyInvestment[] | null;
+  manual_investments?: ManualInvestment[] | null;
+  manual_assets?: ManualAsset[] | null;
+  by_indexador?: IndexadorBloco[] | null;
+  by_currency?: CurrencyBloco[] | null;
+  fx_rates?: FxRates | null;
   snapshot_history?: unknown;
   annual_evolution?: unknown;
   benchmarks?: unknown;
   performance_summary?: unknown;
+  fetched_at?: string | null;
 }
 
 function parseBenchmarkPeriod(o: unknown): BenchmarkPeriod {
@@ -239,6 +251,13 @@ function getCategoryForType(type: string): InvestmentCategory {
 
 export interface PluggyInvestmentsQueryResult {
   investments: PluggyInvestment[];
+  pluggyInvestments: PluggyInvestment[];
+  manualInvestments: ManualInvestment[];
+  manualAssets: ManualAsset[];
+  byIndexador: IndexadorBloco[];
+  byCurrency: CurrencyBloco[];
+  fxRates: FxRates | null;
+  fetchedAt: string | null;
   summaryV2: InvestmentSummaryRow[];
   totals: InvestmentTotalsV2 | null;
   syncStatusRows: SyncStatusRow[];
@@ -271,6 +290,13 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
   let annualEvolution: AnnualRow[] = [];
   let benchmarks: Benchmarks | null = null;
   let performanceSummary: PerformanceSummary | null = null;
+  let pluggyInvestments: PluggyInvestment[] = list;
+  let manualInvestments: ManualInvestment[] = [];
+  let manualAssets: ManualAsset[] = [];
+  let byIndexador: IndexadorBloco[] = [];
+  let byCurrency: CurrencyBloco[] = [];
+  let fxRates: FxRates | null = null;
+  let fetchedAt: string | null = null;
 
   const pageDataResult = await supabase.rpc('get_investments_page_data', { p_user_id: userId });
   const pageData = pageDataResult.data as GetInvestmentsPageDataResult | null;
@@ -318,6 +344,25 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
     annualEvolution = parseAnnualEvolution(pageData.annual_evolution);
     benchmarks = parseBenchmarks(pageData.benchmarks);
     performanceSummary = parsePerformanceSummary(pageData.performance_summary);
+    if (Array.isArray(pageData.pluggy_investments)) {
+      pluggyInvestments = pageData.pluggy_investments;
+    }
+    if (Array.isArray(pageData.manual_investments)) {
+      manualInvestments = pageData.manual_investments;
+    }
+    if (Array.isArray(pageData.manual_assets)) {
+      manualAssets = pageData.manual_assets;
+    }
+    if (Array.isArray(pageData.by_indexador)) {
+      byIndexador = pageData.by_indexador;
+    }
+    if (Array.isArray(pageData.by_currency)) {
+      byCurrency = pageData.by_currency;
+    }
+    if (pageData.fx_rates && typeof pageData.fx_rates === 'object') {
+      fxRates = pageData.fx_rates;
+    }
+    fetchedAt = pageData.fetched_at ?? null;
   } else {
     const legacySum = await supabase.rpc('get_pluggy_investments_summary_v2', { p_user_id: userId });
     if (!legacySum.error && Array.isArray(legacySum.data)) {
@@ -369,7 +414,14 @@ async function fetchPluggyInvestmentsData(userId: string): Promise<PluggyInvestm
   const hasSyncedData = list.length > 0 || (tot?.manual_count ?? 0) > 0;
 
   return {
-    investments: list,
+    investments: pluggyInvestments,
+    pluggyInvestments,
+    manualInvestments,
+    manualAssets,
+    byIndexador,
+    byCurrency,
+    fxRates,
+    fetchedAt,
     summaryV2: v2Rows,
     totals: tot,
     syncStatusRows: syncRows,
@@ -407,6 +459,13 @@ export function usePluggyInvestments() {
   const refetch = useCallback(() => queryClient.invalidateQueries({ queryKey: [PLUGGY_INVESTMENTS_QUERY_KEY, uid] }), [queryClient, uid]);
 
   const investments = data?.investments ?? [];
+  const pluggyInvestments = data?.pluggyInvestments ?? [];
+  const manualInvestments = data?.manualInvestments ?? [];
+  const manualAssets = data?.manualAssets ?? [];
+  const byIndexador = data?.byIndexador ?? [];
+  const byCurrency = data?.byCurrency ?? [];
+  const fxRates = data?.fxRates ?? null;
+  const fetchedAt = data?.fetchedAt ?? null;
   const summary = data?.summary ?? [];
   const summaryV2 = data?.summaryV2 ?? [];
   const totals = data?.totals ?? null;
@@ -511,6 +570,13 @@ export function usePluggyInvestments() {
 
   return {
     investments,
+    pluggyInvestments,
+    manualInvestments,
+    manualAssets,
+    byIndexador,
+    byCurrency,
+    fxRates,
+    fetchedAt,
     summary,
     summaryV2,
     totals,

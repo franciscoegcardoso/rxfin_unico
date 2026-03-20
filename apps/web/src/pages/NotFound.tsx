@@ -48,7 +48,7 @@ const NotFound = () => {
             A página que você procura não existe ou foi movida.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="flex justify-center">
           <button
             type="button"
             onClick={() => navigate('/inicio')}
@@ -56,17 +56,6 @@ const NotFound = () => {
             style={{ background: 'var(--primary)' }}
           >
             Voltar ao Início
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/cibelia')}
-            className="px-4 py-2 rounded-md font-medium border"
-            style={{
-              borderColor: 'var(--border)',
-              color: 'var(--foreground)',
-            }}
-          >
-            Falar com a Cibélia
           </button>
         </div>
       </div>
