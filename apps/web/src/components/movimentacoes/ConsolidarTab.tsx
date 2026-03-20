@@ -738,24 +738,36 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
                           <td className="px-1 py-1.5 w-8 shrink-0" />
                           <td className="px-2 py-1.5 min-w-[240px] max-w-[340px]">
                             <div className="flex items-center gap-2 pl-4">
-                              {oc.transaction_type === 'despesa' ? (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-red-500 bg-red-50 dark:bg-red-950/30 rounded px-1 py-0.5 w-fit">
-                                  <ArrowDownLeft className="w-2.5 h-2.5 shrink-0" /> Saída
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 rounded px-1 py-0.5 w-fit">
-                                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0" /> Entrada
-                                </span>
-                              )}
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="shrink-0 inline-flex">
+                                      {oc.transaction_type === 'despesa' ? (
+                                        <ArrowDownLeft className="w-3.5 h-3.5 text-red-500" />
+                                      ) : (
+                                        <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
+                                      )}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    {oc.transaction_type === 'despesa' ? 'Saída' : 'Entrada'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <span className="text-[11px] text-muted-foreground/50 truncate leading-tight">
+                                {row.estabelecimento}
+                              </span>
                             </div>
                           </td>
                           <td className="px-2 py-1.5 w-[110px] text-xs text-muted-foreground tabular-nums shrink-0">
                             {oc.date ? formatOcorrenciaDate(oc.date) : '—'}
                           </td>
-                          <td className="px-2 py-1.5 w-[60px] shrink-0" />
+                          <td className="px-2 py-1.5 w-[60px] shrink-0 text-xs text-muted-foreground/50">
+                            1x
+                          </td>
                           <td
                             className={cn(
-                              'px-2 py-1.5 w-[110px] text-right tabular-nums font-medium text-xs shrink-0',
+                              'px-2 py-1.5 w-[110px] text-left tabular-nums font-medium text-xs shrink-0',
                               oc.transaction_type === 'despesa' ? 'text-red-500' : 'text-emerald-600'
                             )}
                           >

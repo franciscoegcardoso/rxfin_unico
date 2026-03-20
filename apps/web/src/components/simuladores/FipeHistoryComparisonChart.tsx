@@ -28,6 +28,8 @@ interface FipeHistoryComparisonChartProps {
   showProjection?: boolean;
   /** Se true, ajusta eixo X para modo híbrido (0 km com 1 ponto âncora). */
   hasZeroKmVehicle?: boolean;
+  /** Controle opcional (ex.: toggle Mostrar projeção) para renderizar no header do card. */
+  projectionControl?: React.ReactNode;
 }
 
 interface PointWithX extends ComparisonHistoryPoint {
@@ -125,6 +127,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
   hasHistoryB,
   showProjection = false,
   hasZeroKmVehicle = false,
+  projectionControl,
 }) => {
   const isMobile = useIsMobile();
   const isLoading = loadingA || loadingB;
@@ -134,10 +137,33 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
     [historyA, historyB, hasZeroKmVehicle]
   );
 
-  const mergedData = useMemo(
+  const mergedDataRaw = useMemo(
     () => buildMergedDataset(dataA, dataB, hasZeroKmVehicle),
     [dataA, dataB, hasZeroKmVehicle]
   );
+
+  const mergedData = useMemo(() => {
+    if (!showProjection) return mergedDataRaw;
+    const out = mergedDataRaw.map((d) => ({ ...d }));
+
+    const firstProjA = out.find((d) => typeof d.projA === 'number');
+    if (firstProjA) {
+      const idxA = out.findIndex((d) => d.x === firstProjA.x);
+      if (idxA > 0 && typeof out[idxA - 1].histA === 'number' && out[idxA - 1].projA == null) {
+        out[idxA - 1].projA = out[idxA - 1].histA;
+      }
+    }
+
+    const firstProjB = out.find((d) => typeof d.projB === 'number');
+    if (firstProjB) {
+      const idxB = out.findIndex((d) => d.x === firstProjB.x);
+      if (idxB > 0 && typeof out[idxB - 1].histB === 'number' && out[idxB - 1].projB == null) {
+        out[idxB - 1].projB = out[idxB - 1].histB;
+      }
+    }
+
+    return out;
+  }, [mergedDataRaw, showProjection]);
 
   const yDomain = useMemo(() => {
     const values = mergedData.flatMap((d) =>
@@ -153,8 +179,13 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
     return [min, max] as [number, number];
   }, [mergedData]);
 
-  const tickFormatter = (value: string | number) =>
-    formatTickLabel(value, hasZeroKmVehicle);
+  const tickFormatter = (value: number) => {
+    if (hasZeroKmVehicle) return '';
+    const d = new Date(value);
+    const month = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+    const year = d.getFullYear().toString().slice(-2);
+    return `${month}/${year}`;
+  };
 
   const formatMoney = (value: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -200,6 +231,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           Histórico FIPE
         </CardTitle>
+        {projectionControl ? <div className="pt-1">{projectionControl}</div> : null}
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-0.5 rounded-full bg-blue-500" />
@@ -216,14 +248,20 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={mergedData}
-              margin={{ top: 5, right: 15, left: 15, bottom: 5 }}
+              margin={{ top: 5, right: 15, left: 15, bottom: 20 }}
             >
               <CartesianGrid {...premiumGrid} />
               <XAxis
-                dataKey="label"
+                dataKey="x"
+                type="number"
+                scale="linear"
                 {...premiumXAxis}
-                tickFormatter={tickFormatter}
-                interval="preserveStartEnd"
+                tickFormatter={(v) => tickFormatter(Number(v))}
+                domain={['dataMin', 'dataMax']}
+                tickCount={isMobile ? 5 : 8}
+                interval={0}
+                minTickGap={22}
+                hide={hasZeroKmVehicle}
               />
               <YAxis
                 hide={isMobile}
@@ -254,7 +292,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
-                  connectNulls={false}
+                  connectNulls
                 />
               )}
               {showProjection && (
@@ -268,7 +306,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                   opacity={0.7}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
-                  connectNulls={false}
+                  connectNulls
                 />
               )}
               {hasHistoryB && (
@@ -280,7 +318,7 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
-                  connectNulls={false}
+                  connectNulls
                 />
               )}
               {showProjection && (
@@ -294,11 +332,21 @@ export const FipeHistoryComparisonChart: React.FC<FipeHistoryComparisonChartProp
                   opacity={0.7}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 2, stroke: 'hsl(var(--background))' }}
-                  connectNulls={false}
+                  connectNulls
                 />
               )}
             </LineChart>
           </ResponsiveContainer>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-4 h-0.5 bg-foreground/60 rounded-full" />
+            Dados realizados
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-4 h-0.5 border-t border-dashed border-foreground/60" />
+            Dados projetados
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -1468,27 +1468,6 @@ const SimuladorCarroAB: React.FC = () => {
             isTabletOrMobile={isTabletOrMobile}
           >
             <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2 text-sm px-1">
-                <Switch
-                  id="show-projection-ab"
-                  checked={showProjectionAB}
-                  onCheckedChange={(val) => {
-                    if (!hasZeroKmVehicle) setShowProjectionAB(val);
-                  }}
-                  disabled={hasZeroKmVehicle}
-                />
-                <label
-                  htmlFor="show-projection-ab"
-                  className={cn('cursor-pointer', hasZeroKmVehicle && 'text-muted-foreground')}
-                >
-                  Mostrar projeção
-                </label>
-                {hasZeroKmVehicle && (
-                  <span className="text-xs text-muted-foreground">
-                    (obrigatório quando há veículo 0 km)
-                  </span>
-                )}
-              </div>
               <FipeHistoryComparisonChart
                 historyA={chartDataA}
                 historyB={chartDataB}
@@ -1500,6 +1479,29 @@ const SimuladorCarroAB: React.FC = () => {
                 hasHistoryB={chartDataB.length > 0}
                 showProjection={showProjectionAB}
                 hasZeroKmVehicle={hasZeroKmVehicle}
+                projectionControl={
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Switch
+                      id="show-projection-ab"
+                      checked={showProjectionAB}
+                      onCheckedChange={(val) => {
+                        if (!hasZeroKmVehicle) setShowProjectionAB(val);
+                      }}
+                      disabled={hasZeroKmVehicle}
+                    />
+                    <label
+                      htmlFor="show-projection-ab"
+                      className={cn('cursor-pointer', hasZeroKmVehicle && 'text-muted-foreground')}
+                    >
+                      Mostrar projeção
+                    </label>
+                    {hasZeroKmVehicle && (
+                      <span className="text-xs text-muted-foreground">
+                        (obrigatório quando há veículo 0 km)
+                      </span>
+                    )}
+                  </div>
+                }
               />
             </div>
           </MobileSectionDrawer>
