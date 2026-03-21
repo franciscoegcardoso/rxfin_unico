@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,19 +58,19 @@ const Contas: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <div className="content-zone py-5 md:py-6 flex-1">
             <PageHeader icon={Wallet} title="Contas a Pagar e Receber" subtitle="Controle seu fluxo de obrigações" />
             <PageSkeleton />
           </div>
         </div>
-      </AppLayout>
+      
     );
   }
 
   return (
-    <AppLayout>
+    
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
         <PageHeader
@@ -251,7 +250,7 @@ const Contas: React.FC = () => {
         </Card>
         </div>
       </div>
-    </AppLayout>
+    
   );
 };
 

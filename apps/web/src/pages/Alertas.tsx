@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
@@ -55,7 +54,7 @@ export default function Alertas() {
   const isEmpty = total === 0;
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           title="Alertas Inteligentes"
@@ -125,6 +124,6 @@ export default function Alertas() {
           </>
         )}
       </div>
-    </AppLayout>
+    
   );
 }

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -184,7 +183,7 @@ export const GestaoVeiculos: React.FC = () => {
   const { formatValue } = useVisibility();
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -613,7 +612,7 @@ export const GestaoVeiculos: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppLayout>
+    
   );
 };
 

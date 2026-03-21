@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useUserKV } from '@/hooks/useUserKV';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { BackLink } from '@/components/shared/BackLink';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -201,7 +200,7 @@ export const Sonhos: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Header */}
         <PageHeader
@@ -718,7 +717,7 @@ export const Sonhos: React.FC = () => {
           )}
         </div>
       </div>
-    </AppLayout>
+    
   );
 };
 

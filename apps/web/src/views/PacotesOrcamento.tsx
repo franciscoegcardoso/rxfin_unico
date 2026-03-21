@@ -1,12 +1,11 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PackagesSection } from '@/components/lancamentos/PackagesSection';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 
 export const PacotesOrcamento: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div>
@@ -20,7 +19,7 @@ export const PacotesOrcamento: React.FC = () => {
         
         <PackagesSection />
       </div>
-    </AppLayout>
+    
   );
 };
 

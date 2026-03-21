@@ -1,5 +1,6 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
 import { SecureConnectionBadge } from "@/components/shared/SecureConnectionBadge";
@@ -46,7 +47,9 @@ export const DesktopShell: React.FC<DesktopShellProps> = ({ forceCollapsed }) =>
         )}
         <div className="flex-1 min-w-0 overflow-y-auto flex flex-col">
           <ConsentExpiryBanner />
-          <Outlet />
+          <AppLayout>
+            <Outlet />
+          </AppLayout>
         </div>
         <footer className="w-full border-t py-2 px-6 flex justify-center shrink-0">
           <SecureConnectionBadge />

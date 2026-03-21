@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
@@ -465,7 +464,7 @@ const PlanejamentoAnual: React.FC = () => {
   const isProjectionYear = (year: number) => year > currentYear;
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Header with Filter */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1195,7 +1194,7 @@ const PlanejamentoAnual: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    
   );
 };
 

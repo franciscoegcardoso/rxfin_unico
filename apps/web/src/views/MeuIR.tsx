@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Bot, History, Settings2, Calculator, FileText, Shield, ClipboardCheck, HelpCircle } from 'lucide-react';
@@ -36,7 +35,7 @@ const MeuIR: React.FC = () => {
   } = useFiscalOrganizer();
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -153,7 +152,7 @@ const MeuIR: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+    
   );
 };
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { SegurosSection } from '@/components/seguros/SegurosSection';
 import { Shield } from 'lucide-react';
@@ -11,7 +10,7 @@ const Seguros: React.FC = () => {
   const isMobile = useIsMobile();
 
   return (
-    <AppLayout>
+    
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -28,7 +27,7 @@ const Seguros: React.FC = () => {
         {/* Conteúdo */}
         <SegurosSection />
       </div>
-    </AppLayout>
+    
   );
 };
 

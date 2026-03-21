@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { FipeSimulator } from '@/components/simuladores/FipeSimulator';
 import { FipePublicCTA } from '@/components/simuladores/FipePublicCTA';
 import { useFinancial } from '@/contexts/FinancialContext';
@@ -16,7 +15,7 @@ const SimuladorFipe: React.FC = () => {
     : [];
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
@@ -30,7 +29,7 @@ const SimuladorFipe: React.FC = () => {
         {/* CTA for public (non-authenticated) users */}
         {!user && <FipePublicCTA />}
       </div>
-    </AppLayout>
+    
   );
 };
 

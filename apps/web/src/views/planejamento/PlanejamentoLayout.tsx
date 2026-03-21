@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { Calculator } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
@@ -42,7 +41,7 @@ const PlanejamentoLayout: React.FC = () => {
   }, [location.search, navigate]);
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           title="Planejamento Mensal"
@@ -78,7 +77,7 @@ const PlanejamentoLayout: React.FC = () => {
 
         <Outlet />
       </div>
-    </AppLayout>
+    
   );
 };
 

@@ -29,7 +29,7 @@ export interface SubscriptionPlan {
 
 export function useSubscriptionPlans(includePrivate = false) {
   return useQuery({
-    queryKey: ['subscription-plans', includePrivate],
+    queryKey: ['subscription_plans', includePrivate],
     queryFn: async () => {
       let query = supabase
         .from('subscription_plans')
@@ -67,7 +67,7 @@ export function useSubscriptionPlanMutations() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
       toast({
         title: 'Plano atualizado',
         description: 'As alterações foram salvas com sucesso.',
@@ -94,7 +94,7 @@ export function useSubscriptionPlanMutations() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
       toast({
         title: 'Plano criado',
         description: 'O novo plano foi criado com sucesso.',
@@ -119,7 +119,7 @@ export function useSubscriptionPlanMutations() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
       toast({
         title: 'Plano excluído',
         description: 'O plano foi removido com sucesso.',

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,7 +53,7 @@ const cardVariants = {
 
 const RenegociacaoDividas: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Renegociação de Dívidas"
@@ -98,7 +97,7 @@ const RenegociacaoDividas: React.FC = () => {
           })}
         </motion.div>
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

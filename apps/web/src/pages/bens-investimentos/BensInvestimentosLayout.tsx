@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } fr
 import { useLocation, useSearchParams, useNavigate, Link, Outlet } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart, Briefcase } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -344,7 +343,6 @@ const BensInvestimentosLayout: React.FC = () => {
 
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
-      <AppLayout>
         <div className="content-zone flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))] py-5 md:py-6 space-y-5 flex-1">
           <PageHeader
             icon={Layers}
@@ -1073,7 +1071,6 @@ const BensInvestimentosLayout: React.FC = () => {
           preSelectedAssetId={seguroAssetId}
         />
       </div>
-      </AppLayout>
     </BensInvestimentosContext.Provider>
   );
 };

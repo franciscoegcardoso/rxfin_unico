@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { Lock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,7 +40,7 @@ export const Simuladores: React.FC = () => {
   const activeConfig = SIMULATOR_CATEGORIES.find((c) => c.id === activeCategory);
 
   return (
-    <AppLayout>
+    
       <PageContainer>
         <div className="space-y-6">
           {/* Institutional header */}
@@ -130,7 +129,7 @@ export const Simuladores: React.FC = () => {
           <MethodologyFooter />
         </div>
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

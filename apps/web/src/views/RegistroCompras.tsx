@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -504,7 +503,7 @@ const RegistroCompras: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -965,7 +964,7 @@ const RegistroCompras: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AppLayout>
+    
   );
 };
 

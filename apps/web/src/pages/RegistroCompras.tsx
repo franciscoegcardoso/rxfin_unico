@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
@@ -498,7 +497,7 @@ const RegistroCompras: React.FC = () => {
   };
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           icon={ShoppingBag}
@@ -932,7 +931,7 @@ const RegistroCompras: React.FC = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </AppLayout>
+    
   );
 };
 

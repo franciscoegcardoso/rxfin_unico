@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { OnboardingProgressBanner } from "@/components/shared/OnboardingProgressBanner";
@@ -85,7 +86,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
         <ErrorBoundary key={location.pathname} fallback={shellErrorFallback}>
           <div className="animate-in fade-in duration-200 ease-out">
             <ConsentExpiryBanner />
-            {children}
+            <AppLayout>{children}</AppLayout>
           </div>
         </ErrorBoundary>
       </main>

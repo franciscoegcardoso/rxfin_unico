@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Users, FileText, Crown, Mail, Scale, HeartPulse, Rocket, Bell, ShieldCheck } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminPendingChangesProvider, useAdminPendingChanges } from '@/contexts/AdminPendingChangesContext';
 import { AdminPendingChangesBar } from '@/components/admin/AdminPendingChangesBar';
@@ -67,7 +66,7 @@ function AdminContent() {
   };
 
   return (
-    <AppLayout>
+    
       <AdminPendingChangesBar />
 
       <div className="p-6 space-y-6">
@@ -104,7 +103,7 @@ function AdminContent() {
 
       <AdminSaveConfirmDialog />
       <AdminNavigationGuard />
-    </AppLayout>
+    
   );
 }
 

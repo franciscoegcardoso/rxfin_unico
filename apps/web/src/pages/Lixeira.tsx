@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -176,7 +175,7 @@ export default function Lixeira() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-6">
         <PageHeader
           title="Lixeira"
@@ -380,6 +379,6 @@ export default function Lixeira() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppLayout>
+    </>
   );
 }

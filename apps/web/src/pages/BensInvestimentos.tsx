@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -771,7 +770,7 @@ const BensInvestimentos: React.FC = () => {
   const defaultAssetType = mainTab === 'investimentos' ? 'investment' as const : 'property' as const;
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Add Asset Dialog */}
         <AddAssetDialog
@@ -1530,7 +1529,7 @@ const BensInvestimentos: React.FC = () => {
         onOpenChange={setSeguroDialogOpen}
         preSelectedAssetId={seguroAssetId}
       />
-    </AppLayout>
+    
   );
 };
 

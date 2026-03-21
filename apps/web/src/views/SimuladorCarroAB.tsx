@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { useFipe, VehicleType, formatFipeYearName } from '@/hooks/useFipe';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
@@ -1390,7 +1389,7 @@ const SimuladorCarroAB: React.FC = () => {
   const hasBothValues = valueA > 0 && valueB > 0;
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
@@ -3055,7 +3054,7 @@ const SimuladorCarroAB: React.FC = () => {
         getPrimaryFuelType={getPrimaryFuelTypeForDialogs}
       />
 
-    </AppLayout>
+    
   );
 };
 

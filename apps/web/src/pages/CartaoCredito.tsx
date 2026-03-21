@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -682,7 +681,7 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
   );
 
   if (embedded) return content;
-  return <AppLayout>{content}</AppLayout>;
+  return content;
 };
 
 export default CartaoCredito;

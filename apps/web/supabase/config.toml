@@ -80,3 +80,6 @@ verify_jwt = true
 
 [functions.process-ir-import]
 verify_jwt = false
+
+[functions.process-insights]
+verify_jwt = false

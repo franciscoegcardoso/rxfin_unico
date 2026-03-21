@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { HeaderMetricCard } from '@/components/shared/HeaderMetricCard';
@@ -63,7 +62,7 @@ export const Presentes: React.FC = () => {
   }, [events]);
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           icon={Gift}
@@ -183,7 +182,7 @@ export const Presentes: React.FC = () => {
           </>
         )}
       </div>
-    </AppLayout>
+    
   );
 };
 

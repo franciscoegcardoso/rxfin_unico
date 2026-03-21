@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, Type } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
@@ -665,16 +664,16 @@ export const Lancamentos: React.FC = () => {
   if (loading && lancamentos.length === 0) {
     return (
       <>
-      <AppLayout>
+      
         <PageSkeleton variant="metrics-table" metrics={4} />
-      </AppLayout>
+      
       </>
     );
   }
 
   return (
     <>
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Outdated Connection Banner */}
         {!isManual && <OutdatedConnectionBanner />}
@@ -1764,7 +1763,7 @@ export const Lancamentos: React.FC = () => {
         </Tabs>
 
       </div>
-    </AppLayout>
+    
 
     {/* Conta Form Dialog */}
     <ContaFormDialog

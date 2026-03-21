@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { HourlyCostSimulator } from '@/components/simuladores/HourlyCostSimulator';
@@ -7,7 +6,7 @@ import { Clock } from 'lucide-react';
 
 const SimuladorCustoHora: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Custo da Hora"
@@ -18,7 +17,7 @@ const SimuladorCustoHora: React.FC = () => {
         />
         <HourlyCostSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

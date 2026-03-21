@@ -1,12 +1,11 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCard } from 'lucide-react';
 
 const CartaoCredito: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           title="Cartão de Crédito"
@@ -15,7 +14,7 @@ const CartaoCredito: React.FC = () => {
         />
         <CartaoCreditoSection />
       </div>
-    </AppLayout>
+    
   );
 };
 

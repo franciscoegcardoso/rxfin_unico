@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Car, Fuel, Wrench, Receipt, Plus, BarChart3 } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { useVisibility } from '@/contexts/VisibilityContext';
@@ -126,7 +125,7 @@ const GestaoVeiculosLayout: React.FC = () => {
 
   return (
     <GestaoVeiculosContext.Provider value={contextValue}>
-      <AppLayout>
+      
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -242,7 +241,7 @@ const GestaoVeiculosLayout: React.FC = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </AppLayout>
+      
     </GestaoVeiculosContext.Provider>
   );
 };

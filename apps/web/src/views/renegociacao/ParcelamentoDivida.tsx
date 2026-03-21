@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { ParcelamentoDividaSimulator } from '@/components/simuladores/renegociacao/ParcelamentoDividaSimulator';
@@ -7,7 +6,7 @@ import { Percent } from 'lucide-react';
 
 const ParcelamentoDivida: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Parcelamento de Dívida"
@@ -18,7 +17,7 @@ const ParcelamentoDivida: React.FC = () => {
         />
         <ParcelamentoDividaSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

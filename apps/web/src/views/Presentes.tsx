@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { CollapsibleModule } from '@/components/shared/CollapsibleModule';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { BackLink } from '@/components/shared/BackLink';
@@ -563,14 +562,14 @@ export const Presentes: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      
         <PageSkeleton variant="cards-grid" metrics={3} items={6} />
-      </AppLayout>
+      
     );
   }
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
@@ -1477,7 +1476,7 @@ export const Presentes: React.FC = () => {
           await addPeopleBulk.mutateAsync(names);
         }}
       />
-    </AppLayout>
+    
   );
 };
 

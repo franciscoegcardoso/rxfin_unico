@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { useSimulatorBySlug } from '@/hooks/useSimulatorBySlug';
 import { ProfileCompletionDialog } from '@/components/simuladores/ProfileCompletionDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -102,7 +101,7 @@ export const SimuladorDinamico: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <AppLayout>
+      
         <div className="space-y-6">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-96" />
@@ -111,14 +110,14 @@ export const SimuladorDinamico: React.FC = () => {
             <Skeleton className="h-64" />
           </div>
         </div>
-      </AppLayout>
+      
     );
   }
 
   // Error state - simulator not found
   if (error || !simulator) {
     return (
-      <AppLayout>
+      
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
           <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="h-10 w-10 text-destructive" />
@@ -136,14 +135,14 @@ export const SimuladorDinamico: React.FC = () => {
             </Link>
           </Button>
         </div>
-      </AppLayout>
+      
     );
   }
 
   // Not logged in for non-public simulators
   if (!user && simulator.access_level !== 'public') {
     return (
-      <AppLayout>
+      
         <div className="max-w-lg mx-auto mt-12">
           <Card className="border-primary/20">
             <CardHeader className="text-center pb-4">
@@ -173,14 +172,14 @@ export const SimuladorDinamico: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      
     );
   }
 
   // Access restricted - premium required
   if (!hasAccess && simulator.access_level === 'premium') {
     return (
-      <AppLayout>
+      
         <div className="max-w-lg mx-auto mt-12">
           <Card className="border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
             <CardHeader className="text-center pb-4">
@@ -238,7 +237,7 @@ export const SimuladorDinamico: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      
     );
   }
 
@@ -248,7 +247,7 @@ export const SimuladorDinamico: React.FC = () => {
   // If no component mapping exists, show placeholder
   if (!SimulatorComponent) {
     return (
-      <AppLayout>
+      
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -282,7 +281,7 @@ export const SimuladorDinamico: React.FC = () => {
           currentName={profile?.full_name}
           currentPhone={profile?.phone}
         />
-      </AppLayout>
+      
     );
   }
 

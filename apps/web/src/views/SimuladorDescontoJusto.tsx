@@ -1,11 +1,10 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { DescontoJustoSimulator } from '@/components/simuladores/DescontoJustoSimulator';
 import { BackLink } from '@/components/shared/BackLink';
 
 const SimuladorDescontoJusto: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
@@ -16,7 +15,7 @@ const SimuladorDescontoJusto: React.FC = () => {
         </div>
         <DescontoJustoSimulator />
       </div>
-    </AppLayout>
+    
   );
 };
 

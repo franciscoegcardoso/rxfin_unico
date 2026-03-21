@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { MobileHubList, HubItem } from '@/components/shared/MobileHubList';
@@ -55,7 +54,7 @@ export const ConfiguracoesHub: React.FC = () => {
   const isMobile = useIsMobile();
 
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Configurações"
@@ -91,7 +90,7 @@ export const ConfiguracoesHub: React.FC = () => {
           </div>
         )}
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

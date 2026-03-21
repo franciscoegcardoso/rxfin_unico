@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { PortabilidadeCreditoSimulator } from '@/components/simuladores/renegociacao/PortabilidadeCreditoSimulator';
@@ -7,7 +6,7 @@ import { ArrowRightLeft } from 'lucide-react';
 
 const PortabilidadeCredito: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Portabilidade de Crédito"
@@ -18,7 +17,7 @@ const PortabilidadeCredito: React.FC = () => {
         />
         <PortabilidadeCreditoSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

@@ -315,7 +315,7 @@ export function useAdminDeferredMutations() {
           .eq('id', plan.id);
         
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
         logAction('TOGGLE_PLAN_STATUS', 'subscription_plans', plan.id, { planName: plan.name, newStatus }, 'high');
         toast.success(`Plano ${newStatus ? 'ativado' : 'desativado'}!`);
       },
@@ -335,7 +335,7 @@ export function useAdminDeferredMutations() {
           .eq('id', id);
         
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
         logAction('UPDATE_PLAN', 'subscription_plans', id, { planName: name, fields: Object.keys(data) }, 'high');
         toast.success('Plano atualizado!');
       },
@@ -353,7 +353,7 @@ export function useAdminDeferredMutations() {
           .insert(data);
         
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
         logAction('CREATE_PLAN', 'subscription_plans', null, { planName: data.name, slug: data.slug }, 'high');
         toast.success('Plano criado com sucesso!');
       },
@@ -373,7 +373,7 @@ export function useAdminDeferredMutations() {
           .eq('id', plan.id);
         
         if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+        queryClient.invalidateQueries({ queryKey: ['subscription_plans'] });
         logAction('DELETE_PLAN', 'subscription_plans', plan.id, { planName: plan.name }, 'critical');
         toast.success('Plano excluído!');
       },

@@ -1,6 +1,5 @@
 import React from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { Outlet, NavLink } from 'react-router-dom';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
 import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
@@ -15,10 +14,7 @@ const TAB_INACTIVE =
   'text-muted-foreground hover:text-foreground border-transparent';
 
 const PlanejamentoAnualLayout: React.FC = () => {
-  const location = useLocation();
-
   return (
-    <AppLayout>
       <div className="content-zone py-5 md:py-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -64,9 +60,8 @@ const PlanejamentoAnualLayout: React.FC = () => {
           </NavLink>
         </nav>
 
-        <Outlet key={location.pathname} />
+        <Outlet />
       </div>
-    </AppLayout>
   );
 };
 

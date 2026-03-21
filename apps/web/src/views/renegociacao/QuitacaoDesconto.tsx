@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { QuitacaoDescontoSimulator } from '@/components/simuladores/renegociacao/QuitacaoDescontoSimulator';
@@ -7,7 +6,7 @@ import { Receipt } from 'lucide-react';
 
 const QuitacaoDesconto: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
         <PageHeader
           title="Quitação com Desconto"
@@ -18,7 +17,7 @@ const QuitacaoDesconto: React.FC = () => {
         />
         <QuitacaoDescontoSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

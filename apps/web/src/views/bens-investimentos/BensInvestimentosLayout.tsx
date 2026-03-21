@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, PieChart, DollarSign, TrendingUp, Landmark, Shield } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -247,7 +246,7 @@ const BensInvestimentosLayout: React.FC = () => {
 
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
-      <AppLayout>
+      
         <div className="space-y-6">
           {/* Add Asset Dialog */}
           <AddAssetDialog
@@ -591,7 +590,7 @@ const BensInvestimentosLayout: React.FC = () => {
           onOpenChange={setSeguroDialogOpen}
           preSelectedAssetId={seguroAssetId}
         />
-      </AppLayout>
+      
     </BensInvestimentosContext.Provider>
   );
 };

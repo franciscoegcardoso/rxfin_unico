@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale, ChevronRight, X } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
@@ -113,7 +112,7 @@ function getGrupoLabel(l: LancamentoRealizado): string {
   return '—';
 }
 
-/** Evita AppLayout duplo quando renderizado dentro de MovimentacoesPage (embedded). */
+/** Shell do extrato: embedded dentro de MovimentacoesPage; caso contrário o conteúdo usa AppLayout do DesktopShell/MobileShell. */
 function LancamentosShell({
   embedded,
   children,
@@ -128,7 +127,7 @@ function LancamentosShell({
       </div>
     );
   }
-  return <AppLayout>{children}</AppLayout>;
+  return <>{children}</>;
 }
 
 interface LancamentosProps {
