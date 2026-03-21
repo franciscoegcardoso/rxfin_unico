@@ -76,11 +76,13 @@ export default defineConfig(() => ({
             return "movimentacoes";
           }
 
-          // ── Onboarding — chunk isolado ───────────────────────────────────
+          // ── Onboarding — chunk isolado (só UI) ────────────────────────────
+          // NÃO incluir hooks/useOnboarding* aqui: useOnboardingCheckpoint é
+          // usado em /inicio e no mesmo chunk que o wizard gera TDZ no bundle
+          // ("Cannot access 'X' before initialization" em produção).
           if (
             id.includes("/components/onboarding/") ||
-            id.includes("/components/onboarding-control/") ||
-            id.includes("/hooks/useOnboarding")
+            id.includes("/components/onboarding-control/")
           ) {
             return "onboarding";
           }
