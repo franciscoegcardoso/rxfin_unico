@@ -6,9 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { usePassivosPage } from '@/hooks/usePassivosPage';
 import { useConsolidatedExpenses } from '@/hooks/useConsolidatedExpenses';
+import { STALE_RPC_ANALYTICS_MS } from '@/lib/rpcQueryDefaults';
 import type { SnapshotPoint } from '@/types/investments';
 
-const STALE_MS = 5 * 60 * 1000;
+const STALE_MS = STALE_RPC_ANALYTICS_MS;
 
 export type HealthClassification = 'excelente' | 'bom' | 'regular' | 'atenção';
 

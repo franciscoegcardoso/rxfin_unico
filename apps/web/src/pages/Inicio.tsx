@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppLayout } from "@/components/layout/AppLayout";
 import { useFinancial } from "@/contexts/FinancialContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVisibility } from "@/contexts/VisibilityContext";
@@ -488,7 +487,7 @@ const InicioPageInner: React.FC = () => {
   // ─── Mobile/tablet layout (cabeçalho verde + Resumo/Despesas do mês; do gráfico pra baixo = formato atual) ────────────────────────────────────────
   if (isMobile) {
     return (
-      <AppLayout>
+      
         <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
           <div className="content-zone pt-4 pb-5 md:pt-5 md:pb-6 space-y-5 flex-1">
             {errorBlock}
@@ -571,7 +570,7 @@ const InicioPageInner: React.FC = () => {
           <BudgetInsightsSummary />
           </div>
         </div>
-      </AppLayout>
+      
     );
   }
 
@@ -580,7 +579,7 @@ const InicioPageInner: React.FC = () => {
     user?.user_metadata?.avatar_url || user?.user_metadata?.picture || "";
 
   return (
-    <AppLayout>
+    
       <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone pt-0 pb-5 md:pt-0 md:pb-6 flex-1 w-full max-w-full min-w-0">
           {errorBlock}
@@ -652,7 +651,7 @@ const InicioPageInner: React.FC = () => {
 
         </div>
       </div>
-    </AppLayout>
+    
   );
 };
 

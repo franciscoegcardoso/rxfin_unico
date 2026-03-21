@@ -1,12 +1,13 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { FinancingSimulator } from '@/components/simuladores/FinancingSimulator';
 import { BackLink } from '@/components/shared/BackLink';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 const SimuladorFinanciamento: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
+        <PageBreadcrumb />
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
           <h1 className="text-3xl font-bold text-foreground">Financiamento Vs Consórcio</h1>
@@ -16,7 +17,7 @@ const SimuladorFinanciamento: React.FC = () => {
         </div>
         <FinancingSimulator />
       </div>
-    </AppLayout>
+    
   );
 };
 

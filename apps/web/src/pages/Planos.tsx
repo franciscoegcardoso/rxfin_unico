@@ -8,6 +8,8 @@ import { formatCurrency } from '@/lib/utils';
 import { Check, Crown, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfileSettings } from '@/hooks/useProfileSettings';
+import { useUserPlan } from '@/hooks/useUserPlan';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 
 interface PlanPublic {
   name?: string;
@@ -26,7 +28,11 @@ interface PlanPublic {
 export default function Planos() {
   const { user } = useAuth();
   const { data: profileData } = useProfileSettings();
-  const currentPlanSlug = profileData?.profile?.plan_slug ?? null;
+  const { data: userPlanView } = useUserPlan();
+  /** v_user_plan + fallback do RPC de perfil (plan_slug explícito). */
+  const currentPlanSlug = user
+    ? (userPlanView?.plan_slug ?? profileData?.profile?.plan_slug ?? 'free')
+    : null;
 
   const [plans, setPlans] = useState<PlanPublic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +79,7 @@ export default function Planos() {
       <div className="max-w-4xl mx-auto px-4 py-12 space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Escolha seu plano</h1>
 
+        <SectionErrorBoundary fallbackTitle="Planos e assinatura">
         {plans.length === 0 ? (
           <p className="text-muted-foreground">Nenhum plano disponível.</p>
         ) : (
@@ -156,6 +163,7 @@ export default function Planos() {
             })}
           </div>
         )}
+        </SectionErrorBoundary>
 
         <p className="text-xs text-muted-foreground text-center mt-6">
           Plano renova automaticamente. Cancele quando quiser.

@@ -1,14 +1,15 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { ParcelamentoDividaSimulator } from '@/components/simuladores/renegociacao/ParcelamentoDividaSimulator';
 import { Percent } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 const ParcelamentoDivida: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
+        <PageBreadcrumb />
         <PageHeader
           title="Parcelamento de Dívida"
           description="Compare sua dívida atual com uma nova proposta de parcelamento"
@@ -18,7 +19,7 @@ const ParcelamentoDivida: React.FC = () => {
         />
         <ParcelamentoDividaSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

@@ -1,40 +1,53 @@
-## O que esta PR faz?
+## O que muda neste PR
 
-<!-- Descreva resumidamente a mudança -->
+<!-- Descreva o que foi alterado e por quê -->
 
-## Tipo de mudança
+## Tipo
 
-- [ ] 🐛 Bugfix
-- [ ] ✨ Nova feature
-- [ ] ♻️ Refatoração (sem mudança de comportamento)
-- [ ] 🏗️ Infraestrutura / CI / config
-- [ ] 📄 Documentação
-- [ ] 🎨 UI / Design System
+- [ ] `feat` — nova funcionalidade
+- [ ] `fix` — correção de bug
+- [ ] `chore` — config / dependências / limpeza
+- [ ] `refactor` — sem mudança de comportamento
+- [ ] `style` — CSS / Design System
+- [ ] `docs` — documentação
 
-## Área impactada
+## Pre-Deploy Checklist ✅
 
-- [ ] `apps/web` — App principal
-- [ ] `apps/landing` — Landing page
-- [ ] `apps/mobile` — App mobile
-- [ ] `supabase/` — Edge Functions
-- [ ] `apps/web/supabase/` — Migrations / Functions completas
-- [ ] `.github/` — CI/CD
-- [ ] `docs/` — Documentação
-- [ ] Outro: ___
+**Build & tipos**
+- [ ] `pnpm --filter web build` passa sem erros
+- [ ] `pnpm --filter web exec tsc --noEmit` sem erros de tipo
+- [ ] CI verde no GitHub Actions
 
-## Checklist
+**Banco de dados**
+- [ ] Migrações em `supabase/migrations/` commitadas — ou N/A
+- [ ] Migrações aplicadas no Supabase (MCP ou dashboard) — ou N/A
+- [ ] Edge Functions redeployadas se alteradas — ou N/A
 
-- [ ] Build passa localmente (`npm run build:web`)
-- [ ] Sem erros de TypeScript (`npm run typecheck`)
-- [ ] Testado no browser (se UI)
-- [ ] Migrations aplicadas no staging antes do merge (se DB)
-- [ ] Sem segredos ou credenciais reais no código
-- [ ] `CONTEXT.md` atualizado se houver mudança arquitetural relevante
+**Ambiente**
+- [ ] `.env.example` atualizado se novas variáveis — ou N/A
+- [ ] Variáveis adicionadas no Vercel dashboard — ou N/A
 
-## Screenshots / evidências (se UI)
+**Smoke test (Preview URL)**
+- [ ] `/inicio` carrega, KPIs corretos
+- [ ] **Gráfico Fluxo de Caixa com barras verdes e vermelhas visíveis** ← crítico
+- [ ] `/movimentacoes` renderiza
+- [ ] `/bens-investimentos` abre
+- [ ] Cibélia responde
+- [ ] Tema claro ↔ escuro OK (se CSS alterado)
 
-<!-- Cole aqui screenshots ou gravações se a mudança afetar interface -->
+**Paridade**
+- [ ] Delta intencional documentado abaixo
+- [ ] Sem divergências silenciosas
 
-## Contexto adicional
+## Delta intencional
 
-<!-- Qualquer informação útil para o revisor -->
+<!-- Mudanças em local/preview que divergem intencionalmente de prod -->
+
+_Nenhum_ / ou:
+-
+
+## Screenshots
+
+| Antes | Depois |
+|-------|--------|
+|  |  |

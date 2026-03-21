@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { useCompromissos } from '@/hooks/useCompromissos';
 import { RecurringSummaryHeader } from '@/components/compromissos/RecurringSummaryHeader';
 import { RecurringCard } from '@/components/compromissos/RecurringCard';
@@ -67,10 +66,7 @@ export default function Compromissos() {
   const emptyAfterSync = !hasData && hasSyncedBefore && !isLoading && !error;
 
   return (
-    <AppLayout
-      title="Compromissos Fixos"
-      description="Receitas e despesas recorrentes detectadas automaticamente."
-      icon={<CalendarClock className="h-6 w-6" />}
+    }
     >
       <div className="space-y-8">
         {isLoading && (
@@ -175,6 +171,6 @@ export default function Compromissos() {
           </>
         )}
       </div>
-    </AppLayout>
+    
   );
 }

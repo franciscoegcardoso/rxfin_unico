@@ -186,9 +186,10 @@ const PassivosPage: React.FC = () => {
           </>
         )}
 
-        {/* Tabs orientadas por rota */}
+        {/* Tabs orientadas por rota — alinhado a Bens e Investimentos: área de conteúdo com mt-4 após as guias */}
         <Tabs value={currentTab} onValueChange={(val) => navigate(val === 'visao-geral' ? '/passivos' : `/passivos/${val}`)}>
-          <TabsList>
+          <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 scrollbar-thin">
+            <TabsList>
             <TabsTrigger value="visao-geral" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Visão geral
@@ -229,9 +230,12 @@ const PassivosPage: React.FC = () => {
               )}
             </TabsTrigger>
           </TabsList>
+          </div>
 
-          {/* Conteúdo vem via sub-rotas */}
-          <Outlet />
+          {/* Ritmo vertical alinhado a Bens e Investimentos (conteúdo após guias: mt-4 + space-y-4) */}
+          <div className="mt-4 space-y-4 min-w-0">
+            <Outlet />
+          </div>
         </Tabs>
       </div>
     </div>

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -262,7 +261,7 @@ export default function Notificacoes() {
   );
 
   return (
-    <AppLayout>
+    
       <TooltipProvider>
         <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
           <PageHeader
@@ -435,6 +434,6 @@ export default function Notificacoes() {
           </div>
         </div>
       </TooltipProvider>
-    </AppLayout>
+    
   );
 }

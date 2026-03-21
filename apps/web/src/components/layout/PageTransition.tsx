@@ -31,15 +31,11 @@ const pageVariants: Variants = {
 
 export const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
   const location = useLocation();
-  // Key = apenas o primeiro segmento do path (ex: 'bens-investimentos').
-  // Sub-rotas (/bens-investimentos/patrimonio, /bens-investimentos/investimentos) mantêm
-  // o mesmo key e evitam remontagem da página ao trocar de aba.
-  const rootSegment = location.pathname.split('/').filter(Boolean)[0] ?? '';
 
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={rootSegment || 'root'}
+        key={location.pathname}
         initial="initial"
         animate="enter"
         exit="exit"

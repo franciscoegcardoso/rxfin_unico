@@ -8,6 +8,7 @@ import { useFeaturePreferences } from '@/hooks/useFeaturePreferences';
 import { LucideIcon, Home, PiggyBank, FileText, Receipt, Wallet, TrendingUp, CalendarRange, Calendar, Target, Settings2, User, Car, CreditCard, ClipboardList, Calculator, ShoppingBag, Building2, AlertCircle, Clock, BadgePercent, LineChart, ArrowLeftRight } from 'lucide-react';
 import { getIconComponent } from '@/lib/iconMap';
 import { INVESTIMENTOS_ALOCACAO_PATH, LEGACY_ALOCACAO_PATH } from '@/constants/appPaths';
+import { canonicalPathForPage } from '@/lib/pagePathCanonical';
 
 function isAlocacaoMainMenuPath(path: string): boolean {
   const p = (path || '').replace(/\/+$/, '') || '/';
@@ -308,31 +309,11 @@ export function useNavMenuPages(): NavMenuData {
       
       if (pagesError) throw pagesError;
       
-      // Path canônico do Simulador FIPE dentro da árvore autenticada (AppShell) para o dropdown não cair no layout público
-      const SIMULADOR_FIPE_PATH = '/simuladores/veiculos/simulador-fipe';
-      const normalizedPath = (p: string) => (p && p.startsWith('/') ? p : `/${p || ''}`.replace(/\/+/g, '/'));
-      /** Alinha paths legados do Supabase com rotas canônicas do app. */
-      const canonicalMenuPath = (p: string): string => {
-        if (p.includes('?tab=metas')) return '/planejamento-mensal/metas';
-        if (p.includes('?tab=analises')) return '/planejamento-mensal/analises';
-        if (p.includes('?tab=visao-mensal')) return '/planejamento-mensal';
-        const base = p.split('?')[0] ?? p;
-        if (base === '/planejamento' || base === '/planejamento/') return '/planejamento-mensal';
-        if (base === '/planejamento/visao-mensal') return '/planejamento-mensal';
-        if (base === '/planejamento/metas') return '/planejamento-mensal/metas';
-        if (base === '/planejamento/analises') return '/planejamento-mensal/analises';
-        if (base === '/planejamento-anual/plano-anual') return '/planejamento-anual/plano2anos';
-        if (base === '/planejamento-anual/plano-30-anos') return '/planejamento-anual/plano30anos';
-        return p;
-      };
       const transformedPages: NavPage[] = (pages || []).map((page: any) => ({
         id: page.id,
         slug: page.slug,
         title: page.title,
-        path:
-          page.slug === 'simulador-fipe'
-            ? SIMULADOR_FIPE_PATH
-            : canonicalMenuPath(normalizedPath(page.path)),
+        path: canonicalPathForPage(page.path, page.slug),
         icon: page.icon,
         access_level: page.access_level,
         is_active_users: page.is_active_users,

@@ -5,7 +5,66 @@ import {
   PHASE_ACCESS_PROMPT,
   buildOnboardingPrompt,
   buildFinancialPrompt,
+  buildMacroContextBlock,
+  type MacroContextForAi,
 } from "./prompts.ts";
+
+const MACRO_CACHE_KEY = "macro_context_cache";
+const MACRO_TTL_MS = 60 * 60 * 1000;
+
+/**
+ * Cache por utilizador em user_kv_store (value.expires_at + value.macro).
+ * Falha silenciosa — retorna string vazia.
+ */
+async function getMacroContextCached(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<string> {
+  try {
+    const { data: row, error: selErr } = await supabaseAdmin
+      .from("user_kv_store")
+      .select("value")
+      .eq("user_id", userId)
+      .eq("key", MACRO_CACHE_KEY)
+      .maybeSingle();
+
+    if (selErr) console.warn("[ai-chat] macro cache read:", selErr.message);
+
+    const now = Date.now();
+    const v = row?.value as { expires_at?: string; macro?: MacroContextForAi } | null;
+    if (v?.expires_at && v?.macro) {
+      const exp = new Date(v.expires_at).getTime();
+      if (!Number.isNaN(exp) && exp > now) {
+        return buildMacroContextBlock(v.macro);
+      }
+    }
+
+    const { data: macroRaw, error: rpcErr } = await supabaseAdmin.rpc("get_macro_context_for_ai");
+    if (rpcErr) {
+      console.warn("[ai-chat] get_macro_context_for_ai:", rpcErr.message);
+      return "";
+    }
+
+    const macro = macroRaw as MacroContextForAi | null;
+    if (!macro || typeof macro !== "object") return "";
+
+    const expiresAt = new Date(now + MACRO_TTL_MS).toISOString();
+    const { error: upErr } = await supabaseAdmin.from("user_kv_store").upsert(
+      {
+        user_id: userId,
+        key: MACRO_CACHE_KEY,
+        value: { macro, expires_at: expiresAt },
+      },
+      { onConflict: "user_id,key" },
+    );
+    if (upErr) console.warn("[ai-chat] macro cache write:", upErr.message);
+
+    return buildMacroContextBlock(macro);
+  } catch (e) {
+    console.warn("[ai-chat] macro context:", e);
+    return "";
+  }
+}
 
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY") || Deno.env.get("OPENROUTER_KEY") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -186,6 +245,11 @@ Deno.serve(async (req: Request) => {
     const isFirstTurn = (messages as Array<{ role: string }>).filter(m => m.role === 'user').length === 1;
     console.log(`[ai-chat] phase=${phase} user=${user?.id || 'anon'} firstTurn=${isFirstTurn} alerts=${(cibeliaAlerts as Record<string,unknown>).count || 0}`);
 
+    let macroContextBlock = "";
+    if (user && phase === "financial") {
+      macroContextBlock = await getMacroContextCached(supabaseAdmin, user.id);
+    }
+
     let systemPrompt: string;
     const currentMonth = new Date().toISOString().slice(0, 7);
 
@@ -194,7 +258,7 @@ Deno.serve(async (req: Request) => {
       case 'access':     systemPrompt = PHASE_ACCESS_PROMPT; break;
       case 'onboarding': systemPrompt = buildOnboardingPrompt(userContext, cibeliaMemory); break;
       case 'financial':
-      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}, pluggyContext, financialInsightsSummary); break;
+      default:           systemPrompt = buildFinancialPrompt(userContext, raioX, monthlySummary, currentMonth, cibeliaMemory, isFirstTurn ? cibeliaAlerts : {}, pluggyContext, financialInsightsSummary, macroContextBlock); break;
     }
 
     if (user && phase === 'financial' && isFirstTurn && (cibeliaAlerts as Record<string,unknown>).count) {

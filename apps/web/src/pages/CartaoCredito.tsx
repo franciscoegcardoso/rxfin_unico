@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { CartaoCreditoSection } from '@/components/planejamento/CartaoCreditoSection';
 import { CreditCardBillView } from '@/components/cards/CreditCardBillView';
 import { MonthSelector } from '@/components/lancamentos/MonthSelector';
@@ -314,10 +313,14 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
     return `Vence em ${days} dia${days !== 1 ? 's' : ''}`;
   };
 
-  return (
-    <AppLayout>
+  const content = (
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
+        <div
+          className={cn(
+            'content-zone space-y-5 flex-1',
+            embedded ? 'py-4 md:py-5 px-4 md:px-6 flex-1 min-h-0 overflow-y-auto' : 'py-5 md:py-6'
+          )}
+        >
         {!embedded && (
         <PageHeader
           icon={CreditCard}
@@ -675,8 +678,10 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
         )}
         </div>
       </div>
-    </AppLayout>
   );
+
+  if (embedded) return content;
+  return content;
 };
 
 export default CartaoCredito;

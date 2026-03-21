@@ -130,8 +130,9 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
   }, [data]);
 
   const totalEstabelecimentos = data.length;
+  // Conta estabelecimentos sem pendentes (total_pendentes === 0) ou confirmados manualmente nesta sessão
   const categorizados = data.filter(
-    (r) => (rowStates[r.estabelecimento]?.categoria_id ?? rowStates[r.estabelecimento]?.grupo_id ?? null) !== null
+    (r) => r.total_pendentes === 0 || rowStates[r.estabelecimento]?.confirmada === true
   ).length;
   const totalPendentesToUpdate = data
     .filter((r) => rowStates[r.estabelecimento]?.dirty)
@@ -347,7 +348,7 @@ export function ConsolidarTab({ sourceFilter, categories, onSaveComplete, onClos
       {/* Barra de progresso */}
       <div className="shrink-0 mb-4 space-y-1">
         <p className="text-sm text-muted-foreground">
-          {categorizados} de {totalEstabelecimentos} estabelecimentos categorizados
+          {categorizados} de {totalEstabelecimentos} estabelecimentos confirmados · {pendingCount} pendentes
         </p>
         <Progress value={totalEstabelecimentos > 0 ? (categorizados / totalEstabelecimentos) * 100 : 0} className="h-2" />
         {dirtyCount > 0 && (

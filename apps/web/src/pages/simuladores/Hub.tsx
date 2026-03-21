@@ -17,12 +17,12 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { getSessionId } from '@/lib/simulatorSession';
 import { useAuth } from '@/contexts/AuthContext';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PublicSimuladoresHeader } from '@/components/simuladores/PublicSimuladoresHeader';
 import { SimuladorCard } from '@/components/simuladores/SimuladorCard';
 import { SIMULATOR_CATEGORIES } from '@/components/simuladores/simulatorCategories';
 import { cn } from '@/lib/utils';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 interface SimulatorItem {
   title: string;
@@ -202,10 +202,11 @@ export default function Hub() {
     </>
   );
 
-  // Layout para usuário LOGADO: AppLayout (com shell) + PageHeader + seções por tema
+  // Layout para usuário LOGADO: shell + PageHeader + seções por tema
   if (isLoggedIn) {
     return (
-      <AppLayout>
+      <>
+        <PageBreadcrumb />
         <PageHeader
           icon={Calculator}
           title="Simuladores"
@@ -214,7 +215,7 @@ export default function Hub() {
         <div className="space-y-6">
           {SectionContent}
         </div>
-      </AppLayout>
+      </>
     );
   }
 

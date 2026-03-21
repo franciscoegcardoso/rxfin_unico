@@ -154,7 +154,8 @@ export function useAdminUsers(
         }, {} as Record<string, number>);
       }
       
-      // Fetch plan slugs from v_user_plan view
+      // Fetch plan slugs from v_user_plan (SECURITY INVOKER). Query filtra por IDs explícitos
+      // (.in) — adequado para painel admin; requer policies que permitam ao admin ler planos dos usuários listados.
       const userIds = (data || []).map(u => u.id);
       let planMap: Record<string, { slug: string; name: string }> = {};
       if (userIds.length > 0) {

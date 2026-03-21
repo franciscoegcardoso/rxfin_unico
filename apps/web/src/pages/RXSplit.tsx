@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, UsersRound, Receipt, Wallet, Sparkles, ArrowRightLeft, ShieldCheck } from 'lucide-react';
@@ -26,7 +25,7 @@ const RXSplit: React.FC = () => {
   const [showIntro, setShowIntro] = useState(true);
 
   return (
-    <AppLayout>
+    
       <div className="flex flex-col min-h-full w-full max-w-full overflow-x-hidden">
         <PageHeader
           icon={UsersRound}
@@ -121,7 +120,7 @@ const RXSplit: React.FC = () => {
           </Tabs>
         )}
       </div>
-    </AppLayout>
+    
   );
 };
 

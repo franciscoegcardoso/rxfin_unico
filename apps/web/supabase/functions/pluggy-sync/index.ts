@@ -16,6 +16,7 @@ import {
   getTargetBillDates,
   ensureBillExists,
 } from '../_shared/pluggy-transactions.ts';
+import { syncInvestmentTransactions } from '../_shared/pluggy-investment-transactions.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -850,14 +851,45 @@ Deno.serve(async (req) => {
         if (r.status === 'rejected') console.error('[Refresh] Account sync failed:', r.reason);
       }
 
+      const investmentTxSync = await syncInvestmentTransactions(supabase, user.id, {
+        id: connection.id,
+        item_id: connection.item_id,
+      }, apiKey);
+      console.log(
+        `[Refresh] Investment transactions: processed=${investmentTxSync.investmentsProcessed}, upserted=${investmentTxSync.transactionsUpserted}, skipped=${investmentTxSync.skipped}`,
+      );
+
       // Run payment reconciliation after refresh
       const reconcileResult = await reconcileBillPayments(supabase, user.id);
       console.log(`[Refresh] Reconciliation: ${reconcileResult.reconciled} reconciled, ${reconcileResult.manualCheck} manual check`);
 
       return new Response(
-        JSON.stringify({ success: true, accountsCount: accounts.length, reconciliation: reconcileResult }),
+        JSON.stringify({
+          success: true,
+          accountsCount: accounts.length,
+          investmentTransactionsSync: investmentTxSync,
+          reconciliation: reconcileResult,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (action === 'sync-investment-transactions') {
+      let connRef: { id: string; item_id: string } | null = null;
+      if (itemId) {
+        const { data: c } = await supabase
+          .from('pluggy_connections')
+          .select('id, item_id')
+          .eq('user_id', user.id)
+          .eq('item_id', itemId)
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (c) connRef = { id: c.id, item_id: c.item_id };
+      }
+      const result = await syncInvestmentTransactions(supabase, user.id, connRef, apiKey);
+      return new Response(JSON.stringify({ success: true, ...result }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     if (action === 'delete') {

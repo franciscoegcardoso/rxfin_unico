@@ -14,7 +14,6 @@ import {
   Line,
   ComposedChart,
 } from 'recharts';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,15 +84,15 @@ const FluxoFinanceiro: React.FC = () => {
 
   if (isLoading) {
     return (
-      <AppLayout>
+      <>
         <PageHeader icon={BarChart2} title="Fluxo Financeiro" subtitle="Receitas, despesas e saldo do mês" />
         <PageSkeleton />
-      </AppLayout>
+      </>
     );
   }
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           icon={BarChart2}
@@ -234,7 +233,7 @@ const FluxoFinanceiro: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    
   );
 };
 

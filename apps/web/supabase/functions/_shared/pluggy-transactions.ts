@@ -32,7 +32,10 @@ export interface PluggyTransaction {
   amountInAccountCurrency?: number;
   currencyCode?: string;
   date: string;
+  /** Rótulo textual da categoria (Pluggy). Fallback quando não há categoryId ou map por ID. */
   category?: string;
+  /** ID numérico Pluggy (ex. "05080000") — GET /transactions */
+  categoryId?: string | null;
   type: string;
   status: string;
   paymentData?: object;
@@ -179,6 +182,65 @@ export async function getTransactions(apiKey: string, accountId: string, options
 
   console.log(`Fetched ${allTransactions.length} transactions for account ${accountId} (paused at page ${page}, totalPages ~${totalPages})`);
   return { transactions: allTransactions, nextPage: page, totalPages };
+}
+
+// ─── pluggy_category_map (carregado 1× por invocação) ───
+
+let pluggyCategoryMapsPromise: Promise<void> | null = null;
+const pluggyCategoryByRawId = new Map<string, string>();
+const pluggyCategoryByLabel = new Map<string, string>();
+
+/**
+ * Prioridade 1: pluggy_category_id_raw = categoryId
+ * Prioridade 2: pluggy_category = texto category
+ * Prioridade 3: null (sem AI para transações Pluggy sem match)
+ */
+export async function resolvePluggyTransactionCategories(
+  supabase: ReturnType<typeof createClient>,
+  tx: PluggyTransaction,
+): Promise<{ pluggy_category_id: string | null; category_id: string | null }> {
+  await ensurePluggyCategoryMapsLoaded(supabase);
+  const pluggy_category_id = tx.categoryId ?? null;
+  const category_id = resolveRxfinCategoryIdFromMaps(pluggy_category_id, tx.category ?? null);
+  return { pluggy_category_id, category_id };
+}
+
+async function ensurePluggyCategoryMapsLoaded(supabase: ReturnType<typeof createClient>): Promise<void> {
+  if (pluggyCategoryMapsPromise) return pluggyCategoryMapsPromise;
+  pluggyCategoryMapsPromise = (async () => {
+    pluggyCategoryByRawId.clear();
+    pluggyCategoryByLabel.clear();
+    const { data: rows, error } = await supabase
+      .from('pluggy_category_map')
+      .select('pluggy_category_id_raw, pluggy_category, category_id');
+    if (error) {
+      console.warn('[pluggy] pluggy_category_map load failed:', error.message);
+      pluggyCategoryMapsPromise = null;
+      return;
+    }
+    for (const r of rows || []) {
+      const cid = r.category_id as string | null;
+      if (!cid) continue;
+      const raw = r.pluggy_category_id_raw as string | null | undefined;
+      if (raw != null && String(raw).trim() !== '') {
+        pluggyCategoryByRawId.set(String(raw).trim(), cid);
+      }
+      const lbl = r.pluggy_category as string | undefined;
+      if (lbl) pluggyCategoryByLabel.set(lbl, cid);
+    }
+  })();
+  return pluggyCategoryMapsPromise;
+}
+
+function resolveRxfinCategoryIdFromMaps(
+  pluggyCategoryId: string | null | undefined,
+  categoryLabel: string | null | undefined,
+): string | null {
+  const pid = pluggyCategoryId?.trim() || null;
+  if (pid && pluggyCategoryByRawId.has(pid)) return pluggyCategoryByRawId.get(pid)!;
+  const lbl = categoryLabel?.trim() || null;
+  if (lbl && pluggyCategoryByLabel.has(lbl)) return pluggyCategoryByLabel.get(lbl)!;
+  return null;
 }
 
 export async function getBills(apiKey: string, accountId: string): Promise<PluggyBill[]> {
@@ -371,24 +433,31 @@ export async function syncBillsForAccount(
           const deduplicatedTxs = deduplicateInstallmentsForBill(billTxs, closingDate);
           console.log(`[SyncBills] Bill ${bill.id}: ${deduplicatedTxs.length} transações após deduplicação (removidas ${billTxs.length - deduplicatedTxs.length})`);
           
-          const toInsert = deduplicatedTxs.map(tx => ({
-            user_id: userId,
-            account_id: savedAccountId,
-            pluggy_transaction_id: tx.id,
-            description: tx.description,
-            description_raw: tx.descriptionRaw,
-            amount: tx.amount,
-            amount_in_account_currency: tx.amountInAccountCurrency ?? null,
-            currency_code: tx.currencyCode ?? null,
-            date: toDateOnly(tx.date),
-            category: tx.category,
-            type: tx.type,
-            status: tx.status,
-            payment_data: tx.paymentData,
-            pluggy_bill_id: bill.id,
-            bill_id: savedBill.id,
-            credit_card_metadata: tx.creditCardMetadata || null,
-          }));
+          const toInsert = await Promise.all(
+            deduplicatedTxs.map(async (tx) => {
+              const { pluggy_category_id, category_id } = await resolvePluggyTransactionCategories(supabase, tx);
+              return {
+                user_id: userId,
+                account_id: savedAccountId,
+                pluggy_transaction_id: tx.id,
+                description: tx.description,
+                description_raw: tx.descriptionRaw,
+                amount: tx.amount,
+                amount_in_account_currency: tx.amountInAccountCurrency ?? null,
+                currency_code: tx.currencyCode ?? null,
+                date: toDateOnly(tx.date),
+                category: tx.category ?? null,
+                pluggy_category_id,
+                category_id,
+                type: tx.type,
+                status: tx.status,
+                payment_data: tx.paymentData,
+                pluggy_bill_id: bill.id,
+                bill_id: savedBill.id,
+                credit_card_metadata: tx.creditCardMetadata || null,
+              };
+            }),
+          );
 
           const { error: txError } = await supabase
             .from('pluggy_transactions')
@@ -588,6 +657,8 @@ export async function buildTransactionRecordAsync(
     supabase, tx, userId, accountId, cardName, billsMap, sortedBills,
   );
 
+  const { pluggy_category_id, category_id } = await resolvePluggyTransactionCategories(supabase, tx);
+
   return {
     user_id: userId,
     account_id: accountId,
@@ -598,7 +669,9 @@ export async function buildTransactionRecordAsync(
     amount_in_account_currency: tx.amountInAccountCurrency ?? null,
     currency_code: tx.currencyCode ?? null,
     date: toDateOnly(tx.date),
-    category: tx.category,
+    category: tx.category ?? null,
+    pluggy_category_id,
+    category_id,
     type: tx.type,
     status: tx.status || 'POSTED',
     payment_data: tx.paymentData,

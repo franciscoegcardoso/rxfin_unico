@@ -55,6 +55,35 @@ export default defineConfig(() => ({
           if (id.includes("node_modules/posthog-js")) {
             return "vendor-analytics";
           }
+          // Simuladores — chunk isolado para evitar poluição de escopo
+          if (
+            id.includes("/pages/Simulador") ||
+            id.includes("/pages/EconoGraph") ||
+            id.includes("/pages/RenegociacaoDividas") ||
+            id.includes("/pages/simuladores/")
+          ) {
+            return "simuladores";
+          }
+
+          // ── Movimentações — chunk isolado ────────────────────────────────
+          // Previne hideInternalTransfers e Lancamentos antigo no chunk index
+          if (
+            id.includes("/pages/Lancamentos") ||
+            id.includes("/pages/CartaoCredito") ||
+            id.includes("/pages/MovimentacoesPage") ||
+            id.includes("/components/movimentacoes/")
+          ) {
+            return "movimentacoes";
+          }
+
+          // ── Onboarding — chunk isolado ───────────────────────────────────
+          if (
+            id.includes("/components/onboarding/") ||
+            id.includes("/components/onboarding-control/") ||
+            id.includes("/hooks/useOnboarding")
+          ) {
+            return "onboarding";
+          }
         },
       },
     },

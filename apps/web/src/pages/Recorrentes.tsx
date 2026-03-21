@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +42,7 @@ export default function Recorrentes() {
   const isEmpty = items.length === 0;
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           title="Despesas Recorrentes"
@@ -136,6 +135,6 @@ export default function Recorrentes() {
           </>
         )}
       </div>
-    </AppLayout>
+    
   );
 }

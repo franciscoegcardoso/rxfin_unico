@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ const DividirConta: React.FC = () => {
   const currentUserName = profile?.full_name || user?.email?.split('@')[0] || 'Você';
 
   return (
-    <AppLayout>
+    
       <div className="space-y-6 w-full max-w-full overflow-x-hidden">
         <PageHeader
           icon={Scissors}
@@ -124,7 +123,7 @@ const DividirConta: React.FC = () => {
           </Card>
         )}
       </div>
-    </AppLayout>
+    
   );
 };
 

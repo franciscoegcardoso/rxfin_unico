@@ -1,0 +1,77 @@
+---
+description: Governança RXFin — regras críticas de código para evitar crashes em produção
+globs: ["apps/web/src/**/*.tsx", "apps/web/src/**/*.ts"]
+alwaysApply: true
+---
+
+# RXFin — Regras de Governança
+
+## REGRAS ABSOLUTAS (nunca violar)
+
+### 1. Toda variável deve ser declarada antes de usar
+Nunca referenciar variável de closure sem declaração explícita no
+arquivo. Exemplos banidos: `historyProjectionMeta`, `hideInternalTransfers`
+usados sem `const`/`let` ou prop correspondente.
+
+### 2. Supabase JS v2 — nunca usar .rpc().catch()
+**Proibido:**
+```ts
+supabase.rpc('fn', params).catch(err => ...)
+```
+**Correto sempre:**
+```ts
+const { data, error } = await supabase.rpc('fn', params)
+if (error) { /* tratar */ }
+```
+
+### 3. Prop embedded — sempre respeitar em páginas
+Qualquer página que aceita `embedded?: boolean` DEVE condicionar AppLayout:
+```tsx
+const content = <div>...</div>
+if (embedded) return content
+return <AppLayout>{content}</AppLayout>
+```
+
+### 4. MobileSectionDrawer — banido em pages/
+Nunca importar `MobileSectionDrawer` em arquivos de `pages/`.
+Simuladores usam `SimulatorLayout` de `@/components/simulators/SimulatorLayout`.
+
+### 5. Assinatura RPC = assinatura do banco
+Antes de chamar `supabase.rpc('fn', { params })`, confirmar que o banco
+aceita exatamente esses parâmetros. Função sem parâmetros = chamar sem
+objeto: `supabase.rpc('fn')` — não `supabase.rpc('fn', { p_user_id })`.
+
+### 6. Rodar validate antes de todo push
+```bash
+cd apps/web && npm run validate
+# = tsc --noEmit + eslint --max-warnings 0 + vite build
+```
+
+## PADRÕES OBRIGATÓRIOS
+
+### Simuladores
+- Layout: `SimulatorLayout` de `@/components/simulators/SimulatorLayout`
+- CTA: `SimulatorCTA` de `@/components/simulators/SimulatorCTA`
+- Export default com nome exato do componente (App.tsx importa assim)
+- Sem AppLayout, sem MobileSectionDrawer
+
+### Movimentações
+- `MovimentacoesPage` → só orquestra tabs
+- `Lancamentos` → aceita `embedded`, usa `LancamentosTab`
+- `CartaoCredito` → aceita `embedded`, respeita em AppLayout
+- `hideInternalTransfers` → prop de `LancamentosTab`, nunca useState solto
+
+### RPC Contract
+- Sempre desestruturar: `const { data, error } = await supabase.rpc(...)`
+- Funções `SECURITY DEFINER` usam `auth.uid()` — não passar `p_user_id` em
+  funções que não declaram esse parâmetro
+- Ao mudar assinatura → atualizar TODOS os callers no frontend
+
+## CHECKLIST PRÉ-COMMIT
+
+- [ ] `npx tsc --noEmit` → zero erros
+- [ ] `npx eslint src --rule '{"no-undef":"error"}'` → zero erros
+- [ ] `npm run build` → sem erro
+- [ ] Nenhum `MobileSectionDrawer` em `pages/`
+- [ ] Nenhum `.rpc().catch()`
+- [ ] RPCs com payload correto vs assinatura do banco

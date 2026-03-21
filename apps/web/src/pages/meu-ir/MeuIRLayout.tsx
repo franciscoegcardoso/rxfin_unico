@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Bot, History, Settings2, FileText } from 'lucide-react';
@@ -18,11 +17,9 @@ const TAB_INACTIVE = 'border-transparent';
 
 const MeuIRLayout: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const year = new Date().getFullYear();
 
   return (
-    <AppLayout>
       <div className="flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
           <PageHeader
@@ -82,12 +79,11 @@ const MeuIRLayout: React.FC = () => {
             </nav>
 
             <div className="mt-6">
-              <Outlet key={location.pathname} />
+              <Outlet />
             </div>
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 };
 

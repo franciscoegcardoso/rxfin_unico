@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { CalendarCheck } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
@@ -53,7 +52,6 @@ const PlanejamentoLayout: React.FC = () => {
   }, [location.search, navigate]);
 
   return (
-    <AppLayout>
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
         <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
           <PageHeader
@@ -97,10 +95,9 @@ const PlanejamentoLayout: React.FC = () => {
             </nav>
           </div>
 
-          <Outlet key={location.pathname} />
+          <Outlet />
         </div>
       </div>
-    </AppLayout>
   );
 };
 

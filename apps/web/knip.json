@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "vite": {
+    "config": "vite.config.ts"
+  },
+  "entry": ["index.html", "vitest.config.ts"],
+  "paths": {
+    "@/*": ["./src/*"]
+  },
+  "project": ["tsconfig.app.json", "tsconfig.node.json"],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**",
+    "src/types/database.types.ts",
+    "src/vite-env.d.ts",
+    "dist/**",
+    "coverage/**"
+  ],
+  "ignoreBinaries": ["supabase", "vite", "eslint", "tsc"],
+  "ignoreDependencies": ["@testing-library/jest-dom", "jsdom", "vitest"]
+}

@@ -11,11 +11,7 @@ export function useAllocationStatus() {
       } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('mv_portfolio_allocation_status')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('drift_priority_score', { ascending: false });
+      const { data, error } = await supabase.rpc('get_portfolio_allocation_status');
 
       if (error) throw error;
       return (data ?? []) as AllocationStatusRow[];

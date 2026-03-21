@@ -1,14 +1,15 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { PortabilidadeCreditoSimulator } from '@/components/simuladores/renegociacao/PortabilidadeCreditoSimulator';
 import { ArrowRightLeft } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 const PortabilidadeCredito: React.FC = () => {
   return (
-    <AppLayout>
+    
       <PageContainer>
+        <PageBreadcrumb />
         <PageHeader
           title="Portabilidade de Crédito"
           description="Simule a transferência da dívida para outra instituição"
@@ -18,7 +19,7 @@ const PortabilidadeCredito: React.FC = () => {
         />
         <PortabilidadeCreditoSimulator />
       </PageContainer>
-    </AppLayout>
+    
   );
 };
 

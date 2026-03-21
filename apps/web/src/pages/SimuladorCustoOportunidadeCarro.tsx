@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
+import { SimulatorCTA } from '@/components/simulators/SimulatorCTA';
 import { useFinancial } from '@/contexts/FinancialContext';
 import { BackLink } from '@/components/shared/BackLink';
 import { useFipe, VehicleType, formatFipeYearName } from '@/hooks/useFipe';
@@ -26,7 +27,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VehicleFipeSelector } from '@/components/simuladores/VehicleFipeSelector';
-import { MobileSectionDrawer } from '@/components/simuladores/MobileSectionDrawer';
 import { useFipeFavorites } from '@/hooks/useFipeFavorites';
 import { FipeOwnershipCostCard } from '@/components/simuladores/FipeOwnershipCostCard';
 import { FinancingDataCard, FinancingData, calculateFinancing } from '@/components/simuladores/FinancingDataCard';
@@ -37,7 +37,6 @@ import { WealthComparisonChart } from '@/components/simuladores/WealthComparison
 import { WealthEvolutionChart } from '@/components/simuladores/WealthEvolutionChart';
 import { RealCostSummaryCard } from '@/components/simuladores/RealCostSummaryCard';
 import { FipeHistoryAnalysisDialog } from '@/components/simuladores/FipeHistoryAnalysisDialog';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const formatMoney = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -52,15 +51,6 @@ type CreditType = 'financiamento' | 'consorcio';
 const SimuladorCustoOportunidadeCarro: React.FC = () => {
   const { config } = useFinancial();
   const { load, isFresh, clear } = useSimulatorContext();
-  const isMobile = useIsMobile();
-  const [isTabletOrMobile, setIsTabletOrMobile] = useState(false);
-  
-  React.useEffect(() => {
-    const checkSize = () => setIsTabletOrMobile(window.innerWidth < 1024);
-    checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
-  }, []);
   
   // Check for pending context BEFORE instantiating fipe hooks
   const pendingContextRef = useRef<ReturnType<typeof load> | null>(null);
@@ -322,16 +312,13 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
   const hasVehicleValue = vehicleValue > 0;
 
   return (
-    <AppLayout>
+    <SimulatorLayout
+      title="Custo de Oportunidade do Carro"
+      subtitle="Quanto patrimônio você teria se investisse todo o dinheiro gasto com o carro?"
+    >
       <div className="space-y-6">
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Custo de Oportunidade do Carro
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Quanto patrimônio você teria se investisse todo o dinheiro gasto com o carro?
-          </p>
         </div>
 
         {/* Seleção de Veículo FIPE - Mesmo padrão do FipeSimulator */}
@@ -470,11 +457,11 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
 
             {/* Custos Detalhados */}
             {fipe.price && vehicleValue > 0 && (
-              <MobileSectionDrawer
-                title="Custos Detalhados"
-                icon={<Calculator className="h-4 w-4 text-primary" />}
-                isTabletOrMobile={isTabletOrMobile}
-              >
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Calculator className="h-4 w-4 text-primary" />
+                  Custos Detalhados
+                </div>
                 <FipeOwnershipCostCard
                   fipeValue={vehicleValue}
                   modelName={vehicleName}
@@ -484,7 +471,7 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
                   depreciationMonthly={depreciationMonthly}
                   yearLabel={yearLabel}
                 />
-              </MobileSectionDrawer>
+              </div>
             )}
 
             {/* Tipo de Análise */}
@@ -561,11 +548,11 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
 
             {/* Análise RXfin — seção colapsada */}
             {currentProjection && (
-              <MobileSectionDrawer
-                title="Análise RXfin"
-                icon={<Sparkles className="h-4 w-4 text-primary" />}
-                isTabletOrMobile={isTabletOrMobile}
-              >
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Análise RXfin
+                </div>
                 <div className="space-y-6">
                   {/* TCO - Custo Real Total */}
                   <RealCostSummaryCard
@@ -607,7 +594,7 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
                     selectedHorizon={selectedHorizon}
                   />
                 </div>
-              </MobileSectionDrawer>
+              </div>
             )}
           </div>
         )}
@@ -626,8 +613,13 @@ const SimuladorCustoOportunidadeCarro: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        <SimulatorCTA
+          title="Acompanhe os custos reais dos seus veículos automaticamente"
+          href="/signup"
+        />
       </div>
-    </AppLayout>
+    </SimulatorLayout>
   );
 };
 

@@ -6,15 +6,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
+import { useChartColors } from '@/hooks/useChartColors';
 import { useLancamentosAll } from '@/contexts/LancamentosAllContext';
 import { isBillPaymentTransaction } from '@/hooks/useBillPaymentReconciliation';
 import { useVisibility } from '@/contexts/VisibilityContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BarChart2, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-const COLOR_INCOME  = 'hsl(var(--color-income))';
-const COLOR_EXPENSE = 'hsl(0 65% 40%)'; // vermelho escuro enterprise
 
 const formatCurrency = (value: number, isHidden: boolean) => {
   if (isHidden) return '••••••';
@@ -24,8 +22,8 @@ const formatCurrency = (value: number, isHidden: boolean) => {
   }).format(value);
 };
 
-const AxisTick: React.FC<{ x?: number; y?: number; payload?: { value: string | number }; isHidden?: boolean; isY?: boolean }> = ({
-  x = 0, y = 0, payload, isHidden, isY,
+const AxisTick: React.FC<{ x?: number; y?: number; payload?: { value: string | number }; isHidden?: boolean; isY?: boolean; textColor?: string }> = ({
+  x = 0, y = 0, payload, isHidden, isY, textColor,
 }) => {
   const raw = payload?.value ?? '';
   const text = isY
@@ -35,7 +33,7 @@ const AxisTick: React.FC<{ x?: number; y?: number; payload?: { value: string | n
     <text
       x={x} y={y} dy={isY ? 4 : 12}
       textAnchor={isY ? 'end' : 'middle'}
-      fill="hsl(var(--color-text-tertiary))"
+      fill={textColor ?? 'hsl(var(--color-text-tertiary))'}
       fontSize={11} fontFamily="var(--font-sans)" fontWeight={400}
     >
       {text}
@@ -87,6 +85,7 @@ export const CashFlowChart: React.FC = () => {
   const { lancamentos } = useLancamentosAll();
   const { isHidden } = useVisibility();
   const isMobile = useIsMobile();
+  const colors = useChartColors();
 
   const data = useMemo(() => {
     const now = new Date();
@@ -130,22 +129,22 @@ export const CashFlowChart: React.FC = () => {
               barCategoryGap={isMobile ? '6%' : '28%'}
               barGap={isMobile ? 2 : 3}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--color-border-subtle))" vertical={false} />
-              <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tick={(props) => <AxisTick {...props} isHidden={isHidden} />} />
-              <YAxis hide={isMobile} axisLine={false} tickLine={false} width={isMobile ? 0 : 72} tick={(props) => isMobile ? <g /> : <AxisTick {...props} isHidden={isHidden} isY />} />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.neutral} vertical={false} />
+              <XAxis dataKey="monthLabel" axisLine={false} tickLine={false} tick={(props) => <AxisTick {...props} isHidden={isHidden} textColor={colors.textSecondary} />} />
+              <YAxis hide={isMobile} axisLine={false} tickLine={false} width={isMobile ? 0 : 72} tick={(props) => isMobile ? <g /> : <AxisTick {...props} isHidden={isHidden} isY textColor={colors.textSecondary} />} />
               <Tooltip cursor={{ fill: 'hsl(var(--color-border-subtle))', radius: 4 }} content={<CustomTooltip isHidden={isHidden} />} />
               <Legend content={<CustomLegend />} />
               <Bar
                 dataKey="receitas"
                 name="Receitas"
-                fill={COLOR_INCOME}
+                fill={colors.income}
                 radius={[4, 4, 0, 0]}
                 {...(isMobile ? { barSize: 12 } : {})}
               />
               <Bar
                 dataKey="despesas"
                 name="Despesas"
-                fill={COLOR_EXPENSE}
+                fill={colors.expense}
                 radius={[4, 4, 0, 0]}
                 {...(isMobile ? { barSize: 12 } : {})}
               />

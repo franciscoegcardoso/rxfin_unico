@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { PackagesSection } from '@/components/lancamentos/PackagesSection';
 import { PageHelpSlideDialog } from '@/components/shared/PageHelpSlideDialog';
@@ -8,7 +7,7 @@ import { Package } from 'lucide-react';
 
 export const PacotesOrcamento: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-6">
         <PageHeader
           icon={Package}
@@ -18,7 +17,7 @@ export const PacotesOrcamento: React.FC = () => {
         />
         <PackagesSection />
       </div>
-    </AppLayout>
+    
   );
 };
 

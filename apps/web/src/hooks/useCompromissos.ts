@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 /**
  * @deprecated Use useRecorrentesExtrato ou useRecorrentesCartao.
- * Mantido apenas para compatibilidade até remoção de Compromissos.tsx.
+ * Mantido para tipos e para a página legacy `pages/Compromissos.tsx` (não roteada; contém Pluggy — não remover o ficheiro sem revisão).
  */
 
 export interface CompromissoItem {

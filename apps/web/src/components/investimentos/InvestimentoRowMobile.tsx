@@ -2,7 +2,10 @@ import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo'
+import { Badge } from '@/components/ui/badge'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
+import type { AssetFundamentalsRow } from '@/hooks/useAssetFundamentals'
+import { getFundamentalsForInvestment } from '@/hooks/useAssetFundamentals'
 import { formatCurrency, formatDateShort } from '@/utils/investimentos'
 import { InvestimentoDetalhesMobile } from './InvestimentoDetalhesMobile'
 
@@ -11,11 +14,13 @@ export function InvestimentoRowMobile({
   totalCarteira,
   onToggle,
   isOpen,
+  fundamentalsByCode = new Map<string, AssetFundamentalsRow>(),
 }: {
   item: PluggyInvestment
   totalCarteira: number
   onToggle: () => void
   isOpen: boolean
+  fundamentalsByCode?: Map<string, AssetFundamentalsRow>
 }) {
   const aplicado = item.amount_original ?? 0
   const balance = item.balance ?? 0
@@ -45,6 +50,11 @@ export function InvestimentoRowMobile({
             {['EQUITY', 'ETF'].includes(item.type ?? '') && /^[A-Z]{4}\d{1,2}$/.test(ticker) && (
               <span className="text-xs text-muted-foreground shrink-0">{ticker}</span>
             )}
+            {dyBadge != null && (
+              <Badge variant="success" className="text-[10px] px-1.5 py-0 shrink-0 tabular-nums">
+                DY {dyBadge.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+              </Badge>
+            )}
           </div>
           <div className="text-[11px] text-muted-foreground mt-0.5">
             {(item.quantity ?? 0).toLocaleString('pt-BR')} cotas
@@ -68,7 +78,11 @@ export function InvestimentoRowMobile({
       </button>
       {isOpen && (
         <div className="bg-muted/10 border-b border-border/40 px-4 py-3">
-          <InvestimentoDetalhesMobile item={item} totalCarteira={totalCarteira} />
+          <InvestimentoDetalhesMobile
+            item={item}
+            totalCarteira={totalCarteira}
+            fundamentalsByCode={fundamentalsByCode}
+          />
         </div>
       )}
     </>

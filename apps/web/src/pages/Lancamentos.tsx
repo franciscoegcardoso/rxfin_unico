@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { parseLocalDate, formatDateYMD } from '@/utils/dateUtils';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { TrendingUp, TrendingDown, Plus, Calendar, Trash2, Wallet, CreditCard, Banknote, Pencil, Zap, History, Sparkles, FileText, Camera, ChevronDown, Layers, ShoppingBag, ExternalLink, Clock, Search, Building2, Filter, Link2, AlertCircle, Landmark, CheckCircle2, Receipt, ReceiptText, Type, ArrowUpCircle, ArrowDownCircle, Scale, ChevronRight, X } from 'lucide-react';
 import { PageSkeleton } from '@/components/shared/PageSkeleton';
@@ -111,6 +110,24 @@ function getGrupoLabel(l: LancamentoRealizado): string {
   }
   if (l.tipo === 'receita') return 'Receitas';
   return '—';
+}
+
+/** Shell do extrato: embedded dentro de MovimentacoesPage; caso contrário o conteúdo usa AppLayout do DesktopShell/MobileShell. */
+function LancamentosShell({
+  embedded,
+  children,
+}: {
+  embedded: boolean;
+  children: React.ReactNode;
+}) {
+  if (embedded) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1 w-full min-w-0 h-full overflow-hidden bg-background">
+        {children}
+      </div>
+    );
+  }
+  return <>{children}</>;
 }
 
 interface LancamentosProps {
@@ -887,18 +904,21 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
 
   if (loading && lancamentos.length === 0) {
     return (
-      <>
-      <AppLayout>
+      <LancamentosShell embedded={embedded}>
         <PageSkeleton variant="metrics-table" metrics={4} />
-      </AppLayout>
-      </>
+      </LancamentosShell>
     );
   }
 
   return (
     <>
-    <AppLayout>
-      <div className="content-zone py-5 md:py-6 space-y-6">
+    <LancamentosShell embedded={embedded}>
+      <div
+        className={cn(
+          'content-zone space-y-6',
+          embedded ? 'py-4 md:py-5 px-4 md:px-6 flex-1 min-h-0 overflow-y-auto' : 'py-5 md:py-6'
+        )}
+      >
         {/* Outdated Connection Banner */}
         {!isManual && <OutdatedConnectionBanner />}
 
@@ -2148,7 +2168,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
         </div>
 
       </div>
-    </AppLayout>
+    </LancamentosShell>
 
     {/* Conta Form Dialog */}
     <ContaFormDialog

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } fr
 import { useLocation, useSearchParams, useNavigate, Link, Outlet } from 'react-router-dom';
 
 import { Building2, Plus, Trash2, Package, Pencil, Target, AlertTriangle, RotateCcw, Clock, History, TrendingUp, Landmark, Shield, Car, MinusCircle, ChevronRight, Home, LayoutDashboard, Layers, FileBarChart, Briefcase } from 'lucide-react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { VisibilityToggle } from '@/components/ui/visibility-toggle';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -43,7 +42,6 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 import { assetIcons, formatCurrencyBase, TABS, VALID_TABS, type AssetDependencies, type BensTab } from './constants';
 import { usePatrimonioOverview } from '@/hooks/usePatrimonioOverview';
 import { usePluggyInvestments } from '@/hooks/usePluggyInvestments';
-import { useBensInvestimentos } from '@/hooks/useBensInvestimentos';
 import { formatPluggyType } from '@/utils/formatInvestment';
 import { InvestmentCard } from '@/design-system/components/InvestmentCard';
 import { ErrorCard } from '@/design-system/components/ErrorCard';
@@ -66,8 +64,7 @@ const PLUGGY_TYPE_TO_CATEGORY: Record<string, string> = {
 const BensInvestimentosLayout: React.FC = () => {
   const { config, removeAsset, addAsset, vehicleRecords } = useFinancial();
   const { data: patrimonioData, error: patrimonioError, refetch: refetchPatrimonio } = usePatrimonioOverview();
-  const { allInvestments: pluggyInvestments } = usePluggyInvestments();
-  const { data: bensData } = useBensInvestimentos(null);
+  const { pluggyInvestments, manualAssets, totals, summaryV2 } = usePluggyInvestments();
   const { isHidden } = useVisibility();
   const { deleteContasByVinculoAtivo, getContasByVinculoAtivo, addConta } = useContasPagarReceber();
   const { trashItems, auditLogs, moveToTrash, logDeletion, restoreFromTrash, permanentlyDelete, emptyTrash, getDaysUntilExpiration, loading: trashLoading } = useUserTrash();
@@ -142,20 +139,27 @@ const BensInvestimentosLayout: React.FC = () => {
   const investimentosList = assets.filter((a: { type?: string }) => a.type === 'investimento');
   /** Lista unificada: investimentos manuais + Open Finance (Pluggy) para a seção Meus Investimentos */
   const investimentosListMerged = useMemo(() => {
-    if (bensData?.pluggy_investments != null || bensData?.manual_assets != null) {
-      const pluggy = (bensData.pluggy_investments ?? []).map((p: { id: string; name: string; code?: string | null; balance: number | null; amount_original: number | null; profit_pct: number | null; type: string | null }) => ({
-        id: p.id,
-        name: p.name,
-        ticker: p.code ?? undefined,
-        current_value: Number(p.balance) ?? 0,
-        purchase_value: Number(p.amount_original) ?? Number(p.balance) ?? 0,
-        appreciation_pct: p.profit_pct ?? 0,
-        category: formatPluggyType(p.type),
-        _source: 'pluggy' as const,
-      }));
-      const manual = (bensData.manual_assets ?? []).map((a: { id: string; name: string; current_value: number | null; purchase_value: number | null }) => {
-        const cur = Number(a.current_value) ?? 0;
-        const buy = Number(a.purchase_value) ?? cur;
+    /** Mesmos dados que `get_bens_investimentos` — já vêm de `get_investments_page_data` em usePluggyInvestments. */
+    if (pluggyInvestments.length > 0 || manualAssets.length > 0) {
+      const pluggy = pluggyInvestments.map((p) => {
+        const cur = Number(p.balance) || 0;
+        const buy = Number(p.amount_original) || 0;
+        const appreciation_pct =
+          buy > 0 ? ((cur - buy) / buy) * 100 : Number(p.last_twelve_months_rate) || 0;
+        return {
+          id: p.id,
+          name: p.name,
+          ticker: p.code ?? undefined,
+          current_value: cur,
+          purchase_value: buy || cur,
+          appreciation_pct,
+          category: formatPluggyType(p.type),
+          _source: 'pluggy' as const,
+        };
+      });
+      const manual = manualAssets.map((a) => {
+        const cur = Number(a.current_value) || 0;
+        const buy = Number(a.purchase_value) || cur;
         const pct = buy > 0 ? ((cur - buy) / buy) * 100 : 0;
         return {
           id: a.id,
@@ -181,7 +185,7 @@ const BensInvestimentosLayout: React.FC = () => {
       _source: 'pluggy' as const,
     }));
     return [...manual, ...pluggy];
-  }, [investimentosList, pluggyInvestments, bensData]);
+  }, [investimentosList, pluggyInvestments, manualAssets]);
   const veiculosList = useMemo(() => {
     const fromRpc = assets.filter((a: { type?: string }) => a.type === 'vehicle' || a.type === 'veiculo');
     if (fromRpc.length > 0) return fromRpc;
@@ -344,7 +348,6 @@ const BensInvestimentosLayout: React.FC = () => {
 
   return (
     <BensInvestimentosContext.Provider value={contextValue}>
-      <AppLayout>
         <div className="content-zone flex flex-col min-h-full w-full max-w-full min-w-0 bg-[hsl(var(--color-surface-base))] py-5 md:py-6 space-y-5 flex-1">
           <PageHeader
             icon={Layers}
@@ -674,7 +677,7 @@ const BensInvestimentosLayout: React.FC = () => {
 
               {currentTab === 'investimentos' && !isInvestimentosAlocacao && (
                 <div className="space-y-6">
-                  {bensData?.summary?.has_stale_data && (
+                  {totals?.has_stale_data && (
                     <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
                       Dados podem estar desatualizados
                     </Badge>
@@ -721,13 +724,13 @@ const BensInvestimentosLayout: React.FC = () => {
                         return sum + (cur - buy);
                       }, 0);
                       const donutFromByType =
-                        bensData?.by_type?.length > 0
-                          ? bensData.by_type
-                              .map((t: { type: string; total: number }) => ({
-                                name: formatPluggyType(t.type),
-                                value: Number(t.total) || 0,
+                        summaryV2.length > 0
+                          ? summaryV2
+                              .map((t) => ({
+                                name: formatPluggyType(t.investment_type),
+                                value: Number(t.net_balance) || 0,
                               }))
-                              .filter((d: { value: number }) => d.value > 0)
+                              .filter((d) => d.value > 0)
                           : [];
                       const donutFromMerged = investimentosListMerged.reduce(
                         (acc: { name: string; value: number }[], a: { name?: string; current_value?: number; category?: string }) => {
@@ -1073,7 +1076,6 @@ const BensInvestimentosLayout: React.FC = () => {
           preSelectedAssetId={seguroAssetId}
         />
       </div>
-      </AppLayout>
     </BensInvestimentosContext.Provider>
   );
 };

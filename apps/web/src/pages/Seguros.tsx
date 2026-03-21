@@ -1,5 +1,4 @@
 import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { SegurosSection } from '@/components/seguros/SegurosSection';
 import { Shield } from 'lucide-react';
@@ -8,7 +7,7 @@ import { PAGE_HELP_SLIDE_CONTENT } from '@/data/pageHelpSlideContent';
 
 const Seguros: React.FC = () => {
   return (
-    <AppLayout>
+    
       <div className="space-y-4">
         <PageHeader
           icon={Shield}
@@ -19,7 +18,7 @@ const Seguros: React.FC = () => {
 
         <SegurosSection />
       </div>
-    </AppLayout>
+    
   );
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
+import { SimulatorCTA } from '@/components/simulators/SimulatorCTA';
 import { BackLink } from '@/components/shared/BackLink';
 import { useFipe, VehicleType, formatFipeYearName } from '@/hooks/useFipe';
 import { useFipeFullHistory, mapVehicleTypeToV2 } from '@/hooks/useFipeFullHistory';
@@ -10,7 +11,6 @@ import {
 import { useVehicleConsumption } from '@/hooks/useVehicleConsumption';
 import { useDepreciationEngineV2 } from '@/hooks/useDepreciationEngineV2';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileSectionDrawer } from '@/components/simuladores/MobileSectionDrawer';
 import { useSimulatorContext } from '@/hooks/useSimulatorContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -313,16 +313,8 @@ const SimuladorCarroAB: React.FC = () => {
   const [costProjectionPeriod, setCostProjectionPeriod] = useState<'annual' | 'monthly'>('annual');
   const [mobileViewMode, setMobileViewMode] = useState<'chart' | 'table'>('chart');
   const isMobile = useIsMobile();
-  const [isTabletOrMobile, setIsTabletOrMobile] = useState(false);
   const [showParamsDialog, setShowParamsDialog] = useState(false);
-  
-  useEffect(() => {
-    const checkSize = () => setIsTabletOrMobile(window.innerWidth < 1024);
-    checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
-  }, []);
-  
+
   // Auto-fill Car A from simulator context (when navigating from another simulator)
   // Use pendingContextRef that was checked synchronously before hooks
   useEffect(() => {
@@ -684,10 +676,11 @@ const SimuladorCarroAB: React.FC = () => {
       case 'totalMonthlyKm':
         setConfigA(prev => ({ ...prev, totalMonthlyKm: configB.totalMonthlyKm }));
         break;
-      case 'fuelPrice':
+      case 'fuelPrice': {
         const syncedToA = syncFuelPrices(configA.fuelRows, configB.fuelRows);
         setConfigA(prev => ({ ...prev, fuelRows: syncedToA }));
         break;
+      }
     }
   };
 
@@ -708,10 +701,11 @@ const SimuladorCarroAB: React.FC = () => {
       case 'totalMonthlyKm':
         setConfigB(prev => ({ ...prev, totalMonthlyKm: configA.totalMonthlyKm }));
         break;
-      case 'fuelPrice':
+      case 'fuelPrice': {
         const syncedToB = syncFuelPrices(configB.fuelRows, configA.fuelRows);
         setConfigB(prev => ({ ...prev, fuelRows: syncedToB }));
         break;
+      }
     }
   };
 
@@ -1393,16 +1387,13 @@ const SimuladorCarroAB: React.FC = () => {
   const hasBothValues = valueA > 0 && valueB > 0;
 
   return (
-    <AppLayout>
+    <SimulatorLayout
+      title="Comparativo: Carro A x Carro B"
+      subtitle="Compare dois veículos e descubra qual é financeiramente mais vantajoso"
+    >
       <div className="space-y-6">
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Comparativo: Carro A x Carro B
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Compare dois veículos e descubra qual é financeiramente mais vantajoso
-          </p>
         </div>
 
         {/* Resumo Executivo removed - now appears after "Decisão financeira em 5 anos" */}
@@ -1478,11 +1469,7 @@ const SimuladorCarroAB: React.FC = () => {
             (!configB.isZeroKm && (fipeHistoryB.hasHistory || fipeHistoryB.loading)) ||
             (configA.isZeroKm && valueA > 0 && !!fipeA.price) ||
             (configB.isZeroKm && valueB > 0 && !!fipeB.price)) && (
-          <MobileSectionDrawer
-            title="Histórico FIPE"
-            icon={<BarChart3 className="h-4 w-4 text-primary" />}
-            isTabletOrMobile={isTabletOrMobile}
-          >
+          <div className="space-y-4">
             <div className="space-y-3">
               <FipeHistoryComparisonChart
                 historyA={chartDataA}
@@ -1523,17 +1510,13 @@ const SimuladorCarroAB: React.FC = () => {
                 }
               />
             </div>
-          </MobileSectionDrawer>
+          </div>
         )}
 
         {hasBothValues && (
           <>
             {/* Projeção de Depreciação */}
-            <MobileSectionDrawer
-              title="Projeção de Depreciação"
-              icon={<TrendingDown className="h-4 w-4 text-primary" />}
-              isTabletOrMobile={isTabletOrMobile}
-            >
+            <div className="space-y-4">
               <DepreciationComparisonSection
                 valueA={valueA}
                 valueB={valueB}
@@ -1541,14 +1524,10 @@ const SimuladorCarroAB: React.FC = () => {
                 hasV6ResultA={hasV6ResultA}
                 hasV6ResultB={hasV6ResultB}
               />
-            </MobileSectionDrawer>
+            </div>
 
             {/* Comparativo de custos detalhados */}
-            <MobileSectionDrawer
-              title="Custos Detalhados"
-              icon={<Calculator className="h-4 w-4 text-primary" />}
-              isTabletOrMobile={isTabletOrMobile}
-            >
+            <div className="space-y-4">
               {/* Summary + Personalizar parâmetros button */}
               <div className="space-y-3 mb-6">
                 {/* Compact summary */}
@@ -2229,15 +2208,10 @@ const SimuladorCarroAB: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            </MobileSectionDrawer>
+            </div>
 
             {/* Quanto custa ter estes carros? */}
-            <MobileSectionDrawer
-              title="Quanto custa ter estes carros?"
-              icon={<Calculator className="h-4 w-4 text-primary" />}
-              badge={<Badge variant="secondary" className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-primary/10 text-primary border border-primary/20">Custos</Badge>}
-              isTabletOrMobile={isTabletOrMobile}
-            >
+            <div className="space-y-4">
               <CarABOwnershipCostSection
                 carA={{
                   fipeValue: valueA,
@@ -2289,13 +2263,9 @@ const SimuladorCarroAB: React.FC = () => {
                 yearLabelA={yearLabelA}
                 yearLabelB={yearLabelB}
               />
-            </MobileSectionDrawer>
+            </div>
 
-            <MobileSectionDrawer
-              title="TCO (Custo Total de Propriedade)"
-              icon={<Calculator className="h-4 w-4 text-primary" />}
-              isTabletOrMobile={isTabletOrMobile}
-            >
+            <div className="space-y-4">
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2 sm:pb-3">
                 <div className="flex items-center justify-between gap-2">
@@ -2925,7 +2895,7 @@ const SimuladorCarroAB: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            </MobileSectionDrawer>
+            </div>
           </>
         )}
 
@@ -3058,7 +3028,11 @@ const SimuladorCarroAB: React.FC = () => {
         getPrimaryFuelType={getPrimaryFuelTypeForDialogs}
       />
 
-    </AppLayout>
+      <SimulatorCTA
+        title="Acompanhe os custos reais dos seus veículos automaticamente"
+        href="/signup"
+      />
+    </SimulatorLayout>
   );
 };
 

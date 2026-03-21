@@ -1,8 +1,11 @@
 import React from 'react'
 import { differenceInDays } from 'date-fns'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
+import type { AssetFundamentalsRow } from '@/hooks/useAssetFundamentals'
+import { getFundamentalsForInvestment } from '@/hooks/useAssetFundamentals'
 import { cn } from '@/lib/utils'
 import { formatCurrency, formatDate, getAliquotaRegressiva } from '@/utils/investimentos'
+import { FundamentalsCard } from './FundamentalsCard'
 
 function getDetalheRows(item: PluggyInvestment, totalCarteira: number) {
   const rows: { label: string; value: string; className?: string }[] = []
@@ -66,10 +69,20 @@ function getDetalheRows(item: PluggyInvestment, totalCarteira: number) {
   return rows
 }
 
-export function InvestimentoDetalhesMobile({ item, totalCarteira }: { item: PluggyInvestment; totalCarteira: number }) {
+export function InvestimentoDetalhesMobile({
+  item,
+  totalCarteira,
+  fundamentalsByCode = new Map<string, AssetFundamentalsRow>(),
+}: {
+  item: PluggyInvestment
+  totalCarteira: number
+  fundamentalsByCode?: Map<string, AssetFundamentalsRow>
+}) {
+  const fundamentals = getFundamentalsForInvestment(item, fundamentalsByCode)
   const rows = getDetalheRows(item, totalCarteira)
   return (
     <div>
+      {fundamentals ? <FundamentalsCard fundamentals={fundamentals} className="mb-3" /> : null}
       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Detalhes</p>
       {rows.map((row) => (
         <div key={row.label} className="flex justify-between py-1.5 border-b border-border/20 last:border-0">

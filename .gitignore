@@ -116,3 +116,6 @@ coverage/
 *.lcov
 playwright-report/
 test-results/
+knip-report.json
+knip-report.txt
+knip-summary.json
