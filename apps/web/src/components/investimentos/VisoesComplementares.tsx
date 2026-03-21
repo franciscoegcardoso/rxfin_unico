@@ -55,16 +55,11 @@ type BenchmarkKey = 'CDI' | 'IPCA' | 'IBOVESPA';
 
 /** Referência para sinalizar meses com aportes relevantes (curva de patrimônio). */
 const APORTES_CONHECIDOS: Array<{ mes: string; valor: number; descricao: string }> = [
-  { mes: '2025-07', valor: 44_000, descricao: 'Aportes jul/25: LCA + CDB Rodobens + Trend Cash' },
+  { mes: '2025-06', valor: 5000, descricao: 'Aporte jun/25: CDB BRB' },
+  { mes: '2025-07', valor: 44_000, descricao: 'Aportes jul/25: LCA BRB + CDB Rodobens + Trend Cash' },
   { mes: '2025-11', valor: 79_000, descricao: 'Aportes nov/25: Tivio Institucional + Arx Denali' },
-  { mes: '2026-01', valor: 18_508, descricao: 'Aportes jan/26: CDB Neon + CPLE3' },
+  { mes: '2026-01', valor: 18_508, descricao: 'Aportes jan/26: CDB Neon + CPLE3 + Trend Investback' },
 ];
-
-function isAportePoint(date: string): { isAporte: boolean; valor: number; descricao: string } | null {
-  const mesAno = date.substring(0, 7);
-  const aporte = APORTES_CONHECIDOS.find((a) => a.mes === mesAno);
-  return aporte ? { isAporte: true, valor: aporte.valor, descricao: aporte.descricao } : null;
-}
 
 type EvolutionChartRow = {
   date: string;
@@ -105,6 +100,9 @@ function buildChartSeries(
   const taxaDiaria = Math.pow(1 + bmkTotal / 100, 1 / totalDias) - 1;
 
   return snapshotHistory.map((snap) => {
+    const mesAno = snap.date.substring(0, 7);
+    const aporte = APORTES_CONHECIDOS.find((a) => a.mes === mesAno);
+
     const snapDate = new Date(snap.date);
     const diasDecorridos = Math.max(
       (snapDate.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24),
@@ -117,6 +115,9 @@ function buildChartSeries(
     return {
       date: snap.date,
       isEstimated: snap.completeness_pct === 0,
+      isAporte: !!aporte,
+      aporteValor: aporte?.valor ?? 0,
+      aporteDescricao: aporte?.descricao ?? '',
       carteira:
         viewMode === 'rentabilidade'
           ? parseFloat(carteiraPct.toFixed(2))
@@ -175,17 +176,19 @@ function EvolutionChartTooltip({
         </div>
       ))}
       {isAporte && point && (
-        <div className="mt-2 pt-2 border-t border-border/50">
-          <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-            <span className="text-[10px]">📥</span>
-            <span className="font-medium text-[10px]">Aporte: +{fmtCurrency(point.aporteValor)}</span>
+        <div className="mt-2 pt-2 border-t border-border/40 space-y-0.5">
+          <div className="flex items-center gap-1">
+            <span className="text-[11px]">📥</span>
+            <span className="font-semibold text-[10px] text-blue-600 dark:text-blue-400">
+              Aporte: {fmtCurrency(point.aporteValor)}
+            </span>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{point.aporteDescricao}</p>
+          <p className="text-[10px] text-muted-foreground leading-snug pl-4">{point.aporteDescricao}</p>
         </div>
       )}
-      {isEst && !isAporte && (
-        <p className="text-[10px] text-muted-foreground/60 mt-1.5 pt-1.5 border-t border-border/30">
-          * Valor estimado (CDI sobre aportes)
+      {isEst && (
+        <p className="text-[10px] text-muted-foreground/50 mt-2 pt-1.5 border-t border-border/20 italic">
+          Valor estimado (CDI retroativo)
         </p>
       )}
     </div>
@@ -400,10 +403,13 @@ function PortfolioEvolutionChart({
       ) : (
         <>
           {viewMode === 'rentabilidade' && (
-            <p className="text-[10px] text-muted-foreground bg-muted/30 rounded px-2 py-1 mb-2">
-              ⚠️ A curva inclui novos aportes — os picos representam entrada de capital, não rendimento de
-              mercado. Use &quot;Por patrimônio&quot; para ver a evolução total.
-            </p>
+            <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-md px-3 py-2 mb-2 text-xs text-amber-800 dark:text-amber-300">
+              <span className="shrink-0 mt-0.5">⚠️</span>
+              <span>
+                A curva inclui novos aportes realizados no período — os picos verticais representam entrada de
+                capital, não rendimento. Use <strong>Por patrimônio</strong> para visualizar a evolução total.
+              </span>
+            </div>
           )}
           <ResponsiveContainer width="100%" height={260}>
           <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
@@ -478,16 +484,16 @@ function PortfolioEvolutionChart({
               ))}
           </LineChart>
         </ResponsiveContainer>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <div className="w-3 border-t border-dashed border-muted-foreground/50" />
-              <span>Ponto de aporte</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[10px] text-muted-foreground/60">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 border-t border-dashed border-muted-foreground/40" />
+              <span>Linha vertical = aporte</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 border-t border-muted-foreground/30" />
-              <span>Valor estimado via CDI</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+              <span>Pontos sem borda = valor estimado (CDI)</span>
             </div>
-            <span>· Os saltos verticais representam novos aportes, não rendimento</span>
+            <span>· Histórico real acumula a partir de hoje via Open Finance</span>
           </div>
         </>
       )}
