@@ -1,10 +1,44 @@
 name: Deploy Pipeline
+
 on:
   push:
     branches: [main]
 
 jobs:
-  pipeline:
+  # Gate obrigatório — Vercel só recebe o trigger se build passou aqui
+  frontend-gate:
+    name: Build Gate (pré-deploy)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci
+
+      - name: TypeScript — zero erros
+        run: npx tsc --noEmit
+
+      - name: ESLint — no-undef obrigatório
+        run: npx eslint src --ext .ts,.tsx --rule '{"no-undef":"error"}' --max-warnings 0
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  # Notificação — só executa se o gate acima passou
+  notify-deploy:
+    name: Notificar Deploy
+    needs: frontend-gate          # ← depende do gate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,14 +51,20 @@ jobs:
           if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
             CHANGED=$(git ls-files apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
           else
-            CHANGED=$(git diff --name-only ${{ github.event.before }} HEAD -- apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
+            CHANGED=$(git diff --name-only ${{ github.event.before }} HEAD \
+              -- apps/web/supabase/migrations/ supabase/migrations/ 2>/dev/null || true)
           fi
-          HAS=$([ -n "$CHANGED" ] && echo true || echo false)
-          echo "has_migrations=$HAS" >> $GITHUB_OUTPUT
+          echo "has_migrations=$([ -n "$CHANGED" ] && echo true || echo false)" >> $GITHUB_OUTPUT
 
       - name: Notificar n8n
         run: |
           curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
             -H "x-webhook-secret: ${{ secrets.WEBHOOK_SECRET }}" \
-            -d "{\"branch\":\"${{ github.ref_name }}\",\"commit\":\"${{ github.sha }}\",\"has_migrations\":${{ steps.migrations.outputs.has_migrations }},\"pusher\":\"${{ github.actor }}\"}"
+            -d "{
+              \"branch\":\"${{ github.ref_name }}\",
+              \"commit\":\"${{ github.sha }}\",
+              \"has_migrations\":${{ steps.migrations.outputs.has_migrations }},
+              \"pusher\":\"${{ github.actor }}\",
+              \"build_passed\":true
+            }"

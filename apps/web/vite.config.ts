@@ -64,6 +64,26 @@ export default defineConfig(() => ({
           ) {
             return "simuladores";
           }
+
+          // ── Movimentações — chunk isolado ────────────────────────────────
+          // Previne hideInternalTransfers e Lancamentos antigo no chunk index
+          if (
+            id.includes("/pages/Lancamentos") ||
+            id.includes("/pages/CartaoCredito") ||
+            id.includes("/pages/MovimentacoesPage") ||
+            id.includes("/components/movimentacoes/")
+          ) {
+            return "movimentacoes";
+          }
+
+          // ── Onboarding — chunk isolado ───────────────────────────────────
+          if (
+            id.includes("/components/onboarding/") ||
+            id.includes("/components/onboarding-control/") ||
+            id.includes("/hooks/useOnboarding")
+          ) {
+            return "onboarding";
+          }
         },
       },
     },

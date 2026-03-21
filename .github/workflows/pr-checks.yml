@@ -1,16 +1,95 @@
-# .github/workflows/pr-checks.yml
-# Runs on PRs to main and develop
-# Tests: Deno Edge Function tests + TypeScript checks
-
-name: PR Checks
+name: PR Checks + Build Gate
 
 on:
+  push:
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  push:
-    branches: [develop]
 
 jobs:
+  # ── JOB 1: Frontend — TypeScript + ESLint + Build ──────────────
+  frontend-gate:
+    name: Frontend Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript — zero erros
+        # SEM || echo — falha real bloqueia o merge
+        run: npx tsc --noEmit
+
+      - name: ESLint — no-undef obrigatório
+        run: npx eslint src --ext .ts,.tsx --rule '{"no-undef":"error"}' --max-warnings 0
+
+      - name: Vite build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Bundle size check — bloquear chunks > 1MB
+        run: |
+          OVERSIZED=$(find dist/assets -name "*.js" -size +1000k 2>/dev/null || true)
+          if [ -n "$OVERSIZED" ]; then
+            echo "❌ Chunks > 1MB detectados (possível bundle monolítico antigo):"
+            echo "$OVERSIZED"
+            exit 1
+          fi
+          echo "✅ Tamanho de chunks OK"
+
+  # ── JOB 2: Padrões proibidos ────────────────────────────────────
+  pattern-check:
+    name: Padrões Proibidos
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Proibido — MobileSectionDrawer em pages/
+        run: |
+          FOUND=$(grep -rn "MobileSectionDrawer" apps/web/src/pages/ \
+            --include="*.tsx" 2>/dev/null || true)
+          if [ -n "$FOUND" ]; then
+            echo "❌ MobileSectionDrawer encontrado em pages/ — padrão banido:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "✅ Sem MobileSectionDrawer em pages/"
+
+      - name: Proibido — .rpc().catch() antipatern Supabase JS v2
+        run: |
+          FOUND=$(grep -rn "\.rpc(.*\.catch(" apps/web/src/ \
+            --include="*.ts" --include="*.tsx" 2>/dev/null || true)
+          if [ -n "$FOUND" ]; then
+            echo "❌ .rpc().catch() detectado — usar { data, error } = await rpc():"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "✅ Sem .rpc().catch() antipatern"
+
+      - name: Auditoria — RPCs chamados no frontend
+        run: |
+          echo "=== RPCs chamados pelo frontend ==="
+          grep -rh "supabase\.rpc(" apps/web/src \
+            --include="*.ts" --include="*.tsx" \
+            | grep -oP "\.rpc\('[^']+'" \
+            | sort -u || true
+          echo "=== Verificação concluída ==="
+
+  # ── JOB 3: Edge Functions Deno ──────────────────────────────────
   deno-tests:
     name: Edge Function Tests
     runs-on: ubuntu-latest
@@ -21,49 +100,15 @@ jobs:
         with:
           deno-version: v1.45.x
 
-      - name: Type check shared packages
-        run: |
-          deno check packages/shared/src/index.ts || echo "Shared types check skipped"
-
       - name: Run Edge Function tests
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
-          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
         run: |
           if [ -d "supabase/functions/__tests__" ]; then
             deno test supabase/functions/__tests__/ \
-              --allow-net \
-              --allow-env \
-              --allow-read \
-              --no-check \
-              2>&1 | tee test-results.txt
+              --allow-net --allow-env --allow-read --no-check
           else
-            echo "No tests found, skipping"
+            echo "Sem testes de Edge Functions, pulando"
           fi
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results.txt
-          if-no-files-found: ignore
-
-  typecheck:
-    name: TypeScript Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci || npm install
-
-      - name: Type check
-        run: npx tsc --noEmit || echo "TypeScript check completed with warnings"

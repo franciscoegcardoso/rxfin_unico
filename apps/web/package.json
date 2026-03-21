@@ -8,6 +8,10 @@
     "build": "node scripts/inject-build-id.js && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "lint:strict": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "validate": "npm run typecheck && npm run lint:strict && npm run build",
     "preview": "vite preview",
     "db:types": "supabase gen types typescript --project-id kneaniaifzgqibpajyji --schema public > src/types/database.types.ts"
   },
