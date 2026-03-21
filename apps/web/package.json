@@ -1,10 +1,11 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sync": "node scripts/session-sync.mjs && vite",
     "build": "node scripts/inject-build-id.js && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
