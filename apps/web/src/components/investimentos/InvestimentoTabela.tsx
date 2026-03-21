@@ -1,6 +1,9 @@
 import React from 'react'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
+import type { AssetFundamentalsRow } from '@/hooks/useAssetFundamentals'
+import { getFundamentalsForInvestment } from '@/hooks/useAssetFundamentals'
 import { AssetNameCell } from './cells/AssetNameCell'
+import { FundamentalsCard } from './FundamentalsCard'
 import { RentabilidadeCell } from './cells/RentabilidadeCell'
 import { VencimentoCell } from './cells/VencimentoCell'
 import { ValorizacaoChip } from './cells/ValorizacaoChip'
@@ -27,11 +30,13 @@ export function InvestimentoTabela({
   grupoLabel,
   totalCarteira,
   colorKey,
+  fundamentalsByCode = new Map<string, AssetFundamentalsRow>(),
 }: {
   items: PluggyInvestment[]
   grupoLabel: string
   totalCarteira: number
   colorKey: string
+  fundamentalsByCode?: Map<string, AssetFundamentalsRow>
 }) {
   const isRF = grupoLabel === 'Renda Fixa'
   const isFund = grupoLabel === 'Fundos'
@@ -83,11 +88,21 @@ export function InvestimentoTabela({
           const avg = qty > 0 && applied > 0 ? applied / qty : null
           const current = qty > 0 ? balance / qty : null
           const alloc = totalCarteira > 0 ? (balance / totalCarteira) * 100 : 0
+          const fundamentals = getFundamentalsForInvestment(item, fundamentalsByCode)
+          const dyBadge =
+            item.subtype === 'REAL_ESTATE_FUND' &&
+            fundamentals?.dy_12m != null &&
+            fundamentals.dy_12m > 0
+              ? fundamentals.dy_12m
+              : undefined
 
           return (
             <tr key={item.id} className="border-b border-border/30 hover:bg-muted/15">
               <td className="px-3 py-2.5">
-                <AssetNameCell item={item} />
+                <div className="space-y-2.5 min-w-0">
+                  <AssetNameCell item={item} dy12mBadge={dyBadge} />
+                  {fundamentals ? <FundamentalsCard fundamentals={fundamentals} /> : null}
+                </div>
               </td>
               {isRF ? (
                 <>

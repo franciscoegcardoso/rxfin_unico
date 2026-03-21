@@ -48,6 +48,10 @@ import { VisoesComplementares } from '@/components/investimentos/VisoesComplemen
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos';
 import type { BensInvestimentosSummary } from '@/hooks/useBensInvestimentos';
 import type { InvestmentGroupView } from '@/components/investimentos/types';
+import {
+  collectFundamentalAssetCodes,
+  useAssetFundamentalsByCodes,
+} from '@/hooks/useAssetFundamentals';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Select,
@@ -275,10 +279,20 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
     }));
   }, [categories, rpcGrouped]);
 
+  const listItemsForGroupedView = useMemo(() => {
+    const pluggyItems = pluggyInvestments as PluggyInvestment[];
+    const manualItems = manualInvestments.map(mapManualInvestmentToListItem);
+    return [...pluggyItems, ...manualItems];
+  }, [pluggyInvestments, manualInvestments]);
+
+  const fundamentalCodes = useMemo(
+    () => collectFundamentalAssetCodes(listItemsForGroupedView),
+    [listItemsForGroupedView],
+  );
+  const { data: fundamentalsByCode } = useAssetFundamentalsByCodes(fundamentalCodes);
+
   const redesignedGroups = useMemo<InvestmentGroupView[]>(() => {
-    const pluggyItems = pluggyInvestments as PluggyInvestment[]
-    const manualItems = manualInvestments.map(mapManualInvestmentToListItem)
-    const items = [...pluggyItems, ...manualItems]
+    const items = listItemsForGroupedView;
     if (!items.length) return []
     const map = new Map<string, PluggyInvestment[]>()
     for (const item of items) {
@@ -313,7 +327,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
         }
       })
       .sort((a, b) => b.totalBalance - a.totalBalance)
-  }, [pluggyInvestments, manualInvestments]);
+  }, [listItemsForGroupedView]);
 
   const fiscalSummary = useMemo<BensInvestimentosSummary | null>(() => {
     const total_ir_retido = pluggyInvestments.reduce((sum, i) => sum + Number(i.ir_retido ?? i.taxes ?? 0), 0);
@@ -691,6 +705,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                         grupoLabel={group.label}
                         totalCarteira={netTotal}
                         colorKey={group.colorKey}
+                        fundamentalsByCode={fundamentalsByCode ?? new Map()}
                       />
                     </div>
                     <div className="md:hidden">
@@ -701,6 +716,7 @@ export const PluggyInvestmentsSection: React.FC<PluggyInvestmentsSectionProps> =
                           totalCarteira={netTotal}
                           isOpen={!!openItems[item.id]}
                           onToggle={() => setOpenItems((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                          fundamentalsByCode={fundamentalsByCode ?? new Map()}
                         />
                       ))}
                     </div>

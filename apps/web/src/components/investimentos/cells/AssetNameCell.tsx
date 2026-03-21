@@ -1,5 +1,6 @@
 import React from 'react'
 import { AssetLogo, isFixedIncomeAssetType } from '@/components/ui/AssetLogo'
+import { Badge } from '@/components/ui/badge'
 import type { PluggyInvestment } from '@/hooks/useBensInvestimentos'
 import { simplifyFundSubtype } from '@/utils/investimentos'
 
@@ -25,7 +26,7 @@ function getAssetSubtitle(item: PluggyInvestment): string {
   return subtype
 }
 
-export function AssetNameCell({ item }: { item: PluggyInvestment }) {
+export function AssetNameCell({ item, dy12mBadge }: { item: PluggyInvestment; dy12mBadge?: number }) {
   const display = item.display_name ?? item.name ?? item.full_name ?? 'Ativo'
   const ticker = item.ticker ?? item.code ?? null
   return (
@@ -44,6 +45,11 @@ export function AssetNameCell({ item }: { item: PluggyInvestment }) {
         <div className="flex items-baseline gap-1.5 flex-wrap">
           <span className="text-sm font-medium truncate">{display}</span>
           {shouldShowTicker(item) && <span className="text-xs text-muted-foreground shrink-0">{ticker}</span>}
+          {dy12mBadge != null && dy12mBadge > 0 && (
+            <Badge variant="success" className="text-[10px] px-1.5 py-0 shrink-0 tabular-nums">
+              DY {dy12mBadge.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%
+            </Badge>
+          )}
           {item.ir_exempt && <span className="text-[10px] text-emerald-700 dark:text-emerald-400 shrink-0">Isento IR</span>}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">{getAssetSubtitle(item)}</div>
