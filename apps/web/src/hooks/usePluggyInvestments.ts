@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { STALE_RPC_INVESTMENTS_PAGE_MS } from '@/lib/rpcQueryDefaults';
 import type {
   SyncStatusRow,
   InvestmentTotalsV2,
@@ -449,8 +450,8 @@ export function usePluggyInvestments() {
     queryKey: [PLUGGY_INVESTMENTS_QUERY_KEY, uid],
     queryFn: () => fetchPluggyInvestmentsData(uid!),
     enabled: !!uid,
-    staleTime: 10 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, // 10 min — mantém em memória entre navegações
+    staleTime: STALE_RPC_INVESTMENTS_PAGE_MS,
+    gcTime: STALE_RPC_INVESTMENTS_PAGE_MS, // mantém em memória entre navegações
   });
 
   const data = query.data;

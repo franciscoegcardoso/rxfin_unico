@@ -21,13 +21,17 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useProfileSettings } from '@/hooks/useProfileSettings';
+import { useUserPlan } from '@/hooks/useUserPlan';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency } from '@/lib/utils';
 export const AccountOverviewTab: React.FC = () => {
   const { data, isLoading, error } = useProfileSettings();
+  const { data: userPlanView } = useUserPlan();
 
   const profile = data?.profile;
   const plan = data?.plan;
+  const planDisplayName = plan?.name ?? userPlanView?.plan_name ?? 'Free';
   const notificationPrefs = data?.notification_prefs;
   const stats = data?.stats;
 
@@ -50,6 +54,7 @@ export const AccountOverviewTab: React.FC = () => {
   }
 
   return (
+    <SectionErrorBoundary fallbackTitle="Visão geral da conta">
     <div className="space-y-6">
       {/* Card Perfil */}
       <Card className="rounded-2xl border border-border bg-card shadow-sm p-6">
@@ -77,7 +82,7 @@ export const AccountOverviewTab: React.FC = () => {
             <Crown className="h-4 w-4 text-primary" />
             Plano
           </CardTitle>
-          {plan?.name && <Badge variant="secondary" className="rounded-full">{plan.name}</Badge>}
+          <Badge variant="secondary" className="rounded-full">{planDisplayName}</Badge>
         </CardHeader>
         <CardContent className="p-0">
           {plan?.price_monthly != null && (
@@ -163,5 +168,6 @@ export const AccountOverviewTab: React.FC = () => {
       </Card>
 
     </div>
+    </SectionErrorBoundary>
   );
 };

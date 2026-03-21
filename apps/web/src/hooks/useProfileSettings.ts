@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { DEFAULT_USER_PLAN_VIEW } from '@/lib/userPlanDefaults';
 
 export interface ProfileSettingsProfile {
   full_name?: string | null;
@@ -50,6 +51,20 @@ export interface ProfileSettingsData {
   stats?: ProfileSettingsStats | null;
 }
 
+/** Garante plan_slug/plan_name explícitos quando a RPC não preenche (view v_user_plan vazia). */
+function withProfilePlanFallbacks(data: ProfileSettingsData | null): ProfileSettingsData | null {
+  if (!data?.profile) return data;
+  return {
+    ...data,
+    profile: {
+      ...data.profile,
+      plan_slug: data.profile.plan_slug ?? DEFAULT_USER_PLAN_VIEW.plan_slug,
+      plan_name: data.profile.plan_name ?? DEFAULT_USER_PLAN_VIEW.plan_name,
+      plan_expires_at: data.profile.plan_expires_at ?? null,
+    },
+  };
+}
+
 export function useProfileSettings() {
   const { user } = useAuth();
 
@@ -58,7 +73,7 @@ export function useProfileSettings() {
     queryFn: async (): Promise<ProfileSettingsData | null> => {
       const { data, error } = await supabase.rpc('get_user_profile_settings');
       if (error) throw error;
-      return (data as ProfileSettingsData) ?? null;
+      return withProfilePlanFallbacks((data as ProfileSettingsData) ?? null);
     },
     enabled: !!user?.id,
     staleTime: 15 * 60 * 1000,

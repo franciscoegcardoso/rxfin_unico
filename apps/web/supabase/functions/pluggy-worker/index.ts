@@ -1,5 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getPluggyApiKey } from '../_shared/pluggy-auth.ts';
+import {
+  resolvePluggyTransactionCategories,
+  type PluggyTransaction as PluggyTxShared,
+} from '../_shared/pluggy-transactions.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +21,7 @@ interface PluggyTransaction {
   currencyCode?: string;
   date: string;
   category?: string;
+  categoryId?: string | null;
   type: string;
   status?: string;
   paymentData?: Record<string, unknown>;
@@ -206,23 +211,33 @@ Deno.serve(async (req) => {
           if (abortController.signal.aborted) throw new Error('Timeout após 350s');
 
           const chunk = transactions.slice(i, i + chunkSize);
-          const rows = chunk.map((tx) => ({
-            user_id: userId,
-            account_id: internalAccountId,
-            pluggy_transaction_id: tx.id,
-            description: tx.description ?? '',
-            description_raw: tx.descriptionRaw ?? null,
-            amount: Math.abs(tx.amount),
-            amount_in_account_currency: tx.amountInAccountCurrency != null ? Math.abs(tx.amountInAccountCurrency) : null,
-            currency_code: tx.currencyCode ?? null,
-            date: tx.date?.split('T')[0] ?? tx.date,
-            category: tx.category ?? null,
-            type: tx.type ?? 'DEBIT',
-            status: tx.status ?? null,
-            payment_data: tx.paymentData ?? null,
-            credit_card_metadata: tx.creditCardMetadata ?? null,
-            pluggy_bill_id: tx.bill?.id ?? null,
-          }));
+          const rows = await Promise.all(
+            chunk.map(async (tx) => {
+              const { pluggy_category_id, category_id } = await resolvePluggyTransactionCategories(
+                db,
+                tx as PluggyTxShared,
+              );
+              return {
+                user_id: userId,
+                account_id: internalAccountId,
+                pluggy_transaction_id: tx.id,
+                description: tx.description ?? '',
+                description_raw: tx.descriptionRaw ?? null,
+                amount: Math.abs(tx.amount),
+                amount_in_account_currency: tx.amountInAccountCurrency != null ? Math.abs(tx.amountInAccountCurrency) : null,
+                currency_code: tx.currencyCode ?? null,
+                date: tx.date?.split('T')[0] ?? tx.date,
+                category: tx.category ?? null,
+                pluggy_category_id,
+                category_id,
+                type: tx.type ?? 'DEBIT',
+                status: tx.status ?? null,
+                payment_data: tx.paymentData ?? null,
+                credit_card_metadata: tx.creditCardMetadata ?? null,
+                pluggy_bill_id: tx.bill?.id ?? null,
+              };
+            }),
+          );
 
           const { error } = await db
             .from('pluggy_transactions')
