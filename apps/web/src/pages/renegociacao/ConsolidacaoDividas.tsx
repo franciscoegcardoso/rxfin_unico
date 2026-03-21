@@ -3,11 +3,13 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { ConsolidacaoDividasSimulator } from '@/components/simuladores/renegociacao/ConsolidacaoDividasSimulator';
 import { Layers } from 'lucide-react';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 const ConsolidacaoDividas: React.FC = () => {
   return (
     
       <PageContainer>
+        <PageBreadcrumb />
         <PageHeader
           title="Consolidação de Dívidas"
           description="Junte múltiplas dívidas em um único contrato e compare o custo total"

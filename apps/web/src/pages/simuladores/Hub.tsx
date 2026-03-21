@@ -22,6 +22,7 @@ import { PublicSimuladoresHeader } from '@/components/simuladores/PublicSimulado
 import { SimuladorCard } from '@/components/simuladores/SimuladorCard';
 import { SIMULATOR_CATEGORIES } from '@/components/simuladores/simulatorCategories';
 import { cn } from '@/lib/utils';
+import { PageBreadcrumb } from '@/components/navigation/PageBreadcrumb';
 
 interface SimulatorItem {
   title: string;
@@ -205,6 +206,7 @@ export default function Hub() {
   if (isLoggedIn) {
     return (
       <>
+        <PageBreadcrumb />
         <PageHeader
           icon={Calculator}
           title="Simuladores"

@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import { initSentry } from "@/lib/sentry";
 import App from "./App.tsx";
 import "./index.css";
@@ -68,6 +69,8 @@ createRoot(document.getElementById("root")!).render(
   // Em desenvolvimento, StrictMode monta componentes 2× de propósito (detecção de side effects).
   // Em produção o StrictMode NÃO duplica mount — se requests duplicados ocorrerem em produção, a causa é outra (ex.: useIsMobile flip, ProtectedRoute).
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
   </React.StrictMode>
 );

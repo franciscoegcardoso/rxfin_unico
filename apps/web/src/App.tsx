@@ -1,5 +1,5 @@
 // build-trigger: InteractiveDemoSection frame v6
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -34,6 +34,8 @@ import { INVESTIMENTOS_ALOCACAO_PATH, LEGACY_ALOCACAO_ROUTE_SEGMENT } from "@/co
 // ─── ESTÁTICO: carregado em TODA sessão ──────────────────────────────────────
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import CompartilharSimulacao from "./pages/public/CompartilharSimulacao";
+import Convite from "./pages/public/Convite";
 import ResetPassword from "./pages/ResetPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import VerificarEmail from "./pages/VerificarEmail";
@@ -158,6 +160,17 @@ const AdminRolesPage = lazy(() => import(/* webpackChunkName: "admin" */ './page
 
 const PageSkeleton = () => <RXFinLoadingSpinner height="h-screen" />;
 
+/** Prefetch leve do chunk de B&I após idle (~Prompt B). */
+function PrefetchAfterIdle() {
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      void import(/* webpackChunkName: "bens" */ "./pages/bens-investimentos/BensInvestimentosLayout").catch(() => {});
+    }, 2000);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
+
 function RootRoute() {
   return (
     <>
@@ -197,6 +210,7 @@ const App = () => (
                   <Sonner />
                   <GlobalSyncIndicator />
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <PrefetchAfterIdle />
                     <ScrollToTop />
                     <AccountPendingChangesProvider>
                       <CanonicalLink />
@@ -214,6 +228,9 @@ const App = () => (
                                 <Route path="/" element={<RootRoute />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/signup" element={<Signup />} />
+                                <Route path="/cadastro" element={<Signup />} />
+                                <Route path="/compartilhar/:id" element={<CompartilharSimulacao />} />
+                                <Route path="/convite/:code" element={<Convite />} />
                                 <Route path="/auth" element={<Login />} />
                                 <Route path="/reset-password" element={<ResetPassword />} />
                                 <Route path="/update-password" element={<UpdatePassword />} />
