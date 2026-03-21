@@ -100,10 +100,10 @@ export default function PassivosFinanciamentosTab() {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-          <Landmark className="h-5 w-5 text-primary" />
+          <Landmark className="h-5 w-5 text-primary shrink-0" />
           Financiamentos
         </h2>
         <Button size="sm" className="gap-1.5" onClick={() => setDialogOpen(true)}>

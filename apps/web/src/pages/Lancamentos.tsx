@@ -113,6 +113,24 @@ function getGrupoLabel(l: LancamentoRealizado): string {
   return '—';
 }
 
+/** Evita AppLayout duplo quando renderizado dentro de MovimentacoesPage (embedded). */
+function LancamentosShell({
+  embedded,
+  children,
+}: {
+  embedded: boolean;
+  children: React.ReactNode;
+}) {
+  if (embedded) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1 w-full min-w-0 h-full overflow-hidden bg-background">
+        {children}
+      </div>
+    );
+  }
+  return <AppLayout>{children}</AppLayout>;
+}
+
 interface LancamentosProps {
   embedded?: boolean;
 }
@@ -887,18 +905,21 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
 
   if (loading && lancamentos.length === 0) {
     return (
-      <>
-      <AppLayout>
+      <LancamentosShell embedded={embedded}>
         <PageSkeleton variant="metrics-table" metrics={4} />
-      </AppLayout>
-      </>
+      </LancamentosShell>
     );
   }
 
   return (
     <>
-    <AppLayout>
-      <div className="content-zone py-5 md:py-6 space-y-6">
+    <LancamentosShell embedded={embedded}>
+      <div
+        className={cn(
+          'content-zone space-y-6',
+          embedded ? 'py-4 md:py-5 px-4 md:px-6 flex-1 min-h-0 overflow-y-auto' : 'py-5 md:py-6'
+        )}
+      >
         {/* Outdated Connection Banner */}
         {!isManual && <OutdatedConnectionBanner />}
 
@@ -2148,7 +2169,7 @@ export const Lancamentos: React.FC<LancamentosProps> = ({ embedded = false }) =>
         </div>
 
       </div>
-    </AppLayout>
+    </LancamentosShell>
 
     {/* Conta Form Dialog */}
     <ContaFormDialog

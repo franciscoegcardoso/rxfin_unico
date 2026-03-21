@@ -11,7 +11,11 @@ export default tseslint.config(
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        // TSX may reference React without import (types / legacy); avoids false positives with no-undef
+        React: "readonly",
+      },
     },
     plugins: {
       "react-hooks": reactHooks,
@@ -21,6 +25,7 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      "no-undef": "error",
     },
   },
 );

@@ -55,6 +55,15 @@ export default defineConfig(() => ({
           if (id.includes("node_modules/posthog-js")) {
             return "vendor-analytics";
           }
+          // Simuladores — chunk isolado para evitar poluição de escopo
+          if (
+            id.includes("/pages/Simulador") ||
+            id.includes("/pages/EconoGraph") ||
+            id.includes("/pages/RenegociacaoDividas") ||
+            id.includes("/pages/simuladores/")
+          ) {
+            return "simuladores";
+          }
         },
       },
     },

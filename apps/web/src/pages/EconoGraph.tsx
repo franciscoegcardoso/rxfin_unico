@@ -17,7 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
 import { BackLink } from '@/components/shared/BackLink';
 import { cn } from '@/lib/utils';
 import { useUserKV } from '@/hooks/useUserKV';
@@ -159,15 +159,14 @@ const EconoGraph: React.FC = () => {
   };
   
   return (
-    <AppLayout>
+    <SimulatorLayout
+      title="EconoGraph"
+      subtitle="Compare indicadores econômicos e simule carteiras de investimento"
+      innerClassName="max-w-[min(100%,1400px)]"
+    >
       <div className="space-y-6">
-        {/* Header - Same style as SimuladorFipe */}
         <div>
           <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
-          <h1 className="text-3xl font-bold text-foreground">EconoGraph</h1>
-          <p className="text-muted-foreground mt-1">
-            Compare indicadores econômicos e simule carteiras de investimento
-          </p>
         </div>
 
         {/* Onboarding Card */}
@@ -473,7 +472,7 @@ const EconoGraph: React.FC = () => {
         {/* Help Dialog */}
         <HelpDialog isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
       </div>
-    </AppLayout>
+    </SimulatorLayout>
   );
 };
 

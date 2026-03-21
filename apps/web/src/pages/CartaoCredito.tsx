@@ -314,10 +314,14 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
     return `Vence em ${days} dia${days !== 1 ? 's' : ''}`;
   };
 
-  return (
-    <AppLayout>
+  const content = (
       <div className="flex flex-col min-h-full bg-[hsl(var(--color-surface-base))]">
-        <div className="content-zone py-5 md:py-6 space-y-5 flex-1">
+        <div
+          className={cn(
+            'content-zone space-y-5 flex-1',
+            embedded ? 'py-4 md:py-5 px-4 md:px-6 flex-1 min-h-0 overflow-y-auto' : 'py-5 md:py-6'
+          )}
+        >
         {!embedded && (
         <PageHeader
           icon={CreditCard}
@@ -675,8 +679,10 @@ const CartaoCredito: React.FC<CartaoCreditoProps> = ({ embedded = false }) => {
         )}
         </div>
       </div>
-    </AppLayout>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 };
 
 export default CartaoCredito;

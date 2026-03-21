@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/shared/PageHeader';
+import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
+import { BackLink } from '@/components/shared/BackLink';
 import { PageContainer } from '@/components/shared/PageContainer';
 import { Card, CardContent } from '@/components/ui/card';
-import { HandCoins, Receipt, ArrowRightLeft, Layers, Percent } from 'lucide-react';
+import { Receipt, ArrowRightLeft, Layers, Percent } from 'lucide-react';
 
 const simulators = [
   {
@@ -54,15 +54,14 @@ const cardVariants = {
 
 const RenegociacaoDividas: React.FC = () => {
   return (
-    <AppLayout>
+    <SimulatorLayout
+      title="Renegociação de Dívidas"
+      subtitle="Simule diferentes cenários para renegociar suas dívidas e encontrar a melhor opção"
+    >
       <PageContainer>
-        <PageHeader
-          title="Renegociação de Dívidas"
-          description="Simule diferentes cenários para renegociar suas dívidas e encontrar a melhor opção"
-          icon={<HandCoins className="h-5 w-5 text-primary-foreground" />}
-          backTo="/simuladores"
-          backLabel="Simuladores"
-        />
+        <div className="mb-4">
+          <BackLink to="/simuladores" label="Simuladores" className="mb-2" />
+        </div>
 
         <motion.div
           className="grid gap-4 sm:grid-cols-2"
@@ -98,7 +97,7 @@ const RenegociacaoDividas: React.FC = () => {
           })}
         </motion.div>
       </PageContainer>
-    </AppLayout>
+    </SimulatorLayout>
   );
 };
 

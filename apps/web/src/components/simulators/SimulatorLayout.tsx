@@ -6,15 +6,17 @@ interface SimulatorLayoutProps {
   subtitle?: string;
   children: React.ReactNode;
   className?: string;
+  /** Override inner container width (default: max-w-3xl). Use for wide charts, e.g. max-w-[min(100%,1400px)]. */
+  innerClassName?: string;
 }
 
 /**
  * Base layout for simulator pages: light background, header, content area.
  */
-export function SimulatorLayout({ title, subtitle, children, className }: SimulatorLayoutProps) {
+export function SimulatorLayout({ title, subtitle, children, className, innerClassName }: SimulatorLayoutProps) {
   return (
     <div className={cn('min-h-screen bg-background w-full max-w-full overflow-x-hidden', className)}>
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-10">
+      <div className={cn('max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-10', innerClassName)}>
         <header className="text-center mb-6 sm:mb-8">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight leading-tight px-1">
             {title}

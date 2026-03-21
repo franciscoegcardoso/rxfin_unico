@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { SimulatorLayout } from '@/components/simulators/SimulatorLayout';
 import { useSimulatorBySlug } from '@/hooks/useSimulatorBySlug';
 import { ProfileCompletionDialog } from '@/components/simuladores/ProfileCompletionDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -102,7 +102,7 @@ export const SimuladorDinamico: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <AppLayout>
+      <SimulatorLayout title="Carregando simulador" subtitle="Aguarde um instante">
         <div className="space-y-6">
           <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-96" />
@@ -111,23 +111,20 @@ export const SimuladorDinamico: React.FC = () => {
             <Skeleton className="h-64" />
           </div>
         </div>
-      </AppLayout>
+      </SimulatorLayout>
     );
   }
 
   // Error state - simulator not found
   if (error || !simulator) {
     return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+      <SimulatorLayout
+        title="Simulador não encontrado"
+        subtitle="O simulador que você está procurando não existe ou foi removido."
+      >
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-6">
           <div className="h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center">
             <AlertTriangle className="h-10 w-10 text-destructive" />
-          </div>
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-foreground">Simulador não encontrado</h1>
-            <p className="text-muted-foreground max-w-md">
-              O simulador que você está procurando não existe ou foi removido.
-            </p>
           </div>
           <Button asChild>
             <Link to="/simuladores">
@@ -136,15 +133,15 @@ export const SimuladorDinamico: React.FC = () => {
             </Link>
           </Button>
         </div>
-      </AppLayout>
+      </SimulatorLayout>
     );
   }
 
   // Not logged in for non-public simulators
   if (!user && simulator.access_level !== 'public') {
     return (
-      <AppLayout>
-        <div className="max-w-lg mx-auto mt-12">
+      <SimulatorLayout title="Login necessário" subtitle={`Para acessar o simulador ${simulator.title}, faça login.`}>
+        <div className="max-w-lg mx-auto">
           <Card className="border-primary/20">
             <CardHeader className="text-center pb-4">
               <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -173,15 +170,18 @@ export const SimuladorDinamico: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </SimulatorLayout>
     );
   }
 
   // Access restricted - premium required
   if (!hasAccess && simulator.access_level === 'premium') {
     return (
-      <AppLayout>
-        <div className="max-w-lg mx-auto mt-12">
+      <SimulatorLayout
+        title="Acesso restrito"
+        subtitle={`O simulador ${simulator.title} está disponível apenas para assinantes Premium.`}
+      >
+        <div className="max-w-lg mx-auto">
           <Card className="border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20">
             <CardHeader className="text-center pb-4">
               <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mb-4 shadow-lg">
@@ -238,7 +238,7 @@ export const SimuladorDinamico: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </AppLayout>
+      </SimulatorLayout>
     );
   }
 
@@ -248,17 +248,8 @@ export const SimuladorDinamico: React.FC = () => {
   // If no component mapping exists, show placeholder
   if (!SimulatorComponent) {
     return (
-      <AppLayout>
+      <SimulatorLayout title={simulator.title} subtitle={simulator.description || undefined}>
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{simulator.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {simulator.description}
-              </p>
-            </div>
-          </div>
-
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Em Desenvolvimento</AlertTitle>
@@ -282,7 +273,7 @@ export const SimuladorDinamico: React.FC = () => {
           currentName={profile?.full_name}
           currentPhone={profile?.phone}
         />
-      </AppLayout>
+      </SimulatorLayout>
     );
   }
 
